@@ -418,7 +418,7 @@ Domain Path: /langs
 
 					RWLogger::Log( "AccountPageLoad", 'delete_account' );
 
-
+					$this->fs->delete_account_event();
 
 					$this->_options_manager->clear(true);
 

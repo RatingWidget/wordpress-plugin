@@ -77,6 +77,11 @@
 			return self::$_instances[ $slug ];
 		}
 
+		/**
+		 * @param $plugin_file
+		 *
+		 * @return bool|Freemius
+		 */
 		static function load_instance_by_file($plugin_file) {
 			$sites = self::$_accounts->get_option( 'sites' );
 
@@ -193,12 +198,34 @@
 
 		/* Events
 		------------------------------------------------------------------------------------------------------------------*/
+		function _delete_site()
+		{
+			$sites = self::$_accounts->get_option( 'sites' );
+			if ( isset( $sites[ $this->_plugin_basename ] ) ) {
+				unset( $sites[ $this->_plugin_basename ] );
+			}
+
+			self::$_accounts->set_option( 'sites', $sites, true );
+		}
+
 		function _activate_plugin_event() {
 			$this->_logger->entrance('slug = ' . $this->_slug);
 
 			if ( ! current_user_can( 'activate_plugins' ) ) {
 				return;
 			}
+
+			// Send event.
+		}
+
+		function delete_account_event() {
+			$this->_logger->entrance('slug = ' . $this->_slug);
+
+			if ( ! current_user_can( 'activate_plugins' ) ) {
+				return;
+			}
+
+			$this->_delete_site();
 
 			// Send event.
 		}
@@ -220,12 +247,7 @@
 				return;
 			}
 
-			$sites = self::$_accounts->get_option( 'sites' );
-			if ( isset( $sites[ $this->_plugin_basename ] ) ) {
-				unset( $sites[ $this->_plugin_basename ] );
-			}
-
-			self::$_accounts->set_option( 'sites', $sites, true );
+			$this->_delete_site();
 
 			// Send event.
 
