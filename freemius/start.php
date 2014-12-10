@@ -22,8 +22,8 @@
 		require_once WP_FS__DIR_INCLUDES . '/class-fs-site.php';
 		require_once WP_FS__DIR_INCLUDES . '/class-freemius.php';
 
-		if (file_exists(WP_FS__DIR_INCLUDES . '/class-fs-debug.php'))
-			require_once WP_FS__DIR_INCLUDES . '/class-fs-debug.php';
+		if (file_exists(WP_FS__DIR_INCLUDES . '/_class-fs-debug.php'))
+			require_once WP_FS__DIR_INCLUDES . '/_class-fs-debug.php';
 
 		/**
 		 * @return Freemius

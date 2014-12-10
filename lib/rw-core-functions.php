@@ -68,6 +68,7 @@
 		if ( ! function_exists( 'get_plugins' ) ) {
 			require_once( ABSPATH . 'wp-admin/includes/plugin.php' );
 		}
+
 		$plugin_folder = get_plugins( '/' . plugin_basename( dirname(dirname( __FILE__ )) ) );
 		$plugin_file   = 'rating-widget.php';
 

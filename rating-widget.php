@@ -3,7 +3,7 @@
 Plugin Name: Rating-Widget: Star Rating System
 Plugin URI: http://rating-widget.com/wordpress-plugin/
 Description: Create and manage Rating-Widget ratings in WordPress.
-Version: 2.2.9
+Version: 2.3.0
 Author: Rating-Widget
 Author URI: http://rating-widget.com/wordpress-plugin/
 License: GPLv2
@@ -14,6 +14,7 @@ Domain Path: /langs
 	if ( ! defined( 'ABSPATH' ) ) {
 		exit;
 	}
+
 
 	if (!class_exists('RatingWidgetPlugin')) :
 		// Load common config.
@@ -251,6 +252,29 @@ Domain Path: /langs
 				return true;
 			}
 
+			function _update_account($type, $property, $value)
+			{
+				if ('site' !== $type)
+					return;
+
+				switch ($property)
+				{
+					case 'id':
+						$this->SetOption( WP_RW__DB_OPTION_SITE_ID, $value );
+						break;
+					case 'public_key':
+						$this->SetOption( WP_RW__DB_OPTION_SITE_PUBLIC_KEY, $value );
+						break;
+					case 'secret_key':
+						$this->SetOption( WP_RW__DB_OPTION_SITE_SECRET_KEY, $value );
+						break;
+					default:
+						return;
+				}
+
+				$this->_options_manager->store();
+			}
+
 			private function SetupDashboardActions()
 			{
 				RWLogger::LogEnterence("SetupDashboardActions");
@@ -258,9 +282,11 @@ Domain Path: /langs
 				$this->fs->add_plugin_action_link(__('Settings', WP_RW__ADMIN_MENU_SLUG), rw_get_admin_url());
 				$this->fs->add_plugin_action_link(__('Blog', WP_RW__ADMIN_MENU_SLUG), rw_get_site_url('/blog/'), true);
 
+
+				add_action('fs_account_property_edit_' . WP_RW__ID, array(&$this, '_update_account'), 10, 3);
+
 				// Add activation and de-activation hooks.
 				register_activation_hook(WP_RW__PLUGIN_FILE_FULL, 'rw_activated');
-				register_deactivation_hook(WP_RW__PLUGIN_FILE_FULL, 'rw_deactivated');
 
 				add_action('admin_head', array(&$this, "rw_admin_menu_icon_css"));
 				add_action('admin_menu', array(&$this, 'admin_menu'));
@@ -392,6 +418,8 @@ Domain Path: /langs
 
 					RWLogger::Log( "AccountPageLoad", 'delete_account' );
 
+
+
 					$this->_options_manager->clear(true);
 
 					$this->ClearTransients();
@@ -459,9 +487,9 @@ Domain Path: /langs
 
 				$site_plan_update = $this->GetOption( WP_RW__DB_OPTION_SITE_PLAN_UPDATE, false, 0 );
 				if ( $site_plan_update < ( time() - WP_RW__TIME_24_HOURS_IN_SEC ) ) {
-					if ( function_exists( 'prune_super_cache' ) ) {
+					/*if ( function_exists( 'prune_super_cache' ) ) {
 						prune_super_cache();
-					} else if ( function_exists( 'wp_cache_clear_cache' ) ) {
+					} else */if ( function_exists( 'wp_cache_clear_cache' ) ) {
 						wp_cache_clear_cache();
 					}
 				}
@@ -1345,13 +1373,13 @@ Domain Path: /langs
 				$this->fs->add_action('fs_after_account_details', array(&$this, 'AccountPageRender'));
 				$this->fs->add_action('fs_account_page_load_before_departure', array(&$this, 'AccountPageLoad'));
 
-				if ($this->IsProfessional() && !$this->RW_IsTrial())
+				/*if ($this->IsProfessional() && !$this->RW_IsTrial())
 					// Boosting.
 					$submenu[] = array(
 						'menu_title' => __('Boost', WP_RW__ID),
 						'function' => 'BoostPageRender',
 						'load_function' => 'BoostPageLoad',
-					);
+					);*/
 
 				foreach ($submenu as $item)
 				{
@@ -3738,7 +3766,7 @@ Domain Path: /langs
 			 * @param array $pOptions
 			 * @return string Rating container HTML.
 			 */
-			private function GetRatingHtml($pUrid, $pElementClass, $pAddSchema = false, $pTitle = "", $pOptions = array())
+			private function GetRatingHtml($pUrid, $pElementClass, $pAddSchema = false, $pTitle = "", $pPermaink = '', $pOptions = array())
 			{
 				if (RWLogger::IsOn()){ $params = func_get_args(); RWLogger::LogEnterence("GetRatingHtml", $params); }
 
@@ -3760,26 +3788,26 @@ Domain Path: /langs
 
 					if (false !== $data && $data['votes'] > 0)
 					{
-						$schema_add_title = true;
-
 						if (false !== strpos($pElementClass, 'product'))
 						{
 							// WooCommerce is already adding all the product schema metadata.
 							/*$schema_root = 'itemscope itemtype="http://schema.org/Product"';
 							$schema_title_prop = 'itemprop="name"';
 							*/
-							$schema_root = '';
-							$schema_add_title = false;
+                            $rating_html .= '>';
 						}
 						else
 						{
-							$schema_root = ' itemscope itemprop="blogPost" itemtype="http://schema.org/BlogPosting"';
-							$schema_title_prop = 'itemprop="headline"';
+                            $rating_html .= ' itemscope itemtype="http://schema.org/Article">';
+                            if (!empty($pTitle))
+                                $rating_html .= '<meta itemprop="name" content="' . esc_attr($pTitle) . '" />';
+//                            $rating_html .= '<meta itemprop="description" content="' . esc_attr($pTitle) . '" />';
+                            if (!empty($pPermaink))
+                                $rating_html .= '<meta itemprop="url" content="' . esc_attr($pPermaink) . '" />';
 						}
 
 //						$title = mb_convert_to_utf8(trim($pTitle));
-						$rating_html .= ' ' . $schema_root . '>
-    ' . ($schema_add_title ? '<span ' . $schema_title_prop . ' style="position: fixed; top: 100%;">' . esc_html($pTitle) . '</span>' : '') . '
+						$rating_html .= '
     <div itemprop="aggregateRating" itemscope itemtype="http://schema.org/AggregateRating">
         <meta itemprop="worstRating" content="0" />
         <meta itemprop="bestRating" content="5" />
@@ -5290,7 +5318,7 @@ Domain Path: /langs
 			{
 				$this->QueueRatingData($urid, $title, $permalink, $class);
 
-				$html = $this->GetRatingHtml($urid, $class, $add_schema, $title, $options);
+				$html = $this->GetRatingHtml($urid, $class, $add_schema, $title, $permalink, $options);
 
 				if (false !== ($hor_align || $custom_style))
 					$html = '<div' .
@@ -5627,9 +5655,9 @@ Domain Path: /langs
 		 */
 		function ratingwidget() {
 			global $rwp;
-
 			if (!isset($rwp)) {
 				rw_fs();
+				load_constants();
 				$rwp = RatingWidgetPlugin::Instance();
 				$rwp->Init();
 			}
@@ -5664,7 +5692,42 @@ Domain Path: /langs
 			return $rw_fs_options;
 		}
 
-		function fs_load_external_account()
+		/**
+		 * Load RW constants based on FS account (used after migration).
+		 * @todo Should be removed after changing all constants to the relevant properties from Freemius.
+		 */
+		function load_constants() {
+			$fs   = rw_fs();
+			$site = $fs->get_site();
+			$user = $fs->get_user();
+
+			if ( is_object( $site ) ) {
+				if ( ! defined( 'WP_RW__SITE_ID' ) ) {
+					define( 'WP_RW__SITE_ID', $site->id );
+				}
+				if ( ! defined( 'WP_RW__SITE_PUBLIC_KEY' ) ) {
+					define( 'WP_RW__SITE_PUBLIC_KEY', $site->public_key );
+				}
+				if ( ! defined( 'WP_RW__SITE_SECRET_KEY' ) ) {
+					define( 'WP_RW__SITE_SECRET_KEY', $site->secret_key );
+				}
+			}
+			if ( is_object( $user ) ) {
+				if ( ! defined( 'WP_RW__OWNER_ID' ) ) {
+					define( 'WP_RW__OWNER_ID', $user->id );
+				}
+				if ( ! defined( 'WP_RW__OWNER_EMAIL' ) ) {
+					define( 'WP_RW__OWNER_EMAIL', $user->email );
+				}
+			}
+		}
+
+		/**
+		 * Load account information from RatingWidget to Freemius.
+		 * It's a migration method that should be only executed once.
+		 * @return array
+		 */
+		function rw_fs_load_external_account()
 		{
 			/*<--{obfuscate}*/
 			$options = FS_Option_Manager::get_manager(WP_RW__OPTIONS, true);
@@ -5732,6 +5795,8 @@ Domain Path: /langs
 
 			/*{obfuscate}-->*/
 		}
+
+		add_filter('fs_load_account_' . WP_RW__ID, 'rw_fs_load_external_account');
 
 		function rwapi()
 		{

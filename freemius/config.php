@@ -15,8 +15,8 @@
 	define('WP_FS__DIR_CSS', WP_FS__DIR_ASSETS . '/css');
 
 
-	if (!defined('WP_FS__ACCOUNT_OPTION_NAME')) {
-		define( 'WP_FS__ACCOUNT_OPTION_NAME', 'fs_account' );
+	if (!defined('WP_FS__ACCOUNTS_OPTION_NAME')) {
+		define( 'WP_FS__ACCOUNTS_OPTION_NAME', 'fs_accounts' );
 	}
 
 	/**

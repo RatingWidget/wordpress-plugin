@@ -20,7 +20,7 @@
 
 		private static $_MANAGERS = array();
 
-		private function __construct($id, $load = false) {
+		private function __construct( $id, $load = false ) {
 			$this->_logger = FS_Logger::get_logger( WP_FS__SLUG . '_opt_mngr_' . $id, WP_FS__DEBUG_SDK, WP_FS__ECHO_DEBUG_SDK );
 
 			$this->_logger->entrance();
@@ -39,7 +39,7 @@
 		 *
 		 * @return FS_Option_Manager
 		 */
-		static function get_manager($id, $load = false) {
+		static function get_manager( $id, $load = false ) {
 			$id = strtolower( $id );
 
 			if ( ! isset( self::$_MANAGERS[ $id ] ) ) {
@@ -52,108 +52,134 @@
 			return self::$_MANAGERS[ $id ];
 		}
 
-		private function _get_option_manager_name()
-		{
+		private function _get_option_manager_name() {
 //			return WP_FS__SLUG . '_' . $this->_id;
 			return $this->_id;
 		}
 
-		function load($flush = false)
-		{
+		function load( $flush = false ) {
 			$this->_logger->entrance();
 
 			$option_name = $this->_get_option_manager_name();
 
-			if ($flush || !isset($this->_options))
-			{
-				$this->_options = wp_cache_get($option_name, WP_FS__SLUG);
+			if ( $flush || ! isset( $this->_options ) ) {
+				$this->_options = wp_cache_get( $option_name, WP_FS__SLUG );
 
-				if (is_array($this->_options))
+//				$this->_logger->info('wp_cache_get = ' . var_export($this->_options, true));
+
+				if ( is_array( $this->_options ) ) {
 					$this->clear();
+				}
 
 				$cached = true;
 
-				if (false === $this->_options)
-				{
-					$this->_options = get_option($option_name);
+				if ( false === $this->_options ) {
+					$this->_options = get_option( $option_name );
 
-					if (false !== $this->_options)
-						$this->_options = json_decode($this->_options);
+					if ( is_string( $this->_options ) ) {
+						$this->_options = json_decode( $this->_options );
+					}
 
-					if (is_array($this->_options))
+//					$this->_logger->info('get_option = ' . var_export($this->_options, true));
+
+					if ( false === $this->_options ) {
 						$this->clear();
+					}
 
 					$cached = false;
 				}
 
-				if (!$cached)
-					// Set non encoded cache.
-					wp_cache_set($option_name, $this->_options, WP_FS__SLUG);
+				if ( ! $cached ) // Set non encoded cache.
+				{
+					wp_cache_set( $option_name, $this->_options, WP_FS__SLUG );
+				}
 			}
 		}
 
-		function is_loaded()
-		{
-			return isset($this->_options);
+		function is_loaded() {
+			return isset( $this->_options );
 		}
 
-		function is_empty()
-		{
-			return ($this->is_loaded() && false === $this->_options);
+		function is_empty() {
+			return ( $this->is_loaded() && false === $this->_options );
 		}
 
-		function clear($flush = false)
-		{
+		function clear( $flush = false ) {
 			$this->_logger->entrance();
 
-			$this->_options = new stdClass();
+			$this->_options = array();
 
-			if ($flush)
+			if ( $flush ) {
 				$this->store();
+			}
 		}
 
-		function get_option($option, $default = null)
-		{
-			$this->_logger->entrance('option = ' . $option);
+		function get_option( $option, $default = null ) {
+			$this->_logger->entrance( 'option = ' . $option );
 
-			return isset($this->_options->{$option}) ? $this->_options->{$option} : $default;
+//			$val = $this->_options->{$option};
+//			$this->_logger->info('option = ' . var_export($val['rating-widget/rating-widget.php'], true));
+
+			if ( is_array( $this->_options ) ) {
+				return isset( $this->_options[ $option ] ) ? $this->_options[ $option ] : $default;
+			} else if ( is_object( $this->_options ) ) {
+				return isset( $this->_options->{$option} ) ? $this->_options->{$option} : $default;
+			}
 		}
 
-		function set_option($option, $value, $flush = false)
-		{
-			$this->_logger->entrance('option = ' . $option);
+		function set_option( $option, $value, $flush = false ) {
+			$this->_logger->entrance( 'option = ' . $option );
 
-			if (!$this->is_loaded())
+			if ( ! $this->is_loaded() ) {
 				$this->clear();
+			}
 
-			$this->_options->{$option} = $value;
+			if ( is_array( $this->_options ) ) {
+				$this->_options[ $option ] = $value;
+			} else if ( is_object( $this->_options ) ) {
+				$this->_options->{$option} = $value;
+			}
 
-			if ($flush)
+			if ( $flush ) {
 				$this->store();
+			}
 		}
 
-		function unset_option($option, $flush = false)
-		{
-			$this->_logger->entrance('option = ' . $option);
+		function unset_option( $option, $flush = false ) {
+			$this->_logger->entrance( 'option = ' . $option );
 
-			if (!isset($this->_options->{$option}))
-				return;
+			if ( is_array( $this->_options ) ) {
+				if ( ! isset( $this->_options[ $option ] ) ) {
+					return;
+				}
 
-			unset($this->_options->{$option});
+				unset( $this->_options[ $option ] );
 
-			if ($flush)
+			} else if ( is_object( $this->_options ) ) {
+				if ( ! isset( $this->_options->{$option} ) ) {
+					return;
+				}
+
+				unset( $this->_options->{$option} );
+			}
+
+			if ( $flush ) {
 				$this->store();
+			}
 		}
 
-		function store()
-		{
+		function store() {
 			$this->_logger->entrance();
 
 			$option_name = $this->_get_option_manager_name();
 
-			// Update DB.
-			update_option($option_name, json_encode($this->_options));
+			if ( $this->_logger->is_on() ) {
+				$this->_logger->info( $option_name . ' = ' . var_export( $this->_options , true) );
+			}
 
-			wp_cache_set($option_name, $this->_options, WP_FS__SLUG);
+			// Update DB.
+			update_option( $option_name, $this->_options );
+
+			wp_cache_set( $option_name, $this->_options, WP_FS__SLUG );
 		}
 	}

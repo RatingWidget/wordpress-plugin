@@ -28,12 +28,11 @@
 									if (isset($user->email) && false !== strpos($user->email, '@'))
 										$profile[] = array('id' => 'email', 'title' => __('User Email', WP_FS__SLUG), 'value' => $user->email);
 
-									if (is_numeric($site->id))
-										$profile[] = array('id' => 'site_id', 'title' => __('Site ID', WP_FS__SLUG), 'value' => $site->id);
+									$profile[] = array('id' => 'site_id', 'title' => __('Site ID', WP_FS__SLUG), 'value' => is_string($site->id) ? $site->id : 'No ID');
 
-									$profile[] = array('id' => 'public', 'title' => __('Public Key', WP_FS__SLUG), 'value' => $site->public_key);
+									$profile[] = array('id' => 'site_public_key', 'title' => __('Public Key', WP_FS__SLUG), 'value' => $site->public_key);
 
-									$profile[] = array('id' => 'secret', 'title' => __('Secret Key', WP_FS__SLUG), 'value' => ((is_string($site->secret_key)) ? $site->secret_key : __('No Secret', WP_FS__SLUG)));
+									$profile[] = array('id' => 'site_secret_key', 'title' => __('Secret Key', WP_FS__SLUG), 'value' => ((is_string($site->secret_key)) ? $site->secret_key : __('No Secret', WP_FS__SLUG)));
 
 									$profile[] = array('id' => 'plan', 'title' => __('Plan', WP_FS__SLUG), 'value' => is_string(WP_RW__SITE_PLAN) ? strtoupper(WP_RW__SITE_PLAN) : 'FREE');
 								?>
@@ -56,12 +55,12 @@
 														<a href="<?php echo $fs->get_upgrade_url() ?>" onclick="_gaq.push(['_trackEvent', 'change-plan', 'wordpress', 'account', 1, true]); _gaq.push(['_link', this.href]); return false;" class="button gradient button-secondary button-upgrade" target="_blank"><?php _e('Change Plan', WP_FS__SLUG) ?></a>
 													<?php endif; ?>
 												</form>
-											<?php elseif ('secret' === $p['id']) : ?>
-												<form action="" method="POST" onsubmit="var secret = prompt('<?php _e('What is your secret key?', WP_FS__SLUG) ?>', '<?php echo ((is_string($site->secret_key)) ? $site->secret_key : '') ?>'); if (null == secret || '' === secret) return false; jQuery('input[name=fs_site_secret_<?php echo $slug ?>]').val(secret); return true;">
-													<input type="hidden" name="fs_action" value="update_secret">
-													<input type="hidden" name="fs_site_secret_<?php echo $slug ?>" value="">
-													<?php wp_nonce_field('update_secret') ?>
-													<input type="submit" class="button" value="<?php _e('Update Secret', WP_FS__SLUG) ?>">
+											<?php elseif (in_array($p['id'], array('site_secret_key', 'site_id', 'site_public_key')) ) : ?>
+												<form action="" method="POST" onsubmit="var val = prompt('<?php echo __('What is your', WP_FS__SLUG) . ' ' . $p['title'] . '?' ?>', '<?php echo $p['value'] ?>'); if (null == val || '' === val) return false; jQuery('input[name=fs_<?php echo $p['id'] ?>_<?php echo $slug ?>]').val(val); return true;">
+													<input type="hidden" name="fs_action" value="update_<?php echo $p['id'] ?>">
+													<input type="hidden" name="fs_<?php echo $p['id'] ?>_<?php echo $slug ?>" value="">
+													<?php wp_nonce_field('update_' . $p['id']) ?>
+													<input type="submit" class="button button-small" value="<?php _e('Edit', WP_FS__SLUG) ?>">
 												</form>
 											<?php endif ?>
 										</td>

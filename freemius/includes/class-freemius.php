@@ -3,28 +3,30 @@
 		exit;
 	}
 
+
 	final class Freemius {
 		/**
 		 * @var string
 		 */
-		public $version = '1.0.1';
+		public $version = '1.0.2';
 
 		private $_id;
 		private $_public_key;
 		private $_slug;
 		private $_logger;
 		private $_plugin_basename;
+		private $_plugin_main_file_path;
 		private $_plugin_data;
 
 		private static $_instances = array();
 		/**
 		 * @var FS_User
 		 */
-		private static $_user;
+		private $_user;
 		/**
 		 * @var FS_Site
 		 */
-		private static $_site;
+		private $_site;
 		/**
 		 * @var FS_Logger
 		 */
@@ -33,13 +35,32 @@
 		/**
 		 * @var FS_Option_Manager
 		 */
-		private static $_static_options;
-
-		// Verification is done by slug + public.
+		private static $_accounts;
 
 		private function __construct( $slug ) {
-			$this->_slug   = $slug;
+			$this->_slug = $slug;
+
 			$this->_logger = FS_Logger::get_logger( WP_FS__SLUG . '_' . $slug, WP_FS__DEBUG_SDK, WP_FS__ECHO_DEBUG_SDK );
+
+			$bt = debug_backtrace();
+			$i  = 1;
+			while ($i < count($bt) - 1 && false !== strpos( $bt[ $i ]['file'], '/freemius/' ) ) {
+				$i ++;
+			}
+
+			$this->_plugin_main_file_path = $bt[ $i ]['file'];
+			$this->_plugin_basename       = plugin_basename( $this->_plugin_main_file_path );
+			$this->_plugin_data           = get_plugin_data( $this->_plugin_main_file_path );
+
+			$this->_logger->info( 'plugin_basename = ' . $this->_plugin_basename );
+
+			// Hook to plugin activation
+			register_activation_hook( $this->_plugin_main_file_path, array( &$this, '_activate_plugin_event' ) );
+
+			// Hook to plugin uninstall.
+			register_uninstall_hook( $this->_plugin_main_file_path, array( 'Freemius', '_uninstall_plugin' ) );
+
+			$this->_load_account();
 		}
 
 		static function instance( $slug ) {
@@ -47,7 +68,7 @@
 
 			if ( ! isset( self::$_instances[ $slug ] ) ) {
 				if ( 0 === count( self::$_instances ) ) {
-					self::load_static();
+					self::_load_required_static();
 				}
 
 				self::$_instances[ $slug ] = new Freemius( $slug );
@@ -56,49 +77,77 @@
 			return self::$_instances[ $slug ];
 		}
 
-		private static function load_static() {
+		static function load_instance_by_file($plugin_file) {
+			$sites = self::$_accounts->get_option( 'sites' );
+
+			return isset( $sites[ $plugin_file ] ) ? self::instance( $sites[ $plugin_file ]->slug ) : false;
+		}
+
+		private static $_statics_loaded = false;
+		private static function _load_required_static() {
+			if (self::$_statics_loaded)
+				return;
+
 			self::$_static_logger = FS_Logger::get_logger( WP_FS__SLUG, WP_FS__DEBUG_SDK, WP_FS__ECHO_DEBUG_SDK );
 
 			self::$_static_logger->entrance();
 
-			self::$_static_options = FS_Option_Manager::get_manager( WP_FS__ACCOUNT_OPTION_NAME, true );
+			self::$_accounts = FS_Option_Manager::get_manager( WP_FS__ACCOUNTS_OPTION_NAME, true );
 
-			self::load_account();
+			self::$_statics_loaded = true;
 		}
-
-		private static $_account_loaded = false;
 
 		/***
 		 * Load account information (user + site).
 		 */
-		private static function load_account() {
-			self::$_static_logger->entrance();
-
-			// Make sure account is loaded only once.
-			if ( self::$_account_loaded ) {
-				self::$_static_logger->log( 'Account already loaded' );
-
-				return;
-			}
-
-			self::$_account_loaded = true;
+		private function _load_account() {
+			$this->_logger->entrance();
 
 			/*<--{obfuscate}*/
-			self::$_site = self::$_static_options->get_option( 'site' );
-			self::$_user = self::$_static_options->get_option( 'user' );
+			$sites = self::$_accounts->get_option( 'sites' );
+			$users = self::$_accounts->get_option( 'users' );
 
-			if ( ! is_object( self::$_user ) && function_exists( 'fs_load_external_account' ) ) {
-				self::$_static_logger->info( 'Trying to load account from external source with fs_load_external_account' );
+			if ( ! is_array( $sites ) ) {
+				$sites = array();
+			}
 
-				$account     = fs_load_external_account();
-				self::$_site = $account['site'];
-				self::$_user = $account['user'];
+			if ( ! is_array( $users ) ) {
+				$users = array();
+			}
 
-				if ( is_object( self::$_user ) ) {
-					self::$_static_logger->info( 'Account loaded: user_id = ' . self::$_user->id . '; site_id = ' . self::$_site->id . ';' );
+			if ( $this->_logger->is_on() ) {
+				$this->_logger->log( 'site = ' . var_export( $sites, true ) );
+			}
 
-					// Store new account information after loading from external source.
-//					self::$_static_options->store();
+			if ( isset( $sites[ $this->_plugin_basename ] ) && is_object( $sites[ $this->_plugin_basename ] ) ) {
+				// Load site.
+				$this->_site = $sites[ $this->_plugin_basename ];
+				// Load relevant user.
+				$this->_user = $users[ $this->_site->user_id ];
+			} else {
+				self::$_static_logger->info( 'Trying to load account from external source with ' . 'fs_load_account_' . $this->_slug );
+
+				$account = apply_filters( 'fs_load_account_' . $this->_slug, false );
+
+				if ( false !== $account ) {
+					$this->_site = $account['site'];
+					$this->_user = $account['user'];
+
+					if ( is_object( $this->_site ) ) {
+						self::$_static_logger->info( 'Account loaded: user_id = ' . $this->_user->id . '; site_id = ' . $this->_site->id . ';' );
+
+						$this->_site->slug                = $this->_slug;
+						$this->_site->user_id             = $this->_user->id;
+						$this->_site->version             = $this->get_plugin_version();
+						$sites[ $this->_plugin_basename ] = $this->_site;
+						$users[ $this->_user->id ]        = $this->_user;
+
+						self::$_accounts->set_option( 'sites', $sites );
+						self::$_accounts->set_option( 'users', $users );
+
+						// Store new account information after loading from external source.
+						self::$_accounts->store();
+					}
 				}
 			}
 			/*{obfuscate}-->*/
@@ -107,20 +156,20 @@
 		function init( $id, $public_key, $options ) {
 			$this->_logger->entrance();
 
-			if ( ! is_plugin_active( 'rating-widget/rating-widget.php' ) && file_exists(WP_FS__DIR_INCLUDES . '/class-dummy-rw-plugin.php') ) {
+			if ( 'rating-widget' !== $this->_slug && ! is_plugin_active( 'rating-widget/rating-widget.php' ) && file_exists( WP_FS__DIR_INCLUDES . '/_class-dummy-rw-plugin.php' ) ) {
 				require_once WP_FS__DIR_INCLUDES . '/class-dummy-rw-plugin.php';
 			}
 
-			$bt                     = debug_backtrace();
-			$this->_plugin_basename = plugin_basename( $bt[1]['file'] );
-			$this->_public_key      = $public_key;
-			$this->_id              = $id;
-			$this->_plugin_data     = get_plugin_data( $bt[1]['file'] );
 
-			$this->_logger->info( 'plugin_basename = ' . $this->_plugin_basename );
+			$this->get_plugin_version();
 
-			if (!$this->is_registered())
+			$this->_public_key            = $public_key;
+			$this->_id                    = $id;
+
+
+			if ( ! $this->is_registered() ) {
 				return;
+			}
 
 			if ( is_admin() ) {
 				if ( isset( $options['menu'] ) ) // Plugin has menu.
@@ -128,31 +177,97 @@
 					$this->set_has_menu();
 				}
 
-				add_action( 'admin_init', array( &$this, '_add_upgrade_action_link' ) );
-				add_action( 'admin_menu', array( &$this, '_add_dashboard_menu' ), WP_FS__LOWEST_PRIORITY );
-				add_action( 'init', array( &$this, '_redirect_on_clicked_menu_link' ), WP_FS__LOWEST_PRIORITY );
-				add_action( 'fs_after_license_loaded', array( $this, 'add_default_submenu_items' ) );
+				$this->_init_admin();
 			}
+		}
+
+		private function _init_admin()
+		{
+			register_deactivation_hook( $this->_plugin_main_file_path, array( &$this, '_deactivate_plugin_event' ) );
+
+			add_action( 'admin_init', array( &$this, '_add_upgrade_action_link' ) );
+			add_action( 'admin_menu', array( &$this, '_add_dashboard_menu' ), WP_FS__LOWEST_PRIORITY );
+			add_action( 'init', array( &$this, '_redirect_on_clicked_menu_link' ), WP_FS__LOWEST_PRIORITY );
+			add_action( 'fs_after_license_loaded', array( $this, 'add_default_submenu_items' ) );
+		}
+
+		/* Events
+		------------------------------------------------------------------------------------------------------------------*/
+		function _activate_plugin_event() {
+			$this->_logger->entrance('slug = ' . $this->_slug);
+
+			if ( ! current_user_can( 'activate_plugins' ) ) {
+				return;
+			}
+
+			// Send event.
+		}
+
+		function _deactivate_plugin_event() {
+			$this->_logger->entrance('slug = ' . $this->_slug);
+
+			if ( ! current_user_can( 'activate_plugins' ) ) {
+				return;
+			}
+
+			// Send event.
+		}
+
+		function _uninstall_plugin_event() {
+			$this->_logger->entrance( 'slug = ' . $this->_slug );
+
+			if ( ! current_user_can( 'activate_plugins' ) ) {
+				return;
+			}
+
+			$sites = self::$_accounts->get_option( 'sites' );
+			if ( isset( $sites[ $this->_plugin_basename ] ) ) {
+				unset( $sites[ $this->_plugin_basename ] );
+			}
+
+			self::$_accounts->set_option( 'sites', $sites, true );
+
+			// Send event.
+
+		}
+
+		public static function _uninstall_plugin() {
+			self::_load_required_static();
+
+			self::$_static_logger->entrance();
+
+			if ( ! current_user_can( 'activate_plugins' ) ) {
+				return;
+			}
+
+			$plugin_file = substr(current_filter(), strlen('uninstall_'));
+
+			self::$_static_logger->info('plugin = ' . $plugin_file);
+
+			$fs = self::load_instance_by_file($plugin_file);
+
+			if (is_object($fs))
+				$fs->_uninstall_plugin_event();
 		}
 
 		/* Account
 		------------------------------------------------------------------------------------------------------------------*/
 		function is_registered() {
-			return is_object( self::$_user );
+			return is_object( $this->_user );
 		}
 
 		/**
 		 * @return FS_User
 		 */
 		function get_user() {
-			return self::$_user;
+			return $this->_user;
 		}
 
 		/**
 		 * @return FS_Site
 		 */
 		function get_site() {
-			return self::$_site;
+			return $this->_site;
 		}
 
 		function get_plan() {
@@ -217,6 +332,38 @@
 
 		function get_account_url() {
 			return add_query_arg( array( 'page' => $this->_slug . '-account' ), admin_url( 'admin.php', 'admin' ) );
+		}
+
+		function get_plugin_folder_name() {
+			$this->_logger->entrance();
+
+			$plugin_folder = $this->_plugin_basename;
+
+			while ( '.' !== dirname( $plugin_folder ) ) {
+				$plugin_folder = dirname( $plugin_folder );
+			}
+
+			$this->_logger->departure('Folder Name = ' . $plugin_folder);
+
+			return $plugin_folder;
+		}
+
+		function get_plugin_version() {
+			$this->_logger->entrance();
+
+			if ( ! function_exists( 'get_plugins' ) ) {
+				require_once( ABSPATH . 'wp-admin/includes/plugin.php' );
+			}
+
+			$plugins_data = get_plugins( '/' . $this->get_plugin_folder_name() );
+
+			$this->_logger->info('filename = ' . basename( $this->_plugin_main_file_path ));
+
+			$version = $plugins_data[ basename( $this->_plugin_main_file_path ) ]['Version'];
+
+			$this->_logger->departure( 'Version = ' . $version );
+
+			return $version;
 		}
 
 		/* Logger
@@ -382,13 +529,48 @@
 
 		/* Account Page
 		------------------------------------------------------------------------------------------------------------------*/
-		static function _secret_key_updated_message() {
+		static function _account_details_updated_message() {
 			$vars = array(
-				"message" => "You have successfully updated your Secret Key.",
+				"message" => "You have successfully updated your account details.",
 				"type"    => "update-nag success"
 			);
 
 			fs_require_once_template( "admin-notice.php", $vars );
+		}
+
+		private function _store_site()
+		{
+			$sites = self::$_accounts->get_option( 'sites' );
+			$sites[ $this->_plugin_basename ] = $this->get_site();
+			self::$_accounts->set_option( 'sites', $sites, true );
+		}
+
+		private function _handle_account_edits()
+		{
+			$properties = array('site_secret_key', 'site_id', 'site_public_key');
+
+			foreach ($properties as $p)
+			{
+				if ( fs_request_is_action( 'update_' . $p ) ) {
+					check_admin_referer( 'update_' . $p );
+
+					$this->_logger->log( 'update_' . $p );
+
+					$site_property = substr($p, strlen('site_'));
+					$site_property_value = fs_request_get( 'fs_' . $p . '_' . $this->_slug, '' );
+					$this->get_site()->{$site_property} = $site_property_value;
+
+					// Store account after modification.
+					$this->_store_site();
+
+					do_action('fs_account_property_edit_' . $this->_slug, 'site', $site_property, $site_property_value);
+
+					// Anonymous functions are only available since PHP 5.3
+					add_action( 'all_admin_notices', array('Freemius', '_account_details_updated_message') );
+
+					break;
+				}
+			}
 		}
 
 		function _account_page_load() {
@@ -398,16 +580,7 @@
 
 			fs_enqueue_local_style( 'fs_account', 'account.css' );
 
-			if ( fs_request_is_action( 'update_secret' ) ) {
-				check_admin_referer( 'update_secret' );
-
-				$this->_logger->log( 'update_secret' );
-
-				ratingwidget()->UpdateSecret( fs_request_get( 'fs_site_secret_' . $this->_slug, '' ) );
-
-				// Anonymous functions are only available since PHP 5.3
-				add_action( 'all_admin_notices', array('Freemius', '_secret_key_updated_message') );
-			}
+			$this->_handle_account_edits();
 
 			$this->do_action( 'fs_account_page_load_before_departure' );
 		}

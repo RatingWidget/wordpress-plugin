@@ -180,6 +180,10 @@ If you didn't find a solution to your problem yet, check out our [WordPress Know
 The RatingWidget Team
 
 == Change Log ==
+= 2.3.0 =
+* Update: Modified Rich-Snippets schema from schema.org/BlogPosting to schema.org/Article, which is more tolerant with other schema configurations.
+* New: Added the options to Edit "Public Key" and "Site ID" for old accounts which might have one of the params missing.
+
 = 2.2.9 =
 * Fix: Mistakenly added anonymous function which is not supported before PHP 5.3, therefore we modified that to support older versions.
 
