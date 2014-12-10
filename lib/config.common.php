@@ -173,6 +173,7 @@
 	define( 'WP_RW__SHOW_ON_CATEGORY', 'rw_show_on_category' );
 	define( 'WP_RW__SHOW_ON_SEARCH', 'rw_show_on_search' );
 	define( 'WP_RW__VISIBILITY_SETTINGS', 'rw_visibility_settings' );
+	define( 'WP_RW__READONLY_SETTINGS', 'rw_readonly_settings' );
 	define( 'WP_RW__AVAILABILITY_SETTINGS', 'rw_availability_settings' );
 	define( 'WP_RW__CATEGORIES_AVAILABILITY_SETTINGS', 'rw_categories_availability_settings' );
 	define( 'WP_RW__CUSTOM_SETTINGS_ENABLED', 'rw_custom_settings_enabled' );

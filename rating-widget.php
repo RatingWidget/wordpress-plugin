@@ -823,6 +823,7 @@ Domain Path: /langs
 					WP_RW__USERS_FORUM_POSTS_OPTIONS => $readonly_bp_thumbs,
 
 					WP_RW__VISIBILITY_SETTINGS => new stdClass(),
+					WP_RW__READONLY_SETTINGS => new stdClass(),
 					// By default, disable all activity ratings for un-logged users.
 					WP_RW__AVAILABILITY_SETTINGS => (object)array(
 						"activity-update" => 1,
@@ -3501,6 +3502,63 @@ Domain Path: /langs
 				return true;
 			}
 
+			function rw_is_rating_readonly($post_id, $post_classes = false) {
+                            if(RWLogger::IsOn()) {
+                                $params = func_get_args();
+                                RWLogger::LogEnterence("rw_is_rating_readonly", $params);
+                            }
+
+                            if(!isset($this->_readonly_list)) {
+                                $this->_readonly_list = $this->GetOption(WP_RW__READONLY_SETTINGS);
+
+                                if(RWLogger::IsOn()) {
+                                    RWLogger::Log("_readonly_list", var_export($this->_readonly_list, true));
+                                }
+                            }
+
+                            if(is_string($post_classes)) {
+                                $post_classes = array($post_classes);
+                            } else if (false === $post_classes) {
+                                foreach($this->_readonly_list as $class => $val) {
+                                    $post_classes[] = $class;
+                                }
+                            }
+
+                            $rw_settings = array(
+                                    "post" => array("options" => WP_RW__BLOG_POSTS_OPTIONS),
+                                    "page" => array("options" => WP_RW__PAGES_OPTIONS),
+                                    "product" => array("options" => WP_RW__WOOCOMMERCE_PRODUCTS_OPTIONS)
+                                );
+                            
+                            foreach($post_classes as $class) {
+                                if(!isset($this->_readonly_list->{$class})) {
+                                    $options = $this->GetOption($rw_settings[$class]['options']);
+                                    $readonly_default = $options->readOnly;
+                                    return $readonly_default;
+                                }
+
+                                // Alias.
+                                $readonly_list = $this->_readonly_list->{$class};
+
+                                $readonly_list->enabled = self::IDsCollectionToArray($readonly_list->enabled);
+                                $readonly_list->disabled = self::IDsCollectionToArray($readonly_list->disabled);
+                                
+                                if((!in_array($post_id, $readonly_list->enabled)) &&
+                                    (!in_array($post_id, $readonly_list->disabled))) {
+                                    $options = $this->GetOption($rw_settings[$class]['options']);
+                                    $readonly_default = $options->readOnly;
+                                    return $readonly_default;
+                                }
+                                
+                                if((!in_array($post_id, $readonly_list->enabled)) ||
+                                    (in_array($post_id, $readonly_list->disabled))) {
+                                    return true;
+                                }
+                            }
+
+                            return false;
+			}
+
 			function AddToVisibility($pId, $pClasses, $pIsVisible = true)
 			{
 				if (RWLogger::IsOn()){ $params = func_get_args(); RWLogger::LogEnterence("AddToVisibility", $params, true); }
@@ -3580,6 +3638,62 @@ Domain Path: /langs
 				}
 
 				if (RWLogger::IsOn()){ RWLogger::LogDeparture("AddToVisibility"); }
+			}
+
+			function add_to_readonly($pId, $p_classes, $p_is_readonly = true)
+			{
+                                
+				if (RWLogger::IsOn()){ $params = func_get_args(); RWLogger::LogEnterence("add_to_readonly", $params, true); }
+
+				if (!isset($this->_readonly_list))
+					$this->_readonly_list = $this->GetOption(WP_RW__READONLY_SETTINGS);
+
+				if (is_string($p_classes))
+				{
+					$p_classes = array($p_classes);
+				}
+				else if (!is_array($p_classes) || 0 == count($p_classes))
+				{
+					return;
+				}
+
+				foreach ($p_classes as $class)
+				{   
+					if (RWLogger::IsOn()){ RWLogger::Log("add_to_readonly", "CurrentClass = ". $class); }
+
+					if (!isset($this->_readonly_list->{$class}))
+					{
+						$this->_readonly_list->{$class} = new stdClass();
+					}
+
+					$readonly_list = $this->_readonly_list->{$class};
+
+					if (!isset($readonly_list->enabled) || empty($readonly_list->enabled))
+						$readonly_list->enabled = array();
+
+					$readonly_list->enabled = self::IDsCollectionToArray($readonly_list->enabled);
+
+					if (!isset($readonly_list->disabled) || empty($readonly_list->disabled))
+						$readonly_list->disabled = array();
+
+					$readonly_list->disabled = self::IDsCollectionToArray($readonly_list->disabled);
+
+                                        $remove_from = ($p_is_readonly ? "enabled" : "disabled");
+                                        $add_to = ($p_is_readonly ? "disabled" : "enabled");
+
+                                        if (RWLogger::IsOn()){ RWLogger::Log("add_to_readonly", "Remove {$pId} from {$class}'s " . strtoupper(($p_is_readonly ? "enabled" : "disabled")) . "list."); }
+                                        if (RWLogger::IsOn()){ RWLogger::Log("add_to_readonly", "Add {$pId} to {$class}'s " . strtoupper((!$p_is_readonly ? "disabled" : "enabled")) . "list."); }
+
+                                        if (!in_array($pId, $readonly_list->{$add_to}))
+                                                // Add to include list.
+                                                $readonly_list->{$add_to}[] = $pId;
+
+                                        if (($key = array_search($pId, $readonly_list->{$remove_from})) !== false)
+                                                // Remove from exclude list.
+                                                $remove_from = array_splice($readonly_list->{$remove_from}, $key, 1);
+				}
+
+				if (RWLogger::IsOn()){ RWLogger::LogDeparture("add_to_readonly"); }
 			}
 
 			var $is_user_logged_in;
@@ -3726,8 +3840,9 @@ Domain Path: /langs
 				}
 
 				global $post;
-
-				$ratingHtml = $this->EmbedRatingIfVisibleByPost($post, $this->post_class, true, $this->post_align->hor, false);
+        			$readonly_post = (true === $this->rw_is_rating_readonly($post->ID, $post->post_type));
+                                $options = array('read-only' => $readonly_post?"true":"false");
+				$ratingHtml = $this->EmbedRatingIfVisibleByPost($post, $this->post_class, true, $this->post_align->hor, false, $options);
 
 				return ('top' === $this->post_align->ver) ?
 					$ratingHtml . $content :
@@ -4938,6 +5053,7 @@ Domain Path: /langs
 
 				//check whether this post/page is to be excluded
 				$includePost = (isset($_POST['rw_include_post']) && "1" == $_POST['rw_include_post']);
+				$readonly_post = (isset($_POST['rw_readonly_post']) && "1" == $_POST['rw_readonly_post']);
 
 				$classes = array();
 				switch ($_POST['post_type']) {
@@ -4959,7 +5075,19 @@ Domain Path: /langs
 					$includePost);
 
 				$this->SetOption(WP_RW__VISIBILITY_SETTINGS, $this->_visibilityList);
-
+                                
+                                //Add to read-only list
+                                if($_POST['post_type'] == 'post' || $_POST['post_type'] == 'product') {
+                                    $classes = array($_POST['post_type']);
+                                }
+                                
+				$this->add_to_readonly(
+					$_POST['ID'],
+					$classes,
+					$readonly_post);
+                                
+				$this->SetOption(WP_RW__READONLY_SETTINGS, $this->_readonly_list);
+                                
 				$this->_options_manager->store();
 
 				if (RWLogger::IsOn()){ RWLogger::LogDeparture("SavePostData"); }
