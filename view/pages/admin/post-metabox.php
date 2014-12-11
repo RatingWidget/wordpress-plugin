@@ -7,18 +7,18 @@
 	{
 		case 'page':
 			$excluded_post = (false === $rwp->rw_validate_visibility($post->ID, 'page'));
-			$readonly_post = (true === $rwp->rw_is_rating_readonly($post->ID, 'page'));
+			$readonly_post = (true === $rwp->is_rating_readonly($post->ID, 'page'));
 			$rclass = 'page';
 			break;
 		case 'product':
 			$excluded_post = (false === $rwp->rw_validate_visibility($post->ID, 'collection-product') && false === $rwp->rw_validate_visibility($post->ID, 'product'));
-			$readonly_post = (true === $rwp->rw_is_rating_readonly($post->ID, 'product'));
+			$readonly_post = (true === $rwp->is_rating_readonly($post->ID, 'product'));
 			$rclass = 'product';
 			break;
 		case 'post':
 		default:
 			$excluded_post = (false === $rwp->rw_validate_visibility($post->ID, 'front-post') && false === $rwp->rw_validate_visibility($post->ID, 'blog-post'));
-			$readonly_post = (true === $rwp->rw_is_rating_readonly($post->ID, 'post'));
+			$readonly_post = (true === $rwp->is_rating_readonly($post->ID, 'post'));
 			$rclass = 'blog-post';
 			break;
 	}

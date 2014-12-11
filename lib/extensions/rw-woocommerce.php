@@ -167,9 +167,8 @@
 					RWLogger::LogEnterence('WooCommerce_AddProductRating');
 
 					global $product;
-                                        $readonly_post = (true === $this->rw->rw_is_rating_readonly($product->post->ID, 'product'));
-                                        $options = array('read-only' => $readonly_post?"true":"false");
-					$ratingHtml = $this->EmbedRatingByProduct($product, 'product', true, $options);
+                                        
+					$ratingHtml = $this->EmbedRatingByProduct($product);
 
 					echo $ratingHtml;
 
@@ -181,11 +180,10 @@
 					RWLogger::LogEnterence('WooCommerce_AddCollectionProductRating');
 
 					global $product;
-                                        $readonly_post = (true === $this->rw->rw_is_rating_readonly($product->post->ID, 'product'));
-                                        $options = array('read-only' => $readonly_post?"true":"false");
-					$ratingHtml = $this->EmbedRatingByProduct($product, 'collection-product', false, $options);
-
-					echo $ratingHtml;
+                                        
+                                        $ratingHtml = $this->EmbedRatingByProduct($product, 'collection-product', false);
+					
+                                        echo $ratingHtml;
 
 					RWLogger::LogDeparture('WooCommerce_AddCollectionProductRating');
 				}
