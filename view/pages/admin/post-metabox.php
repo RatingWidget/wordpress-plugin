@@ -2,6 +2,7 @@
 	global $post, $rwp;
 
 	$post_type = get_post_type($post);
+    $readonly_post = (true === $rwp->is_rating_readonly($post->ID, $post_type));
 
 	switch ($post_type)
 	{
@@ -35,4 +36,6 @@
 	<div class="rw-ui-container rw-class-<?php echo $rclass ?>" data-urid="<?php echo $urid ?>" data-read-only="false" data-sync="false"></div>
 	<br><br>
 	<label for="rw_include_post"><input type="checkbox" name="rw_include_post" id="rw_include_post" value="1"<?php echo $checked ?> /><?php _e('Show Rating (Uncheck to Hide)', WP_RW__ID) ?></label>
+        <br>
+	<label for="rw_readonly_post"><input type="checkbox" name="rw_readonly_post" id="rw_readonly_post" value="1"<?php checked(true, $readonly_post); ?> /><?php _e('Read-Only Rating (Uncheck to Make Active)', WP_RW__ID) ?></label>
 </p>

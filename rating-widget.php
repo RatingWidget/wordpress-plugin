@@ -823,6 +823,7 @@ Domain Path: /langs
 					WP_RW__USERS_FORUM_POSTS_OPTIONS => $readonly_bp_thumbs,
 
 					WP_RW__VISIBILITY_SETTINGS => new stdClass(),
+					WP_RW__READONLY_SETTINGS => new stdClass(),
 					// By default, disable all activity ratings for un-logged users.
 					WP_RW__AVAILABILITY_SETTINGS => (object)array(
 						"activity-update" => 1,
@@ -3501,6 +3502,82 @@ Domain Path: /langs
 				return true;
 			}
 
+            /**
+             * Determine if this post's rating is read-only.
+             * 
+             * @param type $post_id The post's ID in the _posts table.
+             * @param type $class A post type which is also a name of a class
+             * that contains the post's read-only-related settings.
+             * @return boolean True if the rating is read-only.
+             */
+            function is_rating_readonly($post_id, $class) {
+                if (RWLogger::IsOn()) {
+                    $params = func_get_args();
+                    RWLogger::LogEnterence('rw_is_rating_readonly', $params);
+                }
+
+                // Avoid further checking, return immediately if the post type is not supported.
+                if (!in_array($class, array('post', 'page', 'product'))) {
+                    return false;
+                }
+
+                if (!isset($this->_readonly_list)) {
+                    $this->_readonly_list = $this->GetOption(WP_RW__READONLY_SETTINGS);
+
+                    if(RWLogger::IsOn()) {
+                        RWLogger::Log('_readonly_list', var_export($this->_readonly_list, true));
+                    }
+                }
+
+                switch ($class) {
+                    case 'page':
+                        $option_name = WP_RW__PAGES_OPTIONS;
+                        break;
+                    case 'product':
+                        $option_name = WP_RW__WOOCOMMERCE_PRODUCTS_OPTIONS;
+                        break;
+                    default:
+                        $option_name = WP_RW__BLOG_POSTS_OPTIONS;
+                }
+
+                /*
+                 * If there is no saved option yet,
+                 * return the default state based on the Read Only admin setting of this post type.
+                 */
+                if (!isset($this->_readonly_list->{$class})) {
+                    $options = $this->GetOption($option_name);
+                    return $options->readOnly;
+                }
+
+                // Alias.
+                $readonly_list = $this->_readonly_list->{$class};
+
+                $readonly_list->enabled = self::IDsCollectionToArray($readonly_list->enabled);
+                $readonly_list->disabled = self::IDsCollectionToArray($readonly_list->disabled);
+
+                /*
+                 * If the read-only state of this post's rating has not been set before,
+                 * return the default state based on the Read Only admin setting of this post type.
+                 */
+                if ((!in_array($post_id, $readonly_list->enabled)) &&
+                    (!in_array($post_id, $readonly_list->disabled))) {
+                    $options = $this->GetOption($option_name);
+                    return $options->readOnly;
+                }
+
+                /*
+                 * If the post ID is not present in the list of enabled post IDs or
+                 * the post ID is present in the list of disabled post IDs
+                 * then this post's rating is read-only.
+                 */
+                if ((!in_array($post_id, $readonly_list->enabled)) ||
+                    (in_array($post_id, $readonly_list->disabled))) {
+                    return true;
+                }
+
+                return false;
+            }
+
 			function AddToVisibility($pId, $pClasses, $pIsVisible = true)
 			{
 				if (RWLogger::IsOn()){ $params = func_get_args(); RWLogger::LogEnterence("AddToVisibility", $params, true); }
@@ -3581,6 +3658,81 @@ Domain Path: /langs
 
 				if (RWLogger::IsOn()){ RWLogger::LogDeparture("AddToVisibility"); }
 			}
+
+            /**
+             * Add/remove this post's ID from/to the enabled or disabled list of post IDs.
+             * @param type $post_id The post ID in the _posts table.
+             * @param type $classes
+             * A collection of post types. Each post type is a name of a class
+             * that holds this post type's read-only-related settings.
+             * @param type $is_readonly
+             * @return type
+             */
+            function add_to_readonly($post_id, $classes, $is_readonly = true) {
+                if (RWLogger::IsOn()) {
+                    $params = func_get_args();
+                    RWLogger::LogEnterence('add_to_readonly', $params, true);
+                }
+
+                if (!isset($this->_readonly_list)) {
+                    $this->_readonly_list = $this->GetOption(WP_RW__READONLY_SETTINGS);
+                }
+
+                if (is_string($classes)) {
+                    $classes = array($classes);
+                } elseif (!is_array($classes) || 0 == count($classes)) {
+                    return;
+                }
+
+                foreach ($classes as $class) {
+                    if (RWLogger::IsOn()) {
+                        RWLogger::Log('add_to_readonly', "CurrentClass = $class");
+                    }
+
+                    if (!isset($this->_readonly_list->{$class})) {
+                        $this->_readonly_list->{$class} = new stdClass();
+                    }
+
+                    $readonly_list = $this->_readonly_list->{$class};
+
+                    if (!isset($readonly_list->enabled) || empty($readonly_list->enabled)) {
+                        $readonly_list->enabled = array();
+                    }
+
+                    $readonly_list->enabled = self::IDsCollectionToArray($readonly_list->enabled);
+
+                    if (!isset($readonly_list->disabled) || empty($readonly_list->disabled)) {
+                        $readonly_list->disabled = array();
+                    }
+
+                    $readonly_list->disabled = self::IDsCollectionToArray($readonly_list->disabled);
+
+                    $remove_from = ($is_readonly ? 'enabled' : 'disabled');
+                    $add_to = ($is_readonly ? 'disabled' : 'enabled');
+
+                    if (RWLogger::IsOn()) {
+                        RWLogger::Log('add_to_readonly', "Remove {$post_id} from {$class}'s " . strtoupper(($is_readonly ? 'enabled' : 'disabled')) . 'list.');
+                    }
+
+                    if (RWLogger::IsOn()) {
+                        RWLogger::Log('add_to_readonly', "Add {$post_id} to {$class}'s " . strtoupper((!$is_readonly ? 'disabled' : 'enabled')) . 'list.');
+                    }
+
+                    if (!in_array($post_id, $readonly_list->{$add_to})) {
+                        // Add to the include list.
+                        $readonly_list->{$add_to}[] = $post_id;
+                    }
+
+                    if (($key = array_search($post_id, $readonly_list->{$remove_from})) !== false) {
+                        // Remove from the exclude list.
+                        $remove_from = array_splice($readonly_list->{$remove_from}, $key, 1);
+                    }
+                }
+
+                if (RWLogger::IsOn()) {
+                    RWLogger::LogDeparture('add_to_readonly');
+                }
+            }
 
 			var $is_user_logged_in;
 			function rw_validate_availability($pClass)
@@ -3726,12 +3878,12 @@ Domain Path: /langs
 				}
 
 				global $post;
-
-				$ratingHtml = $this->EmbedRatingIfVisibleByPost($post, $this->post_class, true, $this->post_align->hor, false);
-
-				return ('top' === $this->post_align->ver) ?
-					$ratingHtml . $content :
-					$content . $ratingHtml;
+                                
+                $ratingHtml = $this->EmbedRatingIfVisibleByPost($post, $this->post_class, true, $this->post_align->hor, false);
+				
+                return ('top' === $this->post_align->ver) ?
+                    $ratingHtml . $content :
+                    $content . $ratingHtml;
 			}
 
 			/**
@@ -4938,6 +5090,9 @@ Domain Path: /langs
 
 				//check whether this post/page is to be excluded
 				$includePost = (isset($_POST['rw_include_post']) && "1" == $_POST['rw_include_post']);
+                                
+                // Checks whether this post/page has read-only rating.
+				$readonly_post = (isset($_POST['rw_readonly_post']) && '1' == $_POST['rw_readonly_post']);
 
 				$classes = array();
 				switch ($_POST['post_type']) {
@@ -4959,10 +5114,23 @@ Domain Path: /langs
 					$includePost);
 
 				$this->SetOption(WP_RW__VISIBILITY_SETTINGS, $this->_visibilityList);
+                                
+                // Only proceed if the post type is supported.
+                if (in_array($_POST['post_type'], array('post', 'page', 'product'))) {
+                    // Add/remove to/from the read-only list of post IDs based on the state of the read-only checkbox.
+                    $this->add_to_readonly(
+                            $_POST['ID'],
+                            array($_POST['post_type']),
+                            $readonly_post);
 
-				$this->_options_manager->store();
+                    $this->SetOption(WP_RW__READONLY_SETTINGS, $this->_readonly_list);
+                }
 
-				if (RWLogger::IsOn()){ RWLogger::LogDeparture("SavePostData"); }
+                $this->_options_manager->store();
+
+                if (RWLogger::IsOn()) {
+                    RWLogger::LogDeparture("SavePostData");
+                }
 			}
 
 			function DeletePostData($post_id) {
@@ -5259,7 +5427,10 @@ Domain Path: /langs
 					return '';
 
 				$urid = false;
-
+                                
+                // Get the read-only state of the exact post type, e.g.: post or product
+                $pOptions['read-only'] = (true === $this->is_rating_readonly($pElementID, get_post_type($pElementID))) ? 'true' : 'false';
+                                
 				switch ($pElementClass)
 				{
 					case 'blog-post':

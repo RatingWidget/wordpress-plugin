@@ -167,7 +167,7 @@
 					RWLogger::LogEnterence('WooCommerce_AddProductRating');
 
 					global $product;
-
+                                        
 					$ratingHtml = $this->EmbedRatingByProduct($product);
 
 					echo $ratingHtml;
@@ -180,10 +180,10 @@
 					RWLogger::LogEnterence('WooCommerce_AddCollectionProductRating');
 
 					global $product;
-
-					$ratingHtml = $this->EmbedRatingByProduct($product, 'collection-product', false);
-
-					echo $ratingHtml;
+                                        
+                                        $ratingHtml = $this->EmbedRatingByProduct($product, 'collection-product', false);
+					
+                                        echo $ratingHtml;
 
 					RWLogger::LogDeparture('WooCommerce_AddCollectionProductRating');
 				}
