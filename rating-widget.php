@@ -3,7 +3,7 @@
 Plugin Name: Rating-Widget: Star Rating System
 Plugin URI: http://rating-widget.com/wordpress-plugin/
 Description: Create and manage Rating-Widget ratings in WordPress.
-Version: 2.3.0
+Version: 2.3.1
 Author: Rating-Widget
 Author URI: http://rating-widget.com/wordpress-plugin/
 License: GPLv2
@@ -119,8 +119,8 @@ Domain Path: /langs
 
 				// Run plugin setup.
 				$continue = is_admin() ?
-					$this->SetupOnDashboard() :
-					$this->SetupOnSite();
+					$this->setup_on_dashboard() :
+					$this->setup_on_site();
 
 				if ( ! $continue )
 				{
@@ -218,9 +218,9 @@ Domain Path: /langs
 //        RWLogger::Log("WP_RW__DEBUG", json_encode(WP_RW__DEBUG));
 			}
 
-			private function SetupOnDashboard()
+			private function setup_on_dashboard()
 			{
-				RWLogger::LogEnterence("SetupOnDashboard");
+				RWLogger::LogEnterence("setup_on_dashboard");
 
 				// Init settings.
 				$this->settings = new RatingWidgetPlugin_Settings();
@@ -230,14 +230,14 @@ Domain Path: /langs
 				if (!$this->fs->is_registered() && $this->_inDashboard && strtolower($_GET['page']) !== $this->GetMenuSlug())
 					rw_admin_redirect();
 
-				$this->SetupDashboardActions();
+				$this->setup_dashboard_actions();
 
 				return true;
 			}
 
-			private function SetupOnSite()
+			private function setup_on_site()
 			{
-				RWLogger::LogEnterence("SetupOnSite");
+				RWLogger::LogEnterence("setup_on_site");
 
 				if ($this->IsHideOnMobile() && $this->IsMobileDevice())
 				{
@@ -247,7 +247,7 @@ Domain Path: /langs
 					return false;
 				}
 
-				$this->SetupSiteActions();
+				$this->setup_site_actions();
 
 				return true;
 			}
@@ -275,30 +275,30 @@ Domain Path: /langs
 				$this->_options_manager->store();
 			}
 
-			private function SetupDashboardActions()
-			{
-				RWLogger::LogEnterence("SetupDashboardActions");
+			private function setup_dashboard_actions() {
+				RWLogger::LogEnterence( "setup_dashboard_actions" );
 
-				$this->fs->add_plugin_action_link(__('Settings', WP_RW__ADMIN_MENU_SLUG), rw_get_admin_url());
-				$this->fs->add_plugin_action_link(__('Blog', WP_RW__ADMIN_MENU_SLUG), rw_get_site_url('/blog/'), true);
+				$this->fs->add_plugin_action_link( __( 'Settings', WP_RW__ADMIN_MENU_SLUG ), rw_get_admin_url() );
+				$this->fs->add_plugin_action_link( __( 'Blog', WP_RW__ADMIN_MENU_SLUG ), rw_get_site_url( '/blog/' ), true );
 
 
-				add_action('fs_account_property_edit_' . WP_RW__ID, array(&$this, '_update_account'), 10, 3);
+				add_action( 'fs_account_property_edit_' . WP_RW__ID, array( &$this, '_update_account' ), 10, 3 );
 
 				// Add activation and de-activation hooks.
-				register_activation_hook(WP_RW__PLUGIN_FILE_FULL, 'rw_activated');
+				register_activation_hook( WP_RW__PLUGIN_FILE_FULL, 'rw_activated' );
 
-				add_action('admin_head', array(&$this, "rw_admin_menu_icon_css"));
-				add_action('admin_menu', array(&$this, 'admin_menu'));
-				add_action('admin_menu', array(&$this, 'AddPostMetaBox')); // Metabox for posts/pages
-				add_action('save_post', array(&$this, 'SavePostData'));
-				add_action('trashed_post', array(&$this, 'DeletePostData'));
-				add_action('updated_post_meta', array(&$this, 'PurgePostFeaturedImageTransient'), 10, 4);
+				add_action( 'admin_head', array( &$this, "rw_admin_menu_icon_css" ) );
+				add_action( 'admin_menu', array( &$this, 'admin_menu' ) );
+				add_action( 'admin_menu', array( &$this, 'AddPostMetaBox' ) ); // Metabox for posts/pages
+				add_action( 'save_post', array( &$this, 'SavePostData' ) );
+				add_action( 'trashed_post', array( &$this, 'DeletePostData' ) );
+				add_action( 'updated_post_meta', array( &$this, 'PurgePostFeaturedImageTransient' ), 10, 4 );
 
 
 				{
-					if ($this->GetOption(WP_RW__DB_OPTION_TRACKING))
-						add_action('admin_head', array(&$this, "GoogleAnalytics"));
+					if ( $this->GetOption( WP_RW__DB_OPTION_TRACKING ) ) {
+//						add_action( 'admin_head', array( &$this, "GoogleAnalytics" ) );
+					}
 
 					// wp_footer call validation.
 					// add_action('init', array(&$this, 'test_footer_init'));
@@ -325,9 +325,9 @@ Domain Path: /langs
 				RWLogger::LogDeparture( 'RegisterExtensionsHooks' );
 			}
 
-			private function SetupSiteActions()
+			private function setup_site_actions()
 			{
-				RWLogger::LogEnterence("SetupSiteActions");
+				RWLogger::LogEnterence("setup_site_actions");
 
 				// If not registered, don't add any actions to site.
 				if (!$this->fs->is_registered())
@@ -3505,8 +3505,8 @@ Domain Path: /langs
             /**
              * Determine if this post's rating is read-only.
              * 
-             * @param type $post_id The post's ID in the _posts table.
-             * @param type $class A post type which is also a name of a class
+             * @param int $post_id The post's ID in the _posts table.
+             * @param string $class A post type which is also a name of a class
              * that contains the post's read-only-related settings.
              * @return boolean True if the rating is read-only.
              */
@@ -3546,127 +3546,133 @@ Domain Path: /langs
                  */
                 if (!isset($this->_readonly_list->{$class})) {
                     $options = $this->GetOption($option_name);
-                    return $options->readOnly;
+	                return isset( $options->readOnly ) ? $options->readOnly : false;
                 }
 
                 // Alias.
                 $readonly_list = $this->_readonly_list->{$class};
 
-                $readonly_list->enabled = self::IDsCollectionToArray($readonly_list->enabled);
-                $readonly_list->disabled = self::IDsCollectionToArray($readonly_list->disabled);
+                $readonly_list->active = self::IDsCollectionToArray($readonly_list->active);
+                $readonly_list->readonly = self::IDsCollectionToArray($readonly_list->readonly);
 
                 /*
                  * If the read-only state of this post's rating has not been set before,
                  * return the default state based on the Read Only admin setting of this post type.
                  */
-                if ((!in_array($post_id, $readonly_list->enabled)) &&
-                    (!in_array($post_id, $readonly_list->disabled))) {
+                if ((!in_array($post_id, $readonly_list->active)) &&
+                    (!in_array($post_id, $readonly_list->readonly))) {
                     $options = $this->GetOption($option_name);
-                    return $options->readOnly;
+	                return isset( $options->readOnly ) ? $options->readOnly : false;
                 }
 
                 /*
-                 * If the post ID is not present in the list of enabled post IDs or
-                 * the post ID is present in the list of disabled post IDs
+                 * If the post ID is not present in the list of active post IDs or
+                 * the post ID is present in the list of readonly post IDs
                  * then this post's rating is read-only.
                  */
-                if ((!in_array($post_id, $readonly_list->enabled)) ||
-                    (in_array($post_id, $readonly_list->disabled))) {
+                if ((!in_array($post_id, $readonly_list->active)) ||
+                    (in_array($post_id, $readonly_list->readonly))) {
                     return true;
                 }
 
                 return false;
             }
 
-			function AddToVisibility($pId, $pClasses, $pIsVisible = true)
-			{
-				if (RWLogger::IsOn()){ $params = func_get_args(); RWLogger::LogEnterence("AddToVisibility", $params, true); }
-
-				if (!isset($this->_visibilityList))
-					$this->_visibilityList = $this->GetOption(WP_RW__VISIBILITY_SETTINGS);
-
-				if (is_string($pClasses))
-				{
-					$pClasses = array($pClasses);
+			function add_to_visibility_list($pId, $pClasses, $pIsVisible = true) {
+				if ( RWLogger::IsOn() ) {
+					$params = func_get_args();
+					RWLogger::LogEnterence( "add_to_visibility_list", $params, true );
 				}
-				else if (!is_array($pClasses) || 0 == count($pClasses))
-				{
+
+				if ( ! isset( $this->_visibilityList ) ) {
+					$this->_visibilityList = $this->GetOption( WP_RW__VISIBILITY_SETTINGS );
+				}
+
+				if ( is_string( $pClasses ) ) {
+					$pClasses = array( $pClasses );
+				} else if ( ! is_array( $pClasses ) || 0 == count( $pClasses ) ) {
 					return;
 				}
 
-				foreach ($pClasses as $class)
-				{
-					if (RWLogger::IsOn()){ RWLogger::Log("AddToVisibility", "CurrentClass = ". $class); }
+				foreach ( $pClasses as $class ) {
+					if ( RWLogger::IsOn() ) {
+						RWLogger::Log( "add_to_visibility_list", "CurrentClass = " . $class );
+					}
 
-					if (!isset($this->_visibilityList->{$class}))
-					{
-						$this->_visibilityList->{$class} = new stdClass();
+					if ( ! isset( $this->_visibilityList->{$class} ) ) {
+						$this->_visibilityList->{$class}           = new stdClass();
 						$this->_visibilityList->{$class}->selected = WP_RW__VISIBILITY_ALL_VISIBLE;
 					}
 
 					$visibility_list = $this->_visibilityList->{$class};
 
-					if (!isset($visibility_list->include) || empty($visibility_list->include))
+					if ( ! isset( $visibility_list->include ) || empty( $visibility_list->include ) ) {
 						$visibility_list->include = array();
+					}
 
-					$visibility_list->include = self::IDsCollectionToArray($visibility_list->include);
+					$visibility_list->include = self::IDsCollectionToArray( $visibility_list->include );
 
-					if (!isset($visibility_list->exclude) || empty($visibility_list->exclude))
+					if ( ! isset( $visibility_list->exclude ) || empty( $visibility_list->exclude ) ) {
 						$visibility_list->exclude = array();
+					}
 
-					$visibility_list->exclude = self::IDsCollectionToArray($visibility_list->exclude);
+					$visibility_list->exclude = self::IDsCollectionToArray( $visibility_list->exclude );
 
-					if ($visibility_list->selected == WP_RW__VISIBILITY_ALL_VISIBLE)
-					{
-						if (RWLogger::IsOn()){ RWLogger::Log("AddToVisibility", "Currently All-Visible for {$class}"); }
-
-						if (true == $pIsVisible)
-						{
-							// Already all visible so just ignore this.
+					if ( $visibility_list->selected == WP_RW__VISIBILITY_ALL_VISIBLE ) {
+						if ( RWLogger::IsOn() ) {
+							RWLogger::Log( "add_to_visibility_list", "Currently All-Visible for {$class}" );
 						}
-						else
-						{
+
+						if ( true == $pIsVisible ) {
+							// Already all visible so just ignore this.
+						} else {
 							// If all visible, and selected to hide this post - exclude specified post/page.
-							$visibility_list->selected = WP_RW__VISIBILITY_EXCLUDE;
+							$visibility_list->selected  = WP_RW__VISIBILITY_EXCLUDE;
 							$visibility_list->exclude[] = $pId;
 						}
-					}
-					else
-					{
+					} else {
 						// If not all visible, move post id from one list to another (exclude/include).
 
-						if (RWLogger::IsOn()){ RWLogger::Log("AddToVisibility", "Currently NOT All-Visible for {$class}"); }
+						if ( RWLogger::IsOn() ) {
+							RWLogger::Log( "add_to_visibility_list", "Currently NOT All-Visible for {$class}" );
+						}
 
-						$remove_from = ($pIsVisible ? "exclude" : "include");
-						$add_to = ($pIsVisible ? "include" : "exclude");
+						$remove_from = ( $pIsVisible ? "exclude" : "include" );
+						$add_to      = ( $pIsVisible ? "include" : "exclude" );
 
-						if (RWLogger::IsOn()){ RWLogger::Log("AddToVisibility", "Remove {$pId} from {$class}'s " . strtoupper(($pIsVisible ? "exclude" : "include")) . "list."); }
-						if (RWLogger::IsOn()){ RWLogger::Log("AddToVisibility", "Add {$pId} to {$class}'s " . strtoupper((!$pIsVisible ? "exclude" : "include")) . "list."); }
+						if ( RWLogger::IsOn() ) {
+							RWLogger::Log( "add_to_visibility_list", "Remove {$pId} from {$class}'s " . strtoupper( ( $pIsVisible ? "exclude" : "include" ) ) . "list." );
+						}
+						if ( RWLogger::IsOn() ) {
+							RWLogger::Log( "add_to_visibility_list", "Add {$pId} to {$class}'s " . strtoupper( ( ! $pIsVisible ? "exclude" : "include" ) ) . "list." );
+						}
 
-						if (!in_array($pId, $visibility_list->{$add_to}))
-							// Add to include list.
+						if ( ! in_array( $pId, $visibility_list->{$add_to} ) ) // Add to include list.
+						{
 							$visibility_list->{$add_to}[] = $pId;
+						}
 
-						if (($key = array_search($pId, $visibility_list->{$remove_from})) !== false)
-							// Remove from exclude list.
-							$remove_from = array_splice($visibility_list->{$remove_from}, $key, 1);
+						if ( ( $key = array_search( $pId, $visibility_list->{$remove_from} ) ) !== false ) // Remove from exclude list.
+						{
+							$remove_from = array_splice( $visibility_list->{$remove_from}, $key, 1 );
+						}
 
-						if (WP_RW__VISIBILITY_EXCLUDE == $visibility_list->selected && 0 === count($visibility_list->exclude))
+						if ( WP_RW__VISIBILITY_EXCLUDE == $visibility_list->selected && 0 === count( $visibility_list->exclude ) ) {
 							$visibility_list->selected = WP_RW__VISIBILITY_ALL_VISIBLE;
+						}
 					}
 				}
 
-				if (RWLogger::IsOn()){ RWLogger::LogDeparture("AddToVisibility"); }
+				if ( RWLogger::IsOn() ) {
+					RWLogger::LogDeparture( "add_to_visibility_list" );
+				}
 			}
 
             /**
-             * Add/remove this post's ID from/to the enabled or disabled list of post IDs.
-             * @param type $post_id The post ID in the _posts table.
-             * @param type $classes
-             * A collection of post types. Each post type is a name of a class
-             * that holds this post type's read-only-related settings.
-             * @param type $is_readonly
-             * @return type
+             * Add/remove this post's ID from/to the active or readonly list of post IDs.
+             * @param numeric $post_id The post ID in the _posts table.
+             * @param array of string $classes A collection of post types. Each post type is a name of a class that holds this post type's read-only-related settings.
+             * @param bool $is_readonly
              */
             function add_to_readonly($post_id, $classes, $is_readonly = true) {
                 if (RWLogger::IsOn()) {
@@ -3695,27 +3701,27 @@ Domain Path: /langs
 
                     $readonly_list = $this->_readonly_list->{$class};
 
-                    if (!isset($readonly_list->enabled) || empty($readonly_list->enabled)) {
-                        $readonly_list->enabled = array();
+                    if (!isset($readonly_list->active) || empty($readonly_list->active)) {
+                        $readonly_list->active = array();
                     }
 
-                    $readonly_list->enabled = self::IDsCollectionToArray($readonly_list->enabled);
+                    $readonly_list->active = self::IDsCollectionToArray($readonly_list->active);
 
-                    if (!isset($readonly_list->disabled) || empty($readonly_list->disabled)) {
-                        $readonly_list->disabled = array();
+                    if (!isset($readonly_list->readonly) || empty($readonly_list->readonly)) {
+                        $readonly_list->readonly = array();
                     }
 
-                    $readonly_list->disabled = self::IDsCollectionToArray($readonly_list->disabled);
+                    $readonly_list->readonly = self::IDsCollectionToArray($readonly_list->readonly);
 
-                    $remove_from = ($is_readonly ? 'enabled' : 'disabled');
-                    $add_to = ($is_readonly ? 'disabled' : 'enabled');
+                    $remove_from = ($is_readonly ? 'active' : 'readonly');
+                    $add_to = ($is_readonly ? 'readonly' : 'active');
 
                     if (RWLogger::IsOn()) {
-                        RWLogger::Log('add_to_readonly', "Remove {$post_id} from {$class}'s " . strtoupper(($is_readonly ? 'enabled' : 'disabled')) . 'list.');
+                        RWLogger::Log('add_to_readonly', "Remove {$post_id} from {$class}'s " . strtoupper(($is_readonly ? 'active' : 'readonly')) . ' list.');
                     }
 
                     if (RWLogger::IsOn()) {
-                        RWLogger::Log('add_to_readonly', "Add {$post_id} to {$class}'s " . strtoupper((!$is_readonly ? 'disabled' : 'enabled')) . 'list.');
+                        RWLogger::Log('add_to_readonly', "Add {$post_id} to {$class}'s " . strtoupper((!$is_readonly ? 'readonly' : 'active')) . ' list.');
                     }
 
                     if (!in_array($post_id, $readonly_list->{$add_to})) {
@@ -5092,7 +5098,7 @@ Domain Path: /langs
 				$includePost = (isset($_POST['rw_include_post']) && "1" == $_POST['rw_include_post']);
                                 
                 // Checks whether this post/page has read-only rating.
-				$readonly_post = (isset($_POST['rw_readonly_post']) && '1' == $_POST['rw_readonly_post']);
+				$readonly_post = (!isset($_POST['rw_readonly_post']) || '1' !== $_POST['rw_readonly_post']);
 
 				$classes = array();
 				switch ($_POST['post_type']) {
@@ -5108,7 +5114,7 @@ Domain Path: /langs
 						break;
 				}
 
-				$this->AddToVisibility(
+				$this->add_to_visibility_list(
 					$_POST['ID'],
 					$classes,
 					$includePost);
@@ -5391,17 +5397,64 @@ Domain Path: /langs
 			}
 
 
+			function get_rating_id_by_element($element_id, $element_type)
+			{
+				$urid = false;
+
+				switch ($element_type)
+				{
+					case 'blog-post':
+					case 'front-post':
+					case 'page':
+					case 'user-page':
+					case 'new-blog-post':
+					case 'user-post':
+						$urid = $this->_getPostRatingGuid($element_id);
+						break;
+					case 'comment':
+					case 'new-blog-comment':
+					case 'user-comment':
+						$urid = $this->_getCommentRatingGuid($element_id);
+						break;
+					case 'forum-post':
+					case 'forum-reply':
+					case 'new-forum-post':
+					case 'user-forum-post':
+						$urid = $this->_getForumPostRatingGuid($element_id);
+						break;
+					case 'user':
+						$urid = $this->_getUserRatingGuid($element_id);
+						break;
+					case 'activity-update':
+					case 'user-activity-update':
+					case 'activity-comment':
+					case 'user-activity-comment':
+						$urid = $this->_getActivityRatingGuid($element_id);
+						break;
+				}
+
+				return $urid;
+			}
+
 			/**
 			 * Queue rating data for footer JS hook and return rating's html.
 			 *
-			 * @param {serial} $pUrid User rating id.
-			 * @param {string} $pTitle Element's title (for top-rated widget).
-			 * @param {string} $pPermalink Corresponding rating's element url.
-			 * @param {string} $pElementClass Rating element class.
+			 * @param int $pElementID
+			 * @param $pOwnerID
+			 * @param $pTitle
+			 * @param $pPermalink
+			 * @param $pElementClass
+			 * @param bool $pAddSchema
+			 * @param bool $pHorAlign
+			 * @param bool $pCustomStyle
+			 * @param array $pOptions
+			 * @param bool $pValidateVisibility
+			 * @param bool $pValidateCategory
+			 *
+			 * @return string Rating HTML container.
 			 *
 			 * @uses GetRatingHtml
 			 * @version 1.3.3
-			 *
 			 */
 			function EmbedRating(
 				$pElementID,
@@ -5426,50 +5479,12 @@ Domain Path: /langs
 				if ($pValidateVisibility && !$this->IsVisibleRating($pElementID, $pElementClass, $pValidateCategory))
 					return '';
 
-				$urid = false;
+				$urid = $this->get_rating_id_by_element($pElementID, $pElementClass);
                                 
                 // Get the read-only state of the exact post type, e.g.: post or product
-                $pOptions['read-only'] = (true === $this->is_rating_readonly($pElementID, get_post_type($pElementID))) ? 'true' : 'false';
+				if ($this->is_rating_readonly($pElementID, get_post_type($pElementID)))
+                    $pOptions['read-only'] = 'true';
                                 
-				switch ($pElementClass)
-				{
-					case 'blog-post':
-					case 'front-post':
-					case 'page':
-					case 'user-page':
-					case 'new-blog-post':
-					case 'user-post':
-//                $post = get_post($pElementID);
-//                $owner_id = $post->post_author;
-						$urid = $this->_getPostRatingGuid($pElementID);
-						break;
-					case 'comment':
-					case 'new-blog-comment':
-					case 'user-comment':
-//                $comment = get_comment($pElementID);
-//                $owner_id = $comment->user_id;
-						$urid = $this->_getCommentRatingGuid($pElementID);
-						break;
-					case 'forum-post':
-					case 'forum-reply':
-					case 'new-forum-post':
-					case 'user-forum-post':
-						$urid = $this->_getForumPostRatingGuid($pElementID);
-						break;
-					case 'user':
-//                $owner_id = $pElementID;
-						$urid = $this->_getUserRatingGuid($pElementID);
-						break;
-					case 'activity-update':
-					case 'user-activity-update':
-					case 'activity-comment':
-					case 'user-activity-comment':
-//                $activities = bp_activity_get_specific(array('activity_ids' => $pElementID));
-//                $owner_id = $activities['activities'][0]->user_id;
-						$urid = $this->_getActivityRatingGuid($pElementID);
-						break;
-				}
-
 				if (false === $urid)
 				{
 					foreach ($this->_extensions as $ext)
@@ -5501,39 +5516,44 @@ Domain Path: /langs
 				return $html;
 			}
 
-			function EmbedRatingIfVisible($pElementID, $pOwnerID, $pTitle, $pPermalink, $pElementClass, $pAddSchema = false, $pHorAlign = false, $pCustomStyle = false, $pOptions = array(), $pValidateCategory = true)
-			{
-				if (RWLogger::IsOn()){ $params = func_get_args(); RWLogger::LogEnterence("EmbedRatingIfVisible", $params); }
+			function EmbedRatingIfVisible($pElementID, $pOwnerID, $pTitle, $pPermalink, $pElementClass, $pAddSchema = false, $pHorAlign = false, $pCustomStyle = false, $pOptions = array(), $pValidateCategory = true) {
+				if ( RWLogger::IsOn() ) {
+					$params = func_get_args();
+					RWLogger::LogEnterence( "EmbedRatingIfVisible", $params );
+				}
 
-				return $this->EmbedRating($pElementID, $pOwnerID, $pTitle, $pPermalink, $pElementClass, $pAddSchema, $pHorAlign, $pCustomStyle, $pOptions, true, $pValidateCategory);
+				return $this->EmbedRating( $pElementID, $pOwnerID, $pTitle, $pPermalink, $pElementClass, $pAddSchema, $pHorAlign, $pCustomStyle, $pOptions, true, $pValidateCategory );
 			}
 
-			function EmbedRatingByPost($pPost, $pClass = 'blog-post', $pAddSchema = false, $pHorAlign = false, $pCustomStyle = false, $pOptions = array(), $pValidateVisibility = false)
-			{
-				$postImg = $this->GetPostImage($pPost);
-				if (false !== $postImg)
+			function EmbedRatingByPost($pPost, $pClass = 'blog-post', $pAddSchema = false, $pHorAlign = false, $pCustomStyle = false, $pOptions = array(), $pValidateVisibility = false) {
+				$postImg = $this->GetPostImage( $pPost );
+				if ( false !== $postImg ) {
 					$pOptions['img'] = $postImg;
+				}
 
 				// Add accumulator id if user accumulated rating.
-				if ($this->IsUserAccumulatedRating())
-					$pOptions['uarid'] = $this->_getUserRatingGuid($pPost->post_author);
+				if ( $this->IsUserAccumulatedRating() ) {
+					$pOptions['uarid'] = $this->_getUserRatingGuid( $pPost->post_author );
+				}
 
 				return $this->EmbedRating(
 					$pPost->ID,
 					$pPost->post_author,
 					$pPost->post_title,
-					get_permalink($pPost->ID),
+					get_permalink( $pPost->ID ),
 					$pClass,
 					$pAddSchema,
 					$pHorAlign,
 					$pCustomStyle,
 					$pOptions,
-					$pValidateVisibility);
+					$pValidateVisibility );
 			}
 
-			function EmbedRatingIfVisibleByPost($pPost, $pClass = 'blog-post', $pAddSchema = false, $pHorAlign = false, $pCustomStyle = false, $pOptions = array())
-			{
-				if (RWLogger::IsOn()){ $params = func_get_args(); RWLogger::LogEnterence("EmbedRatingIfVisibleByPost", $params); }
+			function EmbedRatingIfVisibleByPost($pPost, $pClass = 'blog-post', $pAddSchema = false, $pHorAlign = false, $pCustomStyle = false, $pOptions = array()) {
+				if ( RWLogger::IsOn() ) {
+					$params = func_get_args();
+					RWLogger::LogEnterence( "EmbedRatingIfVisibleByPost", $params );
+				}
 
 				return $this->EmbedRatingByPost(
 					$pPost,
@@ -5546,14 +5566,15 @@ Domain Path: /langs
 				);
 			}
 
-			function EmbedRatingByUser($pUser, $pClass = 'user', $pCustomStyle = false, $pOptions = array(), $pValidateVisibility = false)
-			{
-				if (RWLogger::IsOn()){ $params = func_get_args(); RWLogger::LogEnterence("EmbedRatingByUser", $params); }
+			function EmbedRatingByUser($pUser, $pClass = 'user', $pCustomStyle = false, $pOptions = array(), $pValidateVisibility = false) {
+				if ( RWLogger::IsOn() ) {
+					$params = func_get_args();
+					RWLogger::LogEnterence( "EmbedRatingByUser", $params );
+				}
 
 				// If accumulated user rating, then make sure it can not be directly rated.
-				if ($this->IsUserAccumulatedRating())
-				{
-					$pOptions['read-only'] = 'true';
+				if ( $this->IsUserAccumulatedRating() ) {
+					$pOptions['read-only']   = 'true';
 					$pOptions['show-report'] = 'false';
 				}
 
@@ -5568,39 +5589,44 @@ Domain Path: /langs
 					$pCustomStyle,
 					$pOptions,
 					$pValidateVisibility,
-					false);
+					false );
 			}
 
-			function EmbedRatingIfVisibleByUser($pUser, $pClass = 'user', $pCustomStyle = false, $pOptions = array())
-			{
-				if (RWLogger::IsOn()){ $params = func_get_args(); RWLogger::LogEnterence("EmbedRatingIfVisibleByUser", $params); }
+			function EmbedRatingIfVisibleByUser($pUser, $pClass = 'user', $pCustomStyle = false, $pOptions = array()) {
+				if ( RWLogger::IsOn() ) {
+					$params = func_get_args();
+					RWLogger::LogEnterence( "EmbedRatingIfVisibleByUser", $params );
+				}
 
 				return $this->EmbedRatingByUser(
 					$pUser,
 					$pClass,
 					$pCustomStyle,
 					$pOptions,
-					true);
+					true );
 			}
 
-			function EmbedRatingByComment($pComment, $pClass = 'comment', $pHorAlign = false, $pCustomStyle = false, $pOptions = array())
-			{
-				if (RWLogger::IsOn()){ $params = func_get_args(); RWLogger::LogEnterence('EmbedRatingByComment', $params); }
+			function EmbedRatingByComment($pComment, $pClass = 'comment', $pHorAlign = false, $pCustomStyle = false, $pOptions = array()) {
+				if ( RWLogger::IsOn() ) {
+					$params = func_get_args();
+					RWLogger::LogEnterence( 'EmbedRatingByComment', $params );
+				}
 
 				// Add accumulator id if user accumulated rating.
-				if ($this->IsUserAccumulatedRating() && (int)$pComment->user_id > 0)
-					$pOptions['uarid'] = $this->_getUserRatingGuid($pComment->user_id);
+				if ( $this->IsUserAccumulatedRating() && (int) $pComment->user_id > 0 ) {
+					$pOptions['uarid'] = $this->_getUserRatingGuid( $pComment->user_id );
+				}
 
 				return $this->EmbedRating(
 					$pComment->comment_ID,
-					(int)$pComment->user_id,
-					strip_tags($pComment->comment_content),
-					get_permalink($pComment->comment_post_ID ) . '#comment-' . $pComment->comment_ID,
+					(int) $pComment->user_id,
+					strip_tags( $pComment->comment_content ),
+					get_permalink( $pComment->comment_post_ID ) . '#comment-' . $pComment->comment_ID,
 					$pClass,
 					false,
 					$pHorAlign,
 					$pCustomStyle,
-					$pOptions);
+					$pOptions );
 			}
 
 			function IsUserAccumulatedRating()
