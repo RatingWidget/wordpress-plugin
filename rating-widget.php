@@ -2993,6 +2993,16 @@ Domain Path: /langs
 					/* Rating-Widget options.
             ---------------------------------------------------------------------------------------------------------------*/
 					$rw_options = json_decode(preg_replace('/\%u([0-9A-F]{4})/i', '\\u$1', urldecode(stripslashes($_POST["rw_options"]))));
+					$rw_options_custom = json_decode(preg_replace('/\%u([0-9A-F]{4})/i', '\\u$1', urldecode(stripslashes($_POST["rw_options_custom"]))));
+					
+					if(NULL !== $rw_options_custom && NULL !== $rw_options) {
+						foreach ($rw_options_custom as $custom_option => $val) {
+							if( isset($rw_options->$custom_option) ) {
+								unset($rw_options->$custom_option);
+							}
+						}
+					}
+					
 					if (null !== $rw_options)
 						$this->SetOption($rw_current_settings["options"], $rw_options);
 

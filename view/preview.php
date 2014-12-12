@@ -52,6 +52,19 @@ var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po
                 
                 // Initialize ratings.
                 function RW_Async_Init(){
+					var options = {}, render_count = 0;
+					<?php
+					// Get the type of settings to retrieve.
+					$pClass = trim(rw_settings_rating_type(), 's');
+
+					// Get the custom settings of this type.
+					$custom_settings = ratingwidget()->GetCustomSettings($pClass);
+					echo $custom_settings."\n";
+					?>
+							
+					// Specifiy the power settings so that we can exclude them later.
+					jQuery('#rw_options_hidden_custom').val(encodeURIComponent(RW.JSON.stringify(options)));
+				
                     RW.init("cfcd208495d565ef66e7dff9f98764da");
                     <?php
                         $b_type = $options->type;
@@ -83,9 +96,14 @@ var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po
                     <?php
                         }
                     ?>
-                    RW.render(function(ratings){
+                    RW.render(function(ratings) {
                         rwStar = RWM.STAR = ratings[3].getInstances(0);
                         rwNero = RWM.NERO = ratings[17].getInstances(0);
+						
+						if (++render_count == 2) {
+							jQuery.extend(rwNero.options, options);
+							jQuery.extend(rwStar.options, options);
+						}
                         
                         jQuery("#rw_theme_loader").hide();
                         jQuery("#rw_<?php echo $options->type;?>_theme_select").show();
@@ -143,6 +161,7 @@ var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po
         <div class="submit" style="margin-top: 10px; padding: 0;">
             <input type="hidden" name="<?php echo rw_settings()->form_hidden_field_name; ?>" value="Y">
             <input type="hidden" id="rw_options_hidden" name="rw_options" value="" />
+            <input type="hidden" id="rw_options_hidden_custom" name="rw_options_custom" value="" />
 
             <input type="submit" name="Submit" class="button-primary" value="<?php esc_attr_e('Save Changes', WP_RW__ID) ?>" />
             <?php if (!ratingwidget()->RW_IsPaying()) : ?>
