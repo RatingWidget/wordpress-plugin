@@ -50,21 +50,70 @@ var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po
             <script type="text/javascript">
                 var rwStar, rwNero;
                 
-                // Initialize ratings.
-                function RW_Async_Init(){
-					var options = {}, render_count = 0;
-					<?php
-					// Get the type of settings to retrieve.
-					$pClass = trim(rw_settings_rating_type(), 's');
-
-					// Get the custom settings of this type.
-					$custom_settings = ratingwidget()->GetCustomSettings($pClass);
-					echo $custom_settings."\n";
-					?>
-							
-					// Specifiy the power settings so that we can exclude them later.
-					jQuery('#rw_options_hidden_custom').val(encodeURIComponent(RW.JSON.stringify(options)));
+				var options = {};
+				var customSettingChecked = false;
+				var customSettingHasError = false;
+				var customSettingError = 'Syntax error';
 				
+				<?php
+				// Get the type of settings to retrieve.
+				$pClass = trim(rw_settings_rating_type(), 's');
+
+				// Get the custom settings of this type.
+				$custom_settings = ratingwidget()->GetCustomSettings($pClass);
+				$custom_settings = trim($custom_settings);
+
+				if (!empty($custom_settings)) {
+					// Wrap the custom settings in a function that returns an options object.
+					$custom_settings = "(function() {\n"
+						. "options = {};\n"
+						. $custom_settings
+						. "return options;\n"
+						. '})();';
+				} else {
+					?>
+					customSettingChecked = true;
+					<?php
+				}
+				?>
+					
+				function validateCustomSettings() {
+					RW; // Avoids "RW is not defined" error when referencing RW inside the eval code.
+					
+					if (!customSettingChecked) {
+						// Use json_encode to print multi-line JS code.
+						var customSetting = (<?php echo json_encode($custom_settings); ?>);
+						
+						// Now check if eval will throw an exception.
+						// If eval throws an exception, then the code has an error.
+						try {
+							options = eval(customSetting);
+						} catch( err ) {
+							customSettingHasError = true;
+							customSettingError = err.message;
+						}
+						
+						customSettingChecked = true;
+					}
+					
+					if (customSettingHasError) {
+						options = {};
+					}
+				}
+				
+                // Initialize ratings.
+                function RW_Async_Init() {
+					<?php
+					if (!empty($custom_settings)) {
+						?>
+						validateCustomSettings();
+						<?php
+					}
+					?>
+					
+					// Specifiy the power settings so that they can be excluded
+					// when saving the options after disabling the power settings.
+					jQuery('#rw_options_hidden_custom').val(encodeURIComponent(RW.JSON.stringify(options)));
                     RW.init("cfcd208495d565ef66e7dff9f98764da");
                     <?php
                         $b_type = $options->type;
@@ -98,13 +147,11 @@ var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po
                     ?>
                     RW.render(function(ratings) {
                         rwStar = RWM.STAR = ratings[3].getInstances(0);
-                        rwNero = RWM.NERO = ratings[17].getInstances(0);
+						jQuery.extend(rwStar.options, options);
+							
+						rwNero = RWM.NERO = ratings[17].getInstances(0);
+						jQuery.extend(rwNero.options, options);
 						
-						if (++render_count == 2) {
-							jQuery.extend(rwNero.options, options);
-							jQuery.extend(rwStar.options, options);
-						}
-                        
                         jQuery("#rw_theme_loader").hide();
                         jQuery("#rw_<?php echo $options->type;?>_theme_select").show();
                         
@@ -156,6 +203,23 @@ var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po
                         var s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(rw, s);
                     })();
                 }
+				
+				// Displays an error message at the top of the RatingWidget settings page
+				// if the custom JS code has errors.
+				jQuery(function($) {
+					if ($('input[name="rw_custom_settings_enabled"]').prop('checked')) {
+						validateCustomSettings();
+						if (customSettingHasError) {
+							var errMsg = '<div class="error"><p><strong>'
+									+ 'You have an error in your JavaScript syntax: '
+									+ customSettingError
+									+ '<br />Please check the documentation and update your code. '
+									+ '<br />If the problem persists, please contact support@rating-widget.com.'
+									+ '</strong></p></div>';
+							$(errMsg).insertAfter('.rw-nav-tab-wrapper:first');
+						}
+					}
+				});
             </script>
         </div>
         <div class="submit" style="margin-top: 10px; padding: 0;">
