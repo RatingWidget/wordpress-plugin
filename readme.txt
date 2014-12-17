@@ -1,10 +1,10 @@
 === Rating-Widget: Star Rating System ===
-Contributors: ratingwidget, svovaf
+Contributors: ratingwidget, svovaf, leorw, freemius
 Donate link: http://rating-widget.com/pricing/wordpress/
 Tags: rate, rating, ratings, vote, votes, voting, star, stars, like, dislike, thumbs, widget, widgets, star rating, thumb rating, rating platform, rating system, seo, post rating, comment rating, 5 star, five star, sidebar, comment, comments, post, posts, page, pages, google, admin, administrator, review, reviews, rich-snippets, plugin, plugins, ajax, buddypress, bbpress, social, javascript, js, wordpress, meta, woocommerce, jquery, contest, competition, voting contest, rtmedia
 Requires at least: 2.8
 Tested up to: 4.0
-Stable tag: 2.3.1
+Stable tag: 2.3.2
 License: GPLv2 or later
 
 The most popular Five Star Rating System on the web. User-friendly ratings for: posts, pages, comments, WooCommerce, BuddyPress and bbPress forums.
@@ -180,6 +180,11 @@ If you didn't find a solution to your problem yet, check out our [WordPress Know
 The RatingWidget Team
 
 == Change Log ==
+= 2.3.2 =
+* Fix: Fixed account verification process for users registered before 2013.
+* New: Upgraded Power User Settings with Ace editor (http://ace.c9.io/).
+* New: Added the Pricing section into the dashboard.
+
 = 2.3.1 =
 * New: Added readOnly property per post/page/product controlled by metabox.
 

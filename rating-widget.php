@@ -3,7 +3,7 @@
 Plugin Name: Rating-Widget: Star Rating System
 Plugin URI: http://rating-widget.com/wordpress-plugin/
 Description: Create and manage Rating-Widget ratings in WordPress.
-Version: 2.3.1
+Version: 2.3.2
 Author: Rating-Widget
 Author URI: http://rating-widget.com/wordpress-plugin/
 License: GPLv2
@@ -43,7 +43,7 @@ Domain Path: /langs
 
 			private $errors;
 			private $success;
-			private $fs;
+			public $fs;
 			static $ratings = array();
 
 			var $is_admin;
@@ -129,7 +129,7 @@ Domain Path: /langs
 
 				if ( $this->fs->is_registered() )
 				{
-					$this->fs->add_submenu_link_item(__('FAQ', WP_RW__ID), rw_get_site_url( 'support/wordpress/#platform' ));
+					$this->fs->add_submenu_link_item(__('FAQ', WP_RW__ID), rw_get_site_url( 'support/wordpress/#platform' ), false, 'read', 25);
 
 					add_action( 'init', array( &$this, 'LoadPlan' ) );
 					// Clear cache has to be executed after LoadPlan, because clear
@@ -515,7 +515,7 @@ Domain Path: /langs
 					$in_license_sync = false;
 					// Check if user asked to sync license.
 					if ( rw_request_is_action( 'sync_license' ) ) {
-						check_admin_referer( 'sync_license' );
+//						check_admin_referer( 'sync_license' );
 						$site_plan_update = 0;
 						$in_license_sync = true;
 					}
@@ -4678,6 +4678,12 @@ Domain Path: /langs
 
 			/* Final Rating-Widget JS attach (before </body>)
     ---------------------------------------------------------------------------------------------------------------*/
+
+			/**
+			 * Generates the main JavaScript which renders all the ratings on the page.
+			 *
+			 * @param bool $pElement
+			 */
 			function rw_attach_rating_js($pElement = false)
 			{
 				if (RWLogger::IsOn()){ $params = func_get_args(); RWLogger::LogEnterence("rw_attach_rating_js", $params); }
@@ -5784,7 +5790,7 @@ Domain Path: /langs
 
 			function LicenseSyncSameNotice()
 			{
-				$this->Notice('Hmm... it looks like your license remained the same. If you did upgrade, it\'s probably an issue on our side (sorry). Please contact us <a href="' . rw_get_site_url('/contact/?' . http_build_query(array('topic' => 'Report an Issue', 'email' => WP_RW__OWNER_EMAIL, 'website' => get_site_url(), 'platform' => 'wordpress', 'message' => 'I\'ve upgraded my account but when I try to Sync the License in my WordPress Dashboard -> Ratings -> Account, the license remains the same.' . "\n" . 'Your Upgraded Plan: [REPLACE WITH PLAN NAME]' . "\n" . 'Your PayPal Email: [REPLACE WITH PAYPAL ADDRESS]'))) . '" target="_blank">here</a>.');
+				$this->Notice('Hmm... it looks like your license remained the same. If you did upgrade, it\'s probably an issue on our side (sorry). Please contact us <a href="' . rw_get_site_url('/contact/?' . http_build_query(array('topic' => 'Report an Issue', 'email' => WP_RW__OWNER_EMAIL, 'site_id' => $this->fs->get_site()->id, 'user_id' => $this->fs->get_user()->id, 'website' => get_site_url(), 'platform' => 'wordpress', 'message' => 'I\'ve upgraded my account but when I try to Sync the License in my WordPress Dashboard -> Ratings -> Account, the license remains the same.' . "\n" . 'Your Upgraded Plan: [REPLACE WITH PLAN NAME]' . "\n" . 'Your PayPal Email: [REPLACE WITH PAYPAL ADDRESS]'))) . '" target="_blank">here</a>.');
 			}
 
 			private function TryToConfirmEmail() {
@@ -5827,6 +5833,8 @@ Domain Path: /langs
 				$this->SetOption( WP_RW__DB_OPTION_SITE_ID, $site_id );
 
 				$this->_options_manager->store();
+
+				$this->fs->update_account($user_id, $email, $site_id);
 
 				add_action( 'all_admin_notices', array( &$this, 'SuccessfulEmailConfirmNotice' ) );
 

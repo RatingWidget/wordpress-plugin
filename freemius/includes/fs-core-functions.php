@@ -7,20 +7,20 @@
 
 	/* Url.
 	--------------------------------------------------------------------------------------------*/
-	function fs_admin_url( $path = 'admin.php', $page = WP_RW__ADMIN_MENU_SLUG, $scheme = 'admin' ) {
+	function fs_admin_url( $page = WP_RW__ADMIN_MENU_SLUG, $path = 'admin.php', $scheme = 'admin' ) {
 		echo fs_get_admin_url( $path, $page, $scheme );
 	}
 
-	function fs_get_admin_url( $path = 'admin.php', $page = WP_RW__ADMIN_MENU_SLUG, $scheme = 'admin' ) {
+	function fs_get_admin_url( $page = WP_RW__ADMIN_MENU_SLUG, $path = 'admin.php', $scheme = 'admin' ) {
 		return add_query_arg( array( 'page' => $page ), admin_url( $path, $scheme ) );
 	}
 
-	function fs_admin_plugin_url( $slug ) {
-		echo fs_get_admin_plugin_url( $slug );
+	function fs_admin_plugin_url( $page ) {
+		echo fs_get_admin_plugin_url( $page );
 	}
 
-	function fs_get_admin_plugin_url( $slug ) {
-		return fs_get_admin_url( 'admin.php', WP_RW__ADMIN_MENU_SLUG . '-' . $slug );
+	function fs_get_admin_plugin_url( $page ) {
+		return fs_get_admin_url( WP_RW__ADMIN_MENU_SLUG . '-' . $page, 'admin.php' );
 	}
 
 	function fs_get_url_daily_cache_killer() {
@@ -67,14 +67,26 @@
 
 	/* Scripts and styles including.
 	--------------------------------------------------------------------------------------------*/
-	function fs_enqueue_local_style($handle, $path, $deps = array(), $ver = false, $media = 'all')
-	{
+	function fs_enqueue_local_style($handle, $path, $deps = array(), $ver = false, $media = 'all') {
 		global $fs_core_logger;
-		$fs_core_logger->info('handle = ' . $handle . '; path = ' . $path . ';');
-		$fs_core_logger->info('plugin_basename = ' . plugins_url(WP_FS__DIR_CSS .  trim($path, '/')));
-		$fs_core_logger->info('plugins_url = ' . plugins_url(plugin_basename(WP_FS__DIR_CSS . '/' . trim($path, '/'))));
+		if ( $fs_core_logger->is_on() ) {
+			$fs_core_logger->info( 'handle = ' . $handle . '; path = ' . $path . ';' );
+			$fs_core_logger->info( 'plugin_basename = ' . plugins_url( WP_FS__DIR_CSS . trim( $path, '/' ) ) );
+			$fs_core_logger->info( 'plugins_url = ' . plugins_url( plugin_basename( WP_FS__DIR_CSS . '/' . trim( $path, '/' ) ) ) );
+		}
 
-		wp_enqueue_style($handle, plugins_url(plugin_basename(WP_FS__DIR_CSS . '/' . trim($path, '/'))), $deps, $ver, $media);
+		wp_enqueue_style( $handle, plugins_url( plugin_basename( WP_FS__DIR_CSS . '/' . trim( $path, '/' ) ) ), $deps, $ver, $media );
+	}
+
+	function fs_enqueue_local_script($handle, $path, $deps = array(), $ver = false, $in_footer = 'all') {
+		global $fs_core_logger;
+		if ( $fs_core_logger->is_on() ) {
+			$fs_core_logger->info( 'handle = ' . $handle . '; path = ' . $path . ';' );
+			$fs_core_logger->info( 'plugin_basename = ' . plugins_url( WP_FS__DIR_JS . trim( $path, '/' ) ) );
+			$fs_core_logger->info( 'plugins_url = ' . plugins_url( plugin_basename( WP_FS__DIR_JS . '/' . trim( $path, '/' ) ) ) );
+		}
+
+		wp_enqueue_script( $handle, plugins_url( plugin_basename( WP_FS__DIR_JS . '/' . trim( $path, '/' ) ) ), $deps, $ver, $in_footer );
 	}
 
 	/* Request handlers.

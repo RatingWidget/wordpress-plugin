@@ -19,7 +19,7 @@
             </p>
         </div>
         <div>
-            <a style="display: block; text-align: center;" href="<?php echo ratingwidget()->GetUpgradeUrl() ?>" onclick="_gaq.push(['_trackEvent', 'upgrade', 'wordpress', 'richsnippets_button', 1, true]); _gaq.push(['_link', this.href]); return false;" class="button-secondary gradient rw-upgrade-button" target="_blank"><?php _e('Upgrade to Professional', WP_RW__ID) ?></a>
+            <a style="display: block; text-align: center;" href="<?php echo rw_fs()->get_upgrade_url() ?>" onclick="_gaq.push(['_trackEvent', 'upgrade', 'wordpress', 'richsnippets_button', 1, true]); _gaq.push(['_link', this.href]); return false;" class="button-secondary gradient rw-upgrade-button"><?php _e('Upgrade to Professional', WP_RW__ID) ?></a>
         </div>
     </div>
 </div>

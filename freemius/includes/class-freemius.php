@@ -15,6 +15,8 @@
 		private $_slug;
 		private $_logger;
 		private $_plugin_basename;
+		private $_plugin_dir_path;
+		private $_plugin_dir_name;
 		private $_plugin_main_file_path;
 		private $_plugin_data;
 
@@ -49,10 +51,19 @@
 			}
 
 			$this->_plugin_main_file_path = $bt[ $i ]['file'];
+			$this->_plugin_dir_path       = plugin_dir_path( $this->_plugin_main_file_path );
 			$this->_plugin_basename       = plugin_basename( $this->_plugin_main_file_path );
 			$this->_plugin_data           = get_plugin_data( $this->_plugin_main_file_path );
 
-			$this->_logger->info( 'plugin_basename = ' . $this->_plugin_basename );
+			$base_name_split = explode('/', $this->_plugin_basename);
+			$this->_plugin_dir_name = $base_name_split[0];
+
+			if ($this->_logger->is_on()) {
+				$this->_logger->info( 'plugin_main_file_path = ' . $this->_plugin_main_file_path );
+				$this->_logger->info( 'plugin_dir_path = ' . $this->_plugin_dir_path );
+				$this->_logger->info( 'plugin_basename = ' . $this->_plugin_basename );
+				$this->_logger->info( 'plugin_dir_name = ' . $this->_plugin_dir_name );
+			}
 
 			// Hook to plugin activation
 			register_activation_hook( $this->_plugin_main_file_path, array( &$this, '_activate_plugin_event' ) );
@@ -120,7 +131,7 @@
 				$users = array();
 			}
 
-			if ( $this->_logger->is_on() ) {
+			if ( $this->_logger->is_on() && is_admin() ) {
 				$this->_logger->log( 'site = ' . var_export( $sites, true ) );
 			}
 
@@ -296,6 +307,15 @@
 
 		}
 
+		function update_account($user_id, $user_email, $site_id)
+		{
+			$this->_user->id = $user_id;
+			$this->_user->email = $user_email;
+			$this->_site->user_id = $user_id;
+			$this->_site->id = $site_id;
+			$this->_store_account();
+		}
+
 		/* Licensing
 		------------------------------------------------------------------------------------------------------------------*/
 		function is_trial()/*{obfuscate-method}*/ {
@@ -325,6 +345,11 @@
 			/*{obfuscate}-->*/
 		}
 
+		function is_feature_supported($feature_id)
+		{
+			throw new Exception('not implemented');
+		}
+
 		function is_ssl()/*{obfuscate-method}*/ {
 			/*<--{obfuscate}*/
 			return
@@ -343,7 +368,22 @@
 		function get_upgrade_url( $plan = WP_FS__PLAN_DEFAULT_PAID, $period = WP_FS__PERIOD_ANNUALLY ) {
 			$this->_logger->entrance();
 
-			return ratingwidget()->GetUpgradeUrl( false, $period, $plan );
+			if (!($this->_site->secret_key) || !defined('WP_RW__SITE_ID'))
+			{
+				// Backwards compatibility //////////////////////////////////////
+				$params = array(
+					'uid' => WP_RW__SITE_PUBLIC_KEY
+				);
+
+				$relative = '/get-the-word-press-plugin/?' . http_build_query($params);
+
+				return rw_get_site_url($relative);
+			}
+			else
+			{
+				// New in-plugin pricing page ////////////////////////////////////////////
+				return fs_get_admin_plugin_url('pricing');
+			}
 		}
 
 		function get_pricing_url( $period = WP_FS__PERIOD_ANNUALLY ) {
@@ -415,7 +455,6 @@
 		------------------------------------------------------------------------------------------------------------------*/
 		private $_has_menu = false;
 		private $_menu_items = array();
-		private $_menu_link_items = array();
 
 		function _redirect_on_clicked_menu_link() {
 			$this->_logger->entrance();
@@ -425,12 +464,14 @@
 			$this->_logger->log( 'page = ' . $page );
 
 
-			foreach ( $this->_menu_link_items as $priority => $items) {
+			foreach ( $this->_menu_items as $priority => $items) {
 				foreach ( $items as $item ) {
-					if ( $page === $item['menu_slug'] ) {
-						$this->_logger->log( 'Redirecting to ' . $item['url'] );
+					if (isset($item['url'])) {
+						if ( $page === $item['menu_slug'] ) {
+							$this->_logger->log( 'Redirecting to ' . $item['url'] );
 
-						fs_redirect( $item['url'] );
+							fs_redirect( $item['url'] );
+						}
 					}
 				}
 			}
@@ -449,33 +490,46 @@
 				array( &$this, '_account_page_load' )
 			);
 
-			foreach ( $this->_menu_items as $item ) {
-				$hook = add_submenu_page(
-					$this->_slug,
-					$item['page_title'],
-					$item['menu_title'],
-					$item['capability'],
-					$item['menu_slug'],
-					$item['render_function']
-				);
 
-				if ( false !== $item['before_render_function'] ) {
-					add_action( "load-$hook", $item['before_render_function'] );
-				}
-			}
+			// Add upgrade/pricing page.
+			$this->add_submenu_item(
+				( $this->is_paying() ? __( 'Pricing', $this->_slug ) : __( 'Upgrade', $this->_slug ) . '&nbsp;&nbsp;&#x27a4;' ),
+				array( &$this, '_pricing_page_render' ),
+				$this->_plugin_data['Name'] . ' &ndash; ' . __( 'Pricing', $this->_slug ),
+				'manage_options',
+				'pricing',
+				false,
+				WP_FS__LOWEST_PRIORITY
+			);
 
-			ksort($this->_menu_link_items);
 
-			foreach ( $this->_menu_link_items as $priority => $items) {
+			ksort( $this->_menu_items );
+
+			foreach ( $this->_menu_items as $priority => $items ) {
 				foreach ( $items as $item ) {
-					add_submenu_page(
-						$this->_slug,
-						$item['page_title'],
-						$item['menu_title'],
-						$item['capability'],
-						$item['menu_slug'],
-						array( $this, '' )
-					);
+					if (!isset($item['url'])) {
+						$hook = add_submenu_page(
+							$this->_slug,
+							$item['page_title'],
+							$item['menu_title'],
+							$item['capability'],
+							$item['menu_slug'],
+							$item['render_function']
+						);
+
+						if ( false !== $item['before_render_function'] ) {
+							add_action( "load-$hook", $item['before_render_function'] );
+						}
+					}else {
+						add_submenu_page(
+							$this->_slug,
+							$item['page_title'],
+							$item['menu_title'],
+							$item['capability'],
+							$item['menu_slug'],
+							array( $this, '' )
+						);
+					}
 				}
 			}
 		}
@@ -485,10 +539,6 @@
 				return;
 
 			$this->add_submenu_link_item( __( 'Support Forum', $this->_slug ), 'https://wordpress.org/support/plugin/' . $this->_slug, 'wp-support-forum', 'read', 50 );
-
-			if ( ! $this->is_paying() ) {
-				$this->add_submenu_link_item( '&#9733; ' . __( 'Upgrade', $this->_slug ) . ' &#9733;', $this->get_upgrade_url(), 'upgrade', 'read', 100 );
-			}
 		}
 
 		function set_has_menu() {
@@ -501,10 +551,13 @@
 			return $this->_slug . ( empty( $slug ) ? '' : ( '-' . $slug ) );
 		}
 
-		function add_submenu_item( $menu_title, $render_function, $page_title = false, $capability = 'manage_options', $menu_slug = false, $before_render_function = false ) {
-			$this->_logger->entrance();
+		function add_submenu_item( $menu_title, $render_function, $page_title = false, $capability = 'manage_options', $menu_slug = false, $before_render_function = false, $priority = 10  ) {
+			$this->_logger->entrance('Title = ' . $menu_title );
 
-			$this->_menu_items[] = array(
+			if (!isset($this->_menu_items[$priority]))
+				$this->_menu_items[$priority] = array();
+
+			$this->_menu_items[$priority][] = array(
 				'page_title'             => is_string( $page_title ) ? $page_title : $menu_title,
 				'menu_title'             => $menu_title,
 				'capability'             => $capability,
@@ -519,10 +572,10 @@
 		function add_submenu_link_item( $menu_title, $url, $menu_slug = false, $capability = 'read', $priority = 10 ) {
 			$this->_logger->entrance('Title = ' . $menu_title . '; Url = ' . $url);
 
-			if (!isset($this->_menu_link_items[$priority]))
-				$this->_menu_link_items[$priority] = array();
+			if (!isset($this->_menu_items[$priority]))
+				$this->_menu_items[$priority] = array();
 
-			$this->_menu_link_items[$priority][] = array(
+			$this->_menu_items[$priority][] = array(
 				'menu_title'             => $menu_title,
 				'capability'             => $capability,
 				'menu_slug'              => $this->_get_menu_slug( is_string( $menu_slug ) ? $menu_slug : strtolower( $menu_title ) ),
@@ -560,11 +613,23 @@
 			fs_require_once_template( "admin-notice.php", $vars );
 		}
 
-		private function _store_site()
+		private function _store_site($store = true) {
+			$sites                            = self::$_accounts->get_option( 'sites' );
+			$sites[ $this->_plugin_basename ] = $this->_site;
+			self::$_accounts->set_option( 'sites', $sites, $store );
+		}
+
+		private function _store_user($store = true) {
+			$users                     = self::$_accounts->get_option( 'users' );
+			$users[ $this->_user->id ] = $this->_user;
+			self::$_accounts->set_option( 'users', $users, $store );
+		}
+
+		private function _store_account()
 		{
-			$sites = self::$_accounts->get_option( 'sites' );
-			$sites[ $this->_plugin_basename ] = $this->get_site();
-			self::$_accounts->set_option( 'sites', $sites, true );
+			$this->_store_site(false);
+			$this->_store_user(false);
+			self::$_accounts->store();
 		}
 
 		private function _handle_account_edits()
@@ -613,6 +678,25 @@
 			$vars = array( 'slug' => $this->_slug );
 			fs_require_once_template( 'user-account.php', $vars );
 		}
+
+		/* Pricing & Upgrade
+		------------------------------------------------------------------------------------------------------------------*/
+		function _pricing_page_render() {
+			$this->_logger->entrance();
+
+			$vars = array( 'slug' => $this->_slug );
+			fs_require_once_template( 'pricing.php', $vars );
+		}
+
+		/* CSS & JavaScript
+		------------------------------------------------------------------------------------------------------------------*/
+/*		function _enqueue_script($handle, $src) {
+			$url = plugins_url( substr( WP_FS__DIR_JS, strlen( $this->_plugin_dir_path ) ) . '/assets/js/' . $src );
+
+			$this->_logger->entrance( 'script = ' . $url );
+
+			wp_enqueue_script( $handle, $url );
+		}*/
 
 		/* Action Links
 		------------------------------------------------------------------------------------------------------------------*/
@@ -666,6 +750,9 @@
 			}
 		}
 
+		/**
+		 * Adds Upgrade link to the main Plugins page plugin link actions collection.
+		 */
 		function _add_upgrade_action_link() {
 			$this->_logger->entrance();
 

@@ -13,6 +13,7 @@
 	define('WP_FS__DIR_TEMPLATES', WP_FS__DIR . '/templates');
 	define('WP_FS__DIR_ASSETS', WP_FS__DIR . '/assets');
 	define('WP_FS__DIR_CSS', WP_FS__DIR_ASSETS . '/css');
+	define('WP_FS__DIR_JS', WP_FS__DIR_ASSETS . '/js');
 
 
 	if (!defined('WP_FS__ACCOUNTS_OPTION_NAME')) {

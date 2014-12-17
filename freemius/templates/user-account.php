@@ -1,6 +1,5 @@
 <?php
 	$slug = $VARS['slug'];
-
 	$fs = fs($slug);
 ?>
 
@@ -8,7 +7,7 @@
 	<h2 class="nav-tab-wrapper">
 		<a href="<?php $fs->get_account_url() ?>" class="nav-tab nav-tab-active"><?php _e('Account', WP_FS__SLUG) ?></a>
 		<?php if (!$fs->is_paying()) : ?>
-			<a href="<?php echo $fs->get_upgrade_url() ?>" class="nav-tab" target="_blank"><?php _e('Upgrade', WP_FS__SLUG) ?></a>
+			<a href="<?php echo $fs->get_upgrade_url() ?>" class="nav-tab"><?php _e('Upgrade', WP_FS__SLUG) ?></a>
 		<?php endif ?>
 	</h2>
 	<div id="poststuff">
@@ -39,7 +38,7 @@
 								<?php $odd = true; foreach ($profile as $p) : ?>
 									<tr class="fs-<?php echo $odd ? 'odd' : 'even' ?>">
 										<td>
-											<?php echo $p['title'] ?>:
+											<nobr><?php echo $p['title'] ?>:</nobr>
 										</td>
 										<td><code><?php echo htmlspecialchars($p['value']) ?></code></td>
 										<td class="fs-right">
@@ -50,9 +49,9 @@
 													<input type="submit" class="button" value="<?php _e('Sync License', WP_FS__SLUG) ?>">
 
 													<?php if ( !$fs->is_paying() ) : ?>
-														<a href="<?php echo $fs->get_upgrade_url() ?>" onclick="_gaq.push(['_trackEvent', 'upgrade', 'wordpress', 'gopro_button', 1, true]); _gaq.push(['_link', this.href]); return false;" class="button button-primary gradient button-upgrade" target="_blank"><?php _e('Upgrade', WP_FS__SLUG) ?></a>
+														<a href="<?php echo $fs->get_upgrade_url() ?>" onclick="_gaq.push(['_trackEvent', 'upgrade', 'wordpress', 'gopro_button', 1, true]); _gaq.push(['_link', this.href]); return false;" class="button button-primary gradient button-upgrade"><?php _e('Upgrade', WP_FS__SLUG) ?></a>
 													<?php else : ?>
-														<a href="<?php echo $fs->get_upgrade_url() ?>" onclick="_gaq.push(['_trackEvent', 'change-plan', 'wordpress', 'account', 1, true]); _gaq.push(['_link', this.href]); return false;" class="button gradient button-secondary button-upgrade" target="_blank"><?php _e('Change Plan', WP_FS__SLUG) ?></a>
+														<a href="<?php echo $fs->get_upgrade_url() ?>" onclick="_gaq.push(['_trackEvent', 'change-plan', 'wordpress', 'account', 1, true]); _gaq.push(['_link', this.href]); return false;" class="button gradient button-secondary button-upgrade"><?php _e('Change Plan', WP_FS__SLUG) ?></a>
 													<?php endif; ?>
 												</form>
 											<?php elseif (in_array($p['id'], array('site_secret_key', 'site_id', 'site_public_key')) ) : ?>
