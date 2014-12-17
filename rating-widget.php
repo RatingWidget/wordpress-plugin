@@ -1200,7 +1200,7 @@ Domain Path: /langs
 					// Account activation page includes.
 					rw_enqueue_script('rw_wp_validation', 'rw/validation.js');
 					rw_enqueue_script('rw');
-//            rw_enqueue_script('rw_wp_signup', 'wordpress/signup.php');
+					// rw_enqueue_script('rw_wp_signup', 'wordpress/signup.php');
 					wp_enqueue_script('jquery-postmessage', plugins_url('resources/js/jquery.ba-postmessage.min.js' ,__FILE__ ));
 				}
 				else
@@ -1222,6 +1222,11 @@ Domain Path: /langs
 					rw_enqueue_style('jquery-theme-smoothness', 'vendors/jquery/smoothness/jquery.smoothness.css');
 					rw_enqueue_style('rw_external', 'style.css?all=t');
 					rw_enqueue_style('rw_wp_reports', 'wordpress/reports.php');
+				}
+				
+				// Enqueue on the relevant pages only.
+				if ($_GET['page'] == 'rating-widget' || $_GET['page'] == 'rating-widget-woocommerce') {
+					wp_enqueue_script('ace', plugins_url('resources/js/ace/ace.js' ,__FILE__ ));
 				}
 			}
 
