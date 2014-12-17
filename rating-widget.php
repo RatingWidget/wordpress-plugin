@@ -1223,11 +1223,6 @@ Domain Path: /langs
 					rw_enqueue_style('rw_external', 'style.css?all=t');
 					rw_enqueue_style('rw_wp_reports', 'wordpress/reports.php');
 				}
-				
-				// Enqueue on the relevant pages only.
-				if ($_GET['page'] == 'rating-widget' || $_GET['page'] == 'rating-widget-woocommerce') {
-					wp_enqueue_script('ace', plugins_url('resources/js/ace/ace.js' ,__FILE__ ));
-				}
 			}
 
 			function ActivationNotice()
