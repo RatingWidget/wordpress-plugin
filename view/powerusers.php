@@ -21,41 +21,41 @@
 				<textarea name="rw_custom_settings" style="display: none;"></textarea>
 				<div id="js_editor" style="min-height: 350px; left: 1px;"><?php
 				echo !empty($custom_settings) ? stripslashes($custom_settings) :
-				'/*
-				 * We recommend to use this section only if you familiar with JavaScript.
-				 *
-				 * For your convenience, we have collected a set of examples which we are frequently
-				 * being asked about. Make sure to delete (or comment) the code you do NOT want to use.
-				 */
+'/*
+ * We recommend to use this section only if you familiar with JavaScript.
+ *
+ * For your convenience, we have collected a set of examples which we are frequently
+ * being asked about. Make sure to delete (or comment) the code you do NOT want to use.
+ */
 
-				// Example: Hide ratings tooltip.
-				options.showTooltip = false;
+// Example: Hide ratings tooltip.
+options.showTooltip = false;
 
-				// Example: Hide posts recommendations.
-				options.hideRecommendations = true;
+// Example: Hide posts recommendations.
+options.hideRecommendations = true;
 
-				// Example: Hide ratings report.
-				options.showReport = false;
+// Example: Hide ratings report.
+options.showReport = false;
 
-				// Example: Hide the ratings loading gif.
-				options.showLoader = false;
+// Example: Hide the ratings loading gif.
+options.showLoader = false;
 
-				// Example: Hide the text bubble - only show the star ratings.
-				options.showInfo = false;
+// Example: Hide the text bubble - only show the star ratings.
+options.showInfo = false;
 
-				// Example: Set custom rating file.
-				//
-				// More information:
-				//      http://rating-widget.com/support/how-can-i-customize-the-ratings-image-theme-in-wordpress/
-				options.style = RW.CUSTOM;
-				options.imgUrl = {
-					ltr: "http://imageaddress.com/img.ltr.png", // Left to Right rating
-					rtl: "http://imageaddress.com/img.rtl.png"  // Right to Left rating
-				};
+// Example: Set custom rating file.
+//
+// More information:
+//      http://rating-widget.com/support/how-can-i-customize-the-ratings-image-theme-in-wordpress/
+options.style = RW.CUSTOM;
+options.imgUrl = {
+	ltr: "http://imageaddress.com/img.ltr.png", // Left to Right rating
+	rtl: "http://imageaddress.com/img.rtl.png"  // Right to Left rating
+};
 
-				// Example: Disable mobile optimized UI (the fixed star button).
-				options.mobile = {"showTrigger": false};
-				'
+// Example: Disable mobile optimized UI (the fixed star button).
+options.mobile = {"showTrigger": false};
+'
 				?>
 				</div>
             </div>
