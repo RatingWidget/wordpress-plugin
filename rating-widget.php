@@ -1200,7 +1200,7 @@ Domain Path: /langs
 					// Account activation page includes.
 					rw_enqueue_script('rw_wp_validation', 'rw/validation.js');
 					rw_enqueue_script('rw');
-//            rw_enqueue_script('rw_wp_signup', 'wordpress/signup.php');
+					// rw_enqueue_script('rw_wp_signup', 'wordpress/signup.php');
 					wp_enqueue_script('jquery-postmessage', plugins_url('resources/js/jquery.ba-postmessage.min.js' ,__FILE__ ));
 				}
 				else
