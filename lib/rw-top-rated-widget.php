@@ -104,10 +104,10 @@
 						$since_created = (int)$instance["{$type}_since_created"];
 						
 						// since_created should be at least 24 hours (86400 seconds), skip otherwise.
-						if ($since_created >= 86400) {
+						if ($since_created >= WP_RW__TIME_24_HOURS_IN_SEC) {
 							$time = current_time('timestamp', TRUE) - $since_created;
 
-							// c: ISO 8601 full date/time, 2004-02-12T15:19:21+00:00
+							// c: ISO 8601 full date/time, e.g.: 2004-02-12T15:19:21+00:00
 							$queries[$type]['since_created'] = date('c', $time);
 						}
 					}
@@ -779,11 +779,11 @@
 									<?php
 									$since_created_options = array(
 										-1			=> __('All Time', WP_RW__ID),
-										365 * 86400 => __('Last Year', WP_RW__ID),
-										180 * 86400 => __('Last 6 Months', WP_RW__ID),
-										30 * 86400  => __('Last 30 Days', WP_RW__ID),
-										7 * 86400   => __('Last 7 Days', WP_RW__ID),
-										1 * 86400   => __('Last 24 Hours', WP_RW__ID)
+										365 * WP_RW__TIME_24_HOURS_IN_SEC => __('Last Year', WP_RW__ID),
+										180 * WP_RW__TIME_24_HOURS_IN_SEC => __('Last 6 Months', WP_RW__ID),
+										30	* WP_RW__TIME_24_HOURS_IN_SEC => __('Last 30 Days', WP_RW__ID),
+										7	* WP_RW__TIME_24_HOURS_IN_SEC => __('Last 7 Days', WP_RW__ID),
+										1	* WP_RW__TIME_24_HOURS_IN_SEC => __('Last 24 Hours', WP_RW__ID)
 									);
 									?>
 									<p>
