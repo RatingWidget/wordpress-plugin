@@ -8,6 +8,7 @@
 		define('WP_RW__TR_DEFAULT_ORDERY_BY', 'avgrate');
 		define('WP_RW__TR_DEFAULT_ORDERY', 'DESC');
 		define('WP_RW__TR_DEFAULT_STYLE', 'compact_thumbs');
+		define('WP_RW__TR_DEFAULT_SINCE_CREATED', -1);
 
 		/* Top Rated Widget
 		---------------------------------------------------------------------------------------------------------------*/
@@ -97,8 +98,18 @@
 							"orderby"  => $instance["{$type}_orderby"],
 							"order"    => $instance["{$type}_order"],
 							"limit"    => (int) $instance["{$type}_count"],
-							"types"    => isset( $options->type ) ? $options->type : "star",
+							"types"    => isset( $options->type ) ? $options->type : "star"
 						);
+						
+						$since_created = (int)$instance["{$type}_since_created"];
+						
+						// since_created should be at least 24 hours (86400 seconds), skip otherwise.
+						if ($since_created >= WP_RW__TIME_24_HOURS_IN_SEC) {
+							$time = current_time('timestamp', TRUE) - $since_created;
+
+							// c: ISO 8601 full date/time, e.g.: 2004-02-12T15:19:21+00:00
+							$queries[$type]['since_created'] = date('c', $time);
+						}
 					}
 				}
 
@@ -111,7 +122,7 @@
 				}
 
 				$rw_ret_obj = json_decode( $rw_ret_obj );
-
+				
 				if ( null === $rw_ret_obj || true !== $rw_ret_obj->success ) {
 					return;
 				}
@@ -545,14 +556,15 @@
 				$instance['title']            = $new_instance['title'];
 				$instance['title_max_length'] = (int) $new_instance['title_max_length'];
 				foreach ( $types as $type => $info) {
-					$instance["show_{$type}"]       = (int) $new_instance["show_{$type}"];
-					$instance["show_{$type}_title"] = (int) $new_instance["show_{$type}_title"]; /* (1.3.3) - Conditional title display */
-					$instance["{$type}_style"]      = $new_instance["{$type}_style"];
-					$instance["{$type}_title"]      = $new_instance["{$type}_title"]; /* (1.3.3) - Explicit title */
-					$instance["{$type}_count"]      = (int) $new_instance["{$type}_count"];
-					$instance["{$type}_min_votes"]  = (int) $new_instance["{$type}_min_votes"]; /* (1.3.7) - Min votes to appear */
-					$instance["{$type}_orderby"]    = $new_instance["{$type}_orderby"]; /* (1.3.7) - Order by */
-					$instance["{$type}_order"]      = $new_instance["{$type}_order"]; /* (1.3.8) - Order */
+					$instance["show_{$type}"]          = (int) $new_instance["show_{$type}"];
+					$instance["show_{$type}_title"]    = (int) $new_instance["show_{$type}_title"]; /* (1.3.3) - Conditional title display */
+					$instance["{$type}_style"]         = $new_instance["{$type}_style"];
+					$instance["{$type}_title"]         = $new_instance["{$type}_title"]; /* (1.3.3) - Explicit title */
+					$instance["{$type}_count"]         = (int) $new_instance["{$type}_count"];
+					$instance["{$type}_min_votes"]     = (int) $new_instance["{$type}_min_votes"]; /* (1.3.7) - Min votes to appear */
+					$instance["{$type}_orderby"]       = $new_instance["{$type}_orderby"]; /* (1.3.7) - Order by */
+					$instance["{$type}_order"]		   = $new_instance["{$type}_order"]; /* (1.3.8) - Order */
+					$instance["{$type}_since_created"] = (int) $new_instance["{$type}_since_created"];
 				}
 
 				return $instance;
@@ -567,13 +579,14 @@
 				// Update default values.
 				$values = array( 'title' => 'Top Rated', 'title_max_length' => 30 );
 				foreach ( $types as $type => $info ) {
-					$values["show_{$type}"]       = ( 'posts' === $type );
-					$values["{$type}_count"]      = WP_RW__TR_DEFAULT_ITEMS_COUNT;
-					$values["{$type}_min_votes"]  = WP_RW__TR_DEFAULT_MIN_VOTES;
-					$values["{$type}_orderby"]    = WP_RW__TR_DEFAULT_ORDERY_BY;
-					$values["{$type}_order"]      = WP_RW__TR_DEFAULT_ORDERY;
-					$values["show_{$type}_title"] = 0;
-					$values["{$type}_style"]      = WP_RW__TR_DEFAULT_STYLE;
+					$values["show_{$type}"]			 = ( 'posts' === $type );
+					$values["{$type}_count"]		 = WP_RW__TR_DEFAULT_ITEMS_COUNT;
+					$values["{$type}_min_votes"]	 = WP_RW__TR_DEFAULT_MIN_VOTES;
+					$values["{$type}_orderby"]		 = WP_RW__TR_DEFAULT_ORDERY_BY;
+					$values["{$type}_order"]		 = WP_RW__TR_DEFAULT_ORDERY;
+					$values["show_{$type}_title"]	 = 0;
+					$values["{$type}_style"]		 = WP_RW__TR_DEFAULT_STYLE;
+					$values["{$type}_since_created"] = WP_RW__TR_DEFAULT_SINCE_CREATED;
 				}
 
 				$instance       = wp_parse_args( (array) $instance, $values );
@@ -610,9 +623,12 @@
 					if ( isset( $values["{$type}_order"] ) && ! in_array( $values["{$type}_order"], array( "DESC", "ASC" ) ) ) {
 						$values["{$type}_order"] = WP_RW__TR_DEFAULT_ORDERY;
 					}
+					if ( isset( $instance["{$type}_since_created"] ) ) {
+						$values["{$type}_since_created"] = (int) $instance["{$type}_since_created"];
+					}
 				}
 				?>
-				<div id="rw_wp_top_rated_settings" class="new">
+				<div id="rw_wp_top_rated_settings" class="new" style="margin-bottom: 15px;">
 					<div class="rw-toprated-settings-section selected">
 						<div class="rw-section-body">
 							<p><label
@@ -756,6 +772,29 @@
 													value="ASC"<?php echo( $values["{$type}_order"] == "ASC" ? " selected='selected'" : '' ); ?>>
 													WORST (Ascending)
 												</option>
+											</select>
+										</label>
+									</p>
+									
+									<?php
+									$since_created_options = array(
+										-1			=> __('All Time', WP_RW__ID),
+										365 * WP_RW__TIME_24_HOURS_IN_SEC => __('Last Year', WP_RW__ID),
+										180 * WP_RW__TIME_24_HOURS_IN_SEC => __('Last 6 Months', WP_RW__ID),
+										30	* WP_RW__TIME_24_HOURS_IN_SEC => __('Last 30 Days', WP_RW__ID),
+										7	* WP_RW__TIME_24_HOURS_IN_SEC => __('Last 7 Days', WP_RW__ID),
+										1	* WP_RW__TIME_24_HOURS_IN_SEC => __('Last 24 Hours', WP_RW__ID)
+									);
+									?>
+									<p>
+										<label for="rss-items-<?php echo $values["{$type}_since_created"]; ?>"><?php printf(__( "%s created in:", WP_RW__ID ), $typeTitle); ?>
+											<select id="<?php echo $this->get_field_id( "{$type}_since_created" ); ?>" name="<?php echo $this->get_field_name( "{$type}_since_created" ); ?>">
+												<?php
+												foreach ($since_created_options as $since_created => $display_text) { ?>
+												<option value="<?php echo $since_created; ?>" <?php selected($values["{$type}_since_created"], $since_created); ?>><?php echo $display_text; ?></option>
+												<?php
+												}
+												?>
 											</select>
 										</label>
 									</p>
