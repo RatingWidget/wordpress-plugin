@@ -226,6 +226,10 @@
 	define( 'WP_RW__TIME_15_MIN_IN_SEC', 900 );
 	define( 'WP_RW__TIME_24_HOURS_IN_SEC', 86400 );
 	define( 'WP_RW__TIME_WEEK_IN_SEC', 7 * WP_RW__TIME_24_HOURS_IN_SEC );
+	define( 'WP_RW__TIME_30_DAYS_IN_SEC', 30 * WP_RW__TIME_24_HOURS_IN_SEC );
+	define( 'WP_RW__TIME_6_MONTHS_IN_SEC', 6 * WP_RW__TIME_30_DAYS_IN_SEC );
+	define( 'WP_RW__TIME_YEAR_IN_SEC', 365 * WP_RW__TIME_30_DAYS_IN_SEC );
+	define( 'WP_RW__TIME_ALL_TIME', -1 );
 
 	/* Local caching
 	-----------------------------------------------------------------------------------------*/

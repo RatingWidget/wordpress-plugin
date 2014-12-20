@@ -23,8 +23,9 @@
 				}
 
 				$this->rw_address = WP_RW__ADDRESS;
-				$widget_ops       = array( 'classname'   => 'rw_top_rated',
-				                           'description' => __( 'A list of your top rated posts.' )
+				$widget_ops       = array(
+					'classname'   => 'rw_top_rated',
+					'description' => __( 'A list of your top rated posts.' )
 				);
 				parent::__construct( strtolower( 'RatingWidgetPlugin_TopRatedWidget' ), "Rating-Widget: Top Rated", $widget_ops );
 
@@ -100,15 +101,16 @@
 							"limit"    => (int) $instance["{$type}_count"],
 							"types"    => isset( $options->type ) ? $options->type : "star"
 						);
-						
-						$since_created = (int)$instance["{$type}_since_created"];
-						
+
+
+						$since_created = isset( $instance["{$type}_since_created"] ) ? (int) $instance["{$type}_since_created"] : WP_RW__TIME_ALL_TIME;
+
 						// since_created should be at least 24 hours (86400 seconds), skip otherwise.
-						if ($since_created >= WP_RW__TIME_24_HOURS_IN_SEC) {
-							$time = current_time('timestamp', TRUE) - $since_created;
+						if ( $since_created >= WP_RW__TIME_24_HOURS_IN_SEC ) {
+							$time = current_time( 'timestamp', true ) - $since_created;
 
 							// c: ISO 8601 full date/time, e.g.: 2004-02-12T15:19:21+00:00
-							$queries[$type]['since_created'] = date('c', $time);
+							$queries[ $type ]['since_created'] = date( 'c', $time );
 						}
 					}
 				}
@@ -122,7 +124,7 @@
 				}
 
 				$rw_ret_obj = json_decode( $rw_ret_obj );
-				
+
 				if ( null === $rw_ret_obj || true !== $rw_ret_obj->success ) {
 					return;
 				}
@@ -209,14 +211,15 @@
 
 							$cell = 0;
 							foreach ( $ratings as $rating ) {
-								$urid   = $rating->urid;
-								$rclass = $types[ $type ]["rclass"];
-								$rclasses[$rclass] = true;
+								$urid                = $rating->urid;
+								$rclass              = $types[ $type ]["rclass"];
+								$rclasses[ $rclass ] = true;
 
 								$extension_type = false;
 
-								if ( RWLogger::IsOn() )
+								if ( RWLogger::IsOn() ) {
 									RWLogger::Log( 'HANDLED_ITEM', 'Urid = ' . $urid . '; Class = ' . $rclass . ';' );
+								}
 
 								if ( 'posts' === $type ||
 								     'pages' === $type
@@ -353,7 +356,10 @@
 										}
 
 										// Visible statueses: Public or Closed.
-										$visible_statuses = array( bbp_get_public_status_id(), bbp_get_closed_status_id() );
+										$visible_statuses = array(
+											bbp_get_public_status_id(),
+											bbp_get_closed_status_id()
+										);
 
 										if ( ! in_array( $forum_item->post_status, $visible_statuses ) ) {
 											if ( RWLogger::IsOn() ) {
@@ -364,7 +370,7 @@
 											continue;
 										}
 
-										$is_reply = (!$is_topic);
+										$is_reply = ( ! $is_topic );
 
 										if ( $is_reply ) {
 											// Get parent topic.
@@ -385,30 +391,26 @@
 									} else {
 										continue;
 									}
-									$types[$type]['handler']->GetElementInfoByRating();
+									$types[ $type ]['handler']->GetElementInfoByRating();
 								} else {
 									$found_handler = false;
 
 									$extensions = ratingwidget()->GetExtensions();
-									foreach ($extensions as $ext)
-									{
-										$result = $ext->GetElementInfoByRating($type, $rating);
-										if (false !== $result) {
+									foreach ( $extensions as $ext ) {
+										$result = $ext->GetElementInfoByRating( $type, $rating );
+										if ( false !== $result ) {
 											$found_handler = true;
 											break;
 										}
 									}
 
-									if ($found_handler)
-									{
-										$id = $result['id'];
-										$title = $result['title'];
-										$permalink = $result['permalink'];
-										$img = rw_get_thumb_url($result['img'], $thumb_width, $thumb_height, $result['permalink']);
+									if ( $found_handler ) {
+										$id             = $result['id'];
+										$title          = $result['title'];
+										$permalink      = $result['permalink'];
+										$img            = rw_get_thumb_url( $result['img'], $thumb_width, $thumb_height, $result['permalink'] );
 										$extension_type = true;
-									}
-									else
-									{
+									} else {
 										continue;
 									}
 								}
@@ -439,11 +441,9 @@
 								);
 
 								// Add thumb url.
-								if ($extension_type && is_string($img))
-								{
+								if ( $extension_type && is_string( $img ) ) {
 									$item['page']['img'] = $img;
-								}
-								else if ( $has_thumb && (in_array( $type, array( 'posts', 'pages' ) )) ) {
+								} else if ( $has_thumb && ( in_array( $type, array( 'posts', 'pages' ) ) ) ) {
 									$item['page']['img'] = rw_get_post_thumb_url( $post, $thumb_width, $thumb_height );
 								}
 
@@ -477,35 +477,35 @@
 				}
 			}
 
-			protected function GetTypesInfo()
-			{
+			protected function GetTypesInfo() {
 				$types = array(
 					"posts"    => array(
-						"rclass"  => "blog-post",
-						"classes" => "front-post,blog-post,new-blog-post,user-post",
+						"rclass"         => "blog-post",
+						"classes"        => "front-post,blog-post,new-blog-post,user-post",
 						'has_thumbnails' => true,
-						"options" => WP_RW__BLOG_POSTS_OPTIONS,
-						'title' => 'Posts',
+						"options"        => WP_RW__BLOG_POSTS_OPTIONS,
+						'title'          => 'Posts',
 					),
 					"pages"    => array(
-						"rclass"  => "page",
-						"classes" => "page,user-page",
+						"rclass"         => "page",
+						"classes"        => "page,user-page",
 						'has_thumbnails' => true,
-						'title' => 'Pages',
-						"options" => WP_RW__PAGES_OPTIONS,
+						'title'          => 'Pages',
+						"options"        => WP_RW__PAGES_OPTIONS,
 					),
 					"comments" => array(
 						"rclass"  => "comment",
 						"classes" => "comment,new-blog-comment,user-comment",
-						'title' => 'Comments',
+						'title'   => 'Comments',
 						"options" => WP_RW__COMMENTS_OPTIONS,
 					),
 				);
 
 				$extensions = ratingwidget()->GetExtensions();
 
-				foreach ($extensions as $ext)
-					$types = array_merge($types, $ext->GetTopRatedInfo());
+				foreach ( $extensions as $ext ) {
+					$types = array_merge( $types, $ext->GetTopRatedInfo() );
+				}
 
 
 				$bpInstalled = ratingwidget()->IsBuddyPressInstalled();
@@ -555,7 +555,7 @@
 				$instance                     = $old_instance;
 				$instance['title']            = $new_instance['title'];
 				$instance['title_max_length'] = (int) $new_instance['title_max_length'];
-				foreach ( $types as $type => $info) {
+				foreach ( $types as $type => $info ) {
 					$instance["show_{$type}"]          = (int) $new_instance["show_{$type}"];
 					$instance["show_{$type}_title"]    = (int) $new_instance["show_{$type}_title"]; /* (1.3.3) - Conditional title display */
 					$instance["{$type}_style"]         = $new_instance["{$type}_style"];
@@ -563,7 +563,7 @@
 					$instance["{$type}_count"]         = (int) $new_instance["{$type}_count"];
 					$instance["{$type}_min_votes"]     = (int) $new_instance["{$type}_min_votes"]; /* (1.3.7) - Min votes to appear */
 					$instance["{$type}_orderby"]       = $new_instance["{$type}_orderby"]; /* (1.3.7) - Order by */
-					$instance["{$type}_order"]		   = $new_instance["{$type}_order"]; /* (1.3.8) - Order */
+					$instance["{$type}_order"]         = $new_instance["{$type}_order"]; /* (1.3.8) - Order */
 					$instance["{$type}_since_created"] = (int) $new_instance["{$type}_since_created"];
 				}
 
@@ -579,13 +579,13 @@
 				// Update default values.
 				$values = array( 'title' => 'Top Rated', 'title_max_length' => 30 );
 				foreach ( $types as $type => $info ) {
-					$values["show_{$type}"]			 = ( 'posts' === $type );
-					$values["{$type}_count"]		 = WP_RW__TR_DEFAULT_ITEMS_COUNT;
-					$values["{$type}_min_votes"]	 = WP_RW__TR_DEFAULT_MIN_VOTES;
-					$values["{$type}_orderby"]		 = WP_RW__TR_DEFAULT_ORDERY_BY;
-					$values["{$type}_order"]		 = WP_RW__TR_DEFAULT_ORDERY;
-					$values["show_{$type}_title"]	 = 0;
-					$values["{$type}_style"]		 = WP_RW__TR_DEFAULT_STYLE;
+					$values["show_{$type}"]          = ( 'posts' === $type );
+					$values["{$type}_count"]         = WP_RW__TR_DEFAULT_ITEMS_COUNT;
+					$values["{$type}_min_votes"]     = WP_RW__TR_DEFAULT_MIN_VOTES;
+					$values["{$type}_orderby"]       = WP_RW__TR_DEFAULT_ORDERY_BY;
+					$values["{$type}_order"]         = WP_RW__TR_DEFAULT_ORDERY;
+					$values["show_{$type}_title"]    = 0;
+					$values["{$type}_style"]         = WP_RW__TR_DEFAULT_STYLE;
 					$values["{$type}_since_created"] = WP_RW__TR_DEFAULT_SINCE_CREATED;
 				}
 
@@ -620,7 +620,11 @@
 					if ( isset( $values["{$type}_order"] ) ) {
 						$values["{$type}_order"] = strtoupper( $instance["{$type}_order"] );
 					}
-					if ( isset( $values["{$type}_order"] ) && ! in_array( $values["{$type}_order"], array( "DESC", "ASC" ) ) ) {
+					if ( isset( $values["{$type}_order"] ) && ! in_array( $values["{$type}_order"], array(
+								"DESC",
+								"ASC"
+							) )
+					) {
 						$values["{$type}_order"] = WP_RW__TR_DEFAULT_ORDERY;
 					}
 					if ( isset( $instance["{$type}_since_created"] ) ) {
@@ -639,13 +643,15 @@
 
 							<p><label
 									for="<?php echo $this->get_field_id( 'title_max_length' ); ?>"><?php _e( 'Title Max Length', WP_RW__ID ); ?>
-									: <input style="width: 110px;" id="<?php echo $this->get_field_id( 'title_max_length' ); ?>"
-									         name="<?php echo $this->get_field_name( 'title_max_length' ); ?>" type="text"
+									: <input style="width: 110px;"
+									         id="<?php echo $this->get_field_id( 'title_max_length' ); ?>"
+									         name="<?php echo $this->get_field_name( 'title_max_length' ); ?>"
+									         type="text"
 									         value="<?php echo esc_attr( $titleMaxLength ); ?>"/></label></p>
 						</div>
 					</div>
 					<?php
-						foreach ( $types as $type => $info) {
+						foreach ( $types as $type => $info ) {
 							$typeTitle = ucwords( str_replace( "_", " ", $type ) );
 							$checked   = "";
 							$selected  = '';
@@ -666,7 +672,7 @@
 								</h4>
 
 								<div class="rw-section-body">
-									<?php if (isset($info['has_thumbnails']) && true === $info['has_thumbnails']) : ?>
+									<?php if ( isset( $info['has_thumbnails'] ) && true === $info['has_thumbnails'] ) : ?>
 										<?php
 										$styles = array(
 											'legacy'         => 'Titles (Legacy)',
@@ -682,7 +688,8 @@
 												<?php foreach ( $styles as $key => $val ) : ?>
 													<option
 														value="<?php echo $key ?>"<?php if ( $key == $values["{$type}_style"] || $i === $values["{$type}_style"] ) {
-														echo ' selected="selected"'; } ?>><?php echo $val; ?></option>
+														echo ' selected="selected"';
+													} ?>><?php echo $val; ?></option>
 													<?php $i ++; ?>
 												<?php endforeach; ?>
 											</select>
@@ -711,10 +718,11 @@
 											?>
 											<?php _e( "Title", WP_RW__ID ); ?>:
 										</label>
-										<input id="<?php echo $this->get_field_id( 'title' ); ?>"<?php echo $disabled; ?>
-										       name="<?php echo $this->get_field_name( "{$type}_title" ); ?>" type="text"
-										       value="<?php echo esc_attr( $values["{$type}_title"] ); ?>"
-										       style="width: 120px;"/>
+										<input
+											id="<?php echo $this->get_field_id( 'title' ); ?>"<?php echo $disabled; ?>
+											name="<?php echo $this->get_field_name( "{$type}_title" ); ?>" type="text"
+											value="<?php echo esc_attr( $values["{$type}_title"] ); ?>"
+											style="width: 120px;"/>
 									</p>
 
 									<p>
@@ -739,7 +747,8 @@
 											<input style="width: 40px; text-align: center;"
 											       id="<?php echo $this->get_field_id( "{$type}_min_votes" ); ?>"
 											       name="<?php echo $this->get_field_name( "{$type}_min_votes" ); ?>"
-											       type="text" value="<?php echo esc_attr( $values["{$type}_min_votes"] ); ?>"/>
+											       type="text"
+											       value="<?php echo esc_attr( $values["{$type}_min_votes"] ); ?>"/>
 										</label>
 									</p>
 
@@ -775,40 +784,33 @@
 											</select>
 										</label>
 									</p>
-									
+
 									<?php
-									$since_created_options = array(
-										-1			=> __('All Time', WP_RW__ID),
-										365 * WP_RW__TIME_24_HOURS_IN_SEC => __('Last Year', WP_RW__ID),
-										180 * WP_RW__TIME_24_HOURS_IN_SEC => __('Last 6 Months', WP_RW__ID),
-										30	* WP_RW__TIME_24_HOURS_IN_SEC => __('Last 30 Days', WP_RW__ID),
-										7	* WP_RW__TIME_24_HOURS_IN_SEC => __('Last 7 Days', WP_RW__ID),
-										1	* WP_RW__TIME_24_HOURS_IN_SEC => __('Last 24 Hours', WP_RW__ID)
-									);
+										$since_created_options = array(
+											WP_RW__TIME_ALL_TIME        => __( 'All Time', WP_RW__ID ),
+											WP_RW__TIME_YEAR_IN_SEC     => __( 'Last Year', WP_RW__ID ),
+											WP_RW__TIME_6_MONTHS_IN_SEC => __( 'Last 6 Months', WP_RW__ID ),
+											WP_RW__TIME_30_DAYS_IN_SEC  => __( 'Last 30 Days', WP_RW__ID ),
+											WP_RW__TIME_WEEK_IN_SEC     => __( 'Last 7 Days', WP_RW__ID ),
+											WP_RW__TIME_24_HOURS_IN_SEC => __( 'Last 24 Hours', WP_RW__ID )
+										);
 									?>
 									<p>
-										<label for="rss-items-<?php echo $values["{$type}_since_created"]; ?>"><?php printf(__( "%s created in:", WP_RW__ID ), $typeTitle); ?>
-											<select id="<?php echo $this->get_field_id( "{$type}_since_created" ); ?>" name="<?php echo $this->get_field_name( "{$type}_since_created" ); ?>">
+										<label
+											for="rss-items-<?php echo $values["{$type}_since_created"]; ?>"><?php printf( __( "%s created in:", WP_RW__ID ), $typeTitle ); ?>
+											<select id="<?php echo $this->get_field_id( "{$type}_since_created" ); ?>"
+											        name="<?php echo $this->get_field_name( "{$type}_since_created" ); ?>">
 												<?php
-												foreach ($since_created_options as $since_created => $display_text) { ?>
-												<option value="<?php echo $since_created; ?>" <?php selected($values["{$type}_since_created"], $since_created); ?>><?php echo $display_text; ?></option>
-												<?php
-												}
+													foreach ( $since_created_options as $since_created => $display_text ) {
+														?>
+														<option
+															value="<?php echo $since_created; ?>" <?php selected( $values["{$type}_since_created"], $since_created ); ?>><?php echo $display_text; ?></option>
+													<?php
+													}
 												?>
 											</select>
 										</label>
 									</p>
-									<?php /* <p>
-                <label for="rss-items-<?php echo $values["{$type}_daterange"]; ?>"><?php _e( "Date Range", WP_RW__ID ); ?>:
-                        <select id="<?php echo $this->get_field_id( "{$type}_daterange" ); ?>" name="<?php echo $this->get_field_name( "{$type}_daterange" ); ?>">
-                            <option value="-1"<?php echo( $values["{$type}_daterange"] == "-1" ? " selected='selected'" : '' ); ?>>All Time</option>
-                            <option value="365"<?php echo( $values["{$type}_daterange"] == "365" ? " selected='selected'" : '' ); ?>>Yearly</option>
-                            <option value="30"<?php echo( $values["{$type}_daterange"] == "30" ? " selected='selected'" : '' ); ?>>Monthly</option>
-                            <option value="7"<?php echo( $values["{$type}_daterange"] == "7" ? " selected='selected'" : '' ); ?>>Weekly</option>
-                            <option value="1"<?php echo( $values["{$type}_daterange"] == "1" ? " selected='selected'" : '' ); ?>>Daily</option>
-                        </select>
-                </label>
-            </p> */ ?>
 								</div>
 							</div>
 						<?php
