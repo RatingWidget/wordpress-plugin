@@ -4008,7 +4008,7 @@ Domain Path: /langs
 			{
 				if (!$this->IsBBPressInstalled())
 					return false;
-
+				
 				if (!isset($this->_inBBPress))
 				{
 					$this->_inBBPress = false;
@@ -5480,11 +5480,31 @@ Domain Path: /langs
 					return '';
 
 				$urid = $this->get_rating_id_by_element($pElementID, $pElementClass);
-                                
+				
                 // Get the read-only state of the exact post type, e.g.: post or product
-				if ($this->is_rating_readonly($pElementID, get_post_type($pElementID)))
-                    $pOptions['read-only'] = 'true';
-                                
+				$is_rating_readonly = $this->is_rating_readonly($pElementID, get_post_type($pElementID));
+				
+				if (!$is_rating_readonly) {
+					if (is_buddypress()) {
+						// Get the user ID associated with the current BuddyPress page being viewed.
+						// Get the user ID associated with the current bbPress item being viewed.
+						$buddypress_user_id = $pElementClass == 'user' ? $pElementID : $pOwnerID;
+						
+						// Set the rating to read-only if the current logged in user ID
+						// is equal to the current BuddyPress user ID.
+						$is_rating_readonly = get_current_user_id() == $buddypress_user_id;
+					} else if (is_bbpress()) {
+						// Get the user ID associated with the current bbPress item being viewed.
+						$bbpress_user_id = $pElementClass == 'user' ? $pElementID : $pOwnerID;
+						
+						// Set the rating to read-only if the current logged in user ID
+						// is equal to the current bbPress user ID.
+						$is_rating_readonly = get_current_user_id() == $bbpress_user_id;
+					}
+				}
+				
+				$pOptions['read-only'] = $is_rating_readonly ? 'true' : 'false';
+				
 				if (false === $urid)
 				{
 					foreach ($this->_extensions as $ext)
