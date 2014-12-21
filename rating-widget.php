@@ -5487,7 +5487,6 @@ Domain Path: /langs
 				if (!$is_rating_readonly) {
 					if (is_buddypress()) {
 						// Get the user ID associated with the current BuddyPress page being viewed.
-						// Get the user ID associated with the current bbPress item being viewed.
 						$buddypress_user_id = $pElementClass == 'user' ? $pElementID : $pOwnerID;
 						
 						// Set the rating to read-only if the current logged in user ID
@@ -5503,7 +5502,9 @@ Domain Path: /langs
 					}
 				}
 				
-				$pOptions['read-only'] = $is_rating_readonly ? 'true' : 'false';
+				if ($is_rating_readonly) {
+					$pOptions['read-only'] = 'true';
+				}
 				
 				if (false === $urid)
 				{
