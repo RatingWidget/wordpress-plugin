@@ -40,6 +40,8 @@
 	<input type="hidden" name="rw_post_meta_box_nonce" value="<?php echo wp_create_nonce(basename(WP_RW__PLUGIN_FILE_FULL)) ?>" />
 	<table>
 		<?php
+		$urid_summary = $rwp->_getPostRatingGuid($post->ID);
+		
 		foreach ($multirating_options->criteria as $criteria_id => $criteria) {
 			$urid = $rwp->_getPostRatingGuid($post->ID, $criteria_id);
 			$rwp->QueueRatingData($urid, '', '', $rclass);
@@ -47,21 +49,20 @@
 		<tr>
 		<td>
 			<div><?php echo $criteria['label']; ?></div>
-			<div class="rw-ui-container rw-class-<?php echo $rclass ?>" data-urid="<?php echo $urid; ?>" data-read-only="false" data-sync="false"></div>
+			<div class="rw-ui-container rw-class-<?php echo $rclass ?>" data-uarid="<?php echo $urid_summary; ?>" data-urid="<?php echo $urid; ?>" data-sync="false"></div>
 			<p></p>
 		</td>
 		</tr>
 		<?php
 		}
 		
-		if ($multirating_options->show_summary_rating) {
-			$urid = $rwp->_getPostRatingGuid($post->ID);
-			$rwp->QueueRatingData($urid, '', '', $rclass);
+		if ($multirating_options->show_summary_rating && count($multirating_options->criteria) > 1) {
+			$rwp->QueueRatingData($urid_summary, '', '', $rclass);
 			?>
 			<tr>
 			<td>
-				<div><?php _e('Summary', WP_RW__ID); ?></div>
-				<div class="rw-ui-container rw-class-<?php echo $rclass ?>" data-urid="<?php echo $urid; ?>" data-sync="false"></div>
+				<div><?php echo $multirating_options->summary_label; ?></div>
+				<div class="rw-ui-container rw-class-<?php echo $rclass ?>" data-urid="<?php echo $urid_summary; ?>" data-read-only="true" data-sync="false"></div>
 				<p></p>
 			</td>
 			</tr>

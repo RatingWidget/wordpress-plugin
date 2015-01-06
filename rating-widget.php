@@ -628,10 +628,10 @@ Domain Path: /langs
 				return self::Urid2Id($pUrid);
 			}
 
-			private function _getCommentRatingGuid($id = false)
+			private function _getCommentRatingGuid($id = false, $criteria_id = false)
 			{
 				if (false === $id){ $id = get_comment_ID(); }
-				$urid = ($id + 1) . "1";
+				$urid = ($id + 1) . "1" . (false !== $criteria_id ? '-' . $criteria_id : '');
 
 				if (RWLogger::IsOn()){
 					RWLogger::Log("comment-id", $id);
@@ -760,10 +760,11 @@ Domain Path: /langs
 				$bottom_left = (object)array('ver' => 'bottom', 'hor' => 'left');
 				
 				$default_multirating_options = (object) array(
-					'criteria' => array(1 => array('label' => 'Add Label')),
+					'criteria' => array(time() => array('label' => __('Add Label', WP_RW__ID))),
+					'summary_label' => __('Summary', WP_RW__ID),
 					'show_summary_rating' => true,
-					'show_info' => true,
-					'readonly' => false
+					'summary_preview_rating_star_urid' => time()+1,
+					'summary_preview_rating_nero_urid' => time()+2,
 					);
 				
 				$this->_OPTIONS_DEFAULTS = array(
@@ -867,6 +868,7 @@ Domain Path: /langs
 					WP_RW__MULTIRATING_SETTINGS => (object) array(
 						'blog-post' => clone $default_multirating_options,
 						'front-post' => clone $default_multirating_options,
+						'comment' => clone $default_multirating_options,
 						'page' => clone $default_multirating_options,
 						'product' => clone $default_multirating_options
 					)
@@ -1225,7 +1227,7 @@ Domain Path: /langs
 					$class = 'product';
 				}
 				
-				if (in_array($class, array('blog-post', 'front-post', 'page', 'product'))) {
+				if ($this->has_multirating_options($class)) {
 					rw_enqueue_style('rw-live-preview', WP_RW__PLUGIN_URL . 'resources/css/live-preview.css');
 				}
 				
@@ -1263,7 +1265,16 @@ Domain Path: /langs
 					rw_enqueue_style('rw_wp_reports', 'wordpress/reports.php');
 				}
 			}
-
+			
+			/**
+			 * Checks if this option type supports multi-rating
+			 * @param type $class
+			 * @return boolean
+			 */
+			function has_multirating_options($class) {
+				return (in_array($class, array('blog-post', 'front-post', 'comment', 'page', 'product')));
+			}
+			
 			function ActivationNotice()
 			{
 				$this->Notice('<a href="edit.php?page=' . WP_RW__ADMIN_MENU_SLUG . '">Activate your account now</a> to start seeing the ratings.');
@@ -3016,10 +3027,21 @@ Domain Path: /langs
             ---------------------------------------------------------------------------------------------------------------*/
 					if (isset($_POST['multi_rating'])) {
 						$multi_rating = $_POST['multi_rating'];
+						
+						if (!$this->IsProfessional() && count($multi_rating['criteria']) > 3) {
+							$multi_rating['criteria'] = array_splice($multi_rating['criteria'], 0, 3);
+						}
+						
 						$multirating_options = $this->multirating_settings_list->{$rw_class};
 						$multirating_options->criteria = $multi_rating['criteria'];
-						$multirating_options->show_info = isset($multi_rating['hide_info_bubble']) ? false : true;
-						$multirating_options->readonly = isset($multi_rating['author_rating_readonly']) ? true : false;
+						
+						$multirating_options->summary_preview_rating_star_urid = trim($multi_rating['summary_preview_rating_star_urid']);
+						$multirating_options->summary_preview_rating_nero_urid = trim($multi_rating['summary_preview_rating_nero_urid']);
+						$multirating_options->summary_label = trim($multi_rating['summary_label']);
+						if (empty($multirating_options->summary_label)) {
+							$multirating_options->summary_label = __('Summary', WP_RW__ID);
+						}
+						
 						$multirating_options->show_summary_rating = isset($multi_rating['show_summary_rating']) ? true : false;
 						$this->multirating_settings_list->{$rw_class} = $multirating_options;
 						$this->SetOption(WP_RW__MULTIRATING_SETTINGS, $this->multirating_settings_list);
@@ -3088,7 +3110,7 @@ Domain Path: /langs
 					$this->custom_settings_list->{$rw_class} = $rw_custom_settings;
 					$this->SetOption(WP_RW__CUSTOM_SETTINGS, $this->custom_settings_list);
 
-					$this->_visibilityList->{$rw_class}->selected = $rw_visibility;
+					@$this->_visibilityList->{$rw_class}->selected = $rw_visibility;
 					$this->_visibilityList->{$rw_class}->exclude = self::IDsCollectionToArray($rw_visibility_exclude);
 					$this->_visibilityList->{$rw_class}->include = self::IDsCollectionToArray($rw_visibility_include);
 					$this->SetOption(WP_RW__VISIBILITY_SETTINGS, $this->_visibilityList);
@@ -5474,7 +5496,7 @@ Domain Path: /langs
 					case 'comment':
 					case 'new-blog-comment':
 					case 'user-comment':
-						$urid = $this->_getCommentRatingGuid($element_id);
+						$urid = $this->_getCommentRatingGuid($element_id, $criteria_id);
 						break;
 					case 'forum-post':
 					case 'forum-reply':
@@ -5543,7 +5565,7 @@ Domain Path: /langs
 				if ($this->is_rating_readonly($pElementID, get_post_type($pElementID)))
                     $pOptions['read-only'] = 'true';
 				
-				$has_multirating = in_array($pElementClass, array('blog-post', 'front-post', 'page', 'product'));
+				$has_multirating = $this->has_multirating_options($pElementClass);
 				
 				if ($has_multirating) {
 					$multirating_settings_list = $this->GetOption(WP_RW__MULTIRATING_SETTINGS);
@@ -5556,6 +5578,9 @@ Domain Path: /langs
 						case 'front-post':
 							$options = $this->GetOption(WP_RW__FRONT_POSTS_OPTIONS);
 							break;
+						case 'comment':
+							$options = $this->GetOption(WP_RW__COMMENTS_OPTIONS);
+							break;
 						case 'page':
 							$options = $this->GetOption(WP_RW__PAGES_OPTIONS);
 							break;
@@ -5566,7 +5591,18 @@ Domain Path: /langs
 							$options = array();
 					}
 					
+					$urid_summary = $this->get_rating_id_by_element($pElementID, $pElementClass);
+					if (false === $urid_summary) {
+						foreach ($this->_extensions as $ext) {
+							if (in_array($pElementClass, $ext->GetRatingClasses())) {
+								$urid_summary = $ext->GetRatingGuid($pElementID, $pElementClass);
+								break;
+							}
+						}
+					}
+
 					$html = '';
+					
 					foreach ($multirating_options->criteria as $criteria_id => $criteria) {
 						$urid = $this->get_rating_id_by_element($pElementID, $pElementClass, $criteria_id);
 
@@ -5578,7 +5614,9 @@ Domain Path: /langs
 								}
 							}
 						}
-
+						
+						$pOptions['uarid'] = $urid_summary;
+						
 						$raw_rating = $this->EmbedRawRating($urid, $pTitle, $pPermalink, $pElementClass, $pAddSchema, $pHorAlign, $pCustomStyle, $pOptions);
 
 						$html .= '<tr>';
@@ -5588,21 +5626,12 @@ Domain Path: /langs
 					}
 					
 					if (!empty($html)) {
-						if ($multirating_options->show_summary_rating) {
-							$urid = $this->get_rating_id_by_element($pElementID, $pElementClass);
-							if (false === $urid) {
-								foreach ($this->_extensions as $ext) {
-									if (in_array($pElementClass, $ext->GetRatingClasses())) {
-										$urid = $ext->GetRatingGuid($pElementID, $pElementClass);
-										break;
-									}
-								}
-							}
-							
+						if ($multirating_options->show_summary_rating && count($multirating_options->criteria) > 1) {
 							$pOptions['read-only'] = 'true';
-							$raw_rating = $this->EmbedRawRating($urid, $pTitle, $pPermalink, $pElementClass, $pAddSchema, $pHorAlign, $pCustomStyle, $pOptions);
+							$pOptions['uarid'] = 0;
+							$raw_rating = $this->EmbedRawRating($urid_summary, $pTitle, $pPermalink, $pElementClass, $pAddSchema, $pHorAlign, $pCustomStyle, $pOptions);
 							$html .= '<tr>';
-							$html .= '<td>' . __('Summary', WP_RW__ID) . '</td>';
+							$html .= '<td>' . $multirating_options->summary_label . '</td>';
 							$html .= '<td>' . $raw_rating . '</td>';
 							$html .= '</tr>';
 						}

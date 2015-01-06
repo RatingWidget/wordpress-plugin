@@ -1,54 +1,27 @@
 (function($) {
 	$(document).ready(function() {
-		// Override RWM get so that we will be notified when the settings change.
+		// Override RWM.Code.get so that we will be notified when the settings change.
 		var oldRWMCodeGet = RWM.Code.get;
 		var updatingPreviewOptions = false;
 		
 		RWM.Code.get = function() {
-			oldRWMCodeGet();
-			
 			if (updatingPreviewOptions) {
 				return;
 			}
 			
 			updatingPreviewOptions = true;
+			
+			oldRWMCodeGet();
+			
 			handleRatingOptionsChange();
 			updatingPreviewOptions = false;
 		};
 
 		handleShowInfoChange();
 		handleRatingReadOnlyStateChange();
+		handleRatingTypeChange();
 
-		$('.rw-add-rating').on('click', function() {
-			var ratingID = $('#rw_preview_star tr.rw-rating').length + 1;
-			
-			$('table.rw-preview').each(function() {
-				var parent = $(this);
-				var type = parent.data('type');
-				
-				var ratingTemplate = parent.find('.rw-template-rating');
-				var newRating = $(ratingTemplate.get(0).outerHTML);
-				newRating.removeAttr('id');
-				newRating.removeClass('rw-template-rating');
-				newRating.addClass('rw-rating');
-				newRating.attr('data-rid', ratingID);
-				newRating.find('.multi-rating-label').attr('name', 'multi_rating[criteria][' + ratingID + '][label]').val('Add Label');
-				if (parent.find('tr.rw-rating').length) {
-					newRating.insertAfter(parent.find('tr.rw-rating:last'));
-				} else {
-					parent.prepend(newRating);
-				}
-				
-				newRating.find('.rw-rating-type div:first').addClass('rw-ui-container rw-urid-preview-' + ratingID + ('star' == type ? '0' : '1'));
-				newRating.show();
-			});
-			
-			initializeRatings(ratingID);
-			
-			// Show the summary rating after adding a new rating widget.
-			toggleSummaryRatingOptions();
-			return false;
-		});
+		$('.rw-add-rating').on('click', addRatingCriterion);
 		
 		$('.show-summary-rating').on('click', function() {
 			$('input.show-summary-rating').prop('checked', $(this).prop('checked'));
@@ -74,29 +47,51 @@
 					}
 				}
 				
-				var ratingID = $(this).parents('tr:first').data('rid');
+				var criteriaID = $(this).parents('tr:first').data('cid');
 				var newLabel = $(this).val();
-				$(this).parents('tr:first').find('input').val(newLabel);
+				var parentRow = $(this).parents('tr:first');
+				parentRow.find('input').val(newLabel);
 				var placeholderText = $(this).attr('placeholder');
 				var addLabelButton = $('<a href="#"></a>');
 				$(this).replaceWith(addLabelButton);
 				
 				// .data('placeholder') is not working here
 				addLabelButton.attr('data-placeholder', placeholderText);
-				if (newLabel != placeholderText) {
+				
+				var hasCustomValue = newLabel != placeholderText;
+				if (hasCustomValue) {
 					addLabelButton.addClass('has-custom-value');
 				}
 				addLabelButton.text(newLabel);
-				$('tr.rw-rating[data-rid="' + ratingID + '"] input').val(newLabel);
+				
+				if (parentRow.hasClass('rw-summary-rating')) {
+					$('tr.rw-summary-rating[data-cid="' + criteriaID + '"] .rw-add-label a').text(newLabel);
+					if (hasCustomValue) {
+						$('tr.rw-summary-rating[data-cid="' + criteriaID + '"] .rw-add-label a').addClass('has-custom-value');
+					} else {
+						$('tr.rw-summary-rating[data-cid="' + criteriaID + '"] .rw-add-label a').removeClass('has-custom-value');
+					}
+					
+					$('tr.rw-summary-rating[data-cid="' + criteriaID + '"] input').val(newLabel);
+				} else {
+					$('tr.rw-rating[data-cid="' + criteriaID + '"] .rw-add-label a').text(newLabel);
+					if (hasCustomValue) {
+						$('tr.rw-rating[data-cid="' + criteriaID + '"] .rw-add-label a').addClass('has-custom-value');
+					} else {
+						$('tr.rw-rating[data-cid="' + criteriaID + '"] .rw-add-label a').removeClass('has-custom-value');
+					}
+					
+					$('tr.rw-rating[data-cid="' + criteriaID + '"] input').val(newLabel);
+				}
 			} catch(err) {
 			}
 		});
 		
-		// Handle the removal of a criterion
+		// Handles the removal of a criterion
 		$('#rw_wp_set').on('click', '.multi-rating .rw-remove-button', function() {
 			var parent = $(this).parents('tr:first');
-			var id = parent.attr('data-rid');
-			$('.rw-rating[data-rid="'+id+'"]').remove();
+			var id = parent.attr('data-cid');
+			$('.rw-rating[data-cid="'+id+'"]').remove();
 			toggleSummaryRatingOptions();
 			return false;
 		});
@@ -115,124 +110,268 @@
 		});
 	});
 	
-	function getCurrentRatingOptions(type) {
-		var rw = RWM.STAR;
-		if (type == RW.TYPE.NERO){
-			rw = RWM.NERO;
+	/**
+	 * Creates a new rating widget and appends it to the current rating widgets list
+	 * @returns {Boolean}
+	 */
+	function addRatingCriterion() {
+		if ($(this).hasClass('upgrade')) {
+			return false;
 		}
+		
+		var criteriaID = Math.round(new Date().getTime() / 1000);
+		
+		var parent = $('table.rw-preview');
+
+		var ratingTemplate = parent.find('.rw-template-rating');
+		var newRating = $(ratingTemplate.get(0).outerHTML);
+		newRating.removeAttr('id');
+		newRating.removeClass('rw-template-rating');
+		newRating.addClass('rw-rating');
+		newRating.attr('data-cid', criteriaID);
+		newRating.find('.multi-rating-label').attr('name', 'multi_rating[criteria][' + criteriaID + '][label]').val('Add Label');
+		if (parent.find('tr.rw-rating').length) {
+			newRating.insertAfter(parent.find('tr.rw-rating:last'));
+		} else {
+			parent.prepend(newRating);
+		}
+
+		var rwStarContainer = newRating.find('.rw-rating-type div:first');
+		rwStarContainer.addClass('rw-ui-container rw-urid-' + criteriaID + '0');
+		rwStarContainer.attr('data-uarid', getSummaryPreviewRatingUrid(RW.TYPE.STAR));
+		
+		var rwNeroContainer = newRating.find('.rw-rating-type div:last');
+		rwNeroContainer.addClass('rw-ui-container rw-urid-' + criteriaID + '1');
+		rwNeroContainer.attr('data-uarid', getSummaryPreviewRatingUrid(RW.TYPE.NERO));
+		
+		newRating.show();
+
+		initializeRatings(criteriaID);
+			
+		// Show the summary rating after adding a new rating widget.
+		toggleSummaryRatingOptions();
+		
+		return false;
+	}
+	
+	/**
+	 * Retrieves the current options of the base rating stored in RWM
+	 * @param {string} type
+	 * @returns {Object}
+	 */
+	function getCurrentRatingOptions(type) {
+		var rw = RWM[type.toUpperCase()];
 		
 		return rw.options;
 	}
 	
 	/**
-	 * This is called everytime the live preview settings change.
+	 * Called everytime the live preview settings change.
+	 * @returns {undefined}
 	 */
 	function handleRatingOptionsChange() {
-		for (var type in RW.TYPE) {
-			var updatedOptions = getCurrentRatingOptions(RW.TYPE[type]);
-			var type = updatedOptions.type ? updatedOptions.type : 'star';
-
-			$('#rw_preview_' + type).find('.rw-rating .rw-ui-container, .rw-summary-rating .rw-ui-container').each(function() {
-				var matches = $(this).attr('class').match(/\brw-urid-(\d+)\b/);
-				if (matches) {
-					if (matches.length >= 1) {
-						var urid = matches[1];
-						var rating = RW.getRating(urid).getInstances()[0];
-						var oldOptions = rating.getCalculatedOptions();
-						oldOptions.advanced = updatedOptions.advanced;
-						oldOptions.lng = updatedOptions.lng;
-						oldOptions.readOnly = updatedOptions.readOnly;
-						rating.setOptions(oldOptions);
-						//console.log([oldOptions, updatedOptions]);
-						if (oldOptions.size != updatedOptions.size) {
-							rating.setSize(RW.SIZE[updatedOptions.size.toUpperCase()]);
+		for (var typeIndex in RW.TYPE) {
+			var type = RW.TYPE[typeIndex];
+			
+			var updatedOptions = getCurrentRatingOptions(type);
+			
+			try {
+				$('.rw-ui-' + type).each(function() {
+					var urid = $(this).data('urid');
+					var rating = RW.getRating(urid);
+					
+					var instances = rating.getInstances();
+					var totalInstance = instances.length;
+					
+					for (var i = 0; i < totalInstance; i++) {
+						var ratingInstance = instances[i];
+						var newOptions = $.extend(true, {}, updatedOptions);
+						
+						if (urid == getSummaryPreviewRatingUrid(type)) {
+							newOptions.readOnly = true;
 						}
-						if (oldOptions.style != updatedOptions.style) {
-							rating.setStyle(updatedOptions.style);
-						}
+						
+						ratingInstance.setOptions(newOptions);
 					}
-				}
-			});
-		}
-	}
-	
-	function handleShowInfoChange() {
-		$('.hide_info_bubble').on('click', function() {
-			var showInfo = !$(this).prop('checked');
-			$('.rw-rating .rw-ui-container, .rw-summary-rating .rw-ui-container').each(function() {
-				var urid = $(this).attr('class').match(/\brw-urid-(\d+)\b/)[1];
-				var rating = RW.getRating(urid).getInstances()[0];
-				var options = rating.getCalculatedOptions();
-				options.showInfo = showInfo;
-				rating.setOptions(options);
-			});
-		});
-	}
-	
-	function setRatingReadOnly(readOnly) {
-		$('.rw-rating .rw-ui-container, .rw-summary-rating .rw-ui-container').each(function() {
-			var urid = $(this).attr('class').match(/\brw-urid-(\d+)\b/)[1];
-			var rating = RW.getRating(urid).getInstances()[0];
-			rating.setReadOnly(readOnly);
-		});
-	}
-	
-	function handleRatingReadOnlyStateChange() {
-		$('.author_rating_readonly').on('click', function() {
-			var readOnly = $(this).prop('checked');
-			if (readOnly) {
-				$('#rw_rate_readonly .rw-ui-img-radio.rw-selected').removeClass('rw-selected');
-				$('#rw_rate_readonly .rw-ui-img-radio:last').addClass('rw-selected');
-			} else {
-				$('#rw_rate_readonly .rw-ui-img-radio.rw-selected').removeClass('rw-selected');
-				$('#rw_rate_readonly .rw-ui-img-radio:first').addClass('rw-selected');
+				});
+			} catch(err) {
 			}
-			
-			setRatingReadOnly(readOnly);
-		});
-		
-		$('#rw_rate_readonly').on('click', '.rw-ui-img-radio', function() {
-			var readOnly = $(this).find('span:first').text() == 'ReadOnly';
-			$('input[name="rw_author_rating_readonly"]').prop('checked', readOnly);
-			setRatingReadOnly(readOnly);
-		});
-	}
-	
-	function initializeRatings(ratingID, container) {
-		for (var criteriaID = 0; criteriaID <= 1; criteriaID++) {
-			var type = (0 == criteriaID ? 'star' : 'nero');
-			var currentOptions = getCurrentRatingOptions(type);
-			var defaultOptions = getOptions();
-			
-			defaultOptions.type = type;
-			defaultOptions.advanced = currentOptions.advanced;
-			defaultOptions.lng = currentOptions.lng;
-			defaultOptions.readOnly = currentOptions.readOnly;
-			defaultOptions.size = currentOptions.size;
-			defaultOptions.style = currentOptions.style;
-			defaultOptions.theme = currentOptions.theme;
-
-			RW.initRating(
-				'preview-' + ratingID + criteriaID,
-				defaultOptions
-			);
 		}
-		
-		RW.render(function() {}, false/*, container*/);
-		handleRatingOptionsChange();
 	}
 	
 	/**
-	 *  Decides whether to show or hide the summary rating.
-	 * 
+	 * Hides or shows the rating widget's bubble
+	 * @returns {undefined}
+	 */
+	function handleShowInfoChange() {
+		$('.hide-info-bubble').on('click', function() {
+			var showInfo = !$(this).prop('checked');
+
+			for (var typeIndex in RW.TYPE) {
+				var type = RW.TYPE[typeIndex];
+
+				// Update the base rating instance stored in RWM to preserve
+				// the value for new rating widgets
+				RWM[type.toUpperCase()].options.showInfo = showInfo;
+				
+				try {
+					$('.rw-ui-' + type).each(function() {
+						var urid = $(this).data('urid');
+						var rating = RW.getRating(urid);
+						var instances = rating.getInstances();
+						var totalInstance = instances.length;
+
+						for (var i = 0; i < totalInstance; i++) {
+							var ratingInstance = instances[i];
+							var newOptions = ratingInstance.getCalculatedOptions();
+							newOptions.showInfo = showInfo;
+							ratingInstance.setOptions(newOptions);
+						}
+					});
+				} catch(err) {
+				}
+			}
+			
+			RWM.Code.refresh();
+		});
+	}
+	
+	/**
+	 * Displays or hides the star- or nero-rating widgets based on the selected type
+	 * @returns {undefined}
+	 */
+	function handleRatingTypeChange() {
+		$('#rw_rate_type').on('click', '.rw-ui-img-radio', function() {
+			var type = $(this).find('span:first').text().toLowerCase();
+			
+			if (type == RW.TYPE.STAR) {
+				$('.rw-preview').removeClass('rw-preview-nero').addClass('rw-preview-star');
+			} else {
+				$('.rw-preview').removeClass('rw-preview-star').addClass('rw-preview-nero');
+			}
+		});
+	}
+	
+	/**
+	 * Handles the updating of the readOnly property of the base and criteria rating widgets
+	 * @returns {undefined}
+	 */
+	function handleRatingReadOnlyStateChange() {
+		$('.author-rating-readonly').on('click', function() {
+			var readOnly = $(this).prop('checked');
+			
+			setRatingReadOnly(readOnly);
+
+			if (readOnly) {
+				$('#rw_rate_readonly .rw-ui-img-radio:last').click();
+			} else {
+				$('#rw_rate_readonly .rw-ui-img-radio:first').click();
+			}
+		});
+		
+		$('#rw_rate_readonly').on('click', '.rw-ui-img-radio', function() {
+			var readOnly = ('ReadOnly' == $(this).find('span:first').text());
+			$('.author-rating-readonly').prop('checked', readOnly);
+		});
+	}
+	
+	/**
+	 * Sets the rating widget to be read-only or active
+	 * @param {Boolean} readOnly
+	 * @returns {undefined}
+	 */
+	function setRatingReadOnly(readOnly) {
+		for (var typeIndex in RW.TYPE) {
+			var type = RW.TYPE[typeIndex];
+			
+			// Update the base rating instance stored in RWM to preserve
+			// the value for new rating widgets
+			RWM[type.toUpperCase()].options.readOnly = readOnly;
+			
+			try {
+				$('#base-rating .rw-ui-' + type + ', .rw-preview .rw-ui-' + type).each(function() {
+					var urid = $(this).data('urid');
+					var rating = RW.getRating(urid);
+					var instances = rating.getInstances();
+					var totalInstance = instances.length;
+
+					for (var i = 0; i < totalInstance; i++) {
+						var ratingInstance = instances[i];
+						ratingInstance.setReadOnly(readOnly);
+					}
+				});
+			} catch(err) {
+			}
+		}
+	}
+
+	/**
+	 * Initializes all rating widgets with the current base rating settings and renders the newly added widget
+	 * @param {type} criteriaID
+	 * @returns {undefined}
+	 */
+	function initializeRatings(criteriaID) {
+		for (var typeIndex in RW.TYPE) {
+			var type = RW.TYPE[typeIndex];
+			
+			var updatedOptions = getCurrentRatingOptions(type);
+			
+			try {
+				$('.rw-ui-' + type).each(function() {
+					var urid = $(this).data('urid');
+					var newOptions = $.extend(true, {}, updatedOptions);
+
+					RW.initRating(urid, newOptions);
+				});
+			} catch(err) {
+			}
+		}
+		
+		for (var i = 0; i <= 1; i++) {
+			var type = RW.TYPE.STAR;
+			var urid = criteriaID + '0';
+			
+			if (1 == i) {
+				type = RW.TYPE.NERO;
+				urid = criteriaID + '1';
+			}
+			
+			var updatedOptions = getCurrentRatingOptions(type);
+			
+			try {
+				var newOptions = $.extend(true, {}, updatedOptions);
+
+				RW.initRating(urid, newOptions);
+			} catch(err) {
+			}
+		}
+		
+		RW.render(function() {}, false);
+	}
+	
+	/**
+	 * Decides whether to show or hide the summary rating based on the number of the visible widgets
+	 * @returns {undefined}
 	 */
 	function toggleSummaryRatingOptions() {
-		var total = $('#rw_preview_star tr.rw-rating').length;
+		var total = $('tr.rw-rating').length;
 		
-		if (total > 1) {
+		if (total > 1) { // We have a multi-criteria, show additional options
 			$('#rw_wp_preview').addClass('multi-rating');
+			if ($(this).prop('checked')) {
+				$('.rw-summary-rating').show();
+			}
 		} else {
 			$('#rw_wp_preview').removeClass('multi-rating');
+			$('.rw-summary-rating').hide();
+		}
+		
+		if (total >= 3 && !isProfessional()) { // If not professional, do not allow more than 3 widgets
+			$('a.rw-add-rating').text($('a.rw-add-rating').data('upgrade-text'));
+			$('a.rw-add-rating').addClass('upgrade');
+		} else {
+			$('a.rw-add-rating').text($('a.rw-add-rating').data('default-text'));
+			$('a.rw-add-rating').removeClass('upgrade');
 		}
 	}
 })(jQuery);
