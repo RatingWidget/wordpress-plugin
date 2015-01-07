@@ -115,43 +115,41 @@
 	 * @returns {Boolean}
 	 */
 	function addRatingCriterion() {
-		if ($(this).hasClass('upgrade')) {
+		if (!$(this).hasClass('upgrade')) {
+			var criteriaID = Math.round(new Date().getTime() / 1000);
+
+			var parent = $('table.rw-preview');
+
+			var ratingTemplate = parent.find('.rw-template-rating');
+			var newRating = $(ratingTemplate.get(0).outerHTML);
+			newRating.removeAttr('id');
+			newRating.removeClass('rw-template-rating');
+			newRating.addClass('rw-rating');
+			newRating.attr('data-cid', criteriaID);
+			newRating.find('.multi-rating-label').attr('name', 'multi_rating[criteria][' + criteriaID + '][label]').val('Add Label');
+			if (parent.find('tr.rw-rating').length) {
+				newRating.insertAfter(parent.find('tr.rw-rating:last'));
+			} else {
+				parent.prepend(newRating);
+			}
+
+			var rwStarContainer = newRating.find('.rw-rating-type div:first');
+			rwStarContainer.addClass('rw-ui-container rw-urid-' + criteriaID + '0');
+			rwStarContainer.attr('data-uarid', getSummaryPreviewRatingUrid(RW.TYPE.STAR));
+
+			var rwNeroContainer = newRating.find('.rw-rating-type div:last');
+			rwNeroContainer.addClass('rw-ui-container rw-urid-' + criteriaID + '1');
+			rwNeroContainer.attr('data-uarid', getSummaryPreviewRatingUrid(RW.TYPE.NERO));
+
+			newRating.show();
+
+			initializeRatings(criteriaID);
+
+			// Show the summary rating after adding a new rating widget.
+			toggleSummaryRatingOptions();
+
 			return false;
 		}
-		
-		var criteriaID = Math.round(new Date().getTime() / 1000);
-		
-		var parent = $('table.rw-preview');
-
-		var ratingTemplate = parent.find('.rw-template-rating');
-		var newRating = $(ratingTemplate.get(0).outerHTML);
-		newRating.removeAttr('id');
-		newRating.removeClass('rw-template-rating');
-		newRating.addClass('rw-rating');
-		newRating.attr('data-cid', criteriaID);
-		newRating.find('.multi-rating-label').attr('name', 'multi_rating[criteria][' + criteriaID + '][label]').val('Add Label');
-		if (parent.find('tr.rw-rating').length) {
-			newRating.insertAfter(parent.find('tr.rw-rating:last'));
-		} else {
-			parent.prepend(newRating);
-		}
-
-		var rwStarContainer = newRating.find('.rw-rating-type div:first');
-		rwStarContainer.addClass('rw-ui-container rw-urid-' + criteriaID + '0');
-		rwStarContainer.attr('data-uarid', getSummaryPreviewRatingUrid(RW.TYPE.STAR));
-		
-		var rwNeroContainer = newRating.find('.rw-rating-type div:last');
-		rwNeroContainer.addClass('rw-ui-container rw-urid-' + criteriaID + '1');
-		rwNeroContainer.attr('data-uarid', getSummaryPreviewRatingUrid(RW.TYPE.NERO));
-		
-		newRating.show();
-
-		initializeRatings(criteriaID);
-			
-		// Show the summary rating after adding a new rating widget.
-		toggleSummaryRatingOptions();
-		
-		return false;
 	}
 	
 	/**
@@ -186,6 +184,10 @@
 					for (var i = 0; i < totalInstance; i++) {
 						var ratingInstance = instances[i];
 						var newOptions = $.extend(true, {}, updatedOptions);
+						
+						if ($(this).parents('tr:first').hasClass('rw-rating')) {
+							newOptions.uarid = getSummaryPreviewRatingUrid(type);
+						}
 						
 						if (urid == getSummaryPreviewRatingUrid(type)) {
 							newOptions.readOnly = true;
@@ -368,9 +370,11 @@
 		
 		if (total >= 3 && !isProfessional()) { // If not professional, do not allow more than 3 widgets
 			$('a.rw-add-rating').text($('a.rw-add-rating').data('upgrade-text'));
+			$('a.rw-add-rating').attr('href', $('a.rw-add-rating').data('upgrade-href'));
 			$('a.rw-add-rating').addClass('upgrade');
 		} else {
 			$('a.rw-add-rating').text($('a.rw-add-rating').data('default-text'));
+			$('a.rw-add-rating').attr('href', '#');
 			$('a.rw-add-rating').removeClass('upgrade');
 		}
 	}
