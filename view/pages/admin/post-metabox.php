@@ -38,7 +38,7 @@
 ?>
 <p>
 	<input type="hidden" name="rw_post_meta_box_nonce" value="<?php echo wp_create_nonce(basename(WP_RW__PLUGIN_FILE_FULL)) ?>" />
-	<table>
+	<table class="rw-rating-table rw-<?php echo $options->advanced->layout->dir;?>">
 		<?php
 		$urid_summary = $rwp->_getPostRatingGuid($post->ID);
 		
@@ -48,7 +48,7 @@
 		?>
 		<tr>
 		<td>
-			<div><?php echo $criteria['label']; ?></div>
+			<div><nobr><?php echo $criteria['label']; ?></nobr></div>
 			<div class="rw-ui-container rw-class-<?php echo $rclass ?>" data-uarid="<?php echo $urid_summary; ?>" data-urid="<?php echo $urid; ?>" data-sync="false"></div>
 			<p></p>
 		</td>
@@ -61,7 +61,7 @@
 			?>
 			<tr>
 			<td>
-				<div><?php echo $multirating_options->summary_label; ?></div>
+				<div><nobr><?php echo $multirating_options->summary_label; ?></nobr></div>
 				<div class="rw-ui-container rw-class-<?php echo $rclass ?>" data-urid="<?php echo $urid_summary; ?>" data-read-only="true" data-sync="false"></div>
 				<p></p>
 			</td>

@@ -15,7 +15,7 @@
 	
     $options = rw_options();
 ?>
-<div id="rw_wp_preview" class="postbox rw-body<?php echo $is_multicriteria ? ' multi-rating' : ''; ?>">
+<div id="rw_wp_preview" class="postbox rw-body<?php echo $is_multicriteria ? ' multi-rating' : ''; echo ' rw-' . $options->advanced->layout->dir; ?>">
     <table cellpadding="0" cellspacing="0" style="float: right;height: 45px;">
         <tr>
             <td style="vertical-align: middle;">
@@ -74,7 +74,7 @@ var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po
 						?>
 							<tr class="rw-rating" data-cid="<?php echo $criteria_id; ?>">
 								<td>
-									<span class="rw-add-label"><a href="#" data-placeholder="<?php _e('Add Label', WP_RW__ID); ?>" class="<?php echo __('Add Label', WP_RW__ID) != $criteria['label'] ? 'has-custom-value' : ''; ?>"><?php echo $criteria['label']; ?></a></span>
+									<span class="rw-add-label"><a href="#" data-placeholder="<?php _e('Add Label', WP_RW__ID); ?>" class="<?php echo __('Add Label', WP_RW__ID) != $criteria['label'] ? 'has-custom-value' : ''; ?>"><nobr><?php echo $criteria['label']; ?></nobr></a></span>
 								</td>
 								<td class="rw-rating-type">
 									<div class="rw-ui-container rw-ui-star rw-urid-<?php echo $criteria_id; ?>0" data-uarid="<?php echo $multirating_options->summary_preview_rating_star_urid; ?>"></div>
@@ -108,7 +108,7 @@ var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po
 						</tr>
 						<tr class="rw-summary-rating" data-cid="1" style="<?php echo $multirating_options->show_summary_rating ? '' : 'display: none'; ?>">
 							<td>
-								<span class="rw-add-label rw-summary-label"><a href="#" data-placeholder="<?php _e('Summary', WP_RW__ID); ?>" class="<?php echo __('Summary', WP_RW__ID) != $multirating_options->summary_label ? 'has-custom-value' : ''; ?>"><?php echo $multirating_options->summary_label; ?></a></span>
+								<span class="rw-add-label rw-summary-label"><a href="#" data-placeholder="<?php _e('Summary', WP_RW__ID); ?>" class="<?php echo __('Summary', WP_RW__ID) != $multirating_options->summary_label ? 'has-custom-value' : ''; ?>"><nobr><?php echo $multirating_options->summary_label; ?></nobr></a></span>
 							</td>
 							<td colspan="2">
 								<div class="rw-ui-container rw-ui-star rw-urid-<?php echo $multirating_options->summary_preview_rating_star_urid; ?>" data-read-only="true"></div>
@@ -120,7 +120,7 @@ var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po
 						</tr>
 						<tr class="rw-template-rating" data-cid="0">
 							<td>
-								<span class="rw-add-label"><a href="#" data-placeholder="<?php _e('Add Label'); ?>"><?php _e('Add Label', WP_RW__ID); ?></a></span>
+								<span class="rw-add-label"><a href="#" data-placeholder="<?php _e('Add Label'); ?>"><nobr><?php _e('Add Label', WP_RW__ID); ?></nobr></a></span>
 							</td>
 							<td class="rw-rating-type">
 								<div class="rw-ui-star"></div>
@@ -129,7 +129,7 @@ var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po
 							<td class="rw-action">
 								<span class="rw-remove"><a href="#" class="rw-remove-button"></a></span>
 							</td>
-							<input type="hidden" class="multi-rating-label" />
+							<input type="hidden" class="multi-rating-label" value="<?php _e('Add Label', WP_RW__ID); ?>" />
 						</tr>
 					</table>
 				<?php

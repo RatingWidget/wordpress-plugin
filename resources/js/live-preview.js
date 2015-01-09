@@ -24,7 +24,6 @@
 		$('.rw-add-rating').on('click', addRatingCriterion);
 		
 		$('.show-summary-rating').on('click', function() {
-			$('input.show-summary-rating').prop('checked', $(this).prop('checked'));
 			if ($(this).prop('checked')) {
 				$('.rw-summary-rating').show();
 			} else {
@@ -126,7 +125,10 @@
 			newRating.removeClass('rw-template-rating');
 			newRating.addClass('rw-rating');
 			newRating.attr('data-cid', criteriaID);
-			newRating.find('.multi-rating-label').attr('name', 'multi_rating[criteria][' + criteriaID + '][label]').val('Add Label');
+			
+			var multiRatingLabel = newRating.find('.multi-rating-label');
+			multiRatingLabel.attr('name', 'multi_rating[criteria][' + criteriaID + '][label]');
+			
 			if (parent.find('tr.rw-rating').length) {
 				newRating.insertAfter(parent.find('tr.rw-rating:last'));
 			} else {
@@ -198,6 +200,28 @@
 				});
 			} catch(err) {
 			}
+		}
+		
+		var currentOptions = getCurrentRatingOptions(RW.TYPE.STAR);
+		handleLayoutDirectionChange(currentOptions.advanced.layout.dir);
+	}
+	
+	/**
+	 * Loads the necessary CSS styles based on the current layout direction
+	 * @param {string} dir
+	 * @returns {undefined}
+	 */
+	function handleLayoutDirectionChange(dir) {
+		if ($('#rw_wp_preview').hasClass('rw-' + dir)) {
+			return;
+		}
+		
+		if ('rtl' == dir) {
+			$('#rw_wp_preview').addClass('rw-rtl');
+			$('#rw_wp_preview').removeClass('rw-ltr');
+		} else {
+			$('#rw_wp_preview').addClass('rw-ltr');
+			$('#rw_wp_preview').removeClass('rw-rtl');
 		}
 	}
 	
@@ -360,7 +384,7 @@
 		
 		if (total > 1) { // We have a multi-criteria, show additional options
 			$('#rw_wp_preview').addClass('multi-rating');
-			if ($(this).prop('checked')) {
+			if ($('.show-summary-rating').prop('checked')) {
 				$('.rw-summary-rating').show();
 			}
 		} else {

@@ -1,0 +1,27 @@
+.rw-rtl .rw-preview {
+	direction: rtl;
+}
+
+.rw-rtl .rw-add-label {
+	margin-right: 0;
+	margin-left: 7px;
+}
+
+.rw-rtl .rw-dash, .rw-rtl .summary-rating-option {
+	text-align: left;
+}
+
+.rw-rtl .rw-remove-button:before {
+	left: 0;
+	right: -10px;
+}
+
+.rw-rtl.multi-rating .summary-rating-option {
+	display: block;
+	direction: ltr;
+}
+
+.rw-rtl .rw-add-rating, .rw-rtl .rw-add-label {
+	display: block;
+	direction: ltr;
+}

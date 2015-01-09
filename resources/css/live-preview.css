@@ -22,7 +22,7 @@
 }
 
 .rw-rating td:first-child {
-	width: 150px;
+	width: 10px;
 }
 
 #rw_preview_container > table .rw-summary-rating td, #rw_preview_container > table .rw-add-rating-container td {
@@ -43,7 +43,7 @@
 	cursor: auto;
 }
 
-.rw-summary-label {
+.rw-summary-label a {
 	border-bottom: 1px dashed #aaa;
 }
 

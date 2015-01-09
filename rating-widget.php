@@ -150,6 +150,9 @@ Domain Path: /langs
 				 *   on RTL WP versions.
 				 */
 				add_action( 'admin_enqueue_scripts', array( &$this, 'InitScriptsAndStyles' ) );
+				
+				// Enqueue site's styles
+				add_action('wp_enqueue_scripts', array(&$this, 'initSiteStyles'));
 
 				require_once( WP_RW__PLUGIN_DIR . "/languages/dir.php" );
 				$this->languages       = $rw_languages;
@@ -1206,9 +1209,12 @@ Domain Path: /langs
 
 			function InitScriptsAndStyles()
 			{
-//        wp_enqueue_script( 'rw-test', "/wp-admin/js/rw-test.js", array( 'jquery-ui-sortable', 'jquery-ui-draggable', 'jquery-ui-droppable' ), false, 1 );
+				// wp_enqueue_script( 'rw-test', "/wp-admin/js/rw-test.js", array( 'jquery-ui-sortable', 'jquery-ui-draggable', 'jquery-ui-droppable' ), false, 1 );
 				rw_enqueue_style('rw_wp_admin', 'wordpress/admin.css');
 				rw_enqueue_script('rw_wp_admin', 'wordpress/admin.js');
+				
+				// Enqueue the stylesheet for the rating in the metabox
+				rw_enqueue_style('rw-admin-rating', WP_RW__PLUGIN_URL . 'resources/css/admin-rating.css');
 
 				if (!$this->_inDashboard)
 					return;
@@ -1229,6 +1235,7 @@ Domain Path: /langs
 				
 				if ($this->has_multirating_options($class)) {
 					rw_enqueue_style('rw-live-preview', WP_RW__PLUGIN_URL . 'resources/css/live-preview.css');
+					rw_enqueue_style('rw-live-preview-rtl', WP_RW__PLUGIN_URL . 'resources/css/live-preview-rtl.css');
 				}
 				
 				// rw_enqueue_style('rw', 'settings.php');
@@ -1264,6 +1271,13 @@ Domain Path: /langs
 					rw_enqueue_style('rw_external', 'style.css?all=t');
 					rw_enqueue_style('rw_wp_reports', 'wordpress/reports.php');
 				}
+			}
+			
+			/**
+			 * Adds the necessary stylesheet
+			 */
+			function initSiteStyles() {
+				rw_enqueue_style('rw-site-rating', WP_RW__PLUGIN_URL . 'resources/css/site-rating.css');
 			}
 			
 			/**
@@ -5620,7 +5634,7 @@ Domain Path: /langs
 						$raw_rating = $this->EmbedRawRating($urid, $pTitle, $pPermalink, $pElementClass, $pAddSchema, $pHorAlign, $pCustomStyle, $pOptions);
 
 						$html .= '<tr>';
-						$html .= '<td>' . $criteria['label'] . '</td>';
+						$html .= '<td><nobr>' . $criteria['label'] . '</nobr></td>';
 						$html .= '<td>' . $raw_rating . '</td>';
 						$html .= '</tr>';
 					}
@@ -5631,12 +5645,12 @@ Domain Path: /langs
 							$pOptions['uarid'] = 0;
 							$raw_rating = $this->EmbedRawRating($urid_summary, $pTitle, $pPermalink, $pElementClass, $pAddSchema, $pHorAlign, $pCustomStyle, $pOptions);
 							$html .= '<tr>';
-							$html .= '<td>' . $multirating_options->summary_label . '</td>';
+							$html .= '<td><nobr>' . $multirating_options->summary_label . '</nobr></td>';
 							$html .= '<td>' . $raw_rating . '</td>';
 							$html .= '</tr>';
 						}
 
-						$html = '<table class="rw-rating-table">' . $html . '</table>';
+						$html = '<table class="rw-rating-table rw-' . $options->advanced->layout->dir .'">' . $html . '</table>';
 
 						return $html;
 					}
