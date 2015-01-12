@@ -32,64 +32,47 @@
 		});
 		
 		$('#rw_preview_container').on('keyup keydown blur', '.rw-add-label input', function(e) {
-			try {
-				if (e.type == 'keydown') {
-					// If enter key is pressed
-					if (e.keyCode == 13) {
-						return false;
-					} else {
-						return true;
-					}
-				} else if (e.type == 'keyup') {
-					if (e.keyCode != 13) {
-						return true;
-					}
-				}
-				
-				var criteriaID = $(this).parents('tr:first').data('cid');
-				var newLabel = $(this).val();
-				var parentRow = $(this).parents('tr:first');
-				parentRow.find('input').val(newLabel);
-				var placeholderText = $(this).attr('placeholder');
-				var addLabelButton = $('<a href="#"></a>');
-				$(this).replaceWith(addLabelButton);
-				
-				// .data('placeholder') is not working here
-				addLabelButton.attr('data-placeholder', placeholderText);
-				
-				var hasCustomValue = newLabel != placeholderText;
-				if (hasCustomValue) {
-					addLabelButton.addClass('has-custom-value');
-				}
-				addLabelButton.text(newLabel);
-				
-				if (parentRow.hasClass('rw-summary-rating')) {
-					$('tr.rw-summary-rating[data-cid="' + criteriaID + '"] .rw-add-label a').text(newLabel);
-					if (hasCustomValue) {
-						$('tr.rw-summary-rating[data-cid="' + criteriaID + '"] .rw-add-label a').addClass('has-custom-value');
-					} else {
-						$('tr.rw-summary-rating[data-cid="' + criteriaID + '"] .rw-add-label a').removeClass('has-custom-value');
-					}
-					
-					$('tr.rw-summary-rating[data-cid="' + criteriaID + '"] input').val(newLabel);
+			if (e.type == 'keydown') {
+				// If enter key is pressed
+				if (e.keyCode == 13) {
+					return false;
 				} else {
-					$('tr.rw-rating[data-cid="' + criteriaID + '"] .rw-add-label a').text(newLabel);
-					if (hasCustomValue) {
-						$('tr.rw-rating[data-cid="' + criteriaID + '"] .rw-add-label a').addClass('has-custom-value');
-					} else {
-						$('tr.rw-rating[data-cid="' + criteriaID + '"] .rw-add-label a').removeClass('has-custom-value');
-					}
-					
-					$('tr.rw-rating[data-cid="' + criteriaID + '"] input').val(newLabel);
+					return true;
 				}
-			} catch(err) {
+			} else if (e.type == 'keyup') {
+				if (e.keyCode != 13) {
+					return true;
+				}
 			}
+
+			var placeholderText = $(this).attr('placeholder');
+			var newLabel = $(this).val().trim();
+			if (!newLabel) {
+				newLabel = placeholderText;
+			}
+
+			var parentRow = $(this).parents('tr:first');
+			parentRow.find('input.multi-rating-label').val(newLabel);
+
+			var addLabel = $('<a href="#"><nobr></nobr></a>');
+			addLabel.find('nobr').text(newLabel);
+			addLabel.attr('data-placeholder', placeholderText);
+
+			var hasCustomValue = newLabel != placeholderText;
+
+			if (hasCustomValue) {
+				addLabel.addClass('has-custom-value');
+			} else {
+				addLabel.removeClass('has-custom-value');
+			}
+
+			$(this).replaceWith(addLabel);
 		});
 		
 		// Handles the removal of a criterion
 		$('#rw_wp_set').on('click', '.multi-rating .rw-remove-button', function() {
-			var parent = $(this).parents('tr:first');
-			var id = parent.attr('data-cid');
+			var parentRow = $(this).parents('tr:first');
+			var id = parentRow.attr('data-cid');
 			$('.rw-rating[data-cid="'+id+'"]').remove();
 			toggleSummaryRatingOptions();
 			return false;
@@ -170,36 +153,38 @@
 	 * @returns {undefined}
 	 */
 	function handleRatingOptionsChange() {
+		console.log("change");
+		
 		for (var typeIndex in RW.TYPE) {
 			var type = RW.TYPE[typeIndex];
 			
 			var updatedOptions = getCurrentRatingOptions(type);
 			
-			try {
-				$('.rw-ui-' + type).each(function() {
-					var urid = $(this).data('urid');
-					var rating = RW.getRating(urid);
-					
+			$('.rw-ui-' + type).each(function() {
+				var urid = $(this).data('urid');
+				var rating = RW.getRating(urid);
+				
+				if (rating) {
 					var instances = rating.getInstances();
+
 					var totalInstance = instances.length;
-					
+
 					for (var i = 0; i < totalInstance; i++) {
 						var ratingInstance = instances[i];
 						var newOptions = $.extend(true, {}, updatedOptions);
-						
+
 						if ($(this).parents('tr:first').hasClass('rw-rating')) {
 							newOptions.uarid = getSummaryPreviewRatingUrid(type);
 						}
-						
+
 						if (urid == getSummaryPreviewRatingUrid(type)) {
 							newOptions.readOnly = true;
 						}
-						
+
 						ratingInstance.setOptions(newOptions);
 					}
-				});
-			} catch(err) {
-			}
+				}
+			});
 		}
 		
 		var currentOptions = getCurrentRatingOptions(RW.TYPE.STAR);
@@ -240,10 +225,11 @@
 				// the value for new rating widgets
 				RWM[type.toUpperCase()].options.showInfo = showInfo;
 				
-				try {
-					$('.rw-ui-' + type).each(function() {
-						var urid = $(this).data('urid');
-						var rating = RW.getRating(urid);
+				$('.rw-ui-' + type).each(function() {
+					var urid = $(this).data('urid');
+					var rating = RW.getRating(urid);
+					
+					if (rating) {
 						var instances = rating.getInstances();
 						var totalInstance = instances.length;
 
@@ -253,9 +239,8 @@
 							newOptions.showInfo = showInfo;
 							ratingInstance.setOptions(newOptions);
 						}
-					});
-				} catch(err) {
-				}
+					}
+				});
 			}
 			
 			RWM.Code.refresh();
@@ -314,10 +299,11 @@
 			// the value for new rating widgets
 			RWM[type.toUpperCase()].options.readOnly = readOnly;
 			
-			try {
-				$('#base-rating .rw-ui-' + type + ', .rw-preview .rw-ui-' + type).each(function() {
-					var urid = $(this).data('urid');
-					var rating = RW.getRating(urid);
+			$('#base-rating .rw-ui-' + type + ', .rw-preview .rw-ui-' + type).each(function() {
+				var urid = $(this).data('urid');
+				var rating = RW.getRating(urid);
+				
+				if (rating) {
 					var instances = rating.getInstances();
 					var totalInstance = instances.length;
 
@@ -325,9 +311,8 @@
 						var ratingInstance = instances[i];
 						ratingInstance.setReadOnly(readOnly);
 					}
-				});
-			} catch(err) {
-			}
+				}
+			});
 		}
 	}
 
@@ -342,15 +327,12 @@
 			
 			var updatedOptions = getCurrentRatingOptions(type);
 			
-			try {
-				$('.rw-ui-' + type).each(function() {
-					var urid = $(this).data('urid');
-					var newOptions = $.extend(true, {}, updatedOptions);
+			$('.rw-ui-' + type).each(function() {
+				var urid = $(this).data('urid');
+				var newOptions = $.extend(true, {}, updatedOptions);
 
-					RW.initRating(urid, newOptions);
-				});
-			} catch(err) {
-			}
+				RW.initRating(urid, newOptions);
+			});
 		}
 		
 		for (var i = 0; i <= 1; i++) {
@@ -363,13 +345,9 @@
 			}
 			
 			var updatedOptions = getCurrentRatingOptions(type);
-			
-			try {
-				var newOptions = $.extend(true, {}, updatedOptions);
+			var newOptions = $.extend(true, {}, updatedOptions);
 
-				RW.initRating(urid, newOptions);
-			} catch(err) {
-			}
+			RW.initRating(urid, newOptions);
 		}
 		
 		RW.render(function() {}, false);
@@ -392,7 +370,7 @@
 			$('.rw-summary-rating').hide();
 		}
 		
-		if (total >= 3 && !isProfessional()) { // If not professional, do not allow more than 3 widgets
+		if (total >= 3 && !RW._isProfessional()) {
 			$('a.rw-add-rating').text($('a.rw-add-rating').data('upgrade-text'));
 			$('a.rw-add-rating').attr('href', $('a.rw-add-rating').data('upgrade-href'));
 			$('a.rw-add-rating').addClass('upgrade');

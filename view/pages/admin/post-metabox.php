@@ -25,16 +25,9 @@
 
 	add_action('admin_footer', array(&$rwp, "rw_attach_rating_js"), 5);
 	
-	if ($rclass == 'blog-post') {
-		$options = $rwp->GetOption(WP_RW__BLOG_POSTS_OPTIONS);
-	} else if ($rclass == 'page') {
-		$options = $rwp->GetOption(WP_RW__PAGES_OPTIONS);
-	} else if ($rclass == 'product') {
-		$options = $rwp->GetOption(WP_RW__WOOCOMMERCE_PRODUCTS_OPTIONS);
-	}
-	
 	$multirating_settings_list = $rwp->GetOption(WP_RW__MULTIRATING_SETTINGS);
 	$multirating_options = $multirating_settings_list->{$rclass};
+	$options = ratingwidget()->get_options_by_class($rclass);
 ?>
 <p>
 	<input type="hidden" name="rw_post_meta_box_nonce" value="<?php echo wp_create_nonce(basename(WP_RW__PLUGIN_FILE_FULL)) ?>" />
