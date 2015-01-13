@@ -3,28 +3,67 @@
 
     $html = '';
 
-    $mr_embed_options['uarid'] = $mr_summary_urid;
+	// Backup the value of 'hide-recommendations'
+    $hide_recommendations = isset($mr_embed_options['hide-recommendations']) ? $mr_embed_options['hide-recommendations'] : false;
+			
+	$multi_criteria = count($mr_multi_options->criteria) > 1;
 
-    foreach ($mr_multi_options->criteria as $criteria_id => $criteria) {
-        $criteria_urid = ratingwidget()->get_rating_id_by_element($mr_element_id, $mr_element_class, $criteria_id);
+	if ($multi_criteria) {
+	    $mr_embed_options['uarid'] = $mr_summary_urid;
+		$mr_embed_options['hide-recommendations'] = 'true';
+	} else {
+		unset($mr_embed_options['uarid']);
+	}
+	
+	$criteria_id = 1;
+	$rw_no_labels = true;
+	
+	foreach ($mr_multi_options->criteria as $criteria_key => $criteria) {
+		$criteria_urid = ratingwidget()->get_rating_id_by_element($mr_element_id, $mr_element_class, $multi_criteria ? $criteria_id++ : false);
+		
+		$raw_rating = ratingwidget()->EmbedRawRating($criteria_urid, $mr_title, $mr_permalink, $mr_element_class, $mr_add_schema, $mr_hor_align, $mr_custom_style, $mr_embed_options);
+		
+		// Defaults to &nbsp; instead of empty to keep the widths of all rating widgets same
+		if (isset($criteria['label'])) {
+			$label = $criteria['label'];
+			
+			if ($rw_no_labels) {
+				$rw_no_labels = false;
+			}
+		} else {
+			$label = '&nbsp;';
+		}
+		$html .= '<tr>';
+		$html .= '<td><nobr>' . $label . '</nobr></td>';
+		$html .= '<td>' . $raw_rating . '</td>';
+		$html .= '</tr>';
+	}
 
-        $raw_rating = ratingwidget()->EmbedRawRating($criteria_urid, $mr_title, $mr_permalink, $mr_element_class, $mr_add_schema, $mr_hor_align, $mr_custom_style, $mr_embed_options);
-
-        $html .= '<tr>';
-        $html .= '<td><nobr>' . $criteria['label'] . '</nobr></td>';
-        $html .= '<td>' . $raw_rating . '</td>';
-        $html .= '</tr>';
-    }
-
-
-    if (!empty($html))
-    {
-        if ($mr_multi_options->show_summary_rating && count($mr_multi_options->criteria) > 1) {
+    if (!empty($html)) {
+        if ($mr_multi_options->show_summary_rating && $multi_criteria) {
+            if ($hide_recommendations) {
+                // Restore the value of hide-recommendations
+                $mr_embed_options['hide-recommendations'] = $hide_recommendations;
+            }
+			
+			unset($mr_embed_options['uarid']);
+			
             $mr_embed_options['read-only'] = 'true';
-            $mr_embed_options['uarid'] = 0;
+
             $raw_rating = ratingwidget()->EmbedRawRating($mr_summary_urid, $mr_title, $mr_permalink, $mr_element_class, $mr_add_schema, $mr_hor_align, $mr_custom_style, $mr_embed_options);
+				
+			// Defaults to &nbsp; instead of empty to keep the widths of all rating widgets same
+			if (isset($mr_multi_options->summary_label)) {
+				$summary_label = $mr_multi_options->summary_label;
+				
+				if ($rw_no_labels) {
+					$rw_no_labels = false;
+				}
+			} else {
+				$summary_label = '&nbsp;';
+			}
             $html .= '<tr>';
-            $html .= '<td><nobr>' . $mr_multi_options->summary_label . '</nobr></td>';
+            $html .= '<td><nobr>' . $summary_label . '</nobr></td>';
             $html .= '<td>' . $raw_rating . '</td>';
             $html .= '</tr>';
         }
@@ -33,7 +72,11 @@
             $mr_general_options->advanced->layout->dir :
             'ltr';
 
-        $html = '<table class="rw-rating-table rw-' . $dir . '">' . $html . '</table>';
+		$table_classes = 'rw-rating-table rw-' . $dir;
+		$table_classes .= (false !== $mr_hor_align ? ' rw-' . $mr_hor_align : '');
+		$table_classes .= ($rw_no_labels ? ' rw-no-labels' : '');
+		
+        $html = '<table class="' . $table_classes . '">' . $html . '</table>';
 
         echo $html;
     }

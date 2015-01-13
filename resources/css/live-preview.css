@@ -43,14 +43,6 @@
 	cursor: auto;
 }
 
-.rw-summary-label a {
-	border-bottom: 1px dashed #aaa;
-}
-
-.rw-summary-label a {
-	text-decoration: none;
-}
-
 .rw-add-label a:focus, .rw-summary-label a:focus, .rw-dash a:focus, .rw-remove-button:focus {
 	box-shadow: none;
 	outline: none;
@@ -183,6 +175,10 @@
 .rw-rtl .rw-add-label {
 	margin-right: 0;
 	margin-left: 7px;
+}
+
+.rw-rtl .rw-add-label input {
+	direction: rtl;
 }
 
 .rw-rtl .rw-dash, .rw-rtl .summary-rating-option {
