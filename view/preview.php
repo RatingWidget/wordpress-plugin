@@ -105,7 +105,7 @@ var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po
 						</tr>
 						<tr class="rw-summary-rating" data-cid="1" style="<?php echo $multirating_options->show_summary_rating ? '' : 'display: none'; ?>">
 							<td>
-								<span class="rw-add-label rw-summary-label"><a href="#" data-placeholder="<?php _e('Summary', WP_RW__ID); ?>" class="<?php echo __('Summary', WP_RW__ID) != $multirating_options->summary_label ? 'has-custom-value' : ''; ?>"><nobr><?php echo $multirating_options->summary_label; ?></nobr></a></span>
+								<span class="rw-add-label rw-summary-label"><a href="#" data-placeholder="<?php _e('Add Label', WP_RW__ID); ?>" class="<?php echo (isset($multirating_options->summary_label) && $multirating_options->summary_label != __('Add Label', WP_RW__ID)) ? 'has-custom-value' : ''; ?>"><nobr><?php echo (isset($multirating_options->summary_label) ? $multirating_options->summary_label : __('Add Label', WP_RW__ID)); ?></nobr></a></span>
 							</td>
 							<td colspan="2">
 								<div class="rw-ui-container rw-ui-star rw-urid-<?php echo $multirating_options->summary_preview_rating_star_urid; ?>" data-read-only="true"></div>

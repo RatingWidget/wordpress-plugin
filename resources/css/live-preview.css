@@ -43,14 +43,6 @@
 	cursor: auto;
 }
 
-.rw-summary-label a {
-	border-bottom: 1px dashed #aaa;
-}
-
-.rw-summary-label a {
-	text-decoration: none;
-}
-
 .rw-add-label a:focus, .rw-summary-label a:focus, .rw-dash a:focus, .rw-remove-button:focus {
 	box-shadow: none;
 	outline: none;

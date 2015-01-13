@@ -154,8 +154,6 @@
 	 * @returns {undefined}
 	 */
 	function handleRatingOptionsChange() {
-		console.log("change");
-		
 		for (var typeIndex in RW.TYPE) {
 			var type = RW.TYPE[typeIndex];
 			

@@ -3124,6 +3124,8 @@ Domain Path: /langs
 						$summary_label = isset($multi_rating['summary_label']) ? trim($multi_rating['summary_label']) : '';
 						if (!empty($summary_label)) {
 							$multirating_options->summary_label = $summary_label;
+						} else {
+							unset($multirating_options->summary_label);
 						}
 						
 						// Save the state of the Show Summary Rating option
@@ -4999,7 +5001,7 @@ Domain Path: /langs
                     ?>
 							RW.render(function() {
 								(function($) {
-									$('.rw-rating-table').each(function() {
+									$('.rw-rating-table:not(.rw-no-labels)').each(function() {
 										var ratingTable = $(this);
 										
 										// Find the current width before floating left or right to

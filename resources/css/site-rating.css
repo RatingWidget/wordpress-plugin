@@ -32,10 +32,18 @@
 	vertical-align: middle !important;
 }
 
+.rw-rating-table.rw-no-labels td:first-child {
+	display: none !important;
+}
+
 .rw-rating-table td:last-child {
 	left: 10px;
 	padding-bottom: 10px !important;
 	position: relative;
+}
+
+.rw-rating-table.rw-no-labels td:last-child {
+	left: auto !important;
 }
 
 /* RTL */
@@ -50,6 +58,10 @@
 .rw-rating-table.rw-rtl td:last-child {
 	left: 0;
 	right: 10px;
+}
+
+.rw-rating-table.rw-rtl.rw-no-labels td:last-child {
+	right: auto !important;
 }
 
 .rw-rating-table.rw-rtl .rw-left {
