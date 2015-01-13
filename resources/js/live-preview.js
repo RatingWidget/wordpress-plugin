@@ -51,18 +51,19 @@
 				newLabel = placeholderText;
 			}
 
-			var parentRow = $(this).parents('tr:first');
-			parentRow.find('input.multi-rating-label').val(newLabel);
-
 			var addLabel = $('<a href="#"><nobr></nobr></a>');
 			addLabel.find('nobr').text(newLabel);
 			addLabel.attr('data-placeholder', placeholderText);
 
 			var hasCustomValue = newLabel != placeholderText;
 
+			var parentRow = $(this).parents('tr:first');
+			
 			if (hasCustomValue) {
+				parentRow.find('input.multi-rating-label').val(newLabel);
 				addLabel.addClass('has-custom-value');
 			} else {
+				parentRow.find('input.multi-rating-label').val('');
 				addLabel.removeClass('has-custom-value');
 			}
 

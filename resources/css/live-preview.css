@@ -185,6 +185,10 @@
 	margin-left: 7px;
 }
 
+.rw-rtl .rw-add-label input {
+	direction: rtl;
+}
+
 .rw-rtl .rw-dash, .rw-rtl .summary-rating-option {
 	text-align: left;
 }

@@ -1,9 +1,21 @@
 .rw-rating-table {
-	width: auto;
+	position: relative !important;
+	width: auto !important; /* Needed for proper first column width calculation */
 }
 
-.rw-rating-table, .rw-rating-table td {
-	border: none;
+.rw-rating-table.rw-center {
+	margin: auto !important;
+}
+
+.rw-rating-table.rw-right {
+	margin-left: auto !important;
+}
+
+.rw-rating-table,
+.rw-rating-table tbody,
+.rw-rating-table td,
+.rw-rating-table tr {
+    border: none !important;
 }
 
 .rw-rating-table td {
@@ -14,7 +26,10 @@
 	white-space: nowrap; /* IE needs this */
 	word-wrap: normal; /* IE needs this */
 	position: relative;
-	top: 2px;
+}
+
+.rw-rating-table td:first-child nobr {
+	vertical-align: middle !important;
 }
 
 .rw-rating-table td:last-child {
@@ -25,7 +40,6 @@
 
 /* RTL */
 .rw-rating-table.rw-rtl {
-	margin-left: auto;
 	direction: rtl;
 }
 

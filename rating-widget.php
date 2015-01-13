@@ -757,7 +757,7 @@ Domain Path: /langs
 				$bottom_left = (object)array('ver' => 'bottom', 'hor' => 'left');
 				
 				$default_multirating_options = (object) array(
-					'criteria' => array(time() => array('label' => __('Add Label', WP_RW__ID))),
+					'criteria' => array(time() => array()),
 					'summary_label' => __('Summary', WP_RW__ID),
 					'show_summary_rating' => true,
 					'summary_preview_rating_star_urid' => time()+1,
@@ -3099,6 +3099,14 @@ Domain Path: /langs
 							$multi_rating['criteria'] = array_splice($multi_rating['criteria'], 0, 3);
 						}
 						
+						// Unset empty labels
+						foreach ($multi_rating['criteria'] as $criteria_id => $criteria) {
+							$criteria_label = isset($criteria['label']) ? trim($criteria['label']) : '';
+							if (empty($criteria_label)) {
+								unset($multi_rating['criteria'][$criteria_id]['label']);
+							}
+						}
+						
 						// Retrieve the current multi-rating options
                         if (!isset($this->multirating_settings_list))
                             $this->multirating_settings_list = new stdClass();
@@ -3113,7 +3121,10 @@ Domain Path: /langs
 						$multirating_options->summary_preview_rating_nero_urid = trim($multi_rating['summary_preview_rating_nero_urid']);
 						
 						// Save the summary label
-						$multirating_options->summary_label = trim($multi_rating['summary_label']);
+						$summary_label = isset($multi_rating['summary_label']) ? trim($multi_rating['summary_label']) : '';
+						if (!empty($summary_label)) {
+							$multirating_options->summary_label = $summary_label;
+						}
 						
 						// Save the state of the Show Summary Rating option
 						$multirating_options->show_summary_rating = isset($multi_rating['show_summary_rating']) ? true : false;
@@ -4988,18 +4999,21 @@ Domain Path: /langs
                     ?>
 							RW.render(function() {
 								(function($) {
-									var ratingTable = $('.rw-rating-table');
-									
-									// Find the current width before floating left or right to
-									// keep the ratings aligned
-									var widthCol1 = ratingTable.find('td:first').width();
-									ratingTable.find('td:first-child').width(widthCol1);
+									$('.rw-rating-table').each(function() {
+										var ratingTable = $(this);
+										
+										// Find the current width before floating left or right to
+										// keep the ratings aligned
+										var col1 = ratingTable.find('td:first');
+										var widthCol1 = col1.width();
+										ratingTable.find('td:first-child').width(widthCol1);
 
-									if (ratingTable.hasClass('rw-rtl')) {
-										ratingTable.find('td').css({float: 'right'});
-									} else {
-										ratingTable.find('td').css({float: 'left'});
-									}
+										if (ratingTable.hasClass('rw-rtl')) {
+											ratingTable.find('td').css({float: 'right'});
+										} else {
+											ratingTable.find('td').css({float: 'left'});
+										}
+									});
 								})(jQuery);
 							}, <?php
                         echo (!$this->_TOP_RATED_WIDGET_LOADED) ? "true" : "false";
@@ -5701,7 +5715,7 @@ Domain Path: /langs
 					$pOptions['read-only'] = 'true';
 				}
 
-				if (!$pOwnerID || !$this->has_multirating_options($pElementClass)) {
+				if (!$this->has_multirating_options($pElementClass)) {
 					return $this->EmbedRawRating($urid, $pTitle, $pPermalink, $pElementClass, $pAddSchema, $pHorAlign, $pCustomStyle, $pOptions);
 				} else {
 					//Prefixed with mr_ to avoid possible collisions after calling extract()
@@ -5717,10 +5731,15 @@ Domain Path: /langs
 						'mr_title' => $pTitle
 					);
 					
-					$this->embed_multi_rating($vars);
+					return $this->embed_multi_rating($vars);
 				}
 			}
-
+			
+			/**
+			 * Loads the multi-rating view using the data passed to $vars
+			 * @param array $vars
+			 * @return string Returns the generated multi-rating HTML
+			 */
 			function embed_multi_rating($vars) {
 				$multirating_settings_list = $this->GetOption(WP_RW__MULTIRATING_SETTINGS);
 				$multirating_options = $multirating_settings_list->{$vars['mr_element_class']};
@@ -5729,8 +5748,15 @@ Domain Path: /langs
 				$vars['mr_general_options'] = $general_options;
 				$vars['mr_multi_options'] = $multirating_options;
 				
+				// Retrieve the generated HTML, necessary for proper placement in the site, e.g.: bottom center
+				ob_start();
 				rw_require_view('site/multi-rating.php', $vars);
+				$html = ob_get_contents();
+				ob_end_clean();
+				
+				return $html;
 			}
+			
 			function EmbedRawRating($urid, $title, $permalink, $class, $add_schema, $hor_align = false, $custom_style = false, $options = array())
 			{
 				$this->QueueRatingData($urid, $title, $permalink, $class);
