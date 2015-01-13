@@ -178,6 +178,7 @@
 	define( 'WP_RW__CATEGORIES_AVAILABILITY_SETTINGS', 'rw_categories_availability_settings' );
 	define( 'WP_RW__CUSTOM_SETTINGS_ENABLED', 'rw_custom_settings_enabled' );
 	define( 'WP_RW__CUSTOM_SETTINGS', 'rw_custom_settings' );
+	define( 'WP_RW__MULTIRATING_SETTINGS', 'rw_multirating_settings' );
 	define( 'WP_RW__IS_ACCUMULATED_USER_RATING', 'rw_accumulated_user_rating' );
 
 	/* Visibility Options

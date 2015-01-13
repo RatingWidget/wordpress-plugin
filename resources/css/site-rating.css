@@ -1,0 +1,43 @@
+.rw-rating-table {
+	width: auto;
+}
+
+.rw-rating-table, .rw-rating-table td {
+	border: none;
+}
+
+.rw-rating-table td {
+	padding: 0 !important;
+}
+
+.rw-rating-table td:first-child {
+	white-space: nowrap; /* IE needs this */
+	word-wrap: normal; /* IE needs this */
+	position: relative;
+	top: 2px;
+}
+
+.rw-rating-table td:last-child {
+	left: 10px;
+	padding-bottom: 10px !important;
+	position: relative;
+}
+
+/* RTL */
+.rw-rating-table.rw-rtl {
+	margin-left: auto;
+	direction: rtl;
+}
+
+.rw-rating-table.rw-rtl td {
+	text-align: right;
+}
+
+.rw-rating-table.rw-rtl td:last-child {
+	left: 0;
+	right: 10px;
+}
+
+.rw-rating-table.rw-rtl .rw-left {
+	text-align: right;
+}

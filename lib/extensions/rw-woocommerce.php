@@ -227,8 +227,8 @@
 						true );
 				}
 
-				function GetRatingGuid( $element_id, $rclass ) {
-					return $this->rw->_getPostRatingGuid( $element_id );
+				function GetRatingGuid( $element_id, $rclass, $criteria_id = false ) {
+					return $this->rw->_getPostRatingGuid( $element_id, $criteria_id );
 				}
 
 				function GetTopRatedInfo() {
