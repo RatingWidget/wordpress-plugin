@@ -4,7 +4,7 @@
     $html = '';
 
 	// Backup the value of 'hide-recommendations'
-	$hide_recommendations = $mr_embed_options['hide-recommendations'];
+    $hide_recommendations = isset($mr_embed_options['hide-recommendations']) ? $mr_embed_options['hide-recommendations'] : false;
 			
 	$multi_criteria = count($mr_multi_options->criteria) > 1;
 
@@ -41,8 +41,10 @@
 
     if (!empty($html)) {
         if ($mr_multi_options->show_summary_rating && $multi_criteria) {
-			// Restore the value of hide-recommendations
-			$mr_embed_options['hide-recommendations'] = $hide_recommendations;
+            if ($hide_recommendations) {
+                // Restore the value of hide-recommendations
+                $mr_embed_options['hide-recommendations'] = $hide_recommendations;
+            }
 			
 			unset($mr_embed_options['uarid']);
 			
