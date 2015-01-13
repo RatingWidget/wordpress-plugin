@@ -41,7 +41,7 @@
 		?>
 		<tr>
 		<td>
-			<div><nobr><?php echo $criteria['label']; ?></nobr></div>
+			<div><nobr><?php echo (isset($criteria['label']) && !empty($criteria['label'])) ? $criteria['label'] : ''; ?></nobr></div>
 			<div class="rw-ui-container rw-class-<?php echo $rclass ?>" data-uarid="<?php echo $urid_summary; ?>" data-urid="<?php echo $urid; ?>" data-sync="false"></div>
 			<p></p>
 		</td>
@@ -54,7 +54,7 @@
 			?>
 			<tr>
 			<td>
-				<div><nobr><?php echo $multirating_options->summary_label; ?></nobr></div>
+				<div><nobr><?php echo (isset($multirating_options->summary_label) && !empty($multirating_options->summary_label)) ? $multirating_options->summary_label : ''; ?></nobr></div>
 				<div class="rw-ui-container rw-class-<?php echo $rclass ?>" data-urid="<?php echo $urid_summary; ?>" data-read-only="true" data-sync="false"></div>
 				<p></p>
 			</td>

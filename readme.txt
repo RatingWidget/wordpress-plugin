@@ -11,6 +11,8 @@ The most popular Five Star Rating System on the web. User-friendly ratings for: 
 
 == Description ==
 
+#### New! Multi-Criteria Ratings is now fully supported!
+
 #### Ratings for your:
 * Posts
 * Pages
@@ -50,7 +52,7 @@ The plugin has [PRO VERSIONS](http://rating-widget.com/pricing/wordpress/) with 
 > * Management Dashboard
 > * Analytics
 > * **Especially for Voting Contests** - Visitor by IP identification
-> * Unlimited Criterion (Multi-Criteria Rating)
+> * Unlimited Multi-Criterion (Multi-Criteria Rating)
 > * SSL / HTTPS Support
 > * API Access
 > * Custom Ratings Image
@@ -182,7 +184,8 @@ The RatingWidget Team
 
 == Change Log ==
 = 2.3.6 =
-* New: First release of our new awesome Multi-Criteria ratings support.
+* New: First release of our new awesome Multi-Criteria ratings support!
+* Fix: Fixed Jeegy's Barrels starts theme.
 
 = 2.3.5 =
 * Fix: Fixed a small warning bug for non bbPress & BuddyPress users.

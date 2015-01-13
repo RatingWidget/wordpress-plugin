@@ -89,11 +89,12 @@ var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po
 							<td colspan="3">
 								<div class="rw-dash">
 									<?php
+                                        $upgrade_label_text = __('Upgrade to Professional for Unlimited Criteria', WP_RW__ID);
 									if ($total_criteria >= 3 && !ratingwidget()->IsProfessional()) { ?>
-									<a class="rw-add-rating upgrade" href="<?php echo rw_fs()->get_upgrade_url(); ?>" data-upgrade-href="<?php echo rw_fs()->get_upgrade_url(); ?>" data-upgrade-text="[+] <?php _e('Upgrade for Unlimited Criteria', WP_RW__ID); ?>" data-default-text="[+] <?php _e('Add Rating / Criteria', WP_RW__ID); ?>">[+] <?php _e('Upgrade for Unlimited Criteria', WP_RW__ID); ?></a>
+									<a class="rw-add-rating upgrade" href="<?php echo rw_fs()->get_upgrade_url(); ?>" data-upgrade-href="<?php echo rw_fs()->get_upgrade_url(); ?>" data-upgrade-text="[+] <?php echo $upgrade_label_text ?>" data-default-text="[+] <?php _e('Add Rating / Criteria', WP_RW__ID); ?>">[+] <?php echo $upgrade_label_text ?></a>
 									<?php
 									} else { ?>
-									<a class="rw-add-rating" href="#" data-upgrade-href="<?php echo rw_fs()->get_upgrade_url(); ?>" data-upgrade-text="[+] <?php _e('Upgrade for Unlimited Criteria', WP_RW__ID); ?>" data-default-text="[+] <?php _e('Add Rating / Criteria', WP_RW__ID); ?>">[+] <?php _e('Add Rating / Criteria', WP_RW__ID); ?></a>
+									<a class="rw-add-rating" href="#" data-upgrade-href="<?php echo rw_fs()->get_upgrade_url(); ?>" data-upgrade-text="[+] <?php echo $upgrade_label_text ?>" data-default-text="[+] <?php _e('Add Rating / Criteria', WP_RW__ID); ?>">[+] <?php _e('Add Rating / Criteria', WP_RW__ID); ?></a>
 									<?php
 									}
 									?>

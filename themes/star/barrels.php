@@ -4,8 +4,7 @@
     $theme_options->style = "barrels";
 
     $theme = array(
-        "name" => "barrels",
+        "name" => $theme_options->type . '_' . $theme_options->style,
         "title" => "Jeegy's Barrels",
         "options" => $theme_options
     );
-?>
