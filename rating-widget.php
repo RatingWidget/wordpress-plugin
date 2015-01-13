@@ -3,7 +3,7 @@
 Plugin Name: Rating-Widget: Star Rating System
 Plugin URI: http://rating-widget.com/wordpress-plugin/
 Description: Create and manage Rating-Widget ratings in WordPress.
-Version: 2.3.3
+Version: 2.3.6
 Author: Rating-Widget
 Author URI: http://rating-widget.com/wordpress-plugin/
 License: GPLv2
@@ -505,6 +505,10 @@ Domain Path: /langs
 				/*<--{obfuscate}*/
 				$current_site_plan = $this->GetOption( WP_RW__DB_OPTION_SITE_PLAN );
 
+                if (is_admin()) {
+                    RWLogger::Log('LoadPlan', 'current_plan = ' . $current_site_plan);
+                }
+
 				$site_plan = $current_site_plan;
 
 				$update = false;
@@ -524,15 +528,13 @@ Domain Path: /langs
 						$in_license_sync = true;
 					}
 
+                    RWLogger::Log('LoadPlan', 'in_license_sync = ' . json_encode($in_license_sync));
+
 					// Update plan once in every 24 hours.
 					if ( false === $current_site_plan || $site_plan_update < ( time() - WP_RW__TIME_24_HOURS_IN_SEC ) ) {
 						// Get plan from remote server once a day.
 						try {
 							$site = rwapi()->Api( '?fields=id,plan' );
-
-							//if (RWLogger::IsOn())
-							//RWLogger::Log("comment-id", var_export($site, true));
-
 						} catch ( \Exception $e ) {
 							$site = false;
 						}
@@ -555,6 +557,10 @@ Domain Path: /langs
 							{
 								add_action( 'all_admin_notices', array( &$this, 'ApiAccessBlockedNotice' ) );
 							}
+                            else
+                            {
+                                add_action( 'all_admin_notices', array( &$this, 'ApiUnauthorizedAccessNotice' ) );
+                            }
 						}
 					}
 				}
@@ -2785,12 +2791,6 @@ Domain Path: /langs
 				return key($associative);
 			}
 			
-			function init_options_list(&$list, $class) {
-				if (!isset($list->{$class})) {
-					$list->{$class} = new stdClass();
-				}
-			}
-
 			/**
 			 * To get a list of all custom user defined posts:
 			 *
@@ -3061,26 +3061,20 @@ Domain Path: /langs
 
 				// Visibility list must be loaded anyway.
 				$this->_visibilityList = $this->GetOption(WP_RW__VISIBILITY_SETTINGS);
-				$this->init_options_list($this->_visibilityList, $rw_class);
-				
+
 				if ($item_with_category) {
 					// Categories Availability list must be loaded anyway.
 					$this->categories_list = $this->GetOption(WP_RW__CATEGORIES_AVAILABILITY_SETTINGS);
-					$this->init_options_list($this->categories_list, $rw_class);
 				}
 				
 				// Availability list must be loaded anyway.
 				$this->availability_list = $this->GetOption(WP_RW__AVAILABILITY_SETTINGS);
-				$this->init_options_list($this->availability_list, $rw_class);
 
 				$this->custom_settings_enabled_list = $this->GetOption(WP_RW__CUSTOM_SETTINGS_ENABLED);
-				$this->init_options_list($this->custom_settings_enabled_list, $rw_class);
-				
+
 				$this->custom_settings_list = $this->GetOption(WP_RW__CUSTOM_SETTINGS);
-				$this->init_options_list($this->custom_settings_list, $rw_class);
 
 				$this->multirating_settings_list = $this->GetOption(WP_RW__MULTIRATING_SETTINGS);
-				$this->init_options_list($this->multirating_settings_list, $rw_class);
 
 				// Accumulated user ratings support.
 				if ('users' === $selected_key && $this->IsBBPressInstalled())
@@ -3106,6 +3100,9 @@ Domain Path: /langs
 						}
 						
 						// Retrieve the current multi-rating options
+                        if (!isset($this->multirating_settings_list))
+                            $this->multirating_settings_list = new stdClass();
+
 						$multirating_options = $this->multirating_settings_list->{$rw_class};
 						
 						// Save the new criteria IDs and labels
@@ -3122,6 +3119,9 @@ Domain Path: /langs
 						$multirating_options->show_summary_rating = isset($multi_rating['show_summary_rating']) ? true : false;
 						
 						// Save the updated multi-rating options
+                        if (!isset($this->multirating_settings_list))
+                            $this->multirating_settings_list = new stdClass();
+
 						$this->multirating_settings_list->{$rw_class} = $multirating_options;
 						$this->SetOption(WP_RW__MULTIRATING_SETTINGS, $this->multirating_settings_list);
 					}
@@ -3164,6 +3164,9 @@ Domain Path: /langs
                 ---------------------------------------------------------------------------------------------------------------*/
 						$rw_categories = isset($_POST["rw_categories"]) && is_array($_POST["rw_categories"]) ? $_POST["rw_categories"] : array();
 
+                        if (!isset($this->categories_list))
+                            $this->categories_list = new stdClass();
+
 						$this->categories_list->{$rw_class} = (in_array("-1", $rw_categories) ? array("-1") : $rw_categories);
 						$this->SetOption(WP_RW__CATEGORIES_AVAILABILITY_SETTINGS, $this->categories_list);
 					}
@@ -3182,13 +3185,19 @@ Domain Path: /langs
 					$rw_visibility_include  = isset($_POST["rw_visibility_include"]) ? $_POST["rw_visibility_include"] : "";
 
 					$rw_custom_settings_enabled = isset($_POST["rw_custom_settings_enabled"]) ? true : false;
+                    if (!isset($this->custom_settings_enabled_list))
+                        $this->custom_settings_enabled_list = new stdClass();
 					$this->custom_settings_enabled_list->{$rw_class} = $rw_custom_settings_enabled;
 					$this->SetOption(WP_RW__CUSTOM_SETTINGS_ENABLED, $this->custom_settings_enabled_list);
 
 					$rw_custom_settings = isset($_POST["rw_custom_settings"]) ? $_POST["rw_custom_settings"] : '';
+                    if (!isset($this->custom_settings_list))
+                        $this->custom_settings_list = new stdClass();
 					$this->custom_settings_list->{$rw_class} = $rw_custom_settings;
 					$this->SetOption(WP_RW__CUSTOM_SETTINGS, $this->custom_settings_list);
 
+                    if (!isset($this->_visibilityList))
+                        $this->_visibilityList = new stdClass();
 					$this->_visibilityList->{$rw_class}->selected = $rw_visibility;
 					$this->_visibilityList->{$rw_class}->exclude = self::IDsCollectionToArray($rw_visibility_exclude);
 					$this->_visibilityList->{$rw_class}->include = self::IDsCollectionToArray($rw_visibility_include);
@@ -5612,8 +5621,8 @@ Domain Path: /langs
 
 				if (false === $urid) {
 					foreach ($this->_extensions as $ext) {
-						if (in_array($pElementClass, $ext->GetRatingClasses())) {
-							$urid = $ext->GetRatingGuid($pElementID, $pElementClass, $criteria_id);
+						if (in_array($element_type, $ext->GetRatingClasses())) {
+							$urid = $ext->GetRatingGuid($element_id, $element_type, $criteria_id);
 							break;
 						}
 					}
@@ -5665,13 +5674,33 @@ Domain Path: /langs
 				if ($pValidateVisibility && !$this->IsVisibleRating($pElementID, $pElementClass, $pValidateCategory))
 					return '';
 
-                // Get the read-only state of the exact post type, e.g.: post or product
-				if ($this->is_rating_readonly($pElementID, get_post_type($pElementID)))
-                    $pOptions['read-only'] = 'true';
-				
-				// Default
 				$urid = $this->get_rating_id_by_element($pElementID, $pElementClass);
-					
+
+				// Get the read-only state of the exact post type, e.g.: post or product
+				$is_rating_readonly = $this->is_rating_readonly($pElementID, get_post_type($pElementID));
+
+				if (!$is_rating_readonly) {
+                    if (function_exists('is_buddypress') && is_buddypress()) {
+                        // Get the user ID associated with the current BuddyPress page being viewed.
+                        $buddypress_user_id = ('user' === $pElementClass) ? $pElementID : $pOwnerID;
+
+                        // Set the rating to read-only if the current logged in user ID
+                        // is equal to the current BuddyPress user ID.
+                        $is_rating_readonly = (get_current_user_id() == $buddypress_user_id);
+                    } else if (function_exists('is_bbpress') && is_bbpress()) {
+                        // Get the user ID associated with the current bbPress item being viewed.
+                        $bbpress_user_id = ('user' === $pElementClass) ? $pElementID : $pOwnerID;
+
+                        // Set the rating to read-only if the current logged in user ID
+                        // is equal to the current bbPress user ID.
+                        $is_rating_readonly = (get_current_user_id() == $bbpress_user_id);
+                    }
+                }
+
+				if ($is_rating_readonly) {
+					$pOptions['read-only'] = 'true';
+				}
+
 				if (!$pOwnerID || !$this->has_multirating_options($pElementClass)) {
 					return $this->EmbedRawRating($urid, $pTitle, $pPermalink, $pElementClass, $pAddSchema, $pHorAlign, $pCustomStyle, $pOptions);
 				} else {
@@ -5974,12 +6003,17 @@ Domain Path: /langs
 				$this->Notice('W00t! You have successfully confirmed your email address.', 'update-nag success');
 			}
 
-			function ApiAccessBlockedNotice()
-			{
-				$this->Notice('Oops... your server is blocking the access to our API, therefore your license can NOT be synced. <br>Please contact your host to enable remote access to: <ul><li><code><a href="' . RW_API__ADDRESS . '" target="_blank">' . RW_API__ADDRESS . '</a></code></li><li><code><a href="' . WP_RW__ADDRESS . '" target="_blank">' . WP_RW__ADDRESS . '</a></code></li><li><code><a href="' . WP_RW__SECURE_ADDRESS . '" target="_blank">' . WP_RW__SECURE_ADDRESS . '</a></code></li></ul>');
-			}
+            function ApiAccessBlockedNotice()
+            {
+                $this->Notice('Oops... your server is blocking the access to our API, therefore your license can NOT be synced. <br>Please contact your host to enable remote access to: <ul><li><code><a href="' . RW_API__ADDRESS . '" target="_blank">' . RW_API__ADDRESS . '</a></code></li><li><code><a href="' . WP_RW__ADDRESS . '" target="_blank">' . WP_RW__ADDRESS . '</a></code></li><li><code><a href="' . WP_RW__SECURE_ADDRESS . '" target="_blank">' . WP_RW__SECURE_ADDRESS . '</a></code></li></ul>');
+            }
 
-			function LicenseSyncNotice()
+            function ApiUnauthorizedAccessNotice()
+            {
+                $this->Notice('Oops... seems like one of the authentication parameters is wrong. Update your Public Key, Secret Key & User ID, and try again.');
+            }
+
+            function LicenseSyncNotice()
 			{
 				$this->Notice('Ye-ha! Your license has been successfully synced.', 'update-nag success');
 			}
