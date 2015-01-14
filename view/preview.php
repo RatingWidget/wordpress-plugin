@@ -105,14 +105,15 @@ var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po
 							</td>
 						</tr>
 						<tr class="rw-summary-rating" data-cid="1" style="<?php echo $multirating_options->show_summary_rating ? '' : 'display: none'; ?>">
+                            <?php $summary_label = (isset($multirating_options->summary_label) && $multirating_options->summary_label != __('Add Label', WP_RW__ID)) ? $multirating_options->summary_label : '' ?>
 							<td>
-								<span class="rw-add-label rw-summary-label"><a href="#" data-placeholder="<?php _e('Add Label', WP_RW__ID); ?>" class="<?php echo (isset($multirating_options->summary_label) && $multirating_options->summary_label != __('Add Label', WP_RW__ID)) ? 'has-custom-value' : ''; ?>"><nobr><?php echo (isset($multirating_options->summary_label) ? $multirating_options->summary_label : __('Add Label', WP_RW__ID)); ?></nobr></a></span>
+								<span class="rw-add-label rw-summary-label"><a href="#" data-placeholder="<?php _e('Add Label', WP_RW__ID); ?>" class="<?php echo !empty($summary_label) ? 'has-custom-value' : ''; ?>"><nobr><?php echo (!empty($summary_label) ? $summary_label : __('Add Label', WP_RW__ID)); ?></nobr></a></span>
 							</td>
 							<td colspan="2">
 								<div class="rw-ui-container rw-ui-star rw-urid-<?php echo $multirating_options->summary_preview_rating_star_urid; ?>" data-read-only="true"></div>
 								<div class="rw-ui-container rw-ui-nero rw-urid-<?php echo $multirating_options->summary_preview_rating_nero_urid; ?>" data-read-only="true"></div>
 							</td>
-							<input type="hidden" class="multi-rating-label" name="multi_rating[summary_label]" value="<?php echo $multirating_options->summary_label; ?>" />
+							<input type="hidden" class="multi-rating-label" name="multi_rating[summary_label]" value="<?php echo $summary_label; ?>" />
 							<input type="hidden" name="multi_rating[summary_preview_rating_star_urid]" value="<?php echo $multirating_options->summary_preview_rating_star_urid; ?>" />
 							<input type="hidden" name="multi_rating[summary_preview_rating_nero_urid]" value="<?php echo $multirating_options->summary_preview_rating_nero_urid; ?>" />
 						</tr>
