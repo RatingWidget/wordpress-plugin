@@ -74,8 +74,8 @@ var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po
 									<span class="rw-add-label"><a href="#" data-placeholder="<?php _e('Add Label', WP_RW__ID); ?>" class="<?php echo (isset($criteria['label']) && $criteria['label'] != __('Add Label', WP_RW__ID)) ? 'has-custom-value' : ''; ?>"><nobr><?php echo (isset($criteria['label']) ? $criteria['label'] : __('Add Label', WP_RW__ID)); ?></nobr></a></span>
 								</td>
 								<td class="rw-rating-type">
-									<div class="rw-ui-container rw-ui-star rw-urid-<?php echo $criteria_id; ?>0" data-uarid="<?php echo $multirating_options->summary_preview_rating_star_urid; ?>"></div>
-									<div class="rw-ui-container rw-ui-nero rw-urid-<?php echo $criteria_id; ?>1" data-uarid="<?php echo $multirating_options->summary_preview_rating_nero_urid; ?>"></div>
+									<div class="rw-ui-container rw-ui-star rw-urid-<?php echo $criteria_id; ?>0" <?php echo $is_multicriteria ? ' data-hide-recommendations="true" ' : ''; ?> data-uarid="<?php echo $multirating_options->summary_preview_rating_star_urid; ?>"></div>
+									<div class="rw-ui-container rw-ui-nero rw-urid-<?php echo $criteria_id; ?>1" <?php echo $is_multicriteria ? ' data-hide-recommendations="true" ' : ''; ?> data-uarid="<?php echo $multirating_options->summary_preview_rating_nero_urid; ?>"></div>
 								</td>
 								<td class="rw-action">
 									<span class="rw-remove"><a href="#" class="rw-remove-button"></a></span>
@@ -122,8 +122,8 @@ var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po
 								<span class="rw-add-label"><a href="#" data-placeholder="<?php _e('Add Label', WP_RW__ID); ?>"><nobr><?php _e('Add Label', WP_RW__ID); ?></nobr></a></span>
 							</td>
 							<td class="rw-rating-type">
-								<div class="rw-ui-star"></div>
-								<div class="rw-ui-nero"></div>
+								<div class="rw-ui-star" data-hide-recommendations="true"></div>
+								<div class="rw-ui-nero" data-hide-recommendations="true"></div>
 							</td>
 							<td class="rw-action">
 								<span class="rw-remove"><a href="#" class="rw-remove-button"></a></span>

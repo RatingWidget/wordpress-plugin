@@ -1,6 +1,6 @@
 <?php
     extract($VARS);
-
+	
     $html = '';
 
 	// Backup the value of 'hide-recommendations'
@@ -43,8 +43,10 @@
         if ($mr_multi_options->show_summary_rating && $multi_criteria) {
             if ($hide_recommendations) {
                 // Restore the value of hide-recommendations
-                $mr_embed_options['hide-recommendations'] = $hide_recommendations;
-            }
+                $mr_embed_options['hide-recommendations'] = 'true';
+            } else {
+				unset($mr_embed_options['hide-recommendations']);
+			}
 			
 			unset($mr_embed_options['uarid']);
 			

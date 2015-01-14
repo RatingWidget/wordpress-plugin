@@ -75,6 +75,31 @@
 			var parentRow = $(this).parents('tr:first');
 			var id = parentRow.attr('data-cid');
 			$('.rw-rating[data-cid="'+id+'"]').remove();
+			
+			var total = $('tr.rw-rating').length;
+			
+			// If not multi-criteria, reset the value of hideRecommendations option
+			if (total == 1) {
+				for (var typeIndex in RW.TYPE) {
+					var type = RW.TYPE[typeIndex];
+
+					var updatedOptions = getCurrentRatingOptions(type);
+
+					$('tr.rw-rating .rw-ui-' + type).each(function() {
+						$(this).removeAttr('data-hide-recommendations');
+						var urid = $(this).data('urid');
+						var rating = RW.getRating(urid);
+
+						if (rating) {
+							var ratingInstance = rating.getInstances(0);
+							var newOptions = ratingInstance.getCalculatedOptions();
+							newOptions.hideRecommendations = updatedOptions.hideRecommendations;
+							ratingInstance.setOptions(newOptions);
+						}
+					});
+				}
+			}
+			
 			toggleSummaryRatingOptions();
 			return false;
 		});
@@ -159,6 +184,8 @@
 			
 			var updatedOptions = getCurrentRatingOptions(type);
 			
+			var total = $('tr.rw-rating').length;
+			
 			$('.rw-ui-' + type).each(function() {
 				var urid = $(this).data('urid');
 				var rating = RW.getRating(urid);
@@ -174,6 +201,10 @@
 
 						if ($(this).parents('tr:first').hasClass('rw-rating')) {
 							newOptions.uarid = getSummaryPreviewRatingUrid(type);
+							
+							if (total > 1) {
+								newOptions.hideRecommendations = true;
+							}
 						}
 
 						if (urid == getSummaryPreviewRatingUrid(type)) {
@@ -321,6 +352,8 @@
 	 * @returns {undefined}
 	 */
 	function initializeRatings(criteriaID) {
+		$('tr.rw-rating .rw-ui-container').attr('data-hide-recommendations', 'true');
+		
 		for (var typeIndex in RW.TYPE) {
 			var type = RW.TYPE[typeIndex];
 			
