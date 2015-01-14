@@ -27,7 +27,11 @@
 	
 	$multirating_settings_list = $rwp->GetOption(WP_RW__MULTIRATING_SETTINGS);
 	$multirating_options = $multirating_settings_list->{$rclass};
+	$multi_criteria = count($multirating_options->criteria) > 1;
+	
 	$options = ratingwidget()->get_options_by_class($rclass);
+
+    $default_hide_recommendations = isset($options->hideRecommendations) ? $options->hideRecommendations : false;
 ?>
 <p>
 	<input type="hidden" name="rw_post_meta_box_nonce" value="<?php echo wp_create_nonce(basename(WP_RW__PLUGIN_FILE_FULL)) ?>" />
@@ -35,27 +39,28 @@
 		<?php
 		$urid_summary = $rwp->_getPostRatingGuid($post->ID);
 		
-		foreach ($multirating_options->criteria as $criteria_id => $criteria) {
-			$urid = $rwp->_getPostRatingGuid($post->ID, $criteria_id);
+		$criteria_id = 1;
+		foreach ($multirating_options->criteria as $criteria_key => $criteria) {
+			$urid = $rwp->_getPostRatingGuid($post->ID, $multi_criteria ? $criteria_id++ : false);
 			$rwp->QueueRatingData($urid, '', '', $rclass);
 		?>
 		<tr>
 		<td>
 			<div><nobr><?php echo (isset($criteria['label']) && !empty($criteria['label'])) ? $criteria['label'] : ''; ?></nobr></div>
-			<div class="rw-ui-container rw-class-<?php echo $rclass ?>" data-uarid="<?php echo $urid_summary; ?>" data-urid="<?php echo $urid; ?>" data-sync="false"></div>
+			<div class="rw-ui-container rw-class-<?php echo $rclass ?>" <?php echo $multi_criteria ? "data-uarid=\"$urid_summary\"" : ''; ?> <?php echo ($multi_criteria || $default_hide_recommendations) ? ' data-hide-recommendations="true" ' : ''; ?> data-urid="<?php echo $urid; ?>" data-sync="false"></div>
 			<p></p>
 		</td>
 		</tr>
 		<?php
 		}
 		
-		if ($multirating_options->show_summary_rating && count($multirating_options->criteria) > 1) {
+		if ($multirating_options->show_summary_rating && $multi_criteria) {
 			$rwp->QueueRatingData($urid_summary, '', '', $rclass);
 			?>
 			<tr>
 			<td>
 				<div><nobr><?php echo (isset($multirating_options->summary_label) && !empty($multirating_options->summary_label)) ? $multirating_options->summary_label : ''; ?></nobr></div>
-				<div class="rw-ui-container rw-class-<?php echo $rclass ?>" data-urid="<?php echo $urid_summary; ?>" data-read-only="true" data-sync="false"></div>
+				<div class="rw-ui-container rw-class-<?php echo $rclass ?>" <?php echo $default_hide_recommendations ? ' data-hide-recommendations="true" ' : ''; ?> data-urid="<?php echo $urid_summary; ?>" data-read-only="true" data-sync="false"></div>
 				<p></p>
 			</td>
 			</tr>
