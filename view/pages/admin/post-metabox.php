@@ -1,27 +1,27 @@
 <?php
-	global $post, $rwp;
+    global $post, $rwp;
 
-	$post_type = get_post_type($post);
+    $post_type = get_post_type($post);
     $readonly_post = (true === $rwp->is_rating_readonly($post->ID, $post_type));
 
-	switch ($post_type)
-	{
-		case 'page':
-			$excluded_post = (false === $rwp->rw_validate_visibility($post->ID, 'page'));
-			$rclass = 'page';
-			break;
-		case 'product':
-			$excluded_post = (false === $rwp->rw_validate_visibility($post->ID, 'collection-product') && false === $rwp->rw_validate_visibility($post->ID, 'product'));
-			$rclass = 'product';
-			break;
-		case 'post':
-		default:
-			$excluded_post = (false === $rwp->rw_validate_visibility($post->ID, 'front-post') && false === $rwp->rw_validate_visibility($post->ID, 'blog-post'));
-			$rclass = 'blog-post';
-			break;
-	}
+    switch ($post_type)
+    {
+        case 'page':
+            $excluded_post = (false === $rwp->rw_validate_visibility($post->ID, 'page'));
+            $rclass = 'page';
+            break;
+        case 'product':
+            $excluded_post = (false === $rwp->rw_validate_visibility($post->ID, 'collection-product') && false === $rwp->rw_validate_visibility($post->ID, 'product'));
+            $rclass = 'product';
+            break;
+        case 'post':
+        default:
+            $excluded_post = (false === $rwp->rw_validate_visibility($post->ID, 'front-post') && false === $rwp->rw_validate_visibility($post->ID, 'blog-post'));
+            $rclass = 'blog-post';
+            break;
+    }
 
-	RWLogger::Log('ShowPostMetaBox', 'Post Type = ' . $post_type);
+    RWLogger::Log('ShowPostMetaBox', 'Post Type = ' . $post_type);
 
 	add_action('admin_footer', array(&$rwp, "rw_attach_rating_js"), 5);
 	
