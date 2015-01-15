@@ -2,17 +2,23 @@
 	$class = rtrim(rw_settings_rating_type(), 's');
 	$has_multi_rating = ratingwidget()->has_multirating_options($class);
 	
+	$multi_criterion = false;
+	
 	if ($has_multi_rating) {
 		$multirating_options = ratingwidget()->multirating_settings_list->{$class};
 		
 		// Check if there are more than one criteria so that we can hide or show additional options
 		$total_criteria = count($multirating_options->criteria);
-		$is_multicriteria = $total_criteria > 1;
+		$multi_criterion = $total_criteria > 1;
 	}
 	
     $options = rw_options();
+	
+    $default_hide_recommendations = isset($options->hideRecommendations) ? $options->hideRecommendations : false;
+	$urid_summary_star = 1;
+	$urid_summary_nero = 2;
 ?>
-<div id="rw_wp_preview" class="postbox rw-body<?php echo $is_multicriteria ? ' multi-rating' : ''; echo ' rw-' . $options->advanced->layout->dir; ?>">
+<div id="rw_wp_preview" class="postbox rw-body<?php echo $multi_criterion ? ' multi-rating' : ''; echo ' rw-' . $options->advanced->layout->dir; ?>">
     <table cellpadding="0" cellspacing="0" style="float: right;height: 45px;">
         <tr>
             <td style="vertical-align: middle;">
@@ -62,25 +68,29 @@ var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po
 						criteria widgets' options.
 					-->
 					<div id="base-rating" style="display: none;">
-						<div class="rw-ui-container rw-urid-3" data-sync="false"></div>
+						<div class="rw-ui-container rw-ui-star rw-urid-3" data-sync="false"></div>
 						<div class="rw-ui-container rw-ui-nero rw-urid-17" data-sync="false"></div>
 					</div>
 					<table class="rw-preview rw-preview-<?php echo $options->type; ?>">
 						<?php
-						foreach ($multirating_options->criteria as $criteria_id => $criteria) {
-						?>
-							<tr class="rw-rating" data-cid="<?php echo $criteria_id; ?>">
+						$criterion_id = 1;
+						foreach ($multirating_options->criteria as $criterion) {
+							$urid_star = $urid_summary_star . ($multi_criterion ? '-' . $criterion_id : '');
+							$urid_nero = $urid_summary_nero . ($multi_criterion ? '-' . $criterion_id : '');
+							$criterion_id++;
+							?>
+							<tr class="rw-rating">
 								<td>
-									<span class="rw-add-label"><a href="#" data-placeholder="<?php _e('Add Label', WP_RW__ID); ?>" class="<?php echo (isset($criteria['label']) && $criteria['label'] != __('Add Label', WP_RW__ID)) ? 'has-custom-value' : ''; ?>"><nobr><?php echo (isset($criteria['label']) ? $criteria['label'] : __('Add Label', WP_RW__ID)); ?></nobr></a></span>
+									<span class="rw-add-label"><a href="#" data-placeholder="<?php _e('Add Label', WP_RW__ID); ?>" class="<?php echo (isset($criterion['label']) && $criterion['label'] != __('Add Label', WP_RW__ID)) ? 'has-custom-value' : ''; ?>"><nobr><?php echo (isset($criterion['label']) ? $criterion['label'] : __('Add Label', WP_RW__ID)); ?></nobr></a></span>
 								</td>
 								<td class="rw-rating-type">
-									<div class="rw-ui-container rw-ui-star rw-urid-<?php echo $criteria_id; ?>0" <?php echo $is_multicriteria ? ' data-hide-recommendations="true" ' : ''; ?> data-uarid="<?php echo $multirating_options->summary_preview_rating_star_urid; ?>"></div>
-									<div class="rw-ui-container rw-ui-nero rw-urid-<?php echo $criteria_id; ?>1" <?php echo $is_multicriteria ? ' data-hide-recommendations="true" ' : ''; ?> data-uarid="<?php echo $multirating_options->summary_preview_rating_nero_urid; ?>"></div>
+									<div class="rw-ui-container rw-ui-star" <?php echo $multi_criterion ? "data-uarid=\"$urid_summary_star\"" : ''; echo ($multi_criterion || $default_hide_recommendations) ? ' data-hide-recommendations="true"' : ''; ?> data-urid="<?php echo $urid_star; ?>"></div>
+									<div class="rw-ui-container rw-ui-nero" <?php echo $multi_criterion ? "data-uarid=\"$urid_summary_nero\"" : ''; echo ($multi_criterion || $default_hide_recommendations) ? ' data-hide-recommendations="true"' : ''; ?> data-urid="<?php echo $urid_nero; ?>"></div>
 								</td>
 								<td class="rw-action">
 									<span class="rw-remove"><a href="#" class="rw-remove-button"></a></span>
 								</td>
-								<input type="hidden" class="multi-rating-label" name="multi_rating[criteria][<?php echo $criteria_id; ?>][label]" value="<?php echo (isset($criteria['label']) ? $criteria['label'] : ''); ?>" />
+								<input type="hidden" class="multi-rating-label" name="multi_rating[criteria][][label]" value="<?php echo (isset($criterion['label']) ? $criterion['label'] : ''); ?>" />
 							</tr>
 						<?php
 						}
@@ -104,18 +114,27 @@ var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po
 								</div>
 							</td>
 						</tr>
-						<tr class="rw-summary-rating" data-cid="1" style="<?php echo $multirating_options->show_summary_rating ? '' : 'display: none'; ?>">
+						<tr class="rw-summary-rating" style="<?php echo $multirating_options->show_summary_rating ? '' : 'display: none'; ?>">
                             <?php $summary_label = (isset($multirating_options->summary_label) && $multirating_options->summary_label != __('Add Label', WP_RW__ID)) ? $multirating_options->summary_label : '' ?>
 							<td>
 								<span class="rw-add-label rw-summary-label"><a href="#" data-placeholder="<?php _e('Add Label', WP_RW__ID); ?>" class="<?php echo !empty($summary_label) ? 'has-custom-value' : ''; ?>"><nobr><?php echo (!empty($summary_label) ? $summary_label : __('Add Label', WP_RW__ID)); ?></nobr></a></span>
 							</td>
 							<td colspan="2">
-								<div class="rw-ui-container rw-ui-star rw-urid-<?php echo $multirating_options->summary_preview_rating_star_urid; ?>" data-read-only="true"></div>
-								<div class="rw-ui-container rw-ui-nero rw-urid-<?php echo $multirating_options->summary_preview_rating_nero_urid; ?>" data-read-only="true"></div>
+								<?php
+								// Create the summary rating for multi-criterion case only
+								if ($multi_criterion) { ?>
+								<div class="rw-ui-container rw-ui-star"<?php echo $default_hide_recommendations ? ' data-hide-recommendations="true"' : ''; ?> data-urid="<?php echo $urid_summary_star; ?>" data-read-only="true"></div>
+								<div class="rw-ui-container rw-ui-nero"<?php echo $default_hide_recommendations ? ' data-hide-recommendations="true"' : ''; ?> data-urid="<?php echo $urid_summary_nero; ?>" data-read-only="true"></div>
+								<?php
+								} else {
+								?>
+								<div class="rw-ui-star"<?php echo $default_hide_recommendations ? ' data-hide-recommendations="true" ' : ''; ?> data-read-only="true"></div>
+								<div class="rw-ui-nero"<?php echo $default_hide_recommendations ? ' data-hide-recommendations="true" ' : ''; ?> data-read-only="true"></div>
+								<?php
+								}
+								?>
 							</td>
 							<input type="hidden" class="multi-rating-label" name="multi_rating[summary_label]" value="<?php echo $summary_label; ?>" />
-							<input type="hidden" name="multi_rating[summary_preview_rating_star_urid]" value="<?php echo $multirating_options->summary_preview_rating_star_urid; ?>" />
-							<input type="hidden" name="multi_rating[summary_preview_rating_nero_urid]" value="<?php echo $multirating_options->summary_preview_rating_nero_urid; ?>" />
 						</tr>
 						<tr class="rw-template-rating" data-cid="0">
 							<td>
@@ -160,11 +179,11 @@ var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po
             <script type="text/javascript">
                 var rwStar, rwNero;
 				
-				function getSummaryPreviewRatingUrid(type) {
+				function getSummaryUrid(type) {
 					if (type == RW.TYPE.STAR) {
-						return <?php echo $multirating_options->summary_preview_rating_star_urid; ?>;
+						return '<?php echo $urid_summary_star; ?>';
 					} else {
-						return <?php echo $multirating_options->summary_preview_rating_nero_urid; ?>;
+						return '<?php echo $urid_summary_nero; ?>';
 					}
 				}
 				

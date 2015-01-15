@@ -72,32 +72,32 @@
 		
 		// Handles the removal of a criterion
 		$('#rw_wp_set').on('click', '.multi-rating .rw-remove-button', function() {
-			var parentRow = $(this).parents('tr:first');
-			var id = parentRow.attr('data-cid');
-			$('.rw-rating[data-cid="'+id+'"]').remove();
+			$('tr.rw-rating:last').remove();
 			
-			var total = $('tr.rw-rating').length;
-			
-			// If not multi-criteria, reset the value of hideRecommendations option
-			if (total == 1) {
+			// If not multi-criterion, remove the summary rating and make the 1st criterion the main rating
+			if (!isMultiCriterion()) {
 				for (var typeIndex in RW.TYPE) {
 					var type = RW.TYPE[typeIndex];
-
+					
 					var updatedOptions = getCurrentRatingOptions(type);
-
-					$('tr.rw-rating .rw-ui-' + type).each(function() {
-						$(this).removeAttr('data-hide-recommendations');
-						var urid = $(this).data('urid');
-						var rating = RW.getRating(urid);
-
-						if (rating) {
-							var ratingInstance = rating.getInstances(0);
-							var newOptions = ratingInstance.getCalculatedOptions();
-							newOptions.hideRecommendations = updatedOptions.hideRecommendations;
-							ratingInstance.setOptions(newOptions);
-						}
+					
+					var ratingElement = $('tr.rw-rating .rw-ui-' + type);
+					
+					var urid = getSummaryUrid(type);
+					
+					ratingElement.removeAttr('data-uarid').removeAttr('data-hide-recommendations').attr({
+						'class': 'rw-ui-container rw-ui-' + type,
+						'data-urid': urid
 					});
+					
+					var summaryRatingRow = $('tr.rw-summary-rating');
+					summaryRatingRow.find('.rw-ui-' + type).attr('class', 'rw-ui-' + type).html('');
+					
+					var newOptions = $.extend(true, {}, updatedOptions);
+					RW.initRating(urid, newOptions);
 				}
+
+				RW.render(null, false);
 			}
 			
 			toggleSummaryRatingOptions();
@@ -119,13 +119,35 @@
 	});
 	
 	/**
+	 * Extracts the rating's ID from the element's class
+	 * @param {type} elementClass
+	 * @returns {Number}
+	 */
+	function parseUrid(elementClass) {
+		var matches = elementClass.match(/\brw-urid-(\d+)\b/);
+		if (matches) {
+			if (matches.length >= 1) {
+				return matches[1];
+			}
+		}
+		
+		return 0;
+	}
+	
+	/**
+	 * Checks if there's more than one row
+	 * @returns {Boolean}
+	 */
+	function isMultiCriterion() {
+		return $('tr.rw-rating').length > 1;
+	}
+	
+	/**
 	 * Creates a new rating widget and appends it to the current rating widgets list
 	 * @returns {Boolean}
 	 */
 	function addRatingCriterion() {
 		if (!$(this).hasClass('upgrade')) {
-			var criteriaID = Math.round(new Date().getTime() / 1000);
-
 			var parent = $('table.rw-preview');
 
 			var ratingTemplate = parent.find('.rw-template-rating');
@@ -133,28 +155,19 @@
 			newRating.removeAttr('id');
 			newRating.removeClass('rw-template-rating');
 			newRating.addClass('rw-rating');
-			newRating.attr('data-cid', criteriaID);
 			
 			var multiRatingLabel = newRating.find('.multi-rating-label');
-			multiRatingLabel.attr('name', 'multi_rating[criteria][' + criteriaID + '][label]');
+			multiRatingLabel.attr('name', 'multi_rating[criteria][][label]');
 			
-			if (parent.find('tr.rw-rating').length) {
-				newRating.insertAfter(parent.find('tr.rw-rating:last'));
-			} else {
-				parent.prepend(newRating);
-			}
+			newRating.insertAfter(parent.find('tr.rw-rating:last'));
+			
+			// Add the necessary class so that the summary rating can be initialized
+			$('tr.rw-summary-rating').children('td').eq(1).children('div').addClass('rw-ui-container');
 
-			var rwStarContainer = newRating.find('.rw-rating-type div:first');
-			rwStarContainer.addClass('rw-ui-container rw-urid-' + criteriaID + '0');
-			rwStarContainer.attr('data-uarid', getSummaryPreviewRatingUrid(RW.TYPE.STAR));
-
-			var rwNeroContainer = newRating.find('.rw-rating-type div:last');
-			rwNeroContainer.addClass('rw-ui-container rw-urid-' + criteriaID + '1');
-			rwNeroContainer.attr('data-uarid', getSummaryPreviewRatingUrid(RW.TYPE.NERO));
-
+			newRating.find('.rw-rating-type div').addClass('rw-ui-container');
 			newRating.show();
-
-			initializeRatings(criteriaID);
+			
+			initializeRatings();
 
 			// Show the summary rating after adding a new rating widget.
 			toggleSummaryRatingOptions();
@@ -184,35 +197,27 @@
 			
 			var updatedOptions = getCurrentRatingOptions(type);
 			
-			var total = $('tr.rw-rating').length;
-			
-			$('.rw-ui-' + type).each(function() {
-				var urid = $(this).data('urid');
+			$('#base-rating .rw-ui-' + type + ',' + 'tr.rw-rating .rw-ui-' + type + ',' + 'tr.rw-summary-rating .rw-ui-' + type).each(function() {
+				var elementRow = $(this).parents('tr:first');
+				
+				var urid = parseUrid($(this).attr('class'));
 				var rating = RW.getRating(urid);
 				
 				if (rating) {
-					var instances = rating.getInstances();
-
-					var totalInstance = instances.length;
-
-					for (var i = 0; i < totalInstance; i++) {
-						var ratingInstance = instances[i];
-						var newOptions = $.extend(true, {}, updatedOptions);
-
-						if ($(this).parents('tr:first').hasClass('rw-rating')) {
-							newOptions.uarid = getSummaryPreviewRatingUrid(type);
-							
-							if (total > 1) {
-								newOptions.hideRecommendations = true;
-							}
-						}
-
-						if (urid == getSummaryPreviewRatingUrid(type)) {
-							newOptions.readOnly = true;
-						}
-
-						ratingInstance.setOptions(newOptions);
+					var ratingInstance = rating.getInstances(0);
+					var newOptions = $.extend(true, {}, updatedOptions);
+					var urid_summary = getSummaryUrid(type);
+					
+					if (isMultiCriterion() && elementRow.hasClass('rw-rating')) {
+						newOptions.uarid = urid_summary;
+						newOptions.hideRecommendations = true;
 					}
+
+					if (isMultiCriterion() && urid == urid_summary) {
+						newOptions.readOnly = true;
+					}
+
+					ratingInstance.setOptions(newOptions);
 				}
 			});
 		}
@@ -348,41 +353,40 @@
 
 	/**
 	 * Initializes all rating widgets with the current base rating settings and renders the newly added widget
-	 * @param {type} criteriaID
 	 * @returns {undefined}
 	 */
-	function initializeRatings(criteriaID) {
-		$('tr.rw-rating .rw-ui-container').attr('data-hide-recommendations', 'true');
-		
+	function initializeRatings() {
 		for (var typeIndex in RW.TYPE) {
 			var type = RW.TYPE[typeIndex];
 			
 			var updatedOptions = getCurrentRatingOptions(type);
 			
-			$('.rw-ui-' + type).each(function() {
-				var urid = $(this).data('urid');
+			$('tr.rw-rating .rw-ui-' + type + ',' + 'tr.rw-summary-rating .rw-ui-' + type).each(function() {
 				var newOptions = $.extend(true, {}, updatedOptions);
 
+				var urid = getSummaryUrid(type);
+				
+				var elementRow = $(this).parents('tr:first');
+				
+				$(this).attr('class', 'rw-ui-container rw-ui-' + type);
+				
+				if (isMultiCriterion() && elementRow.hasClass('rw-rating')) {
+					$(this).attr({
+						'data-hide-recommendations': true,
+						'data-uarid': urid
+					});
+					
+					var criterionID = elementRow.index() + 1;
+					urid += '-' + criterionID;
+				}
+				
+				$(this).attr('data-urid', urid);
+				
 				RW.initRating(urid, newOptions);
 			});
 		}
 		
-		for (var i = 0; i <= 1; i++) {
-			var type = RW.TYPE.STAR;
-			var urid = criteriaID + '0';
-			
-			if (1 == i) {
-				type = RW.TYPE.NERO;
-				urid = criteriaID + '1';
-			}
-			
-			var updatedOptions = getCurrentRatingOptions(type);
-			var newOptions = $.extend(true, {}, updatedOptions);
-
-			RW.initRating(urid, newOptions);
-		}
-		
-		RW.render(function() {}, false);
+		RW.render(null, false);
 	}
 	
 	/**
@@ -392,7 +396,7 @@
 	function toggleSummaryRatingOptions() {
 		var total = $('tr.rw-rating').length;
 		
-		if (total > 1) { // We have a multi-criteria, show additional options
+		if (total > 1) { // We have a multi-criterion, show additional options
 			$('#rw_wp_preview').addClass('multi-rating');
 			if ($('.show-summary-rating').prop('checked')) {
 				$('.rw-summary-rating').show();

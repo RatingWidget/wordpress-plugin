@@ -759,9 +759,7 @@ Domain Path: /langs
 				$default_multirating_options = (object) array(
 					'criteria' => array(time() => array()),
 					'summary_label' => __('Summary', WP_RW__ID),
-					'show_summary_rating' => true,
-					'summary_preview_rating_star_urid' => time()+1,
-					'summary_preview_rating_nero_urid' => time()+2,
+					'show_summary_rating' => true
 					);
 				
 				$this->_OPTIONS_DEFAULTS = array(
@@ -3115,10 +3113,6 @@ Domain Path: /langs
 						
 						// Save the new criteria IDs and labels
 						$multirating_options->criteria = $multi_rating['criteria'];
-						
-						// Save the generated summary rating IDs
-						$multirating_options->summary_preview_rating_star_urid = trim($multi_rating['summary_preview_rating_star_urid']);
-						$multirating_options->summary_preview_rating_nero_urid = trim($multi_rating['summary_preview_rating_nero_urid']);
 						
 						// Save the summary label
 						$summary_label = isset($multi_rating['summary_label']) ? trim($multi_rating['summary_label']) : '';
