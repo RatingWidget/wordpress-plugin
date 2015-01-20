@@ -4,7 +4,7 @@ Donate link: http://rating-widget.com/pricing/wordpress/
 Tags: rate, rating, ratings, vote, votes, voting, star, stars, like, dislike, thumbs, widget, widgets, star rating, thumb rating, rating platform, rating system, seo, post rating, comment rating, 5 star, five star, sidebar, comment, comments, post, posts, page, pages, google, admin, administrator, review, reviews, rich-snippets, plugin, plugins, ajax, buddypress, bbpress, social, javascript, js, wordpress, meta, woocommerce, jquery, contest, competition, voting contest, rtmedia
 Requires at least: 2.8
 Tested up to: 4.0
-Stable tag: 2.3.6
+Stable tag: 2.3.7
 License: GPLv2 or later
 
 The most popular Five Star Rating System on the web. User-friendly ratings for: posts, pages, comments, WooCommerce, BuddyPress and bbPress forums.
@@ -12,6 +12,7 @@ The most popular Five Star Rating System on the web. User-friendly ratings for: 
 == Description ==
 
 #### New! Multi-Criteria Ratings is now fully supported!
+
 
 #### Ratings for your:
 * Posts
@@ -183,6 +184,9 @@ If you didn't find a solution to your problem yet, check out our [WordPress Know
 The RatingWidget Team
 
 == Change Log ==
+= 2.3.7 =
+* Fix: Fixed a bug that in some cases were affecting the rating type on excerpts. Hardcoded it to front-post rating.
+
 = 2.3.6 =
 * New: First release of our new awesome Multi-Criteria ratings support!
 * Fix: Fixed Jeegy's Barrels starts theme.

@@ -3,7 +3,7 @@
 Plugin Name: Rating-Widget: Star Rating System
 Plugin URI: http://rating-widget.com/wordpress-plugin/
 Description: Create and manage Rating-Widget ratings in WordPress.
-Version: 2.3.6
+Version: 2.3.7
 Author: Rating-Widget
 Author URI: http://rating-widget.com/wordpress-plugin/
 License: GPLv2
@@ -581,7 +581,7 @@ Domain Path: /langs
 				}
 				/*{obfuscate}-->*/
 
-				do_action('fs_after_license_loaded');
+//				do_action('fs_after_license_loaded');
 			}
 
 			public function ClearTransients()
@@ -3477,91 +3477,95 @@ Domain Path: /langs
 			 * on posts/pages and/or comments are enabled, and saved
 			 * the settings alignment.
 			 */
-			function rw_before_loop_start()
-			{
-				if (RWLogger::IsOn()){ $params = func_get_args(); RWLogger::LogEnterence("rw_before_loop_start", $params); }
+			function rw_before_loop_start() {
+				if ( RWLogger::IsOn() ) {
+					$params = func_get_args();
+					RWLogger::LogEnterence( "rw_before_loop_start", $params );
+				}
 
-				foreach ($this->_extensions as $ext)
-					if ($ext->BlockLoopRatings()) {
-						if (RWLogger::IsOn())
-							RWLogger::Log('rw_before_loop_start', 'Blocked by ' . $ext->GetSlug());
+				foreach ( $this->_extensions as $ext ) {
+					if ( $ext->BlockLoopRatings() ) {
+						if ( RWLogger::IsOn() ) {
+							RWLogger::Log( 'rw_before_loop_start', 'Blocked by ' . $ext->GetSlug() );
+						}
 
 						return;
 					}
+				}
 
 				// Check if shown on search results.
-				if (is_search() && false === $this->GetOption(WP_RW__SHOW_ON_SEARCH))
+				if ( is_search() && false === $this->GetOption( WP_RW__SHOW_ON_SEARCH ) ) {
 					return;
+				}
 
 				// Checks if category.
-				if (is_category() && false === $this->GetOption(WP_RW__SHOW_ON_CATEGORY))
+				if ( is_category() && false === $this->GetOption( WP_RW__SHOW_ON_CATEGORY ) ) {
 					return;
+				}
 
 				// Checks if shown on archive.
-				if (is_archive() && !is_category() && false === $this->GetOption(WP_RW__SHOW_ON_ARCHIVE))
+				if ( is_archive() && ! is_category() && false === $this->GetOption( WP_RW__SHOW_ON_ARCHIVE ) ) {
 					return;
+				}
 
-				if ($this->InBuddyPressPage())
+				if ( $this->InBuddyPressPage() ) {
 					return;
+				}
 
-				if ($this->InBBPressPage())
+				if ( $this->InBBPressPage() ) {
 					return;
+				}
 
-				$comment_align = $this->GetRatingAlignByType(WP_RW__COMMENTS_ALIGN);
-				if (false !== $comment_align && !$this->IsHiddenRatingByType('comment'))
-				{
+				$comment_align = $this->GetRatingAlignByType( WP_RW__COMMENTS_ALIGN );
+				if ( false !== $comment_align && ! $this->IsHiddenRatingByType( 'comment' ) ) {
 					$this->comment_align = $comment_align;
 
 					// Hook comment rating showup.
-					add_action('comment_text', array(&$this, 'AddCommentRating'));
+					add_action( 'comment_text', array( &$this, 'AddCommentRating' ) );
 				}
 
 				$postType = get_post_type();
 
-				RWLogger::Log("rw_before_loop_start", 'Post Type = ' . $postType);
+				RWLogger::Log( "rw_before_loop_start", 'Post Type = ' . $postType );
 
-				if (in_array($postType, array('forum', 'topic', 'reply')))
+				if ( in_array( $postType, array( 'forum', 'topic', 'reply' ) ) ) {
 					return;
+				}
 
-				if (is_page())
-				{
-					// Get rating pages alignment.
-					$post_align = $this->GetRatingAlignByType(WP_RW__PAGES_ALIGN);
-					$post_class = "page";
-				}
-				else if (is_home())
-				{
+				if ( is_home() ) {
 					// Get rating front posts alignment.
-					$post_align = $this->GetRatingAlignByType(WP_RW__FRONT_POSTS_ALIGN);
+					$post_align = $this->GetRatingAlignByType( WP_RW__FRONT_POSTS_ALIGN );
 					$post_class = "front-post";
-				}
-				else
-				{
+				} else if ( is_page() ) {
+					// Get rating pages alignment.
+					$post_align = $this->GetRatingAlignByType( WP_RW__PAGES_ALIGN );
+					$post_class = "page";
+				} else {
 					// Get rating blog posts alignment.
-					$post_align = $this->GetRatingAlignByType(WP_RW__BLOG_POSTS_ALIGN);
+					$post_align = $this->GetRatingAlignByType( WP_RW__BLOG_POSTS_ALIGN );
 					$post_class = "blog-post";
 				}
 
-				if (false !== $post_align && !$this->IsHiddenRatingByType($post_class))
-				{
+				if ( false !== $post_align && ! $this->IsHiddenRatingByType( $post_class ) ) {
 					$this->post_align = $post_align;
 					$this->post_class = $post_class;
 
 					// Hook post rating showup.
-					add_action('the_content', array(&$this, 'AddPostRating'));
+					add_action( 'the_content', array( &$this, 'AddPostRating' ) );
 
-					RWLogger::Log("rw_before_loop_start", 'Hooked to the_content()');
+					RWLogger::Log( "rw_before_loop_start", 'Hooked to the_content()' );
 
-					if (false !== $this->GetOption(WP_RW__SHOW_ON_EXCERPT)) {
+					if ( false !== $this->GetOption( WP_RW__SHOW_ON_EXCERPT ) ) {
 						// Hook post excerpt rating showup.
-						add_action( 'the_excerpt', array( &$this, 'AddPostRating' ) );
+						add_action( 'the_excerpt', array( &$this, 'add_front_post_rating' ) );
 
-						RWLogger::Log("rw_before_loop_start", 'Hooked to the_excerpt()');
+						RWLogger::Log( "rw_before_loop_start", 'Hooked to the_excerpt()' );
 					}
 				}
 
-				if (RWLogger::IsOn())
-					RWLogger::LogDeparture("rw_before_loop_start");
+				if ( RWLogger::IsOn() ) {
+					RWLogger::LogDeparture( "rw_before_loop_start" );
+				}
 			}
 
 			static function IDsCollectionToArray(&$pIds)
@@ -4043,30 +4047,47 @@ Domain Path: /langs
 			}
 
 			/**
-			 * If Rating-Widget enabled for Posts, attach it
-			 * html container to the post content.
-			 *
-			 * @param {string} $content
+			 * @author Vova Feldman (@svovaf)
+			 * @since 2.3.7
 			 */
-			function AddPostRating($content)
+			function add_post_rating($content, $rclass)
 			{
-				if (RWLogger::IsOn()){ $params = func_get_args(); RWLogger::LogEnterence("AddPostRating", $params); }
+				RWLogger::LogEnterence('add_post_rating');
 
 				if ($this->InBuddyPressPage())
 				{
-					if (RWLogger::IsOn())
-						RWLogger::LogDeparture("AddPostRating");
-
+					RWLogger::LogDeparture('add_post_rating');
 					return;
 				}
 
 				global $post;
-                                
-                $ratingHtml = $this->EmbedRatingIfVisibleByPost($post, $this->post_class, true, $this->post_align->hor, false);
-				
-                return ('top' === $this->post_align->ver) ?
-                    $ratingHtml . $content :
-                    $content . $ratingHtml;
+
+				$ratingHtml = $this->EmbedRatingIfVisibleByPost($post, $rclass, true, $this->post_align->hor, false);
+
+				return ('top' === $this->post_align->ver) ?
+					$ratingHtml . $content :
+					$content . $ratingHtml;
+			}
+
+			/**
+			 * @author Vova Feldman (@svovaf)
+			 * @since 2.3.7
+			 */
+			function add_front_post_rating($content)
+			{
+				return $this->add_post_rating($content, 'front-post');
+			}
+
+			/**
+			 * If Rating-Widget enabled for Posts, attach it
+			 * html container to the post content.
+			 *
+			 * @param string $content
+			 * @return string
+			 */
+			function AddPostRating($content)
+			{
+				return $this->add_post_rating($content, $this->post_class);
 			}
 
 			/**
@@ -5302,7 +5323,6 @@ Domain Path: /langs
                 // Checks whether this post/page has read-only rating.
 				$readonly_post = (!isset($_POST['rw_readonly_post']) || '1' !== $_POST['rw_readonly_post']);
 
-				$classes = array();
 				switch ($_POST['post_type']) {
 					case 'page':
 						$classes = array('page');
