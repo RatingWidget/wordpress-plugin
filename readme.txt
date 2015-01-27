@@ -4,7 +4,7 @@ Donate link: http://rating-widget.com/pricing/wordpress/
 Tags: rate, rating, ratings, vote, votes, voting, star, stars, like, dislike, thumbs, widget, widgets, star rating, thumb rating, rating platform, rating system, seo, post rating, comment rating, 5 star, five star, sidebar, comment, comments, post, posts, page, pages, google, admin, administrator, review, reviews, rich-snippets, plugin, plugins, ajax, buddypress, bbpress, social, javascript, js, wordpress, meta, woocommerce, jquery, contest, competition, voting contest, rtmedia
 Requires at least: 2.8
 Tested up to: 4.0
-Stable tag: 2.3.7
+Stable tag: 2.3.8
 License: GPLv2 or later
 
 The most popular Five Star Rating System on the web. User-friendly ratings for: posts, pages, comments, WooCommerce, BuddyPress and bbPress forums.
@@ -114,23 +114,23 @@ Check our full features list: http://rating-widget.com/wordpress-plugin/
 
 == Screenshots ==
 
-1. Ratings settings button
-2. Add ratings
-3. Set rating alignment
-4. Ratings on a posts
-5. Ratings on comments
-6. Ratings on BuddyPress activity updates & comments
-7. Ratings on bbPress forum replies and replies authors'
-8. Top Rated widget
-9. Ratings options
-10. Ratings advanced font options
-11. Ratings advanced layout options
-12. Ratings advanced text options
-13. Rating settings Live Preview
-14. Top Rated widget settings
-15. Ratings availability settings
-16. Ratings visibility settings
-17. Option to exclude ratings on post/page add/edit section
+1. Beautiful Page, Post & Comment Ratings
+2. WYSISYG User-Friendly Configuration
+3. Rich-Snippets Integration (* Professional Plan)
+4. In-Settings Live Preview! (Bonus: Multi-Criteria Ratings Support)
+5. Multi-Criteria Ratings
+6. Stunning Top-Rated Sidebar Widget
+7. Handful of AWESOME Features to Configure the Top-Rated Items
+8. Ratings Reports (* Professional Plan)
+9. WooCommerce Full Integration
+10. Mobile Optimized Experience
+11. bbPress Full Integration for Forum Topics/Replies & User Reputation
+12. BuddyPress Activity and User Ratings
+13. Per-Post/Page/Product Rating Customization to Show / Hide & Active / ReadOnly
+14. Full Text Customization
+15. Developer's Friendly! Power-User Settings to Tweak Everything
+16. Advanced Customization
+17. WooCommerce Products Collection Ratings
 
 == Frequently Asked Questions ==
 
@@ -184,6 +184,9 @@ If you didn't find a solution to your problem yet, check out our [WordPress Know
 The RatingWidget Team
 
 == Change Log ==
+= 2.3.8 =
+* Update: Revamped the screenshots section with updated images.
+
 = 2.3.7 =
 * Fix: Fixed a bug that in some cases were affecting the rating type on excerpts. Hardcoded it to front-post rating.
 
