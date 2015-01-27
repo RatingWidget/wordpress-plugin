@@ -4,7 +4,7 @@ Donate link: http://rating-widget.com/pricing/wordpress/
 Tags: rate, rating, ratings, vote, votes, voting, star, stars, like, dislike, thumbs, widget, widgets, star rating, thumb rating, rating platform, rating system, seo, post rating, comment rating, 5 star, five star, sidebar, comment, comments, post, posts, page, pages, google, admin, administrator, review, reviews, rich-snippets, plugin, plugins, ajax, buddypress, bbpress, social, javascript, js, wordpress, meta, woocommerce, jquery, contest, competition, voting contest, rtmedia
 Requires at least: 2.8
 Tested up to: 4.0
-Stable tag: 2.3.8
+Stable tag: 2.3.9
 License: GPLv2 or later
 
 The most popular Five Star Rating System on the web. User-friendly ratings for: posts, pages, comments, WooCommerce, BuddyPress and bbPress forums.
@@ -58,7 +58,7 @@ The plugin has [PRO VERSIONS](http://rating-widget.com/pricing/wordpress/) with 
 > * API Access
 > * Custom Ratings Image
 > * WMPL Language Auto-Selection
-> * bbPress's Forum Ratings
+> * bbPress Forum Ratings
 > * 250k PageViews / month
 > * 3,000 ratings
 > * Unlimited votes
@@ -85,7 +85,7 @@ Check our full features list: http://rating-widget.com/wordpress-plugin/
 ---
 
 > #### Supported in 40 Languages
-> Rating-Widget star ratings are localizable and currently available in:
+> Rating-Widget star ratings are translated and available in:
 >
 > Afrikaans, Arabic - العربية, Bengali - বাংলা, Bulgarian - български, Catalan - Català, Chinese - 汉语/漢語, Croatian - Hrvatski, Czech - Čeština, Danish - Dansk, English, Estonian - Eesti keel, Finnish - Suomi, French - Français, Georgian - ქართული, German - Deutsch, Greek - Ελληνικά, Hebrew - עברית, Hindi - हिंदी, Hungarian - Magyar, Indonesian - Bahasa Indonesia, Italian - Italiano, Japanese - 日本語, Korean - 한국어/조선말, Lithuanian - Lietuvių, Maltese - Malti, Mongolian - Mongγol Kele, Nederlands - Dutch, Norwegian - Norsk, Persian - فارسی, Polish - Polska, Portuguese - Português, Romanian - Română, Russian - Русский, Serbian - Српски, Slovak - Slovenčina, Slovenian - Slovenščina, Spanish - Español, Swedish - Svenska, Tamil - தமிழ், Turkish - Türkçe, Vietnamese - Tiếng Việt, Ukrainian - Українська Мова
 >
@@ -184,6 +184,9 @@ If you didn't find a solution to your problem yet, check out our [WordPress Know
 The RatingWidget Team
 
 == Change Log ==
+= 2.3.9 =
+* Fix: Modified multi-criteria rating ids in the settings preview section to be sequential and not random.
+
 = 2.3.8 =
 * Update: Revamped the screenshots section with updated images.
 

@@ -3,7 +3,7 @@
 Plugin Name: Rating-Widget: Star Rating System
 Plugin URI: http://rating-widget.com/wordpress-plugin/
 Description: Create and manage Rating-Widget ratings in WordPress.
-Version: 2.3.8
+Version: 2.3.9
 Author: Rating-Widget
 Author URI: http://rating-widget.com/wordpress-plugin/
 License: GPLv2
@@ -760,9 +760,7 @@ Domain Path: /langs
 					'criteria' => array(time() => array()),
 					'summary_label' => __('Summary', WP_RW__ID),
 					'show_summary_rating' => true,
-					'summary_preview_rating_star_urid' => time()+1,
-					'summary_preview_rating_nero_urid' => time()+2,
-					);
+				);
 				
 				$this->_OPTIONS_DEFAULTS = array(
 					WP_RW__DB_OPTION_SITE_PUBLIC_KEY => false,
@@ -3116,10 +3114,6 @@ Domain Path: /langs
 						// Save the new criteria IDs and labels
 						$multirating_options->criteria = $multi_rating['criteria'];
 						
-						// Save the generated summary rating IDs
-						$multirating_options->summary_preview_rating_star_urid = trim($multi_rating['summary_preview_rating_star_urid']);
-						$multirating_options->summary_preview_rating_nero_urid = trim($multi_rating['summary_preview_rating_nero_urid']);
-						
 						// Save the summary label
 						$summary_label = isset($multi_rating['summary_label']) ? trim($multi_rating['summary_label']) : '';
 						if (!empty($summary_label)) {
@@ -4048,7 +4042,12 @@ Domain Path: /langs
 
 			/**
 			 * @author Vova Feldman (@svovaf)
-			 * @since 2.3.7
+			 * @since  2.3.7
+			 *
+			 * @param string $content
+			 * @param string $rclass
+			 *
+			 * @return string
 			 */
 			function add_post_rating($content, $rclass)
 			{
@@ -4071,7 +4070,11 @@ Domain Path: /langs
 
 			/**
 			 * @author Vova Feldman (@svovaf)
-			 * @since 2.3.7
+			 * @since  2.3.7
+			 *
+			 * @param string $content
+			 *
+			 * @return string
 			 */
 			function add_front_post_rating($content)
 			{
