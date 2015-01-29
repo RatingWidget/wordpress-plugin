@@ -1,0 +1,17 @@
+#rw-toprated-shortcode-dialog table [type="text"],
+#rw-toprated-shortcode-dialog table [type="number"],
+#rw-toprated-shortcode-dialog table select {
+	width: 152px;
+}
+
+#rw-toprated-shortcode-dialog label.rw-toprated-ltr {
+	padding-right: 10px !important;
+}
+
+#rw-toprated-shortcode-dialog td {
+	padding-bottom: 0;
+	padding-top: 0;
+}
+
+
+
