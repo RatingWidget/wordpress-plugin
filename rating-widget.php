@@ -291,6 +291,7 @@ Domain Path: /langs
 				// Add activation and de-activation hooks.
 				register_activation_hook( WP_RW__PLUGIN_FILE_FULL, 'rw_activated' );
 				
+				add_action('admin_footer', array( &$this, "init_toprated_shortcode_settings" ) );
 				add_action( 'admin_head', array( &$this, "rw_admin_menu_icon_css" ) );
 				add_action('admin_init', array(&$this, 'init_toprated_shortcode_tinymce'));
 				add_action( 'admin_menu', array( &$this, 'admin_menu' ) );
@@ -298,8 +299,6 @@ Domain Path: /langs
 				add_action( 'save_post', array( &$this, 'SavePostData' ) );
 				add_action( 'trashed_post', array( &$this, 'DeletePostData' ) );
 				add_action( 'updated_post_meta', array( &$this, 'PurgePostFeaturedImageTransient' ), 10, 4 );
-				add_action('wp_ajax_rw_create_toprated_shortcode', array(&$this, 'create_toprated_shortcode_plugin_html'));
-
 
 				{
 					if ( $this->GetOption( WP_RW__DB_OPTION_TRACKING ) ) {
@@ -310,7 +309,21 @@ Domain Path: /langs
 					// add_action('init', array(&$this, 'test_footer_init'));
 				}
 			}
-
+			
+			
+			/**
+			 * Creates a hidden HTML element flag for the product post type's availability
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.3.6
+			 */
+			function init_toprated_shortcode_settings() {
+				if ($this->admin_page_has_rating_metabox()) {
+					?>
+					<input type="hidden" value="<?php echo post_type_exists('product') ? '1' : '0'; ?>" id="rw-toprated-product-type-exists"/>
+					<?php
+				}
+			}
+			
 			/**
 			 * @author Leo Fajardo (@leorw)
 			 * @since 2.3.6
@@ -345,105 +358,6 @@ Domain Path: /langs
 			function add_tinymce_button($buttons) {
 				$buttons[] = 'rw_toprated_shortcode_button';
 				return $buttons;
-			}
-			
-			/**
-			 * Generates the HTML content of the top-rated shortcode plugin dialog
-			 * 
-			 * @author Leo Fajardo (@leorw)
-			 * @since 2.3.6
-			 * @global type $wpdb
-			 */
-			function create_toprated_shortcode_plugin_html() {
-				global $wpdb;
-				?>
-	            <div id="rw-toprated-shortcode-dialog">
-					<table class="form-table">
-						<tbody>
-							<tr>
-								<th scope="row"><label for="rw-toprated-type"><?php _e('Type', WP_RW__ID); ?></label></th>
-								<td>
-									<select id="rw-toprated-type">
-										<option selected="selected" value="posts"><?php _e('Posts', WP_RW__ID); ?></option>
-										<option value="pages"><?php _e('Pages', WP_RW__ID); ?></option>
-										
-										<?php if (post_type_exists('product')) { ?>
-										<option value="products"><?php _e('Products', WP_RW__ID); ?></option>
-										<?php } ?>
-									</select>
-								</td>
-							</tr>
-							<tr>
-								<th scope="row"><?php _e('Direction', WP_RW__ID); ?></th>
-								<td>
-									<fieldset>
-										<label class="rw-toprated-ltr" title="<?php _e('Left to Right', WP_RW__ID); ?>"><input type="radio" name="rw-toprated-direction" value="ltr" checked="checked"> <span><?php _e('Left to Right', WP_RW__ID); ?></span></label>
-										<label title="<?php _e('Right to Left', WP_RW__ID); ?>"><input type="radio" name="rw-toprated-direction" value="rtl"> <span><?php _e('Right to Left', WP_RW__ID); ?></span></label><br>
-									</fieldset>
-								</td>
-							</tr>
-							<tr>
-								<th scope="row"><label for="rw-toprated-count"><?php _e('Max Items', WP_RW__ID); ?></label></th>
-								<td>
-									<select id="rw-toprated-count">
-										<?php
-										for ($value=1; $value<=25; $value++) {
-										?>
-										<option value="<?php echo $value; ?>" <?php selected(5, $value); ?>><?php echo $value; ?></option>
-										<?php
-										}
-										?>
-									</select>
-								</td>
-							</tr>
-							<tr>
-								<th scope="row"><label for="rw-toprated-min-votes"><?php _e('Min Votes', WP_RW__ID); ?></label></th>
-								<td>
-									<input type="number" id="rw-toprated-min-votes" value="1" class="regular-text code">
-									<br><span class="description">&gt;= 1</span>
-								</td>
-							</tr>
-							<tr>
-								<th scope="row"><label for="rw-toprated-orderby"><?php _e('Order By', WP_RW__ID); ?></label></th>
-								<td>
-									<select id="rw-toprated-orderby">
-										<option value="avgrate" selected="selected"><?php _e('Average Rate', WP_RW__ID); ?></option>
-										<option value="votes"><?php _e('Votes Number', WP_RW__ID); ?></option>
-										<option value="likes"><?php _e('Likes (for Thumbs)', WP_RW__ID); ?></option>
-										<option value="created"><?php _e('Created', WP_RW__ID); ?></option>
-										<option value="updated"><?php _e('Updated', WP_RW__ID); ?></option>											</select>									</select>
-								</td>
-							</tr>
-							<tr>
-							<th scope="row"><label for="rw-toprated-order"><?php _e('Order', WP_RW__ID); ?></label></th>
-								<td>
-									<select id="rw-toprated-order">
-										<option value="DESC" selected="selected"><?php _e('BEST (Descending)', WP_RW__ID); ?></option>
-										<option value="ASC"><?php _e('WORST (Ascending)', WP_RW__ID); ?></option>
-									</select>
-								</td>
-							</tr>
-							<tr>
-								<th scope="row"><label for="rw-toprated-created-in"><?php _e('Created In', WP_RW__ID); ?></label></th>
-								<td>
-									<select id="rw-toprated-created-in">
-										<option value="all_time" selected="selected"><?php _e('All Time', WP_RW__ID); ?></option>
-										<option value="last_year"><?php _e('Last Year', WP_RW__ID); ?></option>
-										<option value="last_6_months"><?php _e('Last 6 Months', WP_RW__ID); ?></option>
-										<option value="last_30_days"><?php _e('Last 30 Days', WP_RW__ID); ?></option>
-										<option value="last_7_days"><?php _e('Last 7 Days', WP_RW__ID); ?></option>
-										<option value="last_24_hours"><?php _e('Last 24 Hours', WP_RW__ID); ?></option>
-									</select>
-								</td>
-							</tr>
-						</tbody>
-					</table>
-					<p>
-						<input type="submit" name="submit" id="rw-toprated-insert-shortcode" class="button button-primary" value="<?php _e('Insert Shortcode', WP_RW__ID); ?>">
-					</p>
-				</div>
-				<?php
-				die();
 			}
 			
 			function RegisterExtensionsHooks() {
@@ -1344,15 +1258,10 @@ Domain Path: /langs
 				rw_enqueue_style('rw_wp_admin', 'wordpress/admin.css');
 				rw_enqueue_script('rw_wp_admin', 'wordpress/admin.js');
 				
-				// Enqueue the stylesheet and scripts for the metabox rating and top-rated shortcode
+				// Enqueue the stylesheets for the metabox rating and for the top-rated shortcode
 				if ($this->admin_page_has_rating_metabox()) {
 					rw_enqueue_style('rw-admin-rating', WP_RW__PLUGIN_URL . 'resources/css/admin-rating.css');
 					rw_enqueue_style('rw-toprated-shortcode-style', WP_RW__PLUGIN_URL . 'resources/css/toprated-shortcode.css');
-					
-					wp_enqueue_style('wp-jquery-ui-dialog');
-					
-					rw_enqueue_script('rw-toprated-shortcode', WP_RW__PLUGIN_URL . 'resources/js/top-rated/toprated-shortcode.js');
-					wp_enqueue_script('jquery-ui-dialog');
 				}
 				
 				if (!$this->_inDashboard)

@@ -1,17 +1,29 @@
-#rw-toprated-shortcode-dialog table [type="text"],
-#rw-toprated-shortcode-dialog table [type="number"],
-#rw-toprated-shortcode-dialog table select {
-	width: 152px;
+label.rw-toprated-ltr {
+	padding-right: 20px !important;
 }
 
-#rw-toprated-shortcode-dialog label.rw-toprated-ltr {
-	padding-right: 10px !important;
+#rw-toprated-direction label {
+	cursor: pointer;
 }
 
-#rw-toprated-shortcode-dialog td {
-	padding-bottom: 0;
-	padding-top: 0;
+/* Fix the radio buttons' appearance */
+#rw-toprated-direction [name="rw-toprated-direction"]:before {
+	margin: 5px !important;
 }
 
+/* Align the insert button to the form fields */
+#rw-toprated-insert-shortcode {
+	padding-left: 3px;
+	padding-right: 3px;
+	margin-left: -15px;
+}
 
+#rw-toprated-min-votes {
+	width: 60px !important;
+}
 
+span#rw-toprated-note {
+	font-size: 11px;
+	position: relative;
+	top: 12px;
+}
