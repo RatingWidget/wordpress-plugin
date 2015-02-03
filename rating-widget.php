@@ -3,7 +3,7 @@
 Plugin Name: Rating-Widget: Star Rating System
 Plugin URI: http://rating-widget.com/wordpress-plugin/
 Description: Create and manage Rating-Widget ratings in WordPress.
-Version: 2.3.9
+Version: 2.4.0
 Author: Rating-Widget
 Author URI: http://rating-widget.com/wordpress-plugin/
 License: GPLv2
@@ -217,9 +217,10 @@ Domain Path: /langs
 				RWLogger::Log('WP_RW__SECURE_ADDRESS', json_encode(WP_RW__SECURE_ADDRESS));
 
 				// Don't log secure data.
-//        RWLogger::Log("WP_RW__SITE_SECRET_KEY", $this->fs->get_site()->secret_key);
-//        RWLogger::Log("WP_RW__SERVER_ADDR", WP_RW__SERVER_ADDR);
-//        RWLogger::Log("WP_RW__DEBUG", json_encode(WP_RW__DEBUG));
+				if (is_admin()) {
+					RWLogger::Log( "WP_RW__SERVER_ADDR", WP_RW__SERVER_ADDR );
+					RWLogger::Log( "WP_RW__DEBUG", json_encode( WP_RW__DEBUG ) );
+				}
 			}
 
 			private function setup_on_dashboard()
@@ -553,7 +554,7 @@ Domain Path: /langs
 						}
 						else
 						{
-							if ($in_license_sync && !rwapi()->Test())
+							if (!rwapi()->Test())
 							{
 								add_action( 'all_admin_notices', array( &$this, 'ApiAccessBlockedNotice' ) );
 							}
@@ -4132,8 +4133,11 @@ Domain Path: /langs
 				$ratingData = '';
 				foreach ($pOptions as $key => $val)
 				{
-					if (is_string($val) && '' !== trim($val))
+					if (!empty($val) && '' !== trim($val))
+					{
+						RWLogger::Log('GetRatingHtml', "Adding options for: urid={$pUrid}; data-{$key}={$val}");
 						$ratingData .= ' data-' . $key . '="' . esc_attr(trim($val)) . '"';
+					}
 				}
 
 				$rating_html = '<div class="rw-ui-container rw-class-' . $pElementClass . ' rw-urid-' . $pUrid . '"' . $ratingData;
@@ -5741,8 +5745,12 @@ Domain Path: /langs
 				}
 
 				if (!$this->has_multirating_options($pElementClass)) {
+					RWLogger::Log('EmbedRating', 'Not multi-criteria rating');
+
 					return $this->EmbedRawRating($urid, $pTitle, $pPermalink, $pElementClass, $pAddSchema, $pHorAlign, $pCustomStyle, $pOptions);
 				} else {
+					RWLogger::Log('EmbedRating', 'Multi-criteria rating');
+
 					//Prefixed with mr_ to avoid possible collisions after calling extract()
 					$vars = array(
 						'mr_add_schema' => $pAddSchema,
