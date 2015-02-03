@@ -310,23 +310,32 @@ Domain Path: /langs
 				}
 			}
 			
-			
 			/**
-			 * Creates a hidden HTML element flag for the product post type's availability
+			 * Initializes the options to be used by the top-rated TinyMCE popup dialog
+			 * 
 			 * @author Leo Fajardo (@leorw)
-			 * @since 2.3.6
+			 * @since 2.3.9
 			 */
 			function init_toprated_shortcode_settings() {
 				if ($this->admin_page_has_rating_metabox()) {
+					$extensions = ratingwidget()->GetExtensions();
+					
+					$rw_toprated_options = array(
+						'bbpress_installed' => function_exists('is_bbpress'),
+						'buddypress_installed' => function_exists('is_buddypress'),
+						'woocommerce_installed' => isset($extensions['woocommerce'])
+					);
 					?>
-					<input type="hidden" value="<?php echo post_type_exists('product') ? '1' : '0'; ?>" id="rw-toprated-product-type-exists"/>
+					<script>
+						RW_TOPRATED_OPTIONS = <?php echo json_encode($rw_toprated_options); ?>;
+					</script>
 					<?php
 				}
 			}
 			
 			/**
 			 * @author Leo Fajardo (@leorw)
-			 * @since 2.3.6
+			 * @since 2.3.9
 			 */
 			function init_toprated_shortcode_tinymce() {
 				if (current_user_can('publish_posts') && get_user_option('rich_editing') == 'true') {
@@ -339,7 +348,7 @@ Domain Path: /langs
 			 * Registers the top-rated shortcode TinyMCE plugin
 			 * 
 			 * @author Leo Fajardo (@leorw)
-			 * @since 2.3.6
+			 * @since 2.3.9
 			 * @param array $plugin_array
 			 * @return array
 			 */
@@ -1326,7 +1335,6 @@ Domain Path: /langs
 			 */
 			function init_site_styles() {
 				rw_enqueue_style('rw-site-rating', WP_RW__PLUGIN_URL . 'resources/css/site-rating.css');
-				rw_enqueue_style('rw-site-toprated', WP_RW__PLUGIN_URL . 'resources/css/site-toprated.css');
 			}
 			
 			/**
@@ -5467,6 +5475,29 @@ Domain Path: /langs
 				$image = wp_get_attachment_image_src(get_post_thumbnail_id($pPostID), 'single-post-thumbnail');
 				return $image[0];
 			}
+			
+			/**
+			 * Retrieves the user's avatar URL
+			 * 
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.3.9
+			 * @param int $user_id
+			 * @return string
+			 */
+			function get_user_avatar($user_id) {
+				$avatar_url = '';
+				
+				$avatar = get_avatar($user_id);
+				if ($avatar) {
+					// Extract the avatar URL from the <img> tag
+					preg_match('/src=[\'"](.*?)[\'"]/i', $avatar, $matches);
+					if ($matches) {
+						$avatar_url = $matches[1];
+					}
+				}
+				
+				return $avatar_url;
+			}
 
 			function GetTopRatedData($pTypes = array(), $pLimit = 5, $pOffset = 0, $pMinVotes = 1, $pInclude = false, $pShowOrder = false, $pOrderBy = 'avgrate', $pOrder = 'DESC', $since_created = -1)
 			{
@@ -5524,7 +5555,7 @@ Domain Path: /langs
 					return false;
 
 				$rw_ret_obj = json_decode($rw_ret_obj);
-
+				
 				if (null === $rw_ret_obj || true !== $rw_ret_obj->success)
 					return false;
 
@@ -5532,50 +5563,41 @@ Domain Path: /langs
 			}
 			
 			/**
-			 * Creates an array of rating post types and their settings
+			 * Creates an array of rating post type settings
 			 * 
 			 * @author Leo Fajardo (leorw)
-			 * @since 2.3.6
+			 * @since 2.3.9
 			 * @return array
 			 */
 			function get_rating_types() {
 				$types = array(
-					"posts" => array(
-						"rclass" => "blog-post",
-						"classes" => "front-post,blog-post,new-blog-post,user-post",
-						"options" => WP_RW__BLOG_POSTS_OPTIONS,
-					),
 					"pages" => array(
 						"rclass" => "page",
 						"classes" => "page,user-page",
 						"options" => WP_RW__PAGES_OPTIONS,
 					),
-					"comments" => array(
-						"rclass" => "comment",
-						"classes" => "comment,new-blog-comment,user-comment",
-						"options" => WP_RW__COMMENTS_OPTIONS,
-					),
-					"activity_updates" => array(
-						"rclass" => "activity-update",
-						"classes" => "activity-update,user-activity-update",
-						"options" => WP_RW__ACTIVITY_UPDATES_OPTIONS,
-					),
-					"activity_comments" => array(
-						"rclass" => "activity-comment",
-						"classes" => "activity-comment,user-activity-comment",
-						"options" => WP_RW__ACTIVITY_COMMENTS_OPTIONS,
-					),
-					"forum_posts" => array(
+					"posts" => array(
+						"rclass" => "blog-post",
+						"classes" => "front-post,blog-post,new-blog-post,user-post",
+						"options" => WP_RW__BLOG_POSTS_OPTIONS,
+					)
+				);
+				
+				if (function_exists('is_bbpress')) {
+					$types["forum_posts"] = array(
 						"rclass" => "forum-post",
 						"classes" => "forum-post,new-forum-post,user-forum-post",
 						"options" => WP_RW__FORUM_POSTS_OPTIONS,
-					),
-					"users" => array(
+					);
+				}
+				
+				if (function_exists('is_bbpress') || function_exists('is_buddypress')) {
+					$types["users"] = array(
 						"rclass" => "user",
 						"classes" => "user",
 						"options" => WP_RW__USERS_OPTIONS,
-					)
-				);
+					);
+				}
 
 				$extensions = $this->GetExtensions();
 
@@ -5587,10 +5609,10 @@ Domain Path: /langs
 			}
 			
 			/**
-			 * Retrieves the generated top-rated HTML text
+			 * Retrieves the generated top-rated HTML string
 			 * 
 			 * @author Leo Fajardo (@leorw)
-			 * @since 2.3.6
+			 * @since 2.3.9
 			 * @param array $shortcode_atts
 			 * @return string
 			 */

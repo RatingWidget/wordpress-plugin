@@ -1,42 +1,72 @@
 (function($) {
 	$(document).ready(function() {
+		var topRatedPopupDialog = null;
+		
 		// Initialize the "Max Items" field --------------------------------------------
 		var dialogMaxItemsField = {
 			name: 'rw-toprated-count',
 			label: 'Max Items:',
 			type: 'listbox',
-			values: []
+			values: [],
+			onselect : function() {
+				if ('upgrade' === this.value()) {
+					topRatedPopupDialog.close();
+					window.location.href = 'admin.php?page=rating-widget-pricing';
+				}
+			},
+			onPostRender: function() {
+				// Default total items
+				this.value("5");
+			}
 		};
 		
-		for (var counter = 1; counter <= 25; counter++) {
-			dialogMaxItemsField.values.push({text: counter.toString(), value: counter});
+		var nonProfessionalLimit = 11;
+		var limit = (RW._isProfessional() || RW._isTrial()) ? 50 : nonProfessionalLimit;
+		
+		for (var counter = 1; counter <= limit; counter++) {
+			var text = counter.toString();
+			var value = counter;
+			
+			if (nonProfessionalLimit === counter && nonProfessionalLimit === limit) {
+				text = 'Upgrade to Professional for 50 Items';
+				value = 'upgrade';
+			}
+			
+			dialogMaxItemsField.values.push({text: text, value: value});
 		}
 		// -----------------------------------------------------------------------------		
 	
-		// Initialize the "Type" field --------------------------------------------
+		// Initialize the "Type" field -------------------------------------------------
 		var dialogTypeField = {
 			name: 'rw-toprated-type',
 			label: 'Type:',
 			type: 'listbox',
 			values: [
-				{text: 'Posts', value: 'posts'},
-				{text: 'Pages', value: 'pages'}
-				
+				{text: 'Pages', value: 'pages'},
+				{text: 'Posts', value: 'posts'}
 			]
 		};
 		
-		if ($('#rw-toprated-product-type-exists').val() == '1') {
+		if (RW_TOPRATED_OPTIONS.woocommerce_installed) {
 			dialogTypeField.values.push({text: 'Products', value: 'products'});
+		}
+		
+		if (RW_TOPRATED_OPTIONS.bbpress_installed) {
+			dialogTypeField.values.push({text: 'Topics', value: 'forum_posts'});
+		}
+		
+		if (RW_TOPRATED_OPTIONS.bbpress_installed || RW_TOPRATED_OPTIONS.buddypress_installed) {
+			dialogTypeField.values.push({text: 'Users', value: 'users'});
 		}
 		// -----------------------------------------------------------------------------		
 	
 		tinymce.create('tinymce.plugins.rw_toprated_shortcode_plugin', {
 			init : function(editor, url) {
 				editor.addCommand('rw_insert_toprated_shortcode', function() {
-					var win = editor.windowManager.open({
+					topRatedPopupDialog = editor.windowManager.open({
 						title: 'Add Top-Rated Table',
 						body: [
-							dialogTypeField,
+							dialogTypeField, // Insert the "Type" field
 							{
 								id: 'rw-toprated-direction',
 								label: 'Direction:',
@@ -53,7 +83,7 @@
 									this.value("1");
 								}
 							},
-							dialogMaxItemsField, // Insert our "Max Items" field
+							dialogMaxItemsField, // Insert the "Max Items" field
 							{
 								name: 'rw-toprated-orderby',
 								label: 'Order By:',
@@ -98,7 +128,7 @@
 							classes: 'widget btn primary first abs-layout-item',
 							text: "Add Table",
 							onclick: function() {
-								win.submit();
+								topRatedPopupDialog.submit();
 							}
 						}],
 						onsubmit: function(e) {
@@ -116,12 +146,16 @@
 							// Insert the shortcode into the post's edit page textarea.
 							tinymce.activeEditor.execCommand('mceInsertContent', 0, shortcode);
 							
-							win.close();
+							topRatedPopupDialog.close();
 						}
 					});
 				});
-
-				editor.addButton('rw_toprated_shortcode_button', {title : 'Add Top-Rated Table (by RatingWidget)', cmd : 'rw_insert_toprated_shortcode', image: url + '/../../../icon.png' });
+				
+				editor.addButton('rw_toprated_shortcode_button', {
+					title : 'Add Top-Rated Table (by RatingWidget)',
+					cmd : 'rw_insert_toprated_shortcode',
+					image: $('#toplevel_page_rating-widget .wp-menu-image img:first').attr('src')
+				});
 			},   
 		});
 
