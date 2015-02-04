@@ -11,12 +11,12 @@
 			onselect : function() {
 				if ('upgrade' === this.value()) {
 					topRatedPopupDialog.close();
-					window.location.href = 'admin.php?page=rating-widget-pricing';
+					window.location.href = RW_TOPRATED_OPTIONS.upgrade_url;
 				}
 			},
 			onPostRender: function() {
 				// Default total items
-				this.value("5");
+				this.value("10");
 			}
 		};
 		

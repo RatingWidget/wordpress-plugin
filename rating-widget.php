@@ -3,7 +3,7 @@
 Plugin Name: Rating-Widget: Star Rating System
 Plugin URI: http://rating-widget.com/wordpress-plugin/
 Description: Create and manage Rating-Widget ratings in WordPress.
-Version: 2.3.9
+Version: 2.4.1
 Author: Rating-Widget
 Author URI: http://rating-widget.com/wordpress-plugin/
 License: GPLv2
@@ -217,9 +217,10 @@ Domain Path: /langs
 				RWLogger::Log('WP_RW__SECURE_ADDRESS', json_encode(WP_RW__SECURE_ADDRESS));
 
 				// Don't log secure data.
-//        RWLogger::Log("WP_RW__SITE_SECRET_KEY", $this->fs->get_site()->secret_key);
-//        RWLogger::Log("WP_RW__SERVER_ADDR", WP_RW__SERVER_ADDR);
-//        RWLogger::Log("WP_RW__DEBUG", json_encode(WP_RW__DEBUG));
+				if (is_admin()) {
+					RWLogger::Log( "WP_RW__SERVER_ADDR", WP_RW__SERVER_ADDR );
+					RWLogger::Log( "WP_RW__DEBUG", json_encode( WP_RW__DEBUG ) );
+				}
 			}
 
 			private function setup_on_dashboard()
@@ -291,9 +292,8 @@ Domain Path: /langs
 				// Add activation and de-activation hooks.
 				register_activation_hook( WP_RW__PLUGIN_FILE_FULL, 'rw_activated' );
 				
-				add_action('admin_footer', array( &$this, "init_toprated_shortcode_settings" ) );
 				add_action( 'admin_head', array( &$this, "rw_admin_menu_icon_css" ) );
-				add_action('admin_init', array(&$this, 'init_toprated_shortcode_tinymce'));
+				add_action('admin_init', array(&$this, 'register_toprated_shortcode_hooks'));
 				add_action( 'admin_menu', array( &$this, 'admin_menu' ) );
 				add_action( 'admin_menu', array( &$this, 'AddPostMetaBox' ) ); // Metabox for posts/pages
 				add_action( 'save_post', array( &$this, 'SavePostData' ) );
@@ -311,44 +311,77 @@ Domain Path: /langs
 			}
 			
 			/**
-			 * Initializes the options to be used by the top-rated TinyMCE popup dialog
+			 * Determines if rich editing is available
 			 * 
 			 * @author Leo Fajardo (@leorw)
-			 * @since 2.3.9
+			 * $since 2.4.1
+			 * @return boolean
 			 */
-			function init_toprated_shortcode_settings() {
-				if ($this->admin_page_has_rating_metabox()) {
-					$extensions = ratingwidget()->GetExtensions();
-					
-					$rw_toprated_options = array(
-						'bbpress_installed' => function_exists('is_bbpress'),
-						'buddypress_installed' => function_exists('is_buddypress'),
-						'woocommerce_installed' => isset($extensions['woocommerce'])
-					);
-					?>
-					<script>
-						RW_TOPRATED_OPTIONS = <?php echo json_encode($rw_toprated_options); ?>;
-					</script>
-					<?php
+			function admin_page_has_editor() {
+				global $pagenow, $typenow;
+				
+				if (in_array($pagenow, array('post.php', 'post-new.php'))) {
+					if (empty($typenow)) {
+						if (!empty($_GET['post'])) {
+							$post = get_post($_GET['post']);
+							$typenow = $post->post_type;
+						} else if ('post-new.php' == $pagenow && !isset($_GET['post_type'])) {
+							$typenow = 'post';
+						}
+					}
+						
+					if (post_type_supports($typenow, 'editor')) {
+						if (current_user_can('publish_posts') && get_user_option('rich_editing')) {
+							return true;
+						}
+					}
 				}
+				
+				return false;
 			}
+
 			
 			/**
+			 * Registers the necessary hooks
+			 * 
 			 * @author Leo Fajardo (@leorw)
-			 * @since 2.3.9
+			 * @since 2.4.1
 			 */
-			function init_toprated_shortcode_tinymce() {
-				if (current_user_can('publish_posts') && get_user_option('rich_editing') == 'true') {
+			function register_toprated_shortcode_hooks() {
+				if ($this->admin_page_has_editor()) {
+					add_action('admin_footer', array( &$this, "init_toprated_shortcode_settings" ) );
 					add_filter('mce_external_plugins', array(&$this, 'register_tinymce_plugin')); 
 					add_filter('mce_buttons', array(&$this, 'add_tinymce_button'));
 				}
 			}
 			
 			/**
+			 * Initializes the options to be used by the top-rated TinyMCE popup dialog
+			 * 
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.4.1
+			 */
+			function init_toprated_shortcode_settings() {
+				$extensions = ratingwidget()->GetExtensions();
+
+				$rw_toprated_options = array(
+					'upgrade_url' => fs()->get_upgrade_url(),
+					'bbpress_installed' => function_exists('is_bbpress'),
+					'buddypress_installed' => function_exists('is_buddypress'),
+					'woocommerce_installed' => isset($extensions['woocommerce'])
+				);
+				?>
+				<script>
+					RW_TOPRATED_OPTIONS = <?php echo json_encode($rw_toprated_options); ?>;
+				</script>
+				<?php
+			}
+			
+			/**
 			 * Registers the top-rated shortcode TinyMCE plugin
 			 * 
 			 * @author Leo Fajardo (@leorw)
-			 * @since 2.3.9
+			 * @since 2.4.1
 			 * @param array $plugin_array
 			 * @return array
 			 */
@@ -361,6 +394,7 @@ Domain Path: /langs
 			 * Inserts the top-rated shortcode TinyMCE button
 			 * 
 			 * @author Leo Fajardo (@leorw)
+			 * @since 2.4.1
 			 * @param array $buttons
 			 * @return array
 			 */
@@ -613,7 +647,7 @@ Domain Path: /langs
 						}
 						else
 						{
-							if ($in_license_sync && !rwapi()->Test())
+							if (!rwapi()->Test())
 							{
 								add_action( 'all_admin_notices', array( &$this, 'ApiAccessBlockedNotice' ) );
 							}
@@ -1265,9 +1299,13 @@ Domain Path: /langs
 				rw_enqueue_style('rw_wp_admin', 'wordpress/admin.css');
 				rw_enqueue_script('rw_wp_admin', 'wordpress/admin.js');
 				
-				// Enqueue the stylesheets for the metabox rating and for the top-rated shortcode
+				// Enqueue the stylesheets for the metabox rating
 				if ($this->admin_page_has_rating_metabox()) {
 					rw_enqueue_style('rw-admin-rating', WP_RW__PLUGIN_URL . 'resources/css/admin-rating.css');
+				}
+				
+				// Enqueue the top-rated shortcode stylesheet
+				if ($this->admin_page_has_editor()) {
 					rw_enqueue_style('rw-toprated-shortcode-style', WP_RW__PLUGIN_URL . 'resources/css/toprated-shortcode.css');
 				}
 				
@@ -4192,8 +4230,11 @@ Domain Path: /langs
 				$ratingData = '';
 				foreach ($pOptions as $key => $val)
 				{
-					if (is_string($val) && '' !== trim($val))
+					if (!empty($val) && '' !== trim($val))
+					{
+						RWLogger::Log('GetRatingHtml', "Adding options for: urid={$pUrid}; data-{$key}={$val}");
 						$ratingData .= ' data-' . $key . '="' . esc_attr(trim($val)) . '"';
+					}
 				}
 
 				$rating_html = '<div class="rw-ui-container rw-class-' . $pElementClass . ' rw-urid-' . $pUrid . '"' . $ratingData;
@@ -5480,7 +5521,7 @@ Domain Path: /langs
 			 * Retrieves the user's avatar URL
 			 * 
 			 * @author Leo Fajardo (@leorw)
-			 * @since 2.3.9
+			 * @since 2.4.1
 			 * @param int $user_id
 			 * @return string
 			 */
@@ -5566,7 +5607,7 @@ Domain Path: /langs
 			 * Creates an array of rating post type settings
 			 * 
 			 * @author Leo Fajardo (leorw)
-			 * @since 2.3.9
+			 * @since 2.4.1
 			 * @return array
 			 */
 			function get_rating_types() {
@@ -5612,7 +5653,7 @@ Domain Path: /langs
 			 * Retrieves the generated top-rated HTML string
 			 * 
 			 * @author Leo Fajardo (@leorw)
-			 * @since 2.3.9
+			 * @since 2.4.1
 			 * @param array $shortcode_atts
 			 * @return string
 			 */
@@ -5858,8 +5899,12 @@ Domain Path: /langs
 				}
 
 				if (!$this->has_multirating_options($pElementClass)) {
+					RWLogger::Log('EmbedRating', 'Not multi-criteria rating');
+
 					return $this->EmbedRawRating($urid, $pTitle, $pPermalink, $pElementClass, $pAddSchema, $pHorAlign, $pCustomStyle, $pOptions);
 				} else {
+					RWLogger::Log('EmbedRating', 'Multi-criteria rating');
+
 					//Prefixed with mr_ to avoid possible collisions after calling extract()
 					$vars = array(
 						'mr_add_schema' => $pAddSchema,

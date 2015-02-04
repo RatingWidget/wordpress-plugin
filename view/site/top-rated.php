@@ -115,23 +115,6 @@ HTML;
 	// Set a flag that the widget is loaded.
 	ratingwidget()->TopRatedWidgetLoaded();
 
-	$script .= <<< SCRIPT
-	<script type="text/javascript">
-		// Hook render widget.
-		if (typeof(RW_HOOK_READY) === "undefined"){ RW_HOOK_READY = []; }
-		RW_HOOK_READY.push(function(){
-			RW._foreach(RW._getByClassName("rw-wp-ui-top-rated-list", "ul"), function(list){
-				RW._foreach(RW._getByClassName("rw-ui-container", "div", list), function(rating){
-					// Deactivate rating.
-					RW._Class.remove(rating, "rw-active");
-					var i = (RW._getByClassName("rw-report-link", "a", rating))[0];
-					if (RW._is(i)){ i.parentNode.removeChild(i); }
-				});
-			});
-		});
-	</script>
-SCRIPT;
-
 	$html .= '</div>';
 
 	echo $html;

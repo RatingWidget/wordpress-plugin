@@ -5,14 +5,13 @@
 
 	// Backup the value of 'hide-recommendations'
     $hide_recommendations = isset($mr_embed_options['hide-recommendations']) ? $mr_embed_options['hide-recommendations'] : false;
-			
+	$original_uarid = isset($mr_embed_options['uarid']) ? $mr_embed_options['uarid'] : false;
+
 	$multi_criteria = count($mr_multi_options->criteria) > 1;
 
 	if ($multi_criteria) {
 	    $mr_embed_options['uarid'] = $mr_summary_urid;
 		$mr_embed_options['hide-recommendations'] = 'true';
-	} else {
-		unset($mr_embed_options['uarid']);
 	}
 	
 	$criteria_id = 1;
@@ -47,8 +46,12 @@
             } else {
 				unset($mr_embed_options['hide-recommendations']);
 			}
-			
-			unset($mr_embed_options['uarid']);
+
+	        if (false === $original_uarid)
+				unset($mr_embed_options['uarid']);
+	        else
+		        // Restore original aggregated rating ID.
+		        $mr_embed_options['uarid'] = $original_uarid;
 			
             $mr_embed_options['read-only'] = 'true';
 

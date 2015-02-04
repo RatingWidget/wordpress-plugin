@@ -406,7 +406,7 @@
             $('.rw-summary-rating').hide();
         }
 
-        if (total >= 3 && !RW._isProfessional()) {
+        if (total >= 3 && !(RW._isProfessional() || RW._isTrial())) {
             $('a.rw-add-rating').text($('a.rw-add-rating').data('upgrade-text'));
             $('a.rw-add-rating').attr('href', $('a.rw-add-rating').data('upgrade-href'));
             $('a.rw-add-rating').addClass('upgrade');
