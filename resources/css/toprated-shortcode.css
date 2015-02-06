@@ -11,6 +11,12 @@ label.rw-toprated-ltr {
 	margin: 5px !important;
 }
 
+#rw-toprated-direction [name="rw-toprated-direction"] {
+	width: 18px !important;
+	height: 18px !important;
+	box-sizing: border-box !important;
+}
+
 /* Align the insert button to the form fields */
 #rw-toprated-insert-shortcode {
 	padding-left: 3px;

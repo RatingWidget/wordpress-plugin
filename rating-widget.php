@@ -293,6 +293,7 @@ Domain Path: /langs
 				register_activation_hook( WP_RW__PLUGIN_FILE_FULL, 'rw_activated' );
 				
 				add_action( 'admin_head', array( &$this, "rw_admin_menu_icon_css" ) );
+				add_action('wp_ajax_rw-toprated-popup-html', array(&$this, 'generate_toprated_popup_html'));
 				add_action('admin_init', array(&$this, 'register_toprated_shortcode_hooks'));
 				add_action( 'admin_menu', array( &$this, 'admin_menu' ) );
 				add_action( 'admin_menu', array( &$this, 'AddPostMetaBox' ) ); // Metabox for posts/pages
@@ -318,6 +319,10 @@ Domain Path: /langs
 			 * @return boolean
 			 */
 			function admin_page_has_editor() {
+				if (!$this->fs->is_registered()) {
+					return false;
+				}
+				
 				global $pagenow, $typenow;
 				
 				if (in_array($pagenow, array('post.php', 'post-new.php'))) {
@@ -329,11 +334,13 @@ Domain Path: /langs
 							$typenow = 'post';
 						}
 					}
-						
-					if (post_type_supports($typenow, 'editor')) {
-						if (current_user_can('publish_posts') && get_user_option('rich_editing')) {
-							return true;
+					
+					if (current_user_can('publish_posts') && get_user_option('rich_editing')) {
+						if (function_exists('post_type_supports')) {
+							return post_type_supports($typenow, 'editor');
 						}
+						
+						return true;
 					}
 				}
 				
@@ -349,10 +356,22 @@ Domain Path: /langs
 			 */
 			function register_toprated_shortcode_hooks() {
 				if ($this->admin_page_has_editor()) {
-					add_action('admin_footer', array( &$this, "init_toprated_shortcode_settings" ) );
-					add_filter('mce_external_plugins', array(&$this, 'register_tinymce_plugin')); 
+					add_action('admin_footer', array(&$this, "init_toprated_shortcode_settings"));
+					add_filter('mce_external_plugins', array(&$this, 'register_tinymce_plugin'));
 					add_filter('mce_buttons', array(&$this, 'add_tinymce_button'));
 				}
+			}
+			
+			/**
+			 * For TinyMCE 3 and below. Generates the HTML content for the TinyMCE dialog box.
+			 * 
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.4.1
+			 * @return string 
+			 */
+			function generate_toprated_popup_html() {
+				rw_require_view('pages/admin/toprated-tinymce.php');
+				exit();
 			}
 			
 			/**
@@ -363,12 +382,48 @@ Domain Path: /langs
 			 */
 			function init_toprated_shortcode_settings() {
 				$extensions = ratingwidget()->GetExtensions();
-
+				
+				$bbpress_installed = function_exists('is_bbpress');
+				$buddypress_installed = function_exists('is_buddypress');
+				$woocommerce_installed = isset($extensions['woocommerce']);
+				
+				// Initialize the maximum items allowed
+				$max_item_count = $this->IsProfessional() ? 50 : 11;
+				$max_items = array();
+				
+				for ($count = 1; $count <= $max_item_count; $count++) {
+					if ($count === $max_item_count && !$this->IsProfessional()) {
+						$max_items['upgrade'] = __('Upgrade to Professional for 50 Items', WP_RW__ID);
+						break;
+					}
+					
+					$max_items[$count] = (string) $count;
+				}
+				
+				// Initialize the available types
+				$types = array(
+					'pages' => __('Pages', WP_RW__ID),
+					'posts' => __('Posts', WP_RW__ID)
+				);
+				
+				if ($woocommerce_installed) {
+					$types['products'] = __('Products', WP_RW__ID);
+				}
+				
+				if ($bbpress_installed) {
+					$types['forum_posts'] = __('Topics', WP_RW__ID);
+				}
+				
+				if ($bbpress_installed || $buddypress_installed) {
+					$types['users'] = __('Users', WP_RW__ID);
+				}
+				
 				$rw_toprated_options = array(
+					'fields' => array('max_items' => $max_items, 'types' => $types),
 					'upgrade_url' => fs()->get_upgrade_url(),
-					'bbpress_installed' => function_exists('is_bbpress'),
-					'buddypress_installed' => function_exists('is_buddypress'),
-					'woocommerce_installed' => isset($extensions['woocommerce'])
+					'bbpress_installed' => $bbpress_installed,
+					'buddypress_installed' => $buddypress_installed,
+					'woocommerce_installed' => $woocommerce_installed
 				);
 				?>
 				<script>
@@ -6120,7 +6175,10 @@ Domain Path: /langs
 			{
 				add_shortcode('ratingwidget', 'rw_the_post_shortcode');
 				add_shortcode('ratingwidget_raw', 'rw_the_rating_shortcode');
-				add_shortcode('ratingwidget_toprated', 'rw_toprated_shortcode');
+				
+				if ($this->fs->is_registered()) {
+					add_shortcode('ratingwidget_toprated', 'rw_toprated_shortcode');
+				}
 			}
 
 			function GetUpgradeUrl($pImmediate = false, $pPeriod = 'annually', $pPlan = 'professional')
