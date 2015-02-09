@@ -292,9 +292,12 @@ Domain Path: /langs
 				// Add activation and de-activation hooks.
 				register_activation_hook( WP_RW__PLUGIN_FILE_FULL, 'rw_activated' );
 				
+				if ($this->fs->is_registered()) {
+					add_action('wp_ajax_rw-toprated-popup-html', array(&$this, 'generate_toprated_popup_html'));
+					add_action('admin_init', array(&$this, 'register_toprated_shortcode_hooks'));
+				}
+				
 				add_action( 'admin_head', array( &$this, "rw_admin_menu_icon_css" ) );
-				add_action('wp_ajax_rw-toprated-popup-html', array(&$this, 'generate_toprated_popup_html'));
-				add_action('admin_init', array(&$this, 'register_toprated_shortcode_hooks'));
 				add_action( 'admin_menu', array( &$this, 'admin_menu' ) );
 				add_action( 'admin_menu', array( &$this, 'AddPostMetaBox' ) ); // Metabox for posts/pages
 				add_action( 'save_post', array( &$this, 'SavePostData' ) );
@@ -319,10 +322,6 @@ Domain Path: /langs
 			 * @return boolean
 			 */
 			function admin_page_has_editor() {
-				if (!$this->fs->is_registered()) {
-					return false;
-				}
-				
 				global $pagenow, $typenow;
 				
 				if (in_array($pagenow, array('post.php', 'post-new.php'))) {
@@ -420,7 +419,7 @@ Domain Path: /langs
 				
 				$rw_toprated_options = array(
 					'fields' => array('max_items' => $max_items, 'types' => $types),
-					'upgrade_url' => fs()->get_upgrade_url(),
+					'upgrade_url' => $this->fs->get_upgrade_url(),
 					'bbpress_installed' => $bbpress_installed,
 					'buddypress_installed' => $buddypress_installed,
 					'woocommerce_installed' => $woocommerce_installed
@@ -1360,7 +1359,7 @@ Domain Path: /langs
 				}
 				
 				// Enqueue the top-rated shortcode stylesheet
-				if ($this->admin_page_has_editor()) {
+				if ($this->admin_page_has_editor() && $this->fs->is_registered()) {
 					rw_enqueue_style('rw-toprated-shortcode-style', WP_RW__PLUGIN_URL . 'resources/css/toprated-shortcode.css');
 				}
 				
@@ -1427,6 +1426,10 @@ Domain Path: /langs
 			 * Adds the necessary stylesheet
 			 */
 			function init_site_styles() {
+				if (!wp_script_is('jquery')) {
+					wp_enqueue_script('jquery');
+				}
+				
 				rw_enqueue_style('rw-site-rating', WP_RW__PLUGIN_URL . 'resources/css/site-rating.css');
 			}
 			
@@ -5183,7 +5186,7 @@ Domain Path: /langs
 								(function($) {
 									$('.rw-rating-table:not(.rw-no-labels)').each(function() {
 										var ratingTable = $(this);
-										
+
 										// Find the current width before floating left or right to
 										// keep the ratings aligned
 										var col1 = ratingTable.find('td:first');

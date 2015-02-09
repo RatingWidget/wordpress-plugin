@@ -73,7 +73,7 @@
 	 * Top-rated shortcode
 	 * 
 	 * @author Leo Fajardo (@leorw)
-	 * @since 2.3.6
+	 * @since 2.4.1
 	 * @param array $atts
 	 * @return string
 	 */

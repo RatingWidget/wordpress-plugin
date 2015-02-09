@@ -90,9 +90,9 @@
 				<input type="submit" id="rw-toprated-insert-shortcode" value="<?php _e('Add Table', WP_RW__ID); ?>" />
 			</div>
 		</form>
-		<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+		<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
 		<script type="text/javascript" src="<?php echo includes_url('js/tinymce/tiny_mce_popup.js'); ?>"></script>
-		<script>
+		<script type="text/javascript">
 			(function($) {
 				// Helper function for initializing the values of an <option> element
 				function updateDialogField($dialogField, values) {
@@ -104,7 +104,7 @@
 						var text = values[property];
 						var value = property;
 						
-						$option = $('<option value="' + value + '">' + text + '</option>');
+						var $option = $('<option value="' + value + '">' + text + '</option>');
 						$dialogField.append($option);
 					}
 				}

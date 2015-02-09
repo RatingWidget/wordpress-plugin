@@ -1,4 +1,12 @@
 <?php
+/**
+ * Top-rated table view file called by ratingwidget()->get_toprated_from_shortcode($shortcode_atts) method.
+ * 
+ * Generates the HTML table view for the "ratingwidget_toprated" shortcode.
+ * The shortcode attributes are passed from the get_toprated_from_shortcode method to the $VARS variable.
+ */
+
+// Extract the shortcode attributes
 extract($VARS);
 
 switch ($created_in) {
@@ -22,12 +30,13 @@ switch ($created_in) {
 		break;
 }
 
+// Validate the direction attribute
 $direction = strtolower($direction);
-
 if ('ltr' !== $direction && 'rtl' !== $direction) {
 	$direction = 'ltr';
 }
 
+// Ensure that the maximum number of items is 10 if the account is not professional
 if ($max_items > 10 && !ratingwidget()->IsProfessional()) {
 	$max_items = 10;
 }
@@ -36,12 +45,14 @@ $rw_ret_obj = ratingwidget()->GetTopRatedData(array($type), $max_items, 0,
 		$min_votes, false, false, $order_by, $order, $since_created);
 
 if ($rw_ret_obj && count($rw_ret_obj->data)) {
+	// Retrieve the rating types settings
 	$types = ratingwidget()->get_rating_types();
 
 	$container_class = 'rw-top-rated-page ' . $direction;
 	$html = '<div class="' . $container_class . '">';
 
 	foreach ($rw_ret_obj->data as $type => $ratings) {
+		// Now, retrieve the rclass from the type settings
 		$rclass = $types[$type]['rclass'];
 
 		if (is_array($ratings) && count($ratings) > 0) {
@@ -70,6 +81,7 @@ if ($rw_ret_obj && count($rw_ret_obj->data)) {
 						$wp_object = null;
 					}
 					
+					// If valid WP_User object, retrieve the avatar URL
 					if ($wp_object) {
 						$thumbnail = ratingwidget()->get_user_avatar($user_id);
 					}

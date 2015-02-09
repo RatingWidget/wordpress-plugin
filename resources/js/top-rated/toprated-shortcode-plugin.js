@@ -2,7 +2,8 @@
 	$(document).ready(function() {
 		var topRatedPopupDialog = null;
 		
-		// Initialize the "Max Items" field --------------------------------------------
+		/* "Max Items" field
+		--------------------------------------------------------------------------------------------*/
 		var dialogMaxItemsField = {
 			name: 'rw-toprated-count',
 			label: 'Max Items:',
@@ -23,7 +24,8 @@
 		updateDialogField(dialogMaxItemsField, RW_TOPRATED_OPTIONS.fields.max_items);
 		
 		
-		// Initialize the "Type" field -------------------------------------------------
+		/* "Type" field
+		--------------------------------------------------------------------------------------------*/
 		var dialogTypesField = {
 			name: 'rw-toprated-type',
 			label: 'Type:',
@@ -33,7 +35,9 @@
 		
 		updateDialogField(dialogTypesField, RW_TOPRATED_OPTIONS.fields.types);
 		
-		// TinyMCE plugin
+		
+		/* TinyMCE plugin
+		--------------------------------------------------------------------------------------------*/
 		tinymce.create('tinymce.plugins.rw_toprated_shortcode_plugin', {
 			init : function(editor, url) {
 				editor.addCommand('rw_insert_toprated_shortcode', function() {
