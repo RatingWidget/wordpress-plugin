@@ -95,7 +95,7 @@
 		<script type="text/javascript">
 			(function($) {
 				// Helper function for initializing the values of an <option> element
-				function updateDialogField($dialogField, values) {
+				function updateDialogField($dialogField, values, defaultValue) {
 					for (var property in values) {
 						if (!values.hasOwnProperty(property)) {
 							continue;
@@ -107,12 +107,16 @@
 						var $option = $('<option value="' + value + '">' + text + '</option>');
 						$dialogField.append($option);
 					}
+					
+					if (defaultValue) {
+						$dialogField.val(defaultValue);
+					}
 				}
 				
 				// Retrieve the passed options
 				var RW_TOPRATED_OPTIONS = tinyMCEPopup.getWindowArg('RW_TOPRATED_OPTIONS');
 				
-				updateDialogField($('#rw-toprated-count'), RW_TOPRATED_OPTIONS.fields.max_items);
+				updateDialogField($('#rw-toprated-count'), RW_TOPRATED_OPTIONS.fields.max_items, 10);
 				updateDialogField($('#rw-toprated-type'), RW_TOPRATED_OPTIONS.fields.types);
 				
 				// Event handlers
