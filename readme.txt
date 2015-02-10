@@ -183,7 +183,7 @@ If you didn't find a solution to your problem yet, check out our [WordPress Know
 The RatingWidget Team
 
 == Change Log ==
-= 2.4.1 - 2015-02-04 =
+= 2.4.1 - 2015-02-10 =
 * New: Top-Rated Table! Configured right in your TinyMCE editor.
 
 = 2.4.0 - 2015-02-03 =
