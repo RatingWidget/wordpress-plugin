@@ -2,9 +2,9 @@
 Contributors: ratingwidget, svovaf, leorw, freemius
 Donate link: http://rating-widget.com/pricing/wordpress/
 Tags: rate, rating, ratings, vote, votes, voting, star, stars, like, dislike, thumbs, widget, widgets, star rating, thumb rating, rating platform, rating system, seo, post rating, comment rating, 5 star, five star, sidebar, comment, comments, post, posts, page, pages, google, admin, administrator, review, reviews, rich-snippets, plugin, plugins, ajax, buddypress, bbpress, social, javascript, js, wordpress, meta, woocommerce, jquery, contest, competition, voting contest, rtmedia
-Requires at least: 2.8
+Requires at least: 2.9
 Tested up to: 4.1
-Stable tag: 2.4.0
+Stable tag: 2.4.1
 License: GPLv2 or later
 
 The most popular Five Star Rating System on the web. User-friendly ratings for: posts, pages, comments, WooCommerce, BuddyPress and bbPress forums.
@@ -183,6 +183,9 @@ If you didn't find a solution to your problem yet, check out our [WordPress Know
 The RatingWidget Team
 
 == Change Log ==
+= 2.4.1 - 2015-02-04 =
+* New: Top-Rated Table! Configured right in your TinyMCE editor.
+
 = 2.4.0 - 2015-02-03 =
 * Fix: Fixed user aggregated rating (reputation) after deployment of Multi-Criteria support. Multi-criteria view was removing the uarid property of the summary rating.
 

@@ -68,6 +68,34 @@
 
 		return rw_get_rating( $id, $title, $permalink, $type, $add_schema );
 	}
+	
+	/**
+	 * Top-rated shortcode
+	 * 
+	 * @author Leo Fajardo (@leorw)
+	 * @since 2.4.1
+	 * @param array $atts
+	 * @return string
+	 */
+	function rw_toprated_shortcode($atts) {
+		RWLogger::LogEnterence( 'rw_toprated_shortcode' );
+
+		if ( RWLogger::IsOn() ) {
+			RWLogger::Log( 'rw_toprated_shortcode', var_export($atts, true) );
+		}
+
+		$atts = shortcode_atts(array(
+			'type'       => 'posts',
+			'direction'  => 'ltr',
+			'max_items'  => '5',
+			'min_votes'  => '1',
+			'order'      => 'DESC',
+			'order_by'   => 'avgrate',
+			'created_in' => 'all_time'
+		), $atts);
+		
+		return ratingwidget()->get_toprated_from_shortcode($atts);
+	}
 
 	/* Post inline Shortcodes.
 	--------------------------------------------------------------------------------------------*/

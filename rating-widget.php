@@ -3,7 +3,7 @@
 Plugin Name: Rating-Widget: Star Rating System
 Plugin URI: http://rating-widget.com/wordpress-plugin/
 Description: Create and manage Rating-Widget ratings in WordPress.
-Version: 2.4.0
+Version: 2.4.1
 Author: Rating-Widget
 Author URI: http://rating-widget.com/wordpress-plugin/
 License: GPLv2
@@ -291,14 +291,18 @@ Domain Path: /langs
 
 				// Add activation and de-activation hooks.
 				register_activation_hook( WP_RW__PLUGIN_FILE_FULL, 'rw_activated' );
-
+				
+				if ($this->fs->is_registered()) {
+					add_action('wp_ajax_rw-toprated-popup-html', array(&$this, 'generate_toprated_popup_html'));
+					add_action('admin_init', array(&$this, 'register_toprated_shortcode_hooks'));
+				}
+				
 				add_action( 'admin_head', array( &$this, "rw_admin_menu_icon_css" ) );
 				add_action( 'admin_menu', array( &$this, 'admin_menu' ) );
 				add_action( 'admin_menu', array( &$this, 'AddPostMetaBox' ) ); // Metabox for posts/pages
 				add_action( 'save_post', array( &$this, 'SavePostData' ) );
 				add_action( 'trashed_post', array( &$this, 'DeletePostData' ) );
 				add_action( 'updated_post_meta', array( &$this, 'PurgePostFeaturedImageTransient' ), 10, 4 );
-
 
 				{
 					if ( $this->GetOption( WP_RW__DB_OPTION_TRACKING ) ) {
@@ -309,7 +313,150 @@ Domain Path: /langs
 					// add_action('init', array(&$this, 'test_footer_init'));
 				}
 			}
+			
+			/**
+			 * Determines if rich editing is available
+			 * 
+			 * @author Leo Fajardo (@leorw)
+			 * $since 2.4.1
+			 * @return boolean
+			 */
+			function admin_page_has_editor() {
+				global $pagenow, $typenow;
+				
+				if (in_array($pagenow, array('post.php', 'post-new.php'))) {
+					if (empty($typenow)) {
+						if (!empty($_GET['post'])) {
+							$post = get_post($_GET['post']);
+							$typenow = $post->post_type;
+						} else if ('post-new.php' == $pagenow && !isset($_GET['post_type'])) {
+							$typenow = 'post';
+						}
+					}
+					
+					if (current_user_can('publish_posts') && get_user_option('rich_editing')) {
+						if (function_exists('post_type_supports')) {
+							return post_type_supports($typenow, 'editor');
+						}
+						
+						return true;
+					}
+				}
+				
+				return false;
+			}
 
+			
+			/**
+			 * Registers the necessary hooks
+			 * 
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.4.1
+			 */
+			function register_toprated_shortcode_hooks() {
+				if ($this->admin_page_has_editor()) {
+					add_action('admin_footer', array(&$this, "init_toprated_shortcode_settings"));
+					add_filter('mce_external_plugins', array(&$this, 'register_tinymce_plugin'));
+					add_filter('mce_buttons', array(&$this, 'add_tinymce_button'));
+				}
+			}
+			
+			/**
+			 * For TinyMCE 3 and below. Generates the HTML content for the TinyMCE dialog box.
+			 * 
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.4.1
+			 * @return string 
+			 */
+			function generate_toprated_popup_html() {
+				rw_require_view('pages/admin/toprated-tinymce.php');
+				exit();
+			}
+			
+			/**
+			 * Initializes the options to be used by the top-rated TinyMCE popup dialog
+			 * 
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.4.1
+			 */
+			function init_toprated_shortcode_settings() {
+				$extensions = ratingwidget()->GetExtensions();
+				
+				$bbpress_installed = function_exists('is_bbpress');
+				$buddypress_installed = function_exists('is_buddypress');
+				$woocommerce_installed = isset($extensions['woocommerce']);
+				
+				// Initialize the maximum items allowed
+				$max_item_count = $this->IsProfessional() ? 50 : 11;
+				$max_items = array();
+				
+				for ($count = 1; $count <= $max_item_count; $count++) {
+					if ($count === $max_item_count && !$this->IsProfessional()) {
+						$max_items['upgrade'] = __('Upgrade to Professional for 50 Items', WP_RW__ID);
+						break;
+					}
+					
+					$max_items[$count] = (string) $count;
+				}
+				
+				// Initialize the available types
+				$types = array(
+					'pages' => __('Pages', WP_RW__ID),
+					'posts' => __('Posts', WP_RW__ID)
+				);
+				
+				if ($woocommerce_installed) {
+					$types['products'] = __('Products', WP_RW__ID);
+				}
+				
+				if ($bbpress_installed) {
+					$types['forum_posts'] = __('Topics', WP_RW__ID);
+				}
+				
+				if ($bbpress_installed || $buddypress_installed) {
+					$types['users'] = __('Users', WP_RW__ID);
+				}
+				
+				$rw_toprated_options = array(
+					'fields' => array('max_items' => $max_items, 'types' => $types),
+					'upgrade_url' => $this->fs->get_upgrade_url(),
+					'bbpress_installed' => $bbpress_installed,
+					'buddypress_installed' => $buddypress_installed,
+					'woocommerce_installed' => $woocommerce_installed
+				);
+				?>
+				<script>
+					RW_TOPRATED_OPTIONS = <?php echo json_encode($rw_toprated_options); ?>;
+				</script>
+				<?php
+			}
+			
+			/**
+			 * Registers the top-rated shortcode TinyMCE plugin
+			 * 
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.4.1
+			 * @param array $plugin_array
+			 * @return array
+			 */
+			function register_tinymce_plugin($plugin_array) {
+				$plugin_array['rw_toprated_shortcode_button'] = WP_RW__PLUGIN_URL . '/resources/js/top-rated/toprated-shortcode-plugin.js';
+				return $plugin_array;
+			}
+
+			/**
+			 * Inserts the top-rated shortcode TinyMCE button
+			 * 
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.4.1
+			 * @param array $buttons
+			 * @return array
+			 */
+			function add_tinymce_button($buttons) {
+				$buttons[] = 'rw_toprated_shortcode_button';
+				return $buttons;
+			}
+			
 			function RegisterExtensionsHooks() {
 				RWLogger::LogEnterence( 'RegisterExtensionsHooks' );
 
@@ -1206,9 +1353,14 @@ Domain Path: /langs
 				rw_enqueue_style('rw_wp_admin', 'wordpress/admin.css');
 				rw_enqueue_script('rw_wp_admin', 'wordpress/admin.js');
 				
-				// Enqueue the stylesheet for the rating in the metabox
+				// Enqueue the stylesheets for the metabox rating
 				if ($this->admin_page_has_rating_metabox()) {
 					rw_enqueue_style('rw-admin-rating', WP_RW__PLUGIN_URL . 'resources/css/admin-rating.css');
+				}
+				
+				// Enqueue the top-rated shortcode stylesheet
+				if ($this->admin_page_has_editor() && $this->fs->is_registered()) {
+					rw_enqueue_style('rw-toprated-shortcode-style', WP_RW__PLUGIN_URL . 'resources/css/toprated-shortcode.css');
 				}
 				
 				if (!$this->_inDashboard)
@@ -1263,9 +1415,8 @@ Domain Path: /langs
 					}
 
 					if ($this->has_multirating_options($class)) {
-						// Enqueue live preview JS
+						// Enqueue live preview JS and CSS
 						rw_enqueue_script('rw-js-live-preview', WP_RW__PLUGIN_URL . '/resources/js/live-preview.js');
-
 						rw_enqueue_style('rw-live-preview', WP_RW__PLUGIN_URL . 'resources/css/live-preview.css');
 					}
 				}
@@ -1275,6 +1426,10 @@ Domain Path: /langs
 			 * Adds the necessary stylesheet
 			 */
 			function init_site_styles() {
+				if (!wp_script_is('jquery')) {
+					wp_enqueue_script('jquery');
+				}
+				
 				rw_enqueue_style('rw-site-rating', WP_RW__PLUGIN_URL . 'resources/css/site-rating.css');
 			}
 			
@@ -5031,7 +5186,7 @@ Domain Path: /langs
 								(function($) {
 									$('.rw-rating-table:not(.rw-no-labels)').each(function() {
 										var ratingTable = $(this);
-										
+
 										// Find the current width before floating left or right to
 										// keep the ratings aligned
 										var col1 = ratingTable.find('td:first');
@@ -5401,9 +5556,9 @@ Domain Path: /langs
 			function GetPostExcerpt($pPost, $pWords = 15)
 			{
 				if (!empty($pPost->post_excerpt))
-					return trim(strip_tags($pPost->post_excerpt));
-
-				$strippedContent = trim(strip_tags($pPost->post_content));
+					return wp_trim_words(trim(strip_tags($pPost->post_excerpt)), $pWords);
+				
+				$strippedContent = trim(strip_tags(strip_shortcodes($pPost->post_content)));
 				$excerpt = implode(' ', array_slice(explode(' ', $strippedContent), 0, $pWords));
 
 				return (mb_strlen($strippedContent) !== mb_strlen($excerpt)) ?
@@ -5419,52 +5574,39 @@ Domain Path: /langs
 				$image = wp_get_attachment_image_src(get_post_thumbnail_id($pPostID), 'single-post-thumbnail');
 				return $image[0];
 			}
+			
+			/**
+			 * Retrieves the user's avatar URL
+			 * 
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.4.1
+			 * @param int $user_id
+			 * @return string
+			 */
+			function get_user_avatar($user_id) {
+				$avatar_url = '';
+				
+				$avatar = get_avatar($user_id);
+				if ($avatar) {
+					// Extract the avatar URL from the <img> tag
+					preg_match('/src=[\'"](.*?)[\'"]/i', $avatar, $matches);
+					if ($matches) {
+						$avatar_url = $matches[1];
+					}
+				}
+				
+				return $avatar_url;
+			}
 
-			function GetTopRatedData($pTypes = array(), $pLimit = 5, $pOffset = 0, $pMinVotes = 1, $pInclude = false, $pShowOrder = false, $pOrderBy = 'avgrate', $pOrder = 'DESC')
+			function GetTopRatedData($pTypes = array(), $pLimit = 5, $pOffset = 0, $pMinVotes = 1, $pInclude = false, $pShowOrder = false, $pOrderBy = 'avgrate', $pOrder = 'DESC', $since_created = -1)
 			{
 				if (RWLogger::IsOn()){ $params = func_get_args(); RWLogger::LogEnterence("GetTopRatedData", $params); }
 
 				if (!is_array($pTypes) || count($pTypes) == 0)
 					return false;
-
-				$types = array(
-					"posts" => array(
-						"rclass" => "blog-post",
-						"classes" => "front-post,blog-post,new-blog-post,user-post",
-						"options" => WP_RW__BLOG_POSTS_OPTIONS,
-					),
-					"pages" => array(
-						"rclass" => "page",
-						"classes" => "page,user-page",
-						"options" => WP_RW__PAGES_OPTIONS,
-					),
-					"comments" => array(
-						"rclass" => "comment",
-						"classes" => "comment,new-blog-comment,user-comment",
-						"options" => WP_RW__COMMENTS_OPTIONS,
-					),
-					"activity_updates" => array(
-						"rclass" => "activity-update",
-						"classes" => "activity-update,user-activity-update",
-						"options" => WP_RW__ACTIVITY_UPDATES_OPTIONS,
-					),
-					"activity_comments" => array(
-						"rclass" => "activity-comment",
-						"classes" => "activity-comment,user-activity-comment",
-						"options" => WP_RW__ACTIVITY_COMMENTS_OPTIONS,
-					),
-					"forum_posts" => array(
-						"rclass" => "forum-post",
-						"classes" => "forum-post,new-forum-post,user-forum-post",
-						"options" => WP_RW__FORUM_POSTS_OPTIONS,
-					),
-					"users" => array(
-						"rclass" => "user",
-						"classes" => "user",
-						"options" => WP_RW__USERS_OPTIONS,
-					),
-				);
-
+				
+				$types = $this->get_rating_types();
+				
 				$typesKeys = array_keys($types);
 
 				$availableTypes = array_intersect($typesKeys, $pTypes);
@@ -5493,6 +5635,13 @@ Domain Path: /langs
 						"types" => isset($options->type) ? $options->type : "star",
 					);
 
+					if ( $since_created >= WP_RW__TIME_24_HOURS_IN_SEC ) {
+						$time = current_time( 'timestamp', true ) - $since_created;
+
+						// c: ISO 8601 full date/time, e.g.: 2004-02-12T15:19:21+00:00
+						$queries[$type]['since_created'] = date( 'c', $time );
+					}
+					
 					if (is_array($pInclude) && count($pInclude) > 0)
 						$queries[$type]['urids'] = implode(',', $pInclude);
 				}
@@ -5505,20 +5654,83 @@ Domain Path: /langs
 					return false;
 
 				$rw_ret_obj = json_decode($rw_ret_obj);
-
+				
 				if (null === $rw_ret_obj || true !== $rw_ret_obj->success)
 					return false;
 
 				return $rw_ret_obj;
 			}
+			
+			/**
+			 * Creates an array of rating post type settings
+			 * 
+			 * @author Leo Fajardo (leorw)
+			 * @since 2.4.1
+			 * @return array
+			 */
+			function get_rating_types() {
+				$types = array(
+					"pages" => array(
+						"rclass" => "page",
+						"classes" => "page,user-page",
+						"options" => WP_RW__PAGES_OPTIONS,
+					),
+					"posts" => array(
+						"rclass" => "blog-post",
+						"classes" => "front-post,blog-post,new-blog-post,user-post",
+						"options" => WP_RW__BLOG_POSTS_OPTIONS,
+					)
+				);
+				
+				if (function_exists('is_bbpress')) {
+					$types["forum_posts"] = array(
+						"rclass" => "forum-post",
+						"classes" => "forum-post,new-forum-post,user-forum-post",
+						"options" => WP_RW__FORUM_POSTS_OPTIONS,
+					);
+				}
+				
+				if (function_exists('is_bbpress') || function_exists('is_buddypress')) {
+					$types["users"] = array(
+						"rclass" => "user",
+						"classes" => "user",
+						"options" => WP_RW__USERS_OPTIONS,
+					);
+				}
 
+				$extensions = $this->GetExtensions();
+
+				foreach ( $extensions as $ext ) {
+					$types = array_merge( $types, $ext->GetTopRatedInfo() );
+				}
+				
+				return $types;
+			}
+			
+			/**
+			 * Retrieves the generated top-rated HTML string
+			 * 
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.4.1
+			 * @param array $shortcode_atts
+			 * @return string
+			 */
+			function get_toprated_from_shortcode($shortcode_atts) {
+				ob_start();
+				rw_require_view('site/top-rated.php', $shortcode_atts);
+				$html = ob_get_contents();
+				ob_end_clean();
+				
+				return $html;
+			}
+			
 			function GetTopRated()
 			{
 				$rw_ret_obj = $this->GetTopRatedData(array('posts', 'pages'));
 
 				if (false === $rw_ret_obj || count($rw_ret_obj->data) == 0)
 					return '';
-
+				
 				$html = '<div id="rw_top_rated_page">';
 				foreach($rw_ret_obj->data as $type => $ratings)
 				{
@@ -5578,7 +5790,7 @@ Domain Path: /langs
 									break;
 							}
 							$short = (mb_strlen($title) > 30) ? trim(mb_substr($title, 0, 30)) . "..." : $title;
-
+							
 							$html .= '
 <li class="rw-wp-ui-top-rated-list-item">
     <div>
@@ -5966,6 +6178,10 @@ Domain Path: /langs
 			{
 				add_shortcode('ratingwidget', 'rw_the_post_shortcode');
 				add_shortcode('ratingwidget_raw', 'rw_the_rating_shortcode');
+				
+				if ($this->fs->is_registered()) {
+					add_shortcode('ratingwidget_toprated', 'rw_toprated_shortcode');
+				}
 			}
 
 			function GetUpgradeUrl($pImmediate = false, $pPeriod = 'annually', $pPlan = 'professional')
