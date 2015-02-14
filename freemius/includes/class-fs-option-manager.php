@@ -67,9 +67,9 @@
 
 //				$this->_logger->info('wp_cache_get = ' . var_export($this->_options, true));
 
-				if ( is_array( $this->_options ) ) {
+				/*if ( is_array( $this->_options ) ) {
 					$this->clear();
-				}
+				}*/
 
 				$cached = true;
 

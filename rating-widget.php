@@ -3,7 +3,7 @@
 Plugin Name: Rating-Widget: Star Rating System
 Plugin URI: http://rating-widget.com/wordpress-plugin/
 Description: Create and manage Rating-Widget ratings in WordPress.
-Version: 2.4.1
+Version: 2.4.2
 Author: Rating-Widget
 Author URI: http://rating-widget.com/wordpress-plugin/
 License: GPLv2
@@ -301,7 +301,10 @@ Domain Path: /langs
 				add_action( 'admin_menu', array( &$this, 'admin_menu' ) );
 				add_action( 'admin_menu', array( &$this, 'AddPostMetaBox' ) ); // Metabox for posts/pages
 				add_action( 'save_post', array( &$this, 'SavePostData' ) );
-				add_action( 'trashed_post', array( &$this, 'DeletePostData' ) );
+
+				if (false !== rwapi())
+					add_action( 'trashed_post', array( &$this, 'DeletePostData' ) );
+
 				add_action( 'updated_post_meta', array( &$this, 'PurgePostFeaturedImageTransient' ), 10, 4 );
 
 				{
@@ -604,7 +607,7 @@ Domain Path: /langs
 
 					RWLogger::Log( "AccountPageLoad", 'clear_ratings' );
 
-					rwapi()->Api( '/ratings.json', 'DELETE' );
+					$this->ApiCall( '/ratings.json', 'DELETE' );
 
 					$this->ClearTransients();
 
@@ -616,7 +619,7 @@ Domain Path: /langs
 
 					RWLogger::Log( "AccountPageLoad", 'go_factory' );
 
-					rwapi()->Api( '/ratings.json', 'DELETE' );
+					$this->ApiCall( '/ratings.json', 'DELETE' );
 
 					$this->ClearTransients();
 
@@ -653,9 +656,9 @@ Domain Path: /langs
 				/*<--{obfuscate}*/
 				$current_site_plan = $this->GetOption( WP_RW__DB_OPTION_SITE_PLAN );
 
-                if (is_admin()) {
-                    RWLogger::Log('LoadPlan', 'current_plan = ' . $current_site_plan);
-                }
+				if ( is_admin() ) {
+					RWLogger::Log( 'LoadPlan', 'current_plan = ' . $current_site_plan );
+				}
 
 				$site_plan = $current_site_plan;
 
@@ -668,21 +671,21 @@ Domain Path: /langs
 					}
 				} else {
 					$site_plan_update = $this->GetOption( WP_RW__DB_OPTION_SITE_PLAN_UPDATE, false, 0 );
-					$in_license_sync = false;
+					$in_license_sync  = false;
 					// Check if user asked to sync license.
 					if ( rw_request_is_action( 'sync_license' ) ) {
 //						check_admin_referer( 'sync_license' );
 						$site_plan_update = 0;
-						$in_license_sync = true;
+						$in_license_sync  = true;
 					}
 
-                    RWLogger::Log('LoadPlan', 'in_license_sync = ' . json_encode($in_license_sync));
+					RWLogger::Log( 'LoadPlan', 'in_license_sync = ' . json_encode( $in_license_sync ) );
 
 					// Update plan once in every 24 hours.
 					if ( false === $current_site_plan || $site_plan_update < ( time() - WP_RW__TIME_24_HOURS_IN_SEC ) ) {
 						// Get plan from remote server once a day.
 						try {
-							$site = rwapi()->Api( '?fields=id,plan' );
+							$site = $this->ApiCall( '?fields=id,plan' );
 						} catch ( \Exception $e ) {
 							$site = false;
 						}
@@ -691,31 +694,26 @@ Domain Path: /langs
 							$site_plan = $site->plan;
 							$update    = true;
 
-							if ($in_license_sync) {
+							if ( $in_license_sync ) {
 								if ( $current_site_plan !== $site_plan ) {
 									add_action( 'all_admin_notices', array( &$this, 'LicenseSyncNotice' ) );
 								} else {
 									add_action( 'all_admin_notices', array( &$this, 'LicenseSyncSameNotice' ) );
 								}
 							}
-						}
-						else
-						{
-							if (!rwapi()->Test())
-							{
+						} else {
+							if ( ! rwapi()->Test() ) {
 								add_action( 'all_admin_notices', array( &$this, 'ApiAccessBlockedNotice' ) );
+							} else {
+								add_action( 'all_admin_notices', array( &$this, 'ApiUnauthorizedAccessNotice' ) );
 							}
-                            else
-                            {
-                                add_action( 'all_admin_notices', array( &$this, 'ApiUnauthorizedAccessNotice' ) );
-                            }
 						}
 					}
 				}
 
 				define( 'WP_RW__SITE_PLAN', $site_plan );
 
-				RWLogger::Log('WP_RW__SITE_PLAN', $site_plan);
+				RWLogger::Log( 'WP_RW__SITE_PLAN', $site_plan );
 
 				if ( $update ) {
 					$this->SetOption( WP_RW__DB_OPTION_SITE_PLAN, $site_plan );
@@ -1132,7 +1130,8 @@ Domain Path: /langs
 				return $pData;
 			}
 
-			function ApiCall($pPath, $pMethod = 'GET', $pParams = array(), $pExpiration = false)
+			private $_api_clock_diff;
+			function ApiCall($pPath, $pMethod = 'GET', $pParams = array(), $pExpiration = false, $pRetry = false)
 			{
 				RWLogger::LogEnterence("ApiCall");
 
@@ -1168,6 +1167,12 @@ Domain Path: /langs
 
 				if (false === $cached)
 				{
+					if (!isset($this->_api_clock_diff))
+					{
+						$this->_api_clock_diff = $this->GetOption('api_clock_diff', false, 0);
+						rwapi()->SetClockDiff($this->_api_clock_diff);
+					}
+
 					$result = rwapi()->Api($pPath, $pMethod, $pParams);
 
 					if (RWLogger::IsOn())
@@ -1181,6 +1186,27 @@ Domain Path: /langs
 				{
 					if (RWLogger::IsOn())
 						RWLogger::Log("ApiCall", 'API Error: ' . var_export($result, true));
+
+					if ('request_expired' === $result->error->code)
+					{
+						if (RWLogger::IsOn())
+							RWLogger::Log("ApiCall", 'Found API clock diff - syncing...');
+
+						// Sync clock and store.
+						$this->_api_clock_diff = rwapi()->FindClockDiff();
+						rwapi()->SetClockDiff($this->_api_clock_diff);
+						$this->SetOption('api_clock_diff', $this->_api_clock_diff);
+						$this->_options_manager->store();
+
+						if (!$pRetry)
+						{
+							if (RWLogger::IsOn())
+								RWLogger::Log("ApiCall", 'Retrying API call after clock sync.');
+
+							// Retry call with synced clock.
+							return $this->ApiCall($pPath, $pMethod, $pParams, $pExpiration, true);
+						}
+					}
 
 					if ($this->_inDashboard)
 						$this->errors->add('rw_api_error', 'Unexpected RatingWidget API error: ' . $result->message);
@@ -6143,7 +6169,7 @@ Domain Path: /langs
 			{
 				if (RWLogger::IsOn()){ $params = func_get_args(); RWLogger::LogEnterence('GetRatingDataByRatingID', $params); }
 
-				if (!$this->IsProfessional())
+				if (!$this->IsProfessional() || false === rwapi())
 					return false;
 
 				$rating = $this->ApiCall(
@@ -6280,7 +6306,7 @@ Domain Path: /langs
 
             function ApiAccessBlockedNotice()
             {
-                $this->Notice('Oops... your server is blocking the access to our API, therefore your license can NOT be synced. <br>Please contact your host to enable remote access to: <ul><li><code><a href="' . RW_API__ADDRESS . '" target="_blank">' . RW_API__ADDRESS . '</a></code></li><li><code><a href="' . WP_RW__ADDRESS . '" target="_blank">' . WP_RW__ADDRESS . '</a></code></li><li><code><a href="' . WP_RW__SECURE_ADDRESS . '" target="_blank">' . WP_RW__SECURE_ADDRESS . '</a></code></li></ul>');
+                $this->Notice('Oops... your server (IP ' . WP_RW__SERVER_ADDR . ') is blocking the access to our API, therefore your license can NOT be synced. <br>Please contact your host to enable remote access to: <ul><li><code><a href="' . RW_API__ADDRESS . '" target="_blank">' . RW_API__ADDRESS . '</a></code></li><li><code><a href="' . WP_RW__ADDRESS . '" target="_blank">' . WP_RW__ADDRESS . '</a></code></li><li><code><a href="' . WP_RW__SECURE_ADDRESS . '" target="_blank">' . WP_RW__SECURE_ADDRESS . '</a></code></li></ul>');
             }
 
             function ApiUnauthorizedAccessNotice()
@@ -6516,7 +6542,9 @@ Domain Path: /langs
 			{
 				require_once(WP_RW__PLUGIN_LIB_DIR . 'sdk/ratingwidget.php');
 
-				if (!rw_fs()->get_site()->secret_key)
+				$site = rw_fs()->get_site();
+
+				if (empty($site->secret_key))
 				{
 					// API can not be accessed without a secret key.
 					$rwapi = false;
