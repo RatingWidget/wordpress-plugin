@@ -65,7 +65,8 @@
         $DEFAULT_OPTIONS->label->text->nero->normal = '{{text.rateThis}}';
         $DEFAULT_OPTIONS->label->text->nero->rated = '{{rating.votes}} {{text.votes}}';
         $DEFAULT_OPTIONS->readOnly = false;
-        $DEFAULT_OPTIONS->sync = true;
+	    $DEFAULT_OPTIONS->sync = true;
+	    $DEFAULT_OPTIONS->forceSync = false;
         $DEFAULT_OPTIONS->reVote = true;
         $DEFAULT_OPTIONS->frequency = DEF_FREQUENCY;
         $DEFAULT_OPTIONS->showInfo = true;

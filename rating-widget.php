@@ -5114,7 +5114,7 @@ Domain Path: /langs
 					foreach (self::$ratings as $urid => $data)
 					{
 						$rclass = $data["rclass"];
-
+						
 						if ( RWLogger::IsOn() )
 							RWLogger::Log( 'rw_attach_rating_js', 'Urid = ' . $urid . '; Class = ' . $rclass . ';' );
 
@@ -5138,6 +5138,19 @@ Domain Path: /langs
 							}
 
 							$attach_js = true;
+						}
+					}
+					
+					$criteria_suffix_part = '-criteria';
+					foreach (self::$ratings as $urid => $data)
+					{
+						$rclass = $data["rclass"];
+						
+						$suffix_pos = strpos($rclass, $criteria_suffix_part);
+						if (!isset($rw_settings[$rclass]) && FALSE !== $suffix_pos) {
+							$current_type = substr($rclass, 0, $suffix_pos);
+							
+							$rw_settings[$rclass] = $rw_settings[$current_type];
 						}
 					}
 				}
@@ -5176,18 +5189,18 @@ Domain Path: /langs
 								},
 								identifyBy: "<?php echo $this->GetOption(WP_RW__IDENTIFY_BY) ?>"
 							});
-							<?php
+						<?php
                         foreach ($rw_settings as $rclass => $options)
                         {
                             if (isset($rw_settings[$rclass]["enabled"]) && (true === $rw_settings[$rclass]["enabled"]))
                             {
-                    ?>
+							?>
 							var options = <?php echo !empty($rw_settings[$alias]["options"]) ? json_encode($rw_settings[$rclass]["options"]) : '{}'; ?>;
 							<?php echo $this->GetCustomSettings(('forum-reply' === $rclass) ? 'forum-post' : $rclass); ?>
 							RW.initClass("<?php echo $rclass; ?>", options);
 							<?php
-                            }
-                        }
+							}
+						}
 
                         foreach (self::$ratings as $urid => $data)
                         {

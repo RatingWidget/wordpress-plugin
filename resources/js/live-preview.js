@@ -149,7 +149,7 @@
     function addRatingCriterion() {
         if (!$(this).hasClass('upgrade')) {
             var parent = $('table.rw-preview');
-
+			
             var ratingTemplate = parent.find('.rw-template-rating');
             var newRating = $(ratingTemplate.get(0).outerHTML);
             newRating.removeAttr('id');
@@ -158,9 +158,9 @@
 
             var multiRatingLabel = newRating.find('.multi-rating-label');
             multiRatingLabel.attr('name', 'multi_rating[criteria][][label]');
-
+			
             newRating.insertAfter(parent.find('tr.rw-rating:last'));
-
+			
             // Add the necessary class so that the summary rating can be initialized
             $('tr.rw-summary-rating').children('td').eq(1).children('div').addClass('rw-ui-container');
 
@@ -192,6 +192,8 @@
      * @returns {undefined}
      */
     function handleRatingOptionsChange() {
+		var rclass = $('table.rw-preview').data('rclass');
+		
         for (var typeIndex in RW.TYPE) {
             var type = RW.TYPE[typeIndex];
 
@@ -202,8 +204,10 @@
 
                 var urid = parseUrid($(this).attr('class'));
                 var rating = RW.getRating(urid);
-
+				
                 if (rating) {
+					var criteria_class = rclass;
+					
                     var ratingInstance = rating.getInstances(0);
                     var newOptions = $.extend(true, {}, updatedOptions);
                     var urid_summary = getSummaryUrid(type);
@@ -215,8 +219,17 @@
 
                     if (isMultiCriterion() && urid == urid_summary) {
                         newOptions.readOnly = true;
-                    }
-
+                    } else if (isMultiCriterion()) {
+						var dataUrid = $(this).data('urid').toString();
+						var dataUridParts = dataUrid.split('-');
+						
+						if (2 === dataUridParts.length) {
+							criteria_class += '-criteria-' + dataUridParts[1];
+						}
+					}
+					
+					newOptions.rclass = criteria_class;
+					
                     ratingInstance.setOptions(newOptions);
                 }
             });
@@ -356,6 +369,8 @@
      * @returns {undefined}
      */
     function initializeRatings() {
+		var rclass = $('table.rw-preview').data('rclass');
+		
         for (var typeIndex in RW.TYPE) {
             var type = RW.TYPE[typeIndex];
 
@@ -378,6 +393,8 @@
 
                     var criterionID = elementRow.index() + 1;
                     urid += '-' + criterionID;
+					
+					newOptions.rclass = rclass + '-criteria-' + criterionID;
                 }
 
                 $(this).attr('data-urid', urid);
