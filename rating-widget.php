@@ -5109,6 +5109,8 @@ Domain Path: /langs
 
 				$attach_js = false;
 
+				$criteria_suffix_part = '-criteria';
+				
 				if (is_array(self::$ratings) && count(self::$ratings) > 0)
 				{
 					foreach (self::$ratings as $urid => $data)
@@ -5125,7 +5127,7 @@ Domain Path: /langs
 
 							// Forum reply should have exact same settings as forum post.
 							$alias = ('forum-reply' === $rclass) ? 'forum-post' : $rclass;
-
+							
 							$rw_settings[$rclass]["enabled"] = true;
 
 							// Get rating front posts settings.
@@ -5138,19 +5140,12 @@ Domain Path: /langs
 							}
 
 							$attach_js = true;
-						}
-					}
-					
-					$criteria_suffix_part = '-criteria';
-					foreach (self::$ratings as $urid => $data)
-					{
-						$rclass = $data["rclass"];
-						
-						$suffix_pos = strpos($rclass, $criteria_suffix_part);
-						if (!isset($rw_settings[$rclass]) && FALSE !== $suffix_pos) {
-							$current_type = substr($rclass, 0, $suffix_pos);
-							
-							$rw_settings[$rclass] = $rw_settings[$current_type];
+						} else if (FALSE !== strpos($rclass, $criteria_suffix_part)) {
+							/* Use dummy value for the criteria options but
+							 * use the settings of the summary rating when
+							 * calling RW.initClass below
+							 */
+							$rw_settings[$rclass] = 'DUMMY';
 						}
 					}
 				}
@@ -5192,13 +5187,20 @@ Domain Path: /langs
 						<?php
                         foreach ($rw_settings as $rclass => $options)
                         {
-                            if (isset($rw_settings[$rclass]["enabled"]) && (true === $rw_settings[$rclass]["enabled"]))
-                            {
-							?>
-							var options = <?php echo !empty($rw_settings[$alias]["options"]) ? json_encode($rw_settings[$rclass]["options"]) : '{}'; ?>;
-							<?php echo $this->GetCustomSettings(('forum-reply' === $rclass) ? 'forum-post' : $rclass); ?>
-							RW.initClass("<?php echo $rclass; ?>", options);
-							<?php
+							$criteria_class = $rclass;
+							
+							$suffix_pos = strpos($rclass, $criteria_suffix_part);
+							if (FALSE !== $suffix_pos) {
+								$rclass = substr($rclass, 0, $suffix_pos);
+							}
+							
+                            if (isset($rw_settings[$rclass]["enabled"]) && (true === $rw_settings[$rclass]["enabled"])) {
+								$alias = ('forum-reply' === $rclass) ? 'forum-post' : $rclass;
+								?>
+								var options = <?php echo !empty($rw_settings[$alias]["options"]) ? json_encode($rw_settings[$rclass]["options"]) : '{}'; ?>;
+								<?php echo $this->GetCustomSettings($alias); ?>
+								RW.initClass("<?php echo $criteria_class; ?>", options);
+								<?php
 							}
 						}
 
