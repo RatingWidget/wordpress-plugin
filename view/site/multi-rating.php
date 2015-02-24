@@ -18,9 +18,15 @@
 	$rw_no_labels = true;
 	
 	foreach ($mr_multi_options->criteria as $criteria_key => $criteria) {
+		$rclass = $mr_element_class;
+		
+		if ($multi_criteria) {
+			$rclass .= '-criteria-' . $criteria_id;
+		}
+		
 		$criteria_urid = ratingwidget()->get_rating_id_by_element($mr_element_id, $mr_element_class, $multi_criteria ? $criteria_id++ : false);
 		
-		$raw_rating = ratingwidget()->EmbedRawRating($criteria_urid, $mr_title, $mr_permalink, $mr_element_class, $mr_add_schema, $mr_hor_align, $mr_custom_style, $mr_embed_options);
+		$raw_rating = ratingwidget()->EmbedRawRating($criteria_urid, $mr_title, $mr_permalink, $rclass, $mr_add_schema, $mr_hor_align, $mr_custom_style, $mr_embed_options);
 		
 		// Defaults to &nbsp; instead of empty to keep the widths of all rating widgets same
 		if (isset($criteria['label'])) {
@@ -54,7 +60,8 @@
 		        $mr_embed_options['uarid'] = $original_uarid;
 			
             $mr_embed_options['read-only'] = 'true';
-
+			$mr_embed_options['force-sync'] = 'true';
+			
             $raw_rating = ratingwidget()->EmbedRawRating($mr_summary_urid, $mr_title, $mr_permalink, $mr_element_class, $mr_add_schema, $mr_hor_align, $mr_custom_style, $mr_embed_options);
 				
 			// Defaults to &nbsp; instead of empty to keep the widths of all rating widgets same

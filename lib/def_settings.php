@@ -93,7 +93,8 @@
         $ret->label->text->nero->normal = @rw_get_default_value($settings->label->text->nero->normal, $defaults->label->text->nero->normal);
         $ret->label->text->nero->rated = @rw_get_default_value($settings->label->text->nero->rated, $defaults->label->text->nero->rated);
         $ret->readOnly = @rw_get_default_value($settings->readOnly, $defaults->readOnly);
-        $ret->sync = @rw_get_default_value($settings->sync, $defaults->sync);
+	    $ret->sync = @rw_get_default_value($settings->sync, $defaults->sync);
+	    $ret->forceSync = @rw_get_default_value($settings->forceSync, $defaults->forceSync);
         $ret->reVote = @rw_get_default_value($settings->reVote, $defaults->reVote);
         $ret->frequency = @rw_get_default_value($settings->frequency, $defaults->frequency);
         $ret->showInfo = @rw_get_default_value($settings->showInfo, $defaults->showInfo);
@@ -209,7 +210,8 @@
         $settings->mobile->optimized = @rw_get_default_value($settings->mobile->optimized, true);
         $settings->mobile->showTrigger = @rw_get_default_value($settings->mobile->showTrigger, true);
         $settings->readOnly = @rw_get_default_value($settings->readOnly, false);
-        $settings->sync = @rw_get_default_value($settings->sync, true);
+	    $settings->sync = @rw_get_default_value($settings->sync, true);
+	    $settings->forceSync = @rw_get_default_value($settings->forceSync, false);
         $settings->frequency = @rw_get_default_value($settings->frequency, DEF_FREQUENCY);
         $settings->showInfo = @rw_get_default_value($settings->showInfo, true);
         $settings->showTooltip = @rw_get_default_value($settings->showTooltip, true);

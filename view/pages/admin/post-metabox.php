@@ -41,13 +41,18 @@
 		
 		$criteria_id = 1;
 		foreach ($multirating_options->criteria as $criteria_key => $criteria) {
+			$criteria_rclass = $rclass;
+			if ($multi_criteria) {
+				$criteria_rclass .= '-criteria-' . $criteria_id;
+			}
+			
 			$urid = $rwp->_getPostRatingGuid($post->ID, $multi_criteria ? $criteria_id++ : false);
-			$rwp->QueueRatingData($urid, '', '', $rclass);
+			$rwp->QueueRatingData($urid, '', '', $criteria_rclass);
 		?>
 		<tr>
 		<td>
 			<div><nobr><?php echo (isset($criteria['label']) && !empty($criteria['label'])) ? $criteria['label'] : ''; ?></nobr></div>
-			<div class="rw-ui-container rw-class-<?php echo $rclass ?>" <?php echo $multi_criteria ? "data-uarid=\"$urid_summary\"" : ''; ?> <?php echo ($multi_criteria || $default_hide_recommendations) ? ' data-hide-recommendations="true" ' : ''; ?> data-urid="<?php echo $urid; ?>" data-sync="false"></div>
+			<div class="rw-ui-container rw-class-<?php echo $criteria_rclass ?>" <?php echo $multi_criteria ? "data-uarid=\"$urid_summary\"" : ''; ?> <?php echo ($multi_criteria || $default_hide_recommendations) ? ' data-hide-recommendations="true" ' : ''; ?> data-urid="<?php echo $urid; ?>" data-sync="false"></div>
 			<p></p>
 		</td>
 		</tr>
@@ -60,7 +65,7 @@
 			<tr>
 			<td>
 				<div><nobr><?php echo (isset($multirating_options->summary_label) && !empty($multirating_options->summary_label)) ? $multirating_options->summary_label : ''; ?></nobr></div>
-				<div class="rw-ui-container rw-class-<?php echo $rclass ?>" <?php echo $default_hide_recommendations ? ' data-hide-recommendations="true" ' : ''; ?> data-urid="<?php echo $urid_summary; ?>" data-read-only="true" data-sync="false"></div>
+				<div class="rw-ui-container rw-class-<?php echo $rclass ?>" <?php echo $default_hide_recommendations ? ' data-hide-recommendations="true" ' : ''; ?> data-urid="<?php echo $urid_summary; ?>" data-read-only="true" data-force-sync="true"></div>
 				<p></p>
 			</td>
 			</tr>
