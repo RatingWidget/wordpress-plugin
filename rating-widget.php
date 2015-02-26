@@ -4640,14 +4640,27 @@ Domain Path: /langs
 			function rw_display_activity_comment_rating($comment_content)
 			{
 				if (RWLogger::IsOn()){ $params = func_get_args(); RWLogger::LogEnterence("rw_display_activity_comment_rating", $params); }
+				
+				// If this is a newly inserted comment, assign it to $this->current_comment
+				if (isset($_POST['action']) && 'new_activity_comment' == $_POST['action']) {
+					global $activities_template;
 
+					$current_comment = $activities_template->activity->current_comment;
+					$parent_comment = $activities_template->activity_parents[$current_comment->item_id];
+					
+					$current_comment->parent = $parent_comment;
+					
+					$this->current_comment = $parent_comment;
+					$this->current_comment->children = array($current_comment->id => $current_comment);
+				}
+				
 				if (!isset($this->current_comment) || null === $this->current_comment)
 				{
 					if (RWLogger::IsOn()){ RWLogger::Log("rw_display_activity_comment_rating", "Current comment is not set."); }
 
 					return $comment_content;
 				}
-
+				
 				// Find current comment.
 				while (!$this->current_comment->children || false === current($this->current_comment->children))
 				{
@@ -4954,12 +4967,22 @@ Domain Path: /langs
 
 				if (!defined('WP_RW__BP_INSTALLED'))
 					define('WP_RW__BP_INSTALLED', true);
-
-				if (!is_admin())
-				{
+				
+				// Add activity-related action if BuddyPress is inserting a new status update or comment
+				$bp_post_request = false;
+				if (isset($_POST['action'])
+					&& isset($_POST['cookie'])
+					&& 0 === strpos($_POST['cookie'], 'bp-activity')) {
+					
+					$bp_post_request = true;
+				}
+				
+				if (!is_admin() || $bp_post_request) {
 					// Activity page.
 					add_action("bp_has_activities", array(&$this, "BuddyPressBeforeActivityLoop"));
-
+				}
+				
+				if (!is_admin()) {
 					// Forum topic page.
 					add_filter("bp_has_topic_posts", array(&$this, "rw_before_forum_loop"));
 
@@ -5149,7 +5172,35 @@ Domain Path: /langs
 						}
 					}
 				}
+				
+				if (!$attach_js) {
+					// Necessary for rendering newly inserted activity ratings
+					// when the are no status updates or comments yet
+					if (function_exists('bp_is_activity_component') && bp_is_activity_component()) {
+						$bp_rclasses = array('activity-update', 'activity-comment');
+						
+						foreach ($bp_rclasses as $rclass) {
+							if (isset($rw_settings[$rclass]) && !isset($rw_settings[$rclass]["enabled"])) {
+								if ( RWLogger::IsOn() )
+									RWLogger::Log( 'rw_attach_rating_js', 'Class = ' . $rclass . ';' );
 
+								$rw_settings[$rclass]["enabled"] = true;
+
+								// Get rating front posts settings.
+								$rw_settings[$rclass]["options"] = $this->GetOption($rw_settings[$rclass]["options"]);
+
+								if (WP_RW__AVAILABILITY_DISABLED === $this->rw_validate_availability($rclass))
+								{
+									// Disable ratings (set them to be readOnly).
+									$rw_settings[$rclass]["options"]->readOnly = true;
+								}
+
+								$attach_js = true;
+							}
+						}
+					}
+				}
+				
 				if ($attach_js || $this->_TOP_RATED_WIDGET_LOADED)
 				{
 					?>
@@ -5244,8 +5295,61 @@ Domain Path: /langs
 							}, <?php
                         echo (!$this->_TOP_RATED_WIDGET_LOADED) ? "true" : "false";
                     ?>);
-							}
+								<?php
+								if (function_exists('bp_is_activity_component') && bp_is_activity_component()) { ?>
+									(function($) {
+										$(document).ajaxComplete(function(event, request, settings) {
+											// Retrieve the POST request data sent by BuddyPress
+											var queryStr = "?" + settings.data;
 
+											var action = getParameterByName(queryStr, 'action');
+											var cookie = getParameterByName(queryStr, 'cookie');
+
+											// Check if BuddyPress is inserting a new status update or comment
+											if (action && cookie && 0 === cookie.indexOf('bp-activity')) {
+												if ('post_update' == action || 'new_activity_comment' == action) {
+													// Wait for BuddyPress' post success callback to finish executing
+													// then render the new rating
+													var timer = setTimeout(function() {
+														var container = null;
+
+														if ('post_update' == action) {
+															if ($('#activity-stream').length) {
+																// Retrieve the container of the new status update's rating
+
+																var activityStream = $('#activity-stream');
+																
+																var containerId = $(request.responseText).attr('id');
+																container = $('#' + containerId).find('.activity-meta:first').get(0);
+															}
+														} else {
+															// Retrieve the container of the new comment's rating
+															var containerId = $(request.responseText).attr('id');
+															container = RW._getById(containerId);
+														}
+
+														// Only render new rating
+														RW.render(null, false, container);
+
+														clearTimeout(timer);
+													}, 500);
+												}
+											}
+										});
+
+
+										/**
+										 * Helper function for retrieving HTTP query values
+										 */
+										function getParameterByName(queryStr, name) {
+											var match = RegExp('[?&]' + name + '=([^&]*)').exec(queryStr);
+											return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
+										}
+									})(jQuery);
+								<?php
+								}
+								?>
+							}
 
 							RW_Advanced_Options = {
 								blockFlash: !(<?php
