@@ -153,7 +153,7 @@ Domain Path: /langs
 				
 				// Enqueue site's styles
 				add_action('wp_enqueue_scripts', array(&$this, 'init_site_styles'));
-
+				
 				require_once( WP_RW__PLUGIN_DIR . "/languages/dir.php" );
 				$this->languages       = $rw_languages;
 				$this->languages_short = array_keys( $this->languages );
@@ -5173,10 +5173,12 @@ Domain Path: /langs
 					}
 				}
 				
+				$is_bp_activity_component = function_exists('bp_is_activity_component') && bp_is_activity_component();
+				
 				if (!$attach_js) {
 					// Necessary for rendering newly inserted activity ratings
 					// when the are no status updates or comments yet
-					if (function_exists('bp_is_activity_component') && bp_is_activity_component()) {
+					if ($is_bp_activity_component) {
 						$bp_rclasses = array('activity-update', 'activity-comment');
 						
 						foreach ($bp_rclasses as $rclass) {
@@ -5186,7 +5188,7 @@ Domain Path: /langs
 
 								$rw_settings[$rclass]["enabled"] = true;
 
-								// Get rating front posts settings.
+								// Get rating class settings.
 								$rw_settings[$rclass]["options"] = $this->GetOption($rw_settings[$rclass]["options"]);
 
 								if (WP_RW__AVAILABILITY_DISABLED === $this->rw_validate_availability($rclass))
@@ -5295,60 +5297,6 @@ Domain Path: /langs
 							}, <?php
                         echo (!$this->_TOP_RATED_WIDGET_LOADED) ? "true" : "false";
                     ?>);
-								<?php
-								if (function_exists('bp_is_activity_component') && bp_is_activity_component()) { ?>
-									(function($) {
-										$(document).ajaxComplete(function(event, request, settings) {
-											// Retrieve the POST request data sent by BuddyPress
-											var queryStr = "?" + settings.data;
-
-											var action = getParameterByName(queryStr, 'action');
-											var cookie = getParameterByName(queryStr, 'cookie');
-
-											// Check if BuddyPress is inserting a new status update or comment
-											if (action && cookie && 0 === cookie.indexOf('bp-activity')) {
-												if ('post_update' == action || 'new_activity_comment' == action) {
-													// Wait for BuddyPress' post success callback to finish executing
-													// then render the new rating
-													var timer = setTimeout(function() {
-														var container = null;
-
-														if ('post_update' == action) {
-															if ($('#activity-stream').length) {
-																// Retrieve the container of the new status update's rating
-
-																var activityStream = $('#activity-stream');
-																
-																var containerId = $(request.responseText).attr('id');
-																container = $('#' + containerId).find('.activity-meta:first').get(0);
-															}
-														} else {
-															// Retrieve the container of the new comment's rating
-															var containerId = $(request.responseText).attr('id');
-															container = RW._getById(containerId);
-														}
-
-														// Only render new rating
-														RW.render(null, false, container);
-
-														clearTimeout(timer);
-													}, 500);
-												}
-											}
-										});
-
-
-										/**
-										 * Helper function for retrieving HTTP query values
-										 */
-										function getParameterByName(queryStr, name) {
-											var match = RegExp('[?&]' + name + '=([^&]*)').exec(queryStr);
-											return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
-										}
-									})(jQuery);
-								<?php
-								}
-								?>
 							}
 
 							RW_Advanced_Options = {
@@ -5370,7 +5318,13 @@ Domain Path: /langs
 						</script>
 					</div>
 					<!-- / RatingWidget plugin -->
-				<?php
+					<?php
+					// Enqueue the script that will handle the rendering
+					// of the rating of the newly inserted BuddyPress status update
+					// or comment
+					if ($is_bp_activity_component) {
+						rw_enqueue_script('rw-site-ajax-handler', WP_RW__PLUGIN_URL . 'resources/js/site-ajax-handler.js');
+					}
 				}
 			}
 
