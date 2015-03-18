@@ -63,3 +63,4 @@
     })(jQuery);
     </script>
 </div>
+<?php fs_require_template('powered-by.php') ?>

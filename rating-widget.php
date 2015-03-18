@@ -3,7 +3,7 @@
 	Plugin Name: Rating-Widget: Star Rating System
 	Plugin URI: http://rating-widget.com/wordpress-plugin/
 	Description: Create and manage Rating-Widget ratings in WordPress.
-	Version: 2.4.4
+	Version: 2.4.5
 	Author: Rating-Widget
 	Author URI: http://rating-widget.com/wordpress-plugin/
 	License: GPLv2
@@ -1060,10 +1060,12 @@
 					WP_RW__CUSTOM_SETTINGS => new stdClass(),
 					WP_RW__MULTIRATING_SETTINGS => (object) array(
 						'blog-post' => clone $default_multirating_options,
+						'forum-post' => clone $default_multirating_options,
 						'front-post' => clone $default_multirating_options,
 						'comment' => clone $default_multirating_options,
 						'page' => clone $default_multirating_options,
-						'product' => clone $default_multirating_options
+						'product' => clone $default_multirating_options,
+						'forum-post' => clone $default_multirating_options,
 					)
 				);
 
@@ -1574,7 +1576,7 @@
 			 * @return boolean
 			 */
 			function has_multirating_options($class) {
-				return (in_array($class, array('blog-post', 'front-post', 'comment', 'page', 'product')));
+				return (in_array($class, array('blog-post', 'front-post', 'comment', 'page', 'product', 'forum-post')));
 			}
 
 			function ActivationNotice()
@@ -3705,7 +3707,7 @@
 						<?php rw_include_once_view('settings/custom_color.php'); ?>
 					</div>
 				</div>
-
+				<?php fs_require_template('powered-by.php') ?>
 				<?php
 
 				// Store options if in save mode.
@@ -6539,7 +6541,7 @@
 			global $rwp;
 			if (!isset($rwp)) {
 				rw_fs();
-				load_constants();
+				rw_load_constants();
 				$rwp = RatingWidgetPlugin::Instance();
 				$rwp->Init();
 			}
@@ -6578,7 +6580,7 @@
 		 * Load RW constants based on FS account (used after migration).
 		 * @todo Should be removed after changing all constants to the relevant properties from Freemius.
 		 */
-		function load_constants() {
+		function rw_load_constants() {
 			$fs   = rw_fs();
 			$site = $fs->get_site();
 			$user = $fs->get_user();
