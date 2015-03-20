@@ -11,7 +11,7 @@
 #rw-stats-dashboard-widget .hndle {
 	border-bottom: 1px #ddd solid;
 	background: url('../img/header-logo.png') 15px 50% no-repeat;
-	height: 20px;
+	height: 30px;
 }
 
 #rw-stats-dashboard-widget .handlediv {
@@ -86,6 +86,8 @@
 	height: 40px;
 	width: 40px;
 	vertical-align: middle;
+	-moz-transform:scale(0.7);
+	zoom: 0.7;
 }
 
 .rw-stats-icon-twitter {
