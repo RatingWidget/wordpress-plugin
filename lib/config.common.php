@@ -238,6 +238,7 @@
 	define( 'WP_RW__CACHE_TIMEOUT_RICH_SNIPPETS', WP_RW__TIME_24_HOURS_IN_SEC );
 	define( 'WP_RW__CACHE_TIMEOUT_TOP_RATED', WP_RW__TIME_5_MIN_IN_SEC );
 	define( 'WP_RW__CACHE_TIMEOUT_POST_THUMB_EXTRACT', WP_RW__TIME_24_HOURS_IN_SEC );
+	define( 'WP_RW__CACHE_TIMEOUT_DASHBOARD_STATS', WP_RW__TIME_24_HOURS_IN_SEC );
 
 	/* Freemius Overrides
 	-----------------------------------------------------------------------------------------*/

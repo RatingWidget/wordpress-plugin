@@ -301,6 +301,7 @@
 				add_action( 'admin_head', array( &$this, "rw_admin_menu_icon_css" ) );
 				add_action( 'admin_menu', array( &$this, 'admin_menu' ) );
 				add_action( 'admin_menu', array( &$this, 'AddPostMetaBox' ) ); // Metabox for posts/pages
+				add_action( 'wp_dashboard_setup', array( &$this, 'add_dashboard_widgets' ) );
 				add_action( 'save_post', array( &$this, 'SavePostData' ) );
 
 				if (false !== rwapi())
@@ -1429,6 +1430,8 @@
 
 			function InitScriptsAndStyles()
 			{
+				global $pagenow;
+				
 				// wp_enqueue_script( 'rw-test', "/wp-admin/js/rw-test.js", array( 'jquery-ui-sortable', 'jquery-ui-draggable', 'jquery-ui-droppable' ), false, 1 );
 				rw_enqueue_style('rw_wp_admin', 'wordpress/admin.css');
 				rw_enqueue_script('rw_wp_admin', 'wordpress/admin.js');
@@ -1438,9 +1441,15 @@
 					rw_enqueue_style('rw-admin-rating', WP_RW__PLUGIN_URL . 'resources/css/admin-rating.css');
 				}
 
-				// Enqueue the top-rated shortcode stylesheet
-				if ($this->admin_page_has_editor() && $this->fs->is_registered()) {
-					rw_enqueue_style('rw-toprated-shortcode-style', WP_RW__PLUGIN_URL . 'resources/css/toprated-shortcode.css');
+				// Enqueue the top-rated shortcode and dashboard stats widget stylesheets
+				if ($this->fs->is_registered()) {
+					if ($this->admin_page_has_editor()) {
+						rw_enqueue_style('rw-toprated-shortcode-style', WP_RW__PLUGIN_URL . 'resources/css/toprated-shortcode.css');
+					}
+					
+					if ('index.php' === $pagenow) {
+						rw_enqueue_style('rw-dashboard-stats', WP_RW__PLUGIN_URL . 'resources/css/dashboard-stats.css');
+					}
 				}
 
 				if (!$this->_inDashboard)
@@ -5627,6 +5636,52 @@
 				rw_require_view('pages/admin/post-metabox.php');
 			}
 
+			/**
+			 * Registers the dashboard widgets
+			 * 
+			 * @author Leo Fajardo (@leorw)
+			 */
+			function add_dashboard_widgets() {
+				// Initialize statistics
+				$stats = array(
+					'ratings' => 0,
+					'votes' => 0
+				);
+
+				// Retrieve ratings and votes count
+				$response = $this->ApiCall("/votes/count.json", 'GET', array(), WP_RW__CACHE_TIMEOUT_DASHBOARD_STATS);
+				if (!isset($response->error)) {
+					$stats['votes'] = $response->count;
+				
+					$response = $this->ApiCall("/ratings/count.json", 'GET', array(), WP_RW__CACHE_TIMEOUT_DASHBOARD_STATS);
+					if (!isset($response->error)) {
+						$stats['ratings'] = $response->count;
+					}
+				}
+				
+				// Add the widget if there is at least 1 vote
+				if ($stats['votes'] >= 1) {
+					wp_add_dashboard_widget(
+						'rw-stats-dashboard-widget',			// Widget slug
+						__(' ', WP_RW__ID),						// Title
+						array(&$this, 'stats_widget_callback'),	// Display callback function
+						null,
+						$stats									// Arguments to pass to the callback function
+					);
+				}
+			}
+			
+			/**
+			 * The stats dashboard widget callback function that handles the displaying of the widget content
+			 * 
+			 * @author Leo Fajardo (@leorw)
+			 * @param mixed $object object passed to the callback function
+			 * @param object $callback_args the dashboard widget details, including the arguments passed
+			 */
+			function stats_widget_callback($object, $callback_args) {
+				rw_require_view('pages/admin/dashboard-stats.php', $callback_args['args']);
+			}
+			
 			// Save data from meta box.
 			function SavePostData($post_id)
 			{
