@@ -3503,6 +3503,8 @@
 
 					if (!isset($this->_visibilityList))
 						$this->_visibilityList = new stdClass();
+					if (!isset($this->_visibilityList->{$rw_class}))
+						$this->_visibilityList->{$rw_class} = new stdClass();
 					$this->_visibilityList->{$rw_class}->selected = $rw_visibility;
 					$this->_visibilityList->{$rw_class}->exclude = self::IDsCollectionToArray($rw_visibility_exclude);
 					$this->_visibilityList->{$rw_class}->include = self::IDsCollectionToArray($rw_visibility_include);
