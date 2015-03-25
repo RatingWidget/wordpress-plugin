@@ -3,7 +3,7 @@
 	Plugin Name: Rating-Widget: Star Rating System
 	Plugin URI: http://rating-widget.com/wordpress-plugin/
 	Description: Create and manage Rating-Widget ratings in WordPress.
-	Version: 2.4.6
+	Version: 2.4.7
 	Author: Rating-Widget
 	Author URI: http://rating-widget.com/wordpress-plugin/
 	License: GPLv2
@@ -296,16 +296,16 @@
 					add_action('wp_ajax_rw-toprated-popup-html', array(&$this, 'generate_toprated_popup_html'));
 					add_action('wp_ajax_rw-affiliate-apply', array(&$this, 'send_affiliate_application'));
 					add_action('admin_init', array(&$this, 'register_toprated_shortcode_hooks'));
+					add_action( 'admin_menu', array( &$this, 'AddPostMetaBox' ) ); // Metabox for posts/pages
+					add_action( 'wp_dashboard_setup', array( &$this, 'add_dashboard_widgets' ) );
+					add_action( 'save_post', array( &$this, 'SavePostData' ) );
+
+					if (false !== rwapi())
+						add_action( 'trashed_post', array( &$this, 'DeletePostData' ) );
 				}
 
 				add_action( 'admin_head', array( &$this, "rw_admin_menu_icon_css" ) );
 				add_action( 'admin_menu', array( &$this, 'admin_menu' ) );
-				add_action( 'admin_menu', array( &$this, 'AddPostMetaBox' ) ); // Metabox for posts/pages
-				add_action( 'wp_dashboard_setup', array( &$this, 'add_dashboard_widgets' ) );
-				add_action( 'save_post', array( &$this, 'SavePostData' ) );
-
-				if (false !== rwapi())
-					add_action( 'trashed_post', array( &$this, 'DeletePostData' ) );
 
 				add_action( 'updated_post_meta', array( &$this, 'PurgePostFeaturedImageTransient' ), 10, 4 );
 
