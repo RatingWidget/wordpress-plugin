@@ -3,7 +3,7 @@
 	Plugin Name: Rating-Widget: Star Rating System
 	Plugin URI: http://rating-widget.com/wordpress-plugin/
 	Description: Create and manage Rating-Widget ratings in WordPress.
-	Version: 2.4.5
+	Version: 2.4.8
 	Author: Rating-Widget
 	Author URI: http://rating-widget.com/wordpress-plugin/
 	License: GPLv2
@@ -280,6 +280,19 @@
 				$this->_options_manager->store();
 			}
 
+			/**
+			 * Validates the current site able to connect the API.
+			 *
+			 * @author Vova Feldman (@svovaf)
+			 * @since 2.4.8
+			 *
+			 * @return bool
+			 */
+			private function is_api_supported()
+			{
+				return ( false !== rwapi() );
+			}
+
 			private function setup_dashboard_actions() {
 				RWLogger::LogEnterence( "setup_dashboard_actions" );
 
@@ -293,25 +306,30 @@
 				register_activation_hook( WP_RW__PLUGIN_FILE_FULL, 'rw_activated' );
 
 				if ($this->fs->is_registered()) {
-					add_action('wp_ajax_rw-toprated-popup-html', array(&$this, 'generate_toprated_popup_html'));
-					add_action('wp_ajax_rw-affiliate-apply', array(&$this, 'send_affiliate_application'));
-					add_action('wp_ajax_rw-five-star-wp-rate', array(&$this, 'five_star_wp_rate_action'));
-					add_action('admin_init', array(&$this, 'register_toprated_shortcode_hooks'));
-					add_action('wp_dashboard_setup', array(&$this, 'add_dashboard_widgets'));
-					
-					$min_votes_trigger = $this->GetOption(WP_RW__DB_OPTION_WP_RATE_NOTICE_MIN_VOTES_TRIGGER);
-					if (-1 !== $min_votes_trigger) {
-						add_action('admin_notices', array(&$this, 'five_star_wp_rate_notice'));
+					add_action( 'wp_ajax_rw-toprated-popup-html', array( &$this, 'generate_toprated_popup_html' ) );
+					add_action( 'wp_ajax_rw-affiliate-apply', array( &$this, 'send_affiliate_application' ) );
+					add_action( 'admin_init', array( &$this, 'register_toprated_shortcode_hooks' ) );
+					add_action( 'admin_menu', array( &$this, 'AddPostMetaBox' ) ); // Metabox for posts/pages
+					add_action( 'save_post', array( &$this, 'SavePostData' ) );
+
+					if ( $this->is_api_supported() ) {
+						// Since some old users might not having a secret key set,
+						// the API won't be able to work for them - therefore, all API related
+						// hooks must be executed within this scope.
+						add_action( 'trashed_post', array( &$this, 'DeletePostData' ) );
+						add_action( 'wp_dashboard_setup', array( &$this, 'add_dashboard_widgets' ) );
+						add_action('wp_ajax_rw-five-star-wp-rate', array(&$this, 'five_star_wp_rate_action'));
+
+						$min_votes_trigger = $this->GetOption(WP_RW__DB_OPTION_WP_RATE_NOTICE_MIN_VOTES_TRIGGER);
+						if (-1 !== $min_votes_trigger) {
+							add_action('admin_notices', array(&$this, 'five_star_wp_rate_notice'));
+						}
 					}
 				}
 
 				add_action( 'admin_head', array( &$this, "rw_admin_menu_icon_css" ) );
 				add_action( 'admin_menu', array( &$this, 'admin_menu' ) );
-				add_action( 'admin_menu', array( &$this, 'AddPostMetaBox' ) ); // Metabox for posts/pages
-				add_action( 'save_post', array( &$this, 'SavePostData' ) );
 
-				if (false !== rwapi())
-					add_action( 'trashed_post', array( &$this, 'DeletePostData' ) );
 
 				add_action( 'updated_post_meta', array( &$this, 'PurgePostFeaturedImageTransient' ), 10, 4 );
 
@@ -935,10 +953,10 @@
 				return self::Urid2Id($pUrid);
 			}
 
-			private function _getForumPostRatingGuid($id = false)
+			private function _getForumPostRatingGuid($id = false, $criteria_id = false)
 			{
 				if (false === $id){ $id = bp_get_the_topic_post_id(); }
-				$urid = ($id + 1) . "3";
+				$urid = ($id + 1) . "3" . (false !== $criteria_id ? '-' . $criteria_id : '');
 
 				if (RWLogger::IsOn()){
 					RWLogger::Log("forum-post-id", $id);
@@ -1142,8 +1160,7 @@
 						'front-post' => clone $default_multirating_options,
 						'comment' => clone $default_multirating_options,
 						'page' => clone $default_multirating_options,
-						'product' => clone $default_multirating_options,
-						'forum-post' => clone $default_multirating_options,
+						'product' => clone $default_multirating_options
 					)
 				);
 
@@ -1588,6 +1605,8 @@
 						$class = 'blog-post';
 					} else if (empty($class) && 'rating-widget-woocommerce' == $_GET['page']) {
 						$class = 'product';
+					} else if (empty($class) && 'rating-widget-bbpress' == $_GET['page']) {
+						$class = 'forum-post';
 					}
 
 					if ($this->has_multirating_options($class)) {
@@ -1639,13 +1658,17 @@
 
 			/**
 			 * Retrieves the options of this type
-			 * @param type $class
+			 * @param string $class
 			 * @return object
 			 */
 			function get_options_by_class($class) {
 				switch ($class) {
 					case 'blog-post':
 						$options = $this->GetOption(WP_RW__BLOG_POSTS_OPTIONS);
+						break;
+					case 'forum-post':
+					case 'forum-reply':
+						$options = $this->GetOption(WP_RW__FORUM_POSTS_OPTIONS);
 						break;
 					case 'front-post':
 						$options = $this->GetOption(WP_RW__FRONT_POSTS_OPTIONS);
@@ -1665,6 +1688,33 @@
 
 				return $options;
 			}
+			
+			/**
+			 * Retrieves the multi-rating options of this type
+			 * 
+			 * @author Leo Fajardo (@leorw)
+			 * @param string $rclass option type
+			 * @return object
+			 */
+			function get_multirating_options_by_class($rclass) {
+				if ('forum-reply' === $rclass) {
+					$rclass = 'forum-post';
+				}
+				
+				$multirating_settings_list = $this->GetOption(WP_RW__MULTIRATING_SETTINGS);
+				
+				// If this class has no options set,
+				// load the default options to avoid issues in the
+				// site, live preview, and post edit meta boxes.
+				if (!isset($multirating_settings_list->{$rclass})) {
+					$default_multirating_settings = $this->_OPTIONS_DEFAULTS[WP_RW__MULTIRATING_SETTINGS];
+					if (isset($default_multirating_settings->{$rclass})) {
+						$multirating_settings_list->{$rclass} = $default_multirating_settings->{$rclass};
+					}
+				}
+				
+				return $multirating_settings_list->{$rclass};
+			}
 
 			/**
 			 * Checks if this option type supports multi-rating
@@ -1672,7 +1722,7 @@
 			 * @return boolean
 			 */
 			function has_multirating_options($class) {
-				return (in_array($class, array('blog-post', 'front-post', 'comment', 'page', 'product', 'forum-post')));
+				return (in_array($class, array('blog-post', 'front-post', 'comment', 'page', 'product', 'forum-post', 'forum-reply')));
 			}
 
 			function ActivationNotice()
@@ -3406,7 +3456,7 @@
 
 				// Some alias.
 				$rw_class = $rw_current_settings["class"];
-
+				
 				$is_blog_post = ('blog-post' === $rw_current_settings['class']);
 				$item_with_category = in_array($rw_current_settings['class'], array('blog-post', 'front-post', 'comment'));
 
@@ -3426,7 +3476,7 @@
 				$this->custom_settings_list = $this->GetOption(WP_RW__CUSTOM_SETTINGS);
 
 				$this->multirating_settings_list = $this->GetOption(WP_RW__MULTIRATING_SETTINGS);
-
+				
 				// Accumulated user ratings support.
 				if ('users' === $selected_key && $this->IsBBPressInstalled())
 					$rw_is_user_accumulated = $this->GetOption(WP_RW__IS_ACCUMULATED_USER_RATING);
@@ -3558,6 +3608,8 @@
 
 					if (!isset($this->_visibilityList))
 						$this->_visibilityList = new stdClass();
+					if (!isset($this->_visibilityList->{$rw_class}))
+						$this->_visibilityList->{$rw_class} = new stdClass();
 					$this->_visibilityList->{$rw_class}->selected = $rw_visibility;
 					$this->_visibilityList->{$rw_class}->exclude = self::IDsCollectionToArray($rw_visibility_exclude);
 					$this->_visibilityList->{$rw_class}->include = self::IDsCollectionToArray($rw_visibility_include);
@@ -4045,7 +4097,7 @@
 				}
 
 				// Avoid further checking, return immediately if the post type is not supported.
-				if (!in_array($class, array('post', 'page', 'product'))) {
+				if (!in_array($class, array('post', 'page', 'product', 'topic', 'reply'))) {
 					return false;
 				}
 
@@ -4063,6 +4115,10 @@
 						break;
 					case 'product':
 						$option_name = WP_RW__WOOCOMMERCE_PRODUCTS_OPTIONS;
+						break;
+					case 'topic':
+					case 'reply':
+						$option_name = WP_RW__FORUM_POSTS_OPTIONS;
 						break;
 					default:
 						$option_name = WP_RW__BLOG_POSTS_OPTIONS;
@@ -5808,6 +5864,10 @@
 					case 'product':
 						$classes = array('collection-product', 'product');
 						break;
+					case 'topic':
+					case 'reply':
+						$classes = array('forum-post');
+						break;
 					case 'post':
 					default:
 						$classes = array('front-post', 'blog-post');
@@ -5822,7 +5882,7 @@
 				$this->SetOption(WP_RW__VISIBILITY_SETTINGS, $this->_visibilityList);
 
 				// Only proceed if the post type is supported.
-				if (in_array($_POST['post_type'], array('post', 'page', 'product'))) {
+				if (in_array($_POST['post_type'], array('post', 'page', 'product', 'topic', 'reply'))) {
 					// Add/remove to/from the read-only list of post IDs based on the state of the read-only checkbox.
 					$this->add_to_readonly(
 						$_POST['ID'],
@@ -6177,7 +6237,7 @@
 					case 'forum-reply':
 					case 'new-forum-post':
 					case 'user-forum-post':
-						$urid = $this->_getForumPostRatingGuid($element_id);
+						$urid = $this->_getForumPostRatingGuid($element_id, $criteria_id);
 						break;
 					case 'user':
 						$urid = $this->_getUserRatingGuid($element_id);
@@ -6302,8 +6362,7 @@
 			 * @return string Returns the generated multi-rating HTML
 			 */
 			function embed_multi_rating($vars) {
-				$multirating_settings_list = $this->GetOption(WP_RW__MULTIRATING_SETTINGS);
-				$multirating_options = $multirating_settings_list->{$vars['mr_element_class']};
+				$multirating_options = $this->get_multirating_options_by_class($vars['mr_element_class']);
 				$general_options = $this->get_options_by_class($vars['mr_element_class']);
 
 				$vars['mr_general_options'] = $general_options;
