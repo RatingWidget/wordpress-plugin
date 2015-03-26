@@ -3,7 +3,7 @@
 	Plugin Name: Rating-Widget: Star Rating System
 	Plugin URI: http://rating-widget.com/wordpress-plugin/
 	Description: Create and manage Rating-Widget ratings in WordPress.
-	Version: 2.4.7
+	Version: 2.4.8
 	Author: Rating-Widget
 	Author URI: http://rating-widget.com/wordpress-plugin/
 	License: GPLv2
@@ -293,15 +293,19 @@
 				register_activation_hook( WP_RW__PLUGIN_FILE_FULL, 'rw_activated' );
 
 				if ($this->fs->is_registered()) {
-					add_action('wp_ajax_rw-toprated-popup-html', array(&$this, 'generate_toprated_popup_html'));
-					add_action('wp_ajax_rw-affiliate-apply', array(&$this, 'send_affiliate_application'));
-					add_action('admin_init', array(&$this, 'register_toprated_shortcode_hooks'));
+					add_action( 'wp_ajax_rw-toprated-popup-html', array( &$this, 'generate_toprated_popup_html' ) );
+					add_action( 'wp_ajax_rw-affiliate-apply', array( &$this, 'send_affiliate_application' ) );
+					add_action( 'admin_init', array( &$this, 'register_toprated_shortcode_hooks' ) );
 					add_action( 'admin_menu', array( &$this, 'AddPostMetaBox' ) ); // Metabox for posts/pages
-					add_action( 'wp_dashboard_setup', array( &$this, 'add_dashboard_widgets' ) );
 					add_action( 'save_post', array( &$this, 'SavePostData' ) );
 
-					if (false !== rwapi())
+					if ( false !== rwapi() ) {
+						// Since some old users might not having a secret key set,
+						// the API won't be able to work for them - therefore, all API related
+						// hooks must be executed within this scope.
 						add_action( 'trashed_post', array( &$this, 'DeletePostData' ) );
+						add_action( 'wp_dashboard_setup', array( &$this, 'add_dashboard_widgets' ) );
+					}
 				}
 
 				add_action( 'admin_head', array( &$this, "rw_admin_menu_icon_css" ) );
