@@ -4,7 +4,7 @@
 	$multi_criterion = false;
 
 	if ($has_multi_rating) {
-		$multirating_options = ratingwidget()->multirating_settings_list->{$rclass};
+		$multirating_options = ratingwidget()->get_multirating_options_by_class($rclass);
 		
 		// Check if there are more than one criteria so that we can hide or show additional options
 		$total_criteria = count($multirating_options->criteria);
