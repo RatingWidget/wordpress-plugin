@@ -398,6 +398,7 @@
 			 * display the admin notice at the top of the current page.
 			 * 
 			 * @author Leo Fajardo (@leorw)
+			 * @since 2.4.9
 			 */
 			function five_star_wp_rate_action() {
 				// Continue only if the nonce is correct
@@ -845,6 +846,7 @@
 			 * when the site has reached 10, 100, or 1000 votes.
 			 * 
 			 * @author Leo Fajardo (@leorw)
+			 * @since 2.4.9
 			 */
 			function five_star_wp_rate_notice() {
 				$min_votes_trigger = $this->GetOption(WP_RW__DB_OPTION_WP_RATE_NOTICE_MIN_VOTES_TRIGGER);
@@ -1589,8 +1591,8 @@
 					rw_enqueue_script('rw_wp', 'wordpress/settings.js');
 
 					// Include Chosen files.
-					rw_enqueue_script('rw_chosen', '//cdnjs.cloudflare.com/ajax/libs/chosen/1.1.0/chosen.jquery.min.js');
-					rw_enqueue_style('rw_chosen', '//cdnjs.cloudflare.com/ajax/libs/chosen/1.1.0/chosen.min.css');
+					rw_enqueue_script('rw_chosen', 'https://cdnjs.cloudflare.com/ajax/libs/chosen/1.1.0/chosen.jquery.min.js');
+					rw_enqueue_style('rw_chosen', 'https://cdnjs.cloudflare.com/ajax/libs/chosen/1.1.0/chosen.min.css');
 
 					// Reports includes.
 					rw_enqueue_style('rw_cp', 'colorpicker.php');
