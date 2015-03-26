@@ -280,6 +280,19 @@
 				$this->_options_manager->store();
 			}
 
+			/**
+			 * Validates the current site able to connect the API.
+			 *
+			 * @author Vova Feldman (@svovaf)
+			 * @since 2.4.8
+			 *
+			 * @return bool
+			 */
+			private function is_api_supported()
+			{
+				return ( false !== rwapi() );
+			}
+
 			private function setup_dashboard_actions() {
 				RWLogger::LogEnterence( "setup_dashboard_actions" );
 
@@ -299,7 +312,7 @@
 					add_action( 'admin_menu', array( &$this, 'AddPostMetaBox' ) ); // Metabox for posts/pages
 					add_action( 'save_post', array( &$this, 'SavePostData' ) );
 
-					if ( false !== rwapi() ) {
+					if ( $this->is_api_supported() ) {
 						// Since some old users might not having a secret key set,
 						// the API won't be able to work for them - therefore, all API related
 						// hooks must be executed within this scope.
