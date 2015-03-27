@@ -3868,7 +3868,7 @@
 
 					if ( false !== $this->GetOption( WP_RW__SHOW_ON_EXCERPT ) ) {
 						// Hook post excerpt rating showup.
-						add_action( 'the_excerpt', array( &$this, 'add_front_post_rating' ) );
+						add_action( 'the_excerpt', array( &$this, 'AddPostRating' ) );
 
 						RWLogger::Log( "rw_before_loop_start", 'Hooked to the_excerpt()' );
 					}
