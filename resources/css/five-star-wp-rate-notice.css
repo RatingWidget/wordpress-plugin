@@ -1,0 +1,30 @@
+.rw-five-star-wp-rate-action:not(.success) {
+	color: green;
+	border-left-color: #e6db55;
+	font-weight: 700;
+	padding: 11px 15px 0 15px;
+	text-align: left;
+	font-family: "Open Sans", sans-serif;
+}
+
+.rw-five-star-wp-rate-action.updated .rw-slug b {
+	color: #004fc4;
+}
+
+.rw-five-star-wp-rate-action.updated .rw-slug i {
+	color: #0094ff;
+}
+
+.rw-five-star-wp-rate-action.updated .rw-sep {
+	color: #ffba00;
+}
+
+.rw-five-star-wp-rate-action ul {
+	list-style-type: disc;
+	margin: 14px;
+	padding-left: 35px;
+}
+
+.rw-five-star-wp-rate-action.success ul {
+	margin-bottom: 0;
+}

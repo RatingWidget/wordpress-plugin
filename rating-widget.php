@@ -318,11 +318,18 @@
 						// hooks must be executed within this scope.
 						add_action( 'trashed_post', array( &$this, 'DeletePostData' ) );
 						add_action( 'wp_dashboard_setup', array( &$this, 'add_dashboard_widgets' ) );
+						add_action('wp_ajax_rw-five-star-wp-rate', array(&$this, 'five_star_wp_rate_action'));
+
+						$min_votes_trigger = $this->GetOption(WP_RW__DB_OPTION_WP_RATE_NOTICE_MIN_VOTES_TRIGGER);
+						if (-1 !== $min_votes_trigger) {
+							add_action('admin_notices', array(&$this, 'five_star_wp_rate_notice'));
+						}
 					}
 				}
 
 				add_action( 'admin_head', array( &$this, "rw_admin_menu_icon_css" ) );
 				add_action( 'admin_menu', array( &$this, 'admin_menu' ) );
+
 
 				add_action( 'updated_post_meta', array( &$this, 'PurgePostFeaturedImageTransient' ), 10, 4 );
 
@@ -385,7 +392,41 @@
 				echo 1;
 				exit;
 			}
-
+			
+			/**
+			 * This function updates the minimum votes required in order to
+			 * display the admin notice at the top of the current page.
+			 * 
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.4.9
+			 */
+			function five_star_wp_rate_action() {
+				// Continue only if the nonce is correct
+				check_admin_referer('rw_five_star_wp_rate_action_nonce', '_n');
+				
+				$min_votes_trigger = $this->GetOption(WP_RW__DB_OPTION_WP_RATE_NOTICE_MIN_VOTES_TRIGGER);
+				if (-1 === $min_votes_trigger) {
+					exit;
+				}
+				
+				$rate_action = $_POST['rate_action'];
+				if ('do-rate' === $rate_action) {
+					$min_votes_trigger = -1;
+				} else if (10 === $min_votes_trigger) {
+					$min_votes_trigger = 100;
+				} else if (100 === $min_votes_trigger) {
+					$min_votes_trigger = 1000;
+				} else {
+					$min_votes_trigger = -1;
+				}
+				
+				$this->SetOption(WP_RW__DB_OPTION_WP_RATE_NOTICE_MIN_VOTES_TRIGGER, $min_votes_trigger);
+				$this->_options_manager->store();
+				
+				echo 1;
+				exit;
+			}
+			
 			/**
 			 * Determines if rich editing is available
 			 *
@@ -799,7 +840,45 @@
 
 //				do_action('fs_after_license_loaded');
 			}
+			
+			/**
+			 * This function displays a message at the top of the current page
+			 * when the site has reached 10, 100, or 1000 votes.
+			 * 
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.4.9
+			 */
+			function five_star_wp_rate_notice() {
+				$min_votes_trigger = $this->GetOption(WP_RW__DB_OPTION_WP_RATE_NOTICE_MIN_VOTES_TRIGGER);
+				$response = $this->ApiCall("/votes/count.json", 'GET', array(), WP_RW__CACHE_TIMEOUT_DASHBOARD_STATS);
+				if (!isset($response->error)) {
+					$votes = $response->count;
+					if ($votes >= $min_votes_trigger) {
+						global $wp_version;
+						$classes = 'rw-five-star-wp-rate-action update-nag';
+						
+						// Use additional class for the different versions of WordPress
+						// in order to have the correct message styles.
+						if ($wp_version < 3 ) {
+							$classes .= ' updated';
+						} else if ($wp_version >= 3.8 ) {
+							$classes .= ' success';
+						}
 
+						// Retrieve the admin notice content
+						$params = array('min_votes_trigger' => $min_votes_trigger);
+						
+						ob_start();
+						rw_require_view('pages/admin/five-star-wp-rate-notice.php', $params);
+						$message = ob_get_contents();
+						ob_end_clean();
+						
+						// Display the message
+						ratingwidget()->Notice($message, $classes);
+					}
+				}
+			}
+			
 			public function ClearTransients()
 			{
 				global $wpdb;
@@ -985,6 +1064,7 @@
 
 					WP_RW__LOGGER => false,
 					WP_RW__DB_OPTION_TRACKING => false,
+					WP_RW__DB_OPTION_WP_RATE_NOTICE_MIN_VOTES_TRIGGER => 10,
 					WP_RW__IS_ACCUMULATED_USER_RATING => true,
 
 					WP_RW__IDENTIFY_BY => 'laccount',
@@ -1451,7 +1531,7 @@
 				// wp_enqueue_script( 'rw-test', "/wp-admin/js/rw-test.js", array( 'jquery-ui-sortable', 'jquery-ui-draggable', 'jquery-ui-droppable' ), false, 1 );
 				rw_enqueue_style('rw_wp_admin', 'wordpress/admin.css');
 				rw_enqueue_script('rw_wp_admin', 'wordpress/admin.js');
-
+				
 				// Enqueue the stylesheets for the metabox rating
 				if ($this->admin_page_has_rating_metabox()) {
 					rw_enqueue_style('rw-admin-rating', WP_RW__PLUGIN_URL . 'resources/css/admin-rating.css');
@@ -1465,6 +1545,16 @@
 					
 					if ('index.php' === $pagenow) {
 						rw_enqueue_style('rw-dashboard-stats', WP_RW__PLUGIN_URL . 'resources/css/dashboard-stats.css');
+					}
+					
+					$min_votes_trigger = $this->GetOption(WP_RW__DB_OPTION_WP_RATE_NOTICE_MIN_VOTES_TRIGGER);
+					if (-1 !== $min_votes_trigger) {
+						// Enqueue the script that handles the updating of the minimum votes required for
+						// displaying the "5-star WP rate" message box in the top of every page.
+						rw_enqueue_script('rw-five-star-wp-rate-notice-js', WP_RW__PLUGIN_URL . 'resources/js/five-star-wp-rate-notice.js');
+
+						// "5-star WP rate" message styles
+						rw_enqueue_style('rw-five-star-wp-rate-notice-style', WP_RW__PLUGIN_URL . 'resources/css/five-star-wp-rate-notice.css');
 					}
 				}
 
@@ -1501,8 +1591,8 @@
 					rw_enqueue_script('rw_wp', 'wordpress/settings.js');
 
 					// Include Chosen files.
-					rw_enqueue_script('rw_chosen', '//cdnjs.cloudflare.com/ajax/libs/chosen/1.1.0/chosen.jquery.min.js');
-					rw_enqueue_style('rw_chosen', '//cdnjs.cloudflare.com/ajax/libs/chosen/1.1.0/chosen.min.css');
+					rw_enqueue_script('rw_chosen', 'https://cdnjs.cloudflare.com/ajax/libs/chosen/1.1.0/chosen.jquery.min.js');
+					rw_enqueue_style('rw_chosen', 'https://cdnjs.cloudflare.com/ajax/libs/chosen/1.1.0/chosen.min.css');
 
 					// Reports includes.
 					rw_enqueue_style('rw_cp', 'colorpicker.php');

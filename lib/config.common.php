@@ -111,6 +111,7 @@
 	define( 'WP_RW__DB_OPTION_OWNER_ID', 'rw_owner_id' );
 	define( 'WP_RW__DB_OPTION_OWNER_EMAIL', 'rw_owner_email' );
 	define( 'WP_RW__DB_OPTION_TRACKING', 'rw_tracking' );
+	define( 'WP_RW__DB_OPTION_WP_RATE_NOTICE_MIN_VOTES_TRIGGER', 'rw_wp_rate_notice_min_votes_trigger' );
 
 	/* BuddyPress
 	-----------------------------------------------------------------------------------------*/
@@ -180,7 +181,7 @@
 	define( 'WP_RW__CUSTOM_SETTINGS', 'rw_custom_settings' );
 	define( 'WP_RW__MULTIRATING_SETTINGS', 'rw_multirating_settings' );
 	define( 'WP_RW__IS_ACCUMULATED_USER_RATING', 'rw_accumulated_user_rating' );
-
+	
 	/* Visibility Options
 	-----------------------------------------------------------------------------------------*/
 	define( 'WP_RW__VISIBILITY_ALL_VISIBLE', 0 );
