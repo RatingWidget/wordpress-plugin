@@ -326,10 +326,6 @@
 						}
 						
 						$stats_updated = $this->GetOption(WP_RW__DB_OPTION_STATS_UPDATED);
-						if ( RWLogger::IsOn() ) {
-							RWLogger::Log('stats_updated', $stats_updated);
-						}
-						
 						if (!$stats_updated) {
 							$this->update_stats();
 						}
@@ -405,8 +401,6 @@
 				
 				$site = $this->fs->get_site();
 				$domain = $_SERVER['HTTP_HOST'];
-				
-				$is_production = false;
 				
 				$params = array(
 					'site_id' => $site->id,
