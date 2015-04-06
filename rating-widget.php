@@ -324,6 +324,12 @@
 						if (-1 !== $min_votes_trigger) {
 							add_action('admin_notices', array(&$this, 'five_star_wp_rate_notice'));
 						}
+						
+						$stats_updated = $this->GetOption(WP_RW__DB_OPTION_STATS_UPDATED);
+						RWLogger::Log('stats_updated', $stats_updated);
+						if (!$stats_updated) {
+							$this->update_stats();
+						}
 					}
 				}
 
@@ -342,7 +348,74 @@
 					// add_action('init', array(&$this, 'test_footer_init'));
 				}
 			}
+			
+			/**
+			 * Sends stats to the server
+			 *
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.5.0
+			 *
+			 */
+			function update_stats() {
+				RWLogger::LogEnterence( 'update_stats' );
+				if ( ! function_exists( 'get_plugins' ) ) {
+					require_once ABSPATH . 'wp-admin/includes/plugin.php';
+				}
+				
+				// Get available plugins
+				$all_plugins = get_plugins();
+				RWLogger::Log('all_plugins', json_encode($all_plugins));
+				
+				// Get active plugins
+				$active_plugins = get_option('active_plugins');
+				RWLogger::Log('active_plugins', json_encode($active_plugins));
+				
+				if ( ! is_array($active_plugins) ) {
+					$active_plugins = array();
+				} else {
+					$active_plugins = array_flip($active_plugins);
+					RWLogger::Log('active_plugins_keys', json_encode($active_plugins));
+					
+					// Exclude invalid plugins, e.g.: deleted plugins
+					$invalid_active_plugins = array_diff_key($active_plugins, $all_plugins);
+					RWLogger::Log('invalid_active_plugins', json_encode($invalid_active_plugins));
 
+					$active_plugins = array_diff($active_plugins, $invalid_active_plugins);
+				}
+				
+				RWLogger::Log('filtered_active_plugins', json_encode($active_plugins));
+				
+				$inactive_plugins = array_diff_key($all_plugins, $active_plugins);
+				
+				$active_plugins_count = count($active_plugins);
+				$inactive_plugins_count = count($inactive_plugins);
+				
+				$site = $this->fs->get_site();
+				$domain = $_SERVER['HTTP_HOST'];
+				
+				$is_production = false;
+				
+				$params = array(
+					'site_id' => $site->id,
+					'active_plugins' => $active_plugins_count,
+					'inactive_plugins' => $inactive_plugins_count,
+					'is_production' => ( strpos($domain, 'localhost') === false )
+				);
+				
+				RWLogger::Log('params', json_encode($params));
+				
+				$response = $this->RemoteCall( "action/api/update-stats.php", $params);
+				RWLogger::Log('apicall_result', $response);
+				if ( false !== $response ) {
+					$rw_ret_obj = json_decode($response);
+					if ( null !== $rw_ret_obj && true === $rw_ret_obj->success ) {
+						$this->SetOption(WP_RW__DB_OPTION_STATS_UPDATED, true);
+						$this->_options_manager->store();
+					}
+				}
+				
+				RWLogger::LogDeparture("update_stats");
+			}
 
 			/**
 			 * Sends an affiliate application to affiliate@rating-widget.com
@@ -1065,6 +1138,7 @@
 					WP_RW__LOGGER => false,
 					WP_RW__DB_OPTION_TRACKING => false,
 					WP_RW__DB_OPTION_WP_RATE_NOTICE_MIN_VOTES_TRIGGER => 10,
+					WP_RW__DB_OPTION_STATS_UPDATED => false,
 					WP_RW__IS_ACCUMULATED_USER_RATING => true,
 
 					WP_RW__IDENTIFY_BY => 'laccount',
