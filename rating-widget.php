@@ -326,7 +326,10 @@
 						}
 						
 						$stats_updated = $this->GetOption(WP_RW__DB_OPTION_STATS_UPDATED);
-						RWLogger::Log('stats_updated', $stats_updated);
+						if ( RWLogger::IsOn() ) {
+							RWLogger::Log('stats_updated', $stats_updated);
+						}
+						
 						if (!$stats_updated) {
 							$this->update_stats();
 						}
@@ -350,7 +353,7 @@
 			}
 			
 			/**
-			 * Sends stats to the server
+			 * Sends one-time anonymous plugin stats, only for registered users who accepted the terms of service.
 			 *
 			 * @author Leo Fajardo (@leorw)
 			 * @since 2.5.0
@@ -364,26 +367,36 @@
 				
 				// Get available plugins
 				$all_plugins = get_plugins();
-				RWLogger::Log('all_plugins', json_encode($all_plugins));
+				if ( RWLogger::IsOn() ) {
+					RWLogger::Log('all_plugins', json_encode($all_plugins));
+				}
 				
 				// Get active plugins
 				$active_plugins = get_option('active_plugins');
-				RWLogger::Log('active_plugins', json_encode($active_plugins));
+				if ( RWLogger::IsOn() ) {
+					RWLogger::Log('active_plugins', json_encode($active_plugins));
+				}
 				
 				if ( ! is_array($active_plugins) ) {
 					$active_plugins = array();
 				} else {
 					$active_plugins = array_flip($active_plugins);
-					RWLogger::Log('active_plugins_keys', json_encode($active_plugins));
+					if ( RWLogger::IsOn() ) {
+						RWLogger::Log('active_plugins_keys', json_encode($active_plugins));
+					}
 					
 					// Exclude invalid plugins, e.g.: deleted plugins
 					$invalid_active_plugins = array_diff_key($active_plugins, $all_plugins);
-					RWLogger::Log('invalid_active_plugins', json_encode($invalid_active_plugins));
-
+					if ( RWLogger::IsOn() ) {
+						RWLogger::Log('invalid_active_plugins', json_encode($invalid_active_plugins));
+					}
+					
 					$active_plugins = array_diff($active_plugins, $invalid_active_plugins);
 				}
 				
-				RWLogger::Log('filtered_active_plugins', json_encode($active_plugins));
+				if ( RWLogger::IsOn() ) {
+					RWLogger::Log('filtered_active_plugins', json_encode($active_plugins));
+				}
 				
 				$inactive_plugins = array_diff_key($all_plugins, $active_plugins);
 				
@@ -402,17 +415,17 @@
 					'is_production' => ( strpos($domain, 'localhost') === false )
 				);
 				
-				RWLogger::Log('params', json_encode($params));
+				if ( RWLogger::IsOn() ) {
+					RWLogger::Log('params', json_encode($params));
+				}
 				
 				$response = $this->RemoteCall( "action/api/update-stats.php", $params);
-				RWLogger::Log('apicall_result', $response);
-				if ( false !== $response ) {
-					$rw_ret_obj = json_decode($response);
-					if ( null !== $rw_ret_obj && true === $rw_ret_obj->success ) {
-						$this->SetOption(WP_RW__DB_OPTION_STATS_UPDATED, true);
-						$this->_options_manager->store();
-					}
+				if ( RWLogger::IsOn() ) {
+					RWLogger::Log('apicall_result', $response);
 				}
+				
+				$this->SetOption(WP_RW__DB_OPTION_STATS_UPDATED, true);
+				$this->_options_manager->store();
 				
 				RWLogger::LogDeparture("update_stats");
 			}
