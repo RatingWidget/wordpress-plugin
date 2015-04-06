@@ -112,6 +112,7 @@
 	define( 'WP_RW__DB_OPTION_OWNER_EMAIL', 'rw_owner_email' );
 	define( 'WP_RW__DB_OPTION_TRACKING', 'rw_tracking' );
 	define( 'WP_RW__DB_OPTION_WP_RATE_NOTICE_MIN_VOTES_TRIGGER', 'rw_wp_rate_notice_min_votes_trigger' );
+	define( 'WP_RW__DB_OPTION_STATS_UPDATED', 'rw_wp_stats_updated' );
 
 	/* BuddyPress
 	-----------------------------------------------------------------------------------------*/
