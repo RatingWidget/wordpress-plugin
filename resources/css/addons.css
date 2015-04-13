@@ -190,6 +190,42 @@
   height: 100%;
 }
 
+/* ADMIN NOTICE */
+.addons-page-notice {
+	display:none;
+}
+
+.addons-page-notice:not(.success) {
+	color: green;
+	border-left-color: #e6db55;
+	font-weight: 700;
+	padding: 11px 15px 10px 15px;
+	text-align: left;
+	font-family: "Open Sans", sans-serif;
+}
+
+.addons-page-notice.updated .rw-slug b {
+	color: #004fc4;
+}
+
+.addons-page-notice.updated .rw-slug i {
+	color: #0094ff;
+}
+
+.addons-page-notice.updated .rw-sep {
+	color: #ffba00;
+}
+
+.addons-page-notice ul {
+	list-style-type: disc;
+	margin: 14px;
+	padding-left: 35px;
+}
+
+.addons-page-notice.success ul {
+	margin-bottom: 0;
+}
+
 /* CLEARFIX */
 .clearfix:before, .clearfix:after {
     content: " ";
@@ -435,57 +471,63 @@ ul.rw-addon-grid > li {
 	display:none;
 }
 
-.appcard-rating-star, .appcard-rating-star-halves {
+.appcard-rating-star, .appcard-rating-star span {
+    display: block;
     float: left;
     background-image: url(../img/add-ons/star-rating.png);
-    width: 70px;
-    height: 30px;
-	position: relative;
-	top: 5px;
-}
-
-.appcard-rating-star-halves-0 {
     background-position: 0 0;
+    width: 65px;
+    height: 13px;
+	position: relative;
 }
 
-.appcard-rating-star-halves-1 {
-    background-position: -90px 0;
+.appcard-rating-star {
+	top: 13px;
 }
 
-.appcard-rating-star-halves-2 {
-    background-position: 0 -30px;
+.appcard-rating-star span {
+	width: 0px;
+    background-position: 0 14px;
 }
 
-.appcard-rating-star-halves-3 {
-    background-position: -90px -30px;
+.appcard-rating-5 span {
+	width: 10%;
 }
 
-.appcard-rating-star-halves-4 {
-    background-position: 0 -60px;
+.appcard-rating-10 span {
+	width: 20%;
 }
 
-.appcard-rating-star-halves-5 {
-    background-position: -90px -60px;
+.appcard-rating-15 span {
+	width: 30%;
 }
 
-.appcard-rating-star-halves-6 {
-    background-position: 0 -90px;
+.appcard-rating-20 span {
+	width: 40%;
 }
 
-.appcard-rating-star-halves-7 {
-    background-position: -90px -90px;
+.appcard-rating-25 span {
+	width: 50%;
 }
 
-.appcard-rating-star-halves-8 {
-    background-position: 0 -120px;
+.appcard-rating-30 span {
+	width: 60%;
 }
 
-.appcard-rating-star-halves-9 {
-    background-position: -90px -120px;
+.appcard-rating-35 span {
+	width: 70%;
 }
 
-.appcard-rating-star-halves-10 {
-    background-position: 0 -150px;
+.appcard-rating-40 span {
+	width: 80%;
+}
+
+.appcard-rating-45 span {
+	width: 90%;
+}
+
+.appcard-rating-50 span {
+	width: 100%;
 }
 
 .rw-addon-rating-reviews .button-primary {

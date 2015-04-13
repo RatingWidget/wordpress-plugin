@@ -320,7 +320,7 @@
 						add_action( 'trashed_post', array( &$this, 'DeletePostData' ) );
 						add_action( 'wp_dashboard_setup', array( &$this, 'add_dashboard_widgets' ) );
 						add_action('wp_ajax_rw-five-star-wp-rate', array(&$this, 'five_star_wp_rate_action'));
-
+						
 						$min_votes_trigger = $this->GetOption(WP_RW__DB_OPTION_WP_RATE_NOTICE_MIN_VOTES_TRIGGER);
 						if (-1 !== $min_votes_trigger) {
 							add_action('admin_notices', array(&$this, 'five_star_wp_rate_notice'));
@@ -448,7 +448,7 @@
 				$message = ob_get_contents();
 				ob_end_clean();
 
-				$subject = "Add-on Request";
+				$subject = "Add-on Request: {$addon['title']} / " . ($is_free ? 'Free' : $price);
 				$header = 'Content-type: text/html';
 				wp_mail('addons@rating-widget.com', $subject, $message, $header);
 				
@@ -469,13 +469,13 @@
 					array(
 						'id' => 1,
 						'title' => 'Reviews',
-						'description' => 'Textual Feedback Made Easy<br />Open a comment form after visitor vote to get textual feedback from your users.',
+						'description' => 'Open a comment form after visitor vote to get textual feedback from your users.',
 						'thumbnail_url' => rw_get_plugin_img_path('add-ons/reviews.jpg'),
 						'avg_rate' => 5.0,
 						'pricing' => array(
 							array(
 								'id' => '',
-								'monthly_price' => 19.99
+								'annual_price' => 19.99
 							)
 						),
 						'version' => '',
@@ -484,13 +484,13 @@
 					array(
 						'id' => 2,
 						'title' => 'Product Reviews',
-						'description' => 'Textual Feedback for WooCommerce<br />Open a comment form after visitor vote to get textual feedback from your customers.',
+						'description' => 'Open a comment form after visitor vote to get textual feedback from your customers.',
 						'thumbnail_url' => rw_get_plugin_img_path('add-ons/product_reviews.jpg'),
 						'avg_rate' => 5.0,
 						'pricing' => array(
 							array(
 								'id' => 1,
-								'monthly_price' => 19.99
+								'annual_price' => 19.99
 							)
 						),
 						'version' => '',
@@ -499,13 +499,13 @@
 					array(
 						'id' => 3,
 						'title' => 'Subscribers',
-						'description' => 'Increase Subscribers<br />Ask your visitors to subscribe after after a 5-star rating.',
+						'description' => 'Ask your visitors to subscribe after after a 5-star rating.',
 						'thumbnail_url' => rw_get_plugin_img_path('add-ons/subscribers.jpg'),
 						'avg_rate' => 5.0,
 						'pricing' => array(
 							array(
 								'id' => 1,
-								'monthly_price' => 19.99
+								'annual_price' => 19.99
 							)
 						),
 						'version' => '',
@@ -514,13 +514,13 @@
 					array(
 						'id' => 4,
 						'title' => 'Twitter Followers',
-						'description' => 'Increase Your Twitter Followers<br />Ask your visitors to follow your twitter account after a 5-star rating.',
+						'description' => 'Ask your visitors to follow your Twitter account after a 5-star rating.',
 						'thumbnail_url' => rw_get_plugin_img_path('add-ons/twitter_followers.jpg'),
 						'avg_rate' => 5.0,
 						'pricing' => array(
 							array(
 								'id' => 1,
-								'monthly_price' => 19.99
+								'annual_price' => 19.99
 							)
 						),
 						'version' => '',
@@ -529,13 +529,13 @@
 					array(
 						'id' => 5,
 						'title' => 'Facebook Fans',
-						'description' => 'Increase Your Facebook Fans<br />Ask your visitors to like your Facebook Fans page after a 5-star rating.',
+						'description' => 'Ask your visitors to like your Facebook Fans page after a 5-star rating.',
 						'thumbnail_url' => rw_get_plugin_img_path('add-ons/facebook_fans.jpg'),
 						'avg_rate' => 5.0,
 						'pricing' => array(
 							array(
 								'id' => 1,
-								'monthly_price' => 19.99
+								'annual_price' => 19.99
 							)
 						),
 						'version' => '',
@@ -544,13 +544,13 @@
 					array(
 						'id' => 6,
 						'title' => 'Mobile Alerts',
-						'description' => 'Real-time Ratings Alerts<br />Get push notification about every ratings on your site in real-time!',
+						'description' => 'Get push notification about every ratings on your site in real-time!',
 						'thumbnail_url' => rw_get_plugin_img_path('add-ons/mobile_alerts.jpg'),
 						'avg_rate' => 5.0,
 						'pricing' => array(
 							array(
 								'id' => 1,
-								'monthly_price' => 19.99
+								'annual_price' => 19.99
 							)
 						),
 						'version' => '',
@@ -559,13 +559,13 @@
 					array(
 						'id' => 7,
 						'title' => 'Tweets',
-						'description' => 'Increase Your Posts\' Tweets<br />Ask your visitors to follow your twitter account after a 5-star rating.',
+						'description' => 'Ask your visitors to follow your Twitter account after a 5-star rating.',
 						'thumbnail_url' => rw_get_plugin_img_path('add-ons/tweets.jpg'),
 						'avg_rate' => 5.0,
 						'pricing' => array(
 							array(
 								'id' => 1,
-								'monthly_price' => 19.99
+								'annual_price' => 19.99
 							)
 						),
 						'version' => '',
@@ -574,13 +574,13 @@
 					array(
 						'id' => 8,
 						'title' => 'Facebook Likes',
-						'description' => 'Increase Your Posts\' Likes<br />Ask your visitors to like your Facebook Fans page after a 5-star rating.',
+						'description' => 'Ask your visitors to like your Facebook Fans page after a 5-star rating.',
 						'thumbnail_url' => rw_get_plugin_img_path('add-ons/facebook_likes.png'),
 						'avg_rate' => 5.0,
 						'pricing' => array(
 							array(
 								'id' => 1,
-								'monthly_price' => 19.99
+								'annual_price' => 19.99
 							)
 						),
 						'version' => '',
@@ -1838,7 +1838,7 @@
 							rw_enqueue_script('rw-js-live-preview', WP_RW__PLUGIN_URL . '/resources/js/live-preview.js');
 							rw_enqueue_style('rw-live-preview', WP_RW__PLUGIN_URL . 'resources/css/live-preview.css');
 						}
-					}
+					}							
 				}
 			}
 

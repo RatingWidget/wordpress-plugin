@@ -5,6 +5,21 @@
  */
 
 $addons = ratingwidget()->get_addons();
+
+$admin_notice_classes = 'addons-page-notice update-nag';
+
+global $wp_version;
+
+// Use additional class for the different versions of WordPress
+// in order to have the correct message styles.
+if ($wp_version < 3 ) {
+	$admin_notice_classes .= ' updated';
+} else if ($wp_version >= 3.8 ) {
+	$admin_notice_classes .= ' success';
+}
+
+$message = __('Thanks for subscribing to the waiting list - we will let you know when the Add On is ready.', WP_RW__ID);
+ratingwidget()->Notice($message, $admin_notice_classes);
 ?>
 <div class="wrap rw-dir-ltr">
 	<h2 class="entry-title"><?php _e('Add Ons for RatingWidget', WP_RW__ID); ?></h2>
@@ -17,7 +32,7 @@ $addons = ratingwidget()->get_addons();
 							<?php
 							foreach ( $addons as $idx => $addon ) {
 								$pricing = $addon['pricing'][0];
-								$price = $pricing['monthly_price'];
+								$price = $pricing['annual_price'];
 								$is_free = (NULL === $price);
 								?>
 								<li class="rw-addon<?php echo $is_free ? ' free' : ''; ?>" data-idx="<?php echo $idx; ?>">
@@ -32,7 +47,7 @@ $addons = ratingwidget()->get_addons();
 													</li>
 													<span>
 														<li class="rw-addon-price">
-														  <?php echo $price; ?> <span class="price-per">/ month</span>
+														  <?php echo $price; ?> <span class="price-per">/ year</span>
 														</li>
 													</span>
 													<li class="rw-addon-rating">
@@ -47,14 +62,14 @@ $addons = ratingwidget()->get_addons();
 
 														$avg_rate = round($avg_rate, 0);
 
-														$half_stars = $rating * 2;
+														$score = $rating * 10;
 														
 														if ($rating < $avg_rate) {
 															// Add one half-star
-															$half_stars++;
+															$score += 5;
 														}
 														?>
-														<span class="appcard-rating-star-halves appcard-rating-star-halves-<?php echo $half_stars; ?>"></span>
+														<span class="appcard-rating-star appcard-rating-<?php echo $score; ?>"><span></span></span>
 													</li>
 													<li class="rw-addon-description">
 														<?php echo $addon['description']; ?>
@@ -74,11 +89,9 @@ $addons = ratingwidget()->get_addons();
 		</div>
 		<div id="rw-addons-popup-dialog">
 			<p><?php _e("The add-on is still not ready for final use, would you like us to let you know when it's ready? Or just anonymously tell us it's interesting?", WP_RW__ID); ?></p>
+			<input type="hidden" class="addon-action" value=""/>
 		</div>
-		<?php
-			global $wp_version;
-		?>
-		<input type="hidden" id="wp-version" value="<?php echo $wp_version; ?>";
+		<input type="hidden" id="wp-version" value="<?php echo $wp_version; ?>"
 	</form>
 	<script>
 		(function($) {
@@ -95,11 +108,12 @@ $addons = ratingwidget()->get_addons();
 					'width'			: 430,
 					'buttons'       : { // Add button labels in this way so that it will work with WordPress 3.0 and below
 							'<?php _e('Yes - add me to the waiting list', WP_RW__ID); ?>': function() {
-								sendData("Purchase Click", {add_user: true});
+								$('.addons-page-notice').show();
+								sendData({addon_action: $popupDialog.find('.addon-action').val(), add_user: true});
 								$popupDialog.dialog('close');
 							},
 							'<?php _e("It\'s just interesting", WP_RW__ID); ?>': function() {
-								sendData("Purchase Click");
+								sendData({addon_action: $popupDialog.find('.addon-action').val()});
 								$popupDialog.dialog('close');
 							}
 						}
@@ -127,13 +141,12 @@ $addons = ratingwidget()->get_addons();
 					var $target = $(evt.target);
 					var elementClass = $target.attr("class");
 
-					var addonAction = ('rw-addon-overlay' === elementClass ? 'Click' : 'Purchase Click');
-					if ( 'Purchase Click' === addonAction ) {
-						evt.preventDefault();
-						$popupDialog.dialog('open');
-					} else {
-						sendData(addonAction);
-					}
+					var addonAction = ('rw-addon-overlay' === elementClass ? 'Card Click' : 'Purchase Click');
+					$popupDialog.find('.addon-action').val(addonAction);
+					
+					evt.preventDefault();
+					$('.addons-page-notice').hide();
+					$popupDialog.dialog('open');
 
 					return false;
 				});
@@ -166,12 +179,11 @@ $addons = ratingwidget()->get_addons();
 			/**
 			 * Sends the add-on information to the server for further processing.
 			 */
-			function sendData(addonAction, extraDetails) {
+			function sendData(extraDetails) {
 				var data = {
 					action: 'rw-addon-request',
 					_n: '<?php echo wp_create_nonce('rw_send_addon_request'); ?>',
-					addon_key: $('li.rw-addon.active').attr('data-idx'),
-					addon_action: addonAction
+					addon_key: $('li.rw-addon.active').attr('data-idx')
 				};
 
 				if ( extraDetails ) {
