@@ -24,41 +24,41 @@
 		            <?php endforeach ?>
 	            </div>
 	            <script>
-		            var $ = $ || jQuery;
+					(function($) {
+						$('#rw_categories_availability_settings select').chosen({width: '100%'}).change(function(evt, params){
+							var sel_all = $(this).find('option[value=-1]'),
+								sel_all_check = $(this).parents().find('input[type=checkbox][value=-1]');
 
-		            $('#rw_categories_availability_settings select').chosen({width: '100%'}).change(function(evt, params){
-			            var sel_all = $(this).find('option[value=-1]'),
-				            sel_all_check = $(this).parents().find('input[type=checkbox][value=-1]');
+							if (params.selected)
+							{
+								$(this).parents().find('input[type=checkbox][value=' + params.selected + ']').prop('checked', true);
 
-			            if (params.selected)
-			            {
-				            $(this).parents().find('input[type=checkbox][value=' + params.selected + ']').prop('checked', true);
+								if ('-1' === params.selected) {
+									// Selected all categories.
+									$(this).find('option').prop('selected', true);
+									$(this).parents().find('input[type=checkbox]').prop('checked', true);
+								}
+								else
+								{
+									if (!sel_all.is(':selected') && ($(this).find('option').length - 1) == $(this).find('option:selected').length) {
+										// Select all.
+										sel_all.prop('selected', true);
+										sel_all_check.prop('checked', true);
+									}
+								}
+							}
+							else if (params.deselected)
+							{
+								$(this).parents().find('input[type=checkbox][value=' + params.deselected + ']').prop('checked', false);
 
-				            if ('-1' === params.selected) {
-					            // Selected all categories.
-					            $(this).find('option').prop('selected', true);
-					            $(this).parents().find('input[type=checkbox]').prop('checked', true);
-				            }
-				            else
-				            {
-					            if (!sel_all.is(':selected') && ($(this).find('option').length - 1) == $(this).find('option:selected').length) {
-						            // Select all.
-						            sel_all.prop('selected', true);
-						            sel_all_check.prop('checked', true);
-					            }
-				            }
-			            }
-			            else if (params.deselected)
-			            {
-				            $(this).parents().find('input[type=checkbox][value=' + params.deselected + ']').prop('checked', false);
+								// Deselect "All Categories".
+								sel_all.prop('selected', false);
+								sel_all_check.prop('checked', false);
+							}
 
-				            // Deselect "All Categories".
-				            sel_all.prop('selected', false);
-				            sel_all_check.prop('checked', false);
-			            }
-
-			            $(this).trigger("chosen:updated");
-		            });
+							$(this).trigger("chosen:updated");
+						});
+					})(jQuery);
 	            </script>
             </div>
         </div>

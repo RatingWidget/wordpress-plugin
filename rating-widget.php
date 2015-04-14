@@ -4121,11 +4121,11 @@
 															</select>
 															<input id="rw_align" name="rw_align" type="hidden" value="<?php echo $rw_align->ver . ' ' . $rw_align->hor ?>">
 															<script>
-																var $ = $ || jQuery;
-
-																$('.rw-post-rating-align select').chosen({width: '100%'}).change(function(evt, params){
-																	$('#rw_align').val(params.selected);
-																});
+																(function($) {
+																	$('.rw-post-rating-align select').chosen({width: '100%'}).change(function(evt, params){
+																		$('#rw_align').val(params.selected);
+																	});
+																})(jQuery);
 															</script>
 														</div>
 													<?php
