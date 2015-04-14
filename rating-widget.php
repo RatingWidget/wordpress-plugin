@@ -1083,13 +1083,13 @@
 					}
 
 					RWLogger::Log( 'LoadPlan', 'in_license_sync = ' . json_encode( $in_license_sync ) );
-
+					
 					// Update plan once in every 24 hours.
 					if ( false === $current_site_plan || $site_plan_update < ( time() - WP_RW__TIME_24_HOURS_IN_SEC ) ) {
 						// Get plan from remote server once a day.
 						try {
 							$site = $this->ApiCall( '?fields=id,plan' );
-						} catch ( \Exception $e ) {
+						} catch ( Exception $e ) {
 							$site = false;
 						}
 

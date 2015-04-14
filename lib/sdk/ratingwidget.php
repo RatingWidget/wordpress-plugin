@@ -57,7 +57,7 @@
 		    {
 			    $result = $this->MakeRequest($pPath, $pMethod, $pParams);
 		    }
-		    catch (\Exception $e)
+		    catch (Exception $e)
 		    {
 			    // Map to error object.
 			    $result = json_encode(array(
