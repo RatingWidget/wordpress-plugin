@@ -409,7 +409,7 @@
 				$addons = $this->get_addons();
 				$addon = $addons[$_REQUEST['addon_key']];
 				$pricing = $addon['pricing'][0];
-				$price = $pricing['monthly_price'];
+				$price = $pricing['annual_price'];
 				$is_free = (NULL === $price);
 				
 				$addon_title = '';
