@@ -46,7 +46,7 @@
 
 			$bt = debug_backtrace();
 			$i  = 1;
-			while ($i < count($bt) - 1 && false !== strpos( $bt[ $i ]['file'], '/freemius/' ) ) {
+			while ($i < count($bt) - 1 && false !== strpos( $bt[ $i ]['file'], DIRECTORY_SEPARATOR . 'freemius' . DIRECTORY_SEPARATOR) ) {
 				$i ++;
 			}
 
