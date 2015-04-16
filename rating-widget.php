@@ -321,15 +321,10 @@
 						add_action( 'trashed_post', array( &$this, 'DeletePostData' ) );
 						add_action( 'wp_dashboard_setup', array( &$this, 'add_dashboard_widgets' ) );
 						add_action('wp_ajax_rw-five-star-wp-rate', array(&$this, 'five_star_wp_rate_action'));
-						
+
 						$min_votes_trigger = $this->GetOption(WP_RW__DB_OPTION_WP_RATE_NOTICE_MIN_VOTES_TRIGGER);
 						if (-1 !== $min_votes_trigger) {
 							add_action('admin_notices', array(&$this, 'five_star_wp_rate_notice'));
-						}
-						
-						$stats_updated = $this->GetOption(WP_RW__DB_OPTION_STATS_UPDATED);
-						if (!$stats_updated) {
-							$this->update_stats();
 						}
 					}
 				}
@@ -480,7 +475,7 @@
 			 * information about the add-on with which the user is interacting.
 			 * 
 			 * @author Leo Fajardo (@leorw)
-			 * @since 2.5.0
+			 * @since 2.5.1
 			 *
 			 */
 			function send_addon_request() {
@@ -541,7 +536,7 @@
 			 * Returns an array of available add-ons.
 			 * 
 			 * @author Leo Fajardo (@leorw)
-			 * @since 2.5.0
+			 * @since 2.5.1
 			 *
 			 * @return array
 			 */
@@ -1116,7 +1111,7 @@
 				}
 
 				define( 'WP_RW__SITE_PLAN', $site_plan );
-
+				
 				RWLogger::Log( 'WP_RW__SITE_PLAN', $site_plan );
 
 				if ( $update ) {
@@ -1132,6 +1127,11 @@
 				/*{obfuscate}-->*/
 
 //				do_action('fs_after_license_loaded');
+					
+				$stats_updated = $this->GetOption(WP_RW__DB_OPTION_STATS_UPDATED);
+				if (!$stats_updated) {
+					$this->update_stats();
+				}
 			}
 			
 			/**
