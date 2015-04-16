@@ -3,7 +3,7 @@
 	Plugin Name: Rating-Widget: Star Rating System
 	Plugin URI: http://rating-widget.com/wordpress-plugin/
 	Description: Create and manage Rating-Widget ratings in WordPress.
-	Version: 2.4.9
+	Version: 2.5.1
 	Author: Rating-Widget
 	Author URI: http://rating-widget.com/wordpress-plugin/
 	License: GPLv2
@@ -79,9 +79,8 @@
 
 			/* Plugin setup.
 --------------------------------------------------------------------------------------------*/
-			private function __construct()
-			{
-				$this->fs = rw_fs();
+			private function __construct() {
+				$this->fs               = rw_fs();
 				$this->_options_manager = rw_fs_options();
 
 				if ( WP_RW__DEBUG ) {
@@ -93,14 +92,12 @@
 				$this->LoadOptions();
 
 				// Give 2nd chance to logger after options are loaded.
-				if ( ! RWLogger::IsOn() && $this->GetOption( WP_RW__LOGGER ) )
-				{
+				if ( ! RWLogger::IsOn() && $this->GetOption( WP_RW__LOGGER ) ) {
 					$this->InitLogger();
 				}
 
 				// If not in admin dashboard and account don't exist, don't continue with plugin init.
-				if ( ! $this->fs->is_registered() && ! is_admin() )
-				{
+				if ( ! $this->fs->is_registered() && ! is_admin() ) {
 					return;
 				}
 
@@ -110,6 +107,10 @@
 
 			function Init()
 			{
+				if ( ! $this->fs->is_registered() && ! is_admin() ) {
+					return;
+				}
+
 				// Load all extensions.
 				require_once(WP_RW__PLUGIN_LIB_DIR . "rw-extension-abstract.php");
 				require_once(WP_RW__PLUGIN_LIB_DIR_EXT . 'rw-woocommerce.php');
@@ -356,7 +357,7 @@
 			 * @since 2.5.0
 			 *
 			 */
-			function update_stats() {
+			private function update_stats() {
 				RWLogger::LogEnterence( 'update_stats' );
 				if ( ! function_exists( 'get_plugins' ) ) {
 					require_once ABSPATH . 'wp-admin/includes/plugin.php';
@@ -407,7 +408,7 @@
 					'site_id' => $site->id,
 					'active_plugins' => $active_plugins_count,
 					'inactive_plugins' => $inactive_plugins_count,
-					'is_production' => ( strpos($domain, 'localhost') === false )
+					'is_production' => json_encode( strpos($domain, 'localhost') === false )
 				);
 				
 				if ( RWLogger::IsOn() ) {
@@ -1653,7 +1654,7 @@
 					}
 
 					if ($this->_inDashboard)
-						$this->errors->add('rw_api_error', 'Unexpected RatingWidget API error: ' . $result->message);
+						$this->errors->add('rw_api_error', 'Unexpected RatingWidget API error: ' . $result->error->message);
 				}
 
 				return $result;
