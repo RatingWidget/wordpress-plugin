@@ -1132,8 +1132,161 @@
 				if (!$stats_updated) {
 					$this->update_stats();
 				}
+				
+				if ( $this->IsProfessional() ) {
+					if ( !isset($_GET['schema_test'])
+						|| (isset($_GET['schema_test']) && !$_GET['schema_test']) ) {
+						$this->update_rich_snippets_settings();
+					}
+				}
+			}
+
+			/**
+			 * Checks the latest post page if it contains specific metadata.
+			 * 
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.5.2
+			 */
+			function update_rich_snippets_settings() {
+				RWLogger::LogEnterence('update_rich_snippet_properties_availability');
+				$rich_snippets_settings = $this->get_rich_snippets_settings();
+
+				$update_rich_snippets_settings = true;
+				
+				if ( !$rich_snippets_settings->timestamp ) {
+					$update_rich_snippets_settings = true;
+				} else {
+					if (time() - $rich_snippets_settings->timestamp > WP_RW__TIME_WEEK_IN_SEC) {
+						$update_rich_snippets_settings = true;
+					}
+				}
+				
+				if ( !$update_rich_snippets_settings ) {
+					RWLogger::LogDeparture('update_rich_snippets_settings');
+					return;
+				}
+				
+				$recent_posts = wp_get_recent_posts(array('numberposts' => 1, 'post_type' => 'post'));
+				if ( count($recent_posts) ) {
+					$recent_post = $recent_posts[0];
+					$post_id = $recent_post['ID'];
+					
+					$permalink = get_permalink($post_id);
+//					$permalink = 'http://localhost/ratingwidget2/?p=1';
+//					$permalink = 'http://goodorbademail.com/company-email/email-in-real-life-video/';
+					$permalink = add_query_arg(array('schema_test' => true), $permalink);
+					
+					if ( RWLogger::IsOn() ) {
+						RWLogger::Log('permalink', $permalink);
+					}
+
+					$html = $this->remote_get($permalink, array('timeout' => 20, 'blocking' => true), false);
+					if ( empty($html) ) {
+						if ( RWLogger::IsOn() ) {
+							RWLogger::Log('html_is_empty', 'true');
+						}
+						
+						unset($rich_snippets_settings->availability);
+					} else {
+						if ( RWLogger::IsOn() ) {
+							RWLogger::Log('html_content_length: ' . strlen($html));
+						}
+
+						$urid = $this->get_rating_id_by_element($post_id, 'blog-post', false);
+	//					$urid = 20;
+	//					$urid = 13040;
+
+						$rating_container_class = 'rw-urid-' . $urid;
+
+						$dom = new DOMDocument();
+						@$dom->loadHTML($html);
+
+						$xpath = new DomXPath($dom);
+
+						// Find all elements with "itemtype" attribute whose value is "http://schema.org/Article"
+						// and have div descendants that have a class specified by the rating_container_class field
+						$query_str = "//div[contains(concat(' ', normalize-space(@class), ' '), ' {$rating_container_class} ')]/ancestor::*[@itemtype = 'http://schema.org/Article']";
+						$itemtype_article_nodes = $xpath->query($query_str);
+
+						if ( RWLogger::IsOn() ) {
+							RWLogger::Log('total_article_elements: ' . $itemtype_article_nodes->length);
+						}
+
+						if ( $itemtype_article_nodes->length ) {
+							$rich_snippets_settings->availability['type_wrapper'] = true;
+							
+							foreach ( $itemtype_article_nodes as $itemtype_article_node ) {
+								foreach ( array_keys($rich_snippets_settings->availability) as $property_name ) {
+									if ( 'type_wrapper' === $property_name ) {
+										continue;
+									}
+									
+									$available = $this->rich_snippets_itemprop_exists($xpath, $itemtype_article_node, $property_name);
+									$rich_snippets_settings->availability[$property_name] = $available;
+								}
+							}
+						}
+						
+						if ( RWLogger::IsOn() ) {
+							RWLogger::Log('rich_snippets_settings: ' . json_encode($rich_snippets_settings));
+						}
+					}
+					
+					$rich_snippets_settings->timestamp = time();
+					$this->SetOption(WP_RW__DB_OPTION_RICH_SNIPPETS_SETTINGS, $rich_snippets_settings);
+					$this->_options_manager->store();
+				}
+				
+				RWLogger::LogDeparture('update_rich_snippets_settings');
 			}
 			
+			/**
+			 * 
+			 * $author Leo Fajardo (@leorw)
+			 * @since 2.5.2
+			 * 
+			 * @param type $url
+			 * @param type $args
+			 * @return string
+			 */
+			function remote_get($url, $args = array()) {
+				$response = wp_remote_get($url, $args);
+				$result = wp_remote_retrieve_body($response);
+
+				if ( RWLogger::IsOn() ) {
+					RWLogger::Log("remote_get", 'Result: ' . var_export($response, true));
+				}
+				
+				return $result;
+			}
+			
+			/**
+			 * Description
+			 * 
+			 * @author Leo Fajardo (@leorw)
+			 * @since  2.5.2
+			 *
+			 * @param type $xpath
+			 * @param type $parent
+			 * @param type $prop_name
+			 * @return boolean
+			 */
+			function rich_snippets_itemprop_exists($xpath, $parent, $prop_name) {
+				// Find the itemtype ancestors of all descendants whose ancestors have itemtype attribute and 
+				// descendants that have itemprop attribute whose value is "name".
+				$itemtype_nodes = $xpath->query(".//*[@itemprop = '$prop_name']/ancestor::*[@itemtype]", $parent);
+				if ( !$itemtype_nodes->length ) {
+					return false;
+				} else {
+					$itemtype_node = $itemtype_nodes->item(0);
+					if ( 'http://schema.org/Article' === $itemtype_node->getAttribute('itemtype') ) {
+						return true;
+					} else {
+						return false;
+					}
+				}
+			}
+
 			/**
 			 * This function displays a message at the top of the current page
 			 * when the site has reached 10, 100, or 1000 votes.
@@ -1359,6 +1512,15 @@
 					WP_RW__DB_OPTION_TRACKING => false,
 					WP_RW__DB_OPTION_WP_RATE_NOTICE_MIN_VOTES_TRIGGER => 10,
 					WP_RW__DB_OPTION_STATS_UPDATED => false,
+					WP_RW__DB_OPTION_RICH_SNIPPETS_SETTINGS => (object) array(
+						'timestamp' => false,
+						'availability' => array(
+							'type_wrapper' => false,
+							'name' => false,
+							'url' => false,
+							'description' => false
+						)
+					),
 					WP_RW__IS_ACCUMULATED_USER_RATING => true,
 
 					WP_RW__IDENTIFY_BY => 'laccount',
@@ -2016,6 +2178,20 @@
 				}
 				
 				return $multirating_settings_list->{$rclass};
+			}
+
+			function get_rich_snippets_settings() {
+				$rich_snippets_settings = $this->GetOption(WP_RW__DB_OPTION_RICH_SNIPPETS_SETTINGS);
+				if (!$rich_snippets_settings) {
+					$rich_snippets_settings = new stdClass();
+				}
+				
+				if ( !isset($rich_snippets_settings->availability) ) {
+					$default_rich_snippets_settings = $this->_OPTIONS_DEFAULTS[WP_RW__DB_OPTION_RICH_SNIPPETS_SETTINGS];
+					$rich_snippets_settings->availability = $default_rich_snippets_settings->availability;
+				}
+				
+				return $rich_snippets_settings;
 			}
 
 			/**
@@ -4866,16 +5042,18 @@
 						$ratingData .= ' data-' . $key . '="' . esc_attr(trim($val)) . '"';
 					}
 				}
-
-				$rating_html = '<div class="rw-ui-container rw-class-' . $pElementClass . ' rw-urid-' . $pUrid . '"' . $ratingData;
-
+				
+				$rating_html = '<div class="rw-ui-container rw-class-' . $pElementClass . ' rw-urid-' . $pUrid . '"' . $ratingData . '></div>';
+				
 				/*<--{obfuscate}*/
-				if (true === $pAddSchema && 'front-post' !== $pElementClass && $this->IsProfessional())
+				if (true === $pAddSchema && 'front-post' !== $pElementClass && $this->IsProfessional() && !isset($_GET['schema_test']) )
 				{
+					$rich_snippets_settings = $this->get_rich_snippets_settings();
+					$availability = $rich_snippets_settings->availability;
+					
 					RWLogger::Log('GetRatingHtml', "Adding schema for: urid={$pUrid}; rclass={$pElementClass}");
 
 					$data = $this->GetRatingDataByRatingID($pUrid, 2);
-
 					if (false !== $data && $data['votes'] > 0)
 					{
 						if (false !== strpos($pElementClass, 'product'))
@@ -4884,16 +5062,26 @@
 							/*$schema_root = 'itemscope itemtype="http://schema.org/Product"';
 							$schema_title_prop = 'itemprop="name"';
 							*/
-							$rating_html .= '>';
 						}
 						else
 						{
-							$rating_html .= ' itemscope itemtype="http://schema.org/Article">';
-							if (!empty($pTitle))
-								$rating_html .= '<meta itemprop="name" content="' . esc_attr($pTitle) . '" />';
-//                            $rating_html .= '<meta itemprop="description" content="' . esc_attr($pTitle) . '" />';
-							if (!empty($pPermaink))
+							if ( !$availability['type_wrapper'] ) {
+								$rating_html = '<div itemscope itemtype="http://schema.org/Article">' . $rating_html;
+							}
+							
+							if ( !empty($pTitle) ) {
+								if ( !$availability['name'] ) {
+									$rating_html .= '<meta itemprop="name" content="' . esc_attr($pTitle) . '" />';
+								}
+								
+								if ( !$availability['description'] ) {
+									$rating_html .= '<meta itemprop="description" content="' . esc_attr($pTitle) . '" />';
+								}
+							}
+							
+							if ( !$availability['url'] && !empty($pPermaink) ) {
 								$rating_html .= '<meta itemprop="url" content="' . esc_attr($pPermaink) . '" />';
+							}
 						}
 
 //						$title = mb_convert_to_utf8(trim($pTitle));
@@ -4904,11 +5092,13 @@
         <meta itemprop="ratingValue" content="' . $data['rate'] . '" />
         <meta itemprop="ratingCount" content="' . $data['votes'] . '" />
     </div';
+							
+						if ( !$availability['type_wrapper'] ) {
+							$rating_html . '</div>';
+						}
 					}
 				}
 				/*{obfuscate}-->*/
-
-				$rating_html .= '></div>';
 
 				return $rating_html;
 			}

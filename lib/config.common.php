@@ -113,6 +113,7 @@
 	define( 'WP_RW__DB_OPTION_TRACKING', 'rw_tracking' );
 	define( 'WP_RW__DB_OPTION_WP_RATE_NOTICE_MIN_VOTES_TRIGGER', 'rw_wp_rate_notice_min_votes_trigger' );
 	define( 'WP_RW__DB_OPTION_STATS_UPDATED', 'rw_wp_stats_updated' );
+	define( 'WP_RW__DB_OPTION_RICH_SNIPPETS_SETTINGS', 'rw_wp_rich_snippets_settings' );
 
 	/* BuddyPress
 	-----------------------------------------------------------------------------------------*/
@@ -241,6 +242,7 @@
 	define( 'WP_RW__CACHE_TIMEOUT_TOP_RATED', WP_RW__TIME_5_MIN_IN_SEC );
 	define( 'WP_RW__CACHE_TIMEOUT_POST_THUMB_EXTRACT', WP_RW__TIME_24_HOURS_IN_SEC );
 	define( 'WP_RW__CACHE_TIMEOUT_DASHBOARD_STATS', WP_RW__TIME_24_HOURS_IN_SEC );
+	define( 'WP_RW__CACHE_TIMEOUT_RICH_SNIPPETS_SETTINGS_UPDATE', WP_RW__TIME_WEEK_IN_SEC );
 
 	/* Freemius Overrides
 	-----------------------------------------------------------------------------------------*/
