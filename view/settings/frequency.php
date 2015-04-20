@@ -22,9 +22,11 @@
 		            <?php endforeach ?>
 	            </select>
 				<script type="text/javascript">
-					$('#rw_frequency_settings select').chosen({width: '100%'}).change(function(evt, params) {
-						RWM.Set.frequency(RW.FREQUENCY[$(this).find('option[value=' + params.selected + ']').attr('data-frequency')]);
-					});
+					(function($) {
+						$('#rw_frequency_settings select').chosen({width: '100%'}).change(function(evt, params) {
+							RWM.Set.frequency(RW.FREQUENCY[$(this).find('option[value=' + params.selected + ']').attr('data-frequency')]);
+						});
+					})(jQuery);
 				</script>
             </div>
         </div>

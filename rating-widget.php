@@ -3,7 +3,7 @@
 	Plugin Name: Rating-Widget: Star Rating System
 	Plugin URI: http://rating-widget.com/wordpress-plugin/
 	Description: Create and manage Rating-Widget ratings in WordPress.
-	Version: 2.4.9
+	Version: 2.5.1
 	Author: Rating-Widget
 	Author URI: http://rating-widget.com/wordpress-plugin/
 	License: GPLv2
@@ -79,9 +79,8 @@
 
 			/* Plugin setup.
 --------------------------------------------------------------------------------------------*/
-			private function __construct()
-			{
-				$this->fs = rw_fs();
+			private function __construct() {
+				$this->fs               = rw_fs();
 				$this->_options_manager = rw_fs_options();
 
 				if ( WP_RW__DEBUG ) {
@@ -93,14 +92,12 @@
 				$this->LoadOptions();
 
 				// Give 2nd chance to logger after options are loaded.
-				if ( ! RWLogger::IsOn() && $this->GetOption( WP_RW__LOGGER ) )
-				{
+				if ( ! RWLogger::IsOn() && $this->GetOption( WP_RW__LOGGER ) ) {
 					$this->InitLogger();
 				}
 
 				// If not in admin dashboard and account don't exist, don't continue with plugin init.
-				if ( ! $this->fs->is_registered() && ! is_admin() )
-				{
+				if ( ! $this->fs->is_registered() && ! is_admin() ) {
 					return;
 				}
 
@@ -110,6 +107,10 @@
 
 			function Init()
 			{
+				if ( ! $this->fs->is_registered() && ! is_admin() ) {
+					return;
+				}
+
 				// Load all extensions.
 				require_once(WP_RW__PLUGIN_LIB_DIR . "rw-extension-abstract.php");
 				require_once(WP_RW__PLUGIN_LIB_DIR_EXT . 'rw-woocommerce.php');
@@ -308,6 +309,7 @@
 				if ($this->fs->is_registered()) {
 					add_action( 'wp_ajax_rw-toprated-popup-html', array( &$this, 'generate_toprated_popup_html' ) );
 					add_action( 'wp_ajax_rw-affiliate-apply', array( &$this, 'send_affiliate_application' ) );
+					add_action( 'wp_ajax_rw-addon-request', array( &$this, 'send_addon_request' ) );
 					add_action( 'admin_init', array( &$this, 'register_toprated_shortcode_hooks' ) );
 					add_action( 'admin_menu', array( &$this, 'AddPostMetaBox' ) ); // Metabox for posts/pages
 					add_action( 'save_post', array( &$this, 'SavePostData' ) );
@@ -323,11 +325,6 @@
 						$min_votes_trigger = $this->GetOption(WP_RW__DB_OPTION_WP_RATE_NOTICE_MIN_VOTES_TRIGGER);
 						if (-1 !== $min_votes_trigger) {
 							add_action('admin_notices', array(&$this, 'five_star_wp_rate_notice'));
-						}
-						
-						$stats_updated = $this->GetOption(WP_RW__DB_OPTION_STATS_UPDATED);
-						if (!$stats_updated) {
-							$this->update_stats();
 						}
 					}
 				}
@@ -355,7 +352,7 @@
 			 * @since 2.5.0
 			 *
 			 */
-			function update_stats() {
+			private function update_stats() {
 				RWLogger::LogEnterence( 'update_stats' );
 				if ( ! function_exists( 'get_plugins' ) ) {
 					require_once ABSPATH . 'wp-admin/includes/plugin.php';
@@ -406,7 +403,7 @@
 					'site_id' => $site->id,
 					'active_plugins' => $active_plugins_count,
 					'inactive_plugins' => $inactive_plugins_count,
-					'is_production' => ( strpos($domain, 'localhost') === false )
+					'is_production' => json_encode( strpos($domain, 'localhost') === false )
 				);
 				
 				if ( RWLogger::IsOn() ) {
@@ -471,6 +468,217 @@
 
 				echo 1;
 				exit;
+			}
+			
+			/**
+			 * Sends an email to addons@rating-widget.com containing
+			 * information about the add-on with which the user is interacting.
+			 * 
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.5.1
+			 *
+			 */
+			function send_addon_request() {
+				// Continue only if the nonce is correct
+				check_admin_referer('rw_send_addon_request', '_n');
+
+				$addons = $this->get_addons();
+				$addon = $addons[$_REQUEST['addon_key']];
+				$pricing = $addon['pricing'][0];
+				$price = $pricing['annual_price'];
+				$is_free = (NULL === $price);
+				
+				$addon_title = '';
+				$total_addons = count($addons);
+				for ( $i = 0; $i < $total_addons; $i++ ) {
+					if ( !empty($addon_title) ) {
+						if ( $i % 3 != 0 ) {
+							$addon_title .= ', ';
+						} else {
+							$addon_title .= '<br />';
+						}
+					}
+					
+					$addon_title .= $addons[$i]['title'];
+				}
+				
+				$site_address = site_url();
+
+				$email_details = array(
+					'addon_title' => $addon['title'],
+					'addon_price' => $is_free ? 'Free' : $price,
+					'addon_site_address' => $site_address,
+					'addon_action' => $_REQUEST['addon_action'],
+					'addon_order' => $addon_title
+				);
+				
+				if ( isset($_REQUEST['add_user']) ) {
+					$user_email = get_option('admin_email');
+					
+					$email_details['addon_user_email'] = $user_email;
+				}
+				
+				// Retrieve the HTML email content
+				ob_start();
+				rw_require_view('emails/addon_email.php', $email_details);
+				$message = ob_get_contents();
+				ob_end_clean();
+
+				$subject = "Add-on Request: {$addon['title']} / " . ($is_free ? 'Free' : $price);
+				$header = 'Content-type: text/html';
+				wp_mail('addons@rating-widget.com', $subject, $message, $header);
+				
+				echo 1;
+				exit;
+			}
+			
+			/**
+			 * Returns an array of available add-ons.
+			 * 
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.5.1
+			 *
+			 * @return array
+			 */
+			function get_addons() {
+				$addons = array(
+					array(
+						'id' => 1,
+						'title' => 'Reviews',
+						'description' => 'Open a comment form after visitor vote to get textual feedback from your users.',
+						'thumbnail_url' => rw_get_plugin_img_path('add-ons/reviews.jpg'),
+						'avg_rate' => 5.0,
+						'pricing' => array(
+							array(
+								'id' => '',
+								'annual_price' => 19.99
+							)
+						),
+						'version' => '',
+						'licenses' => ''
+					),
+					array(
+						'id' => 2,
+						'title' => 'Product Reviews',
+						'description' => 'Open a comment form after visitor vote to get textual feedback from your customers.',
+						'thumbnail_url' => rw_get_plugin_img_path('add-ons/product_reviews.jpg'),
+						'avg_rate' => 5.0,
+						'pricing' => array(
+							array(
+								'id' => 1,
+								'annual_price' => 19.99
+							)
+						),
+						'version' => '',
+						'licenses' => ''
+					),
+					array(
+						'id' => 3,
+						'title' => 'Subscribers',
+						'description' => 'Ask your visitors to subscribe after after a 5-star rating.',
+						'thumbnail_url' => rw_get_plugin_img_path('add-ons/subscribers.jpg'),
+						'avg_rate' => 5.0,
+						'pricing' => array(
+							array(
+								'id' => 1,
+								'annual_price' => 19.99
+							)
+						),
+						'version' => '',
+						'licenses' => ''
+					),
+					array(
+						'id' => 4,
+						'title' => 'Twitter Followers',
+						'description' => 'Ask your visitors to follow your Twitter account after a 5-star rating.',
+						'thumbnail_url' => rw_get_plugin_img_path('add-ons/twitter_followers.jpg'),
+						'avg_rate' => 5.0,
+						'pricing' => array(
+							array(
+								'id' => 1,
+								'annual_price' => 19.99
+							)
+						),
+						'version' => '',
+						'licenses' => ''
+					),
+					array(
+						'id' => 5,
+						'title' => 'Facebook Fans',
+						'description' => 'Ask your visitors to like your Facebook Fans page after a 5-star rating.',
+						'thumbnail_url' => rw_get_plugin_img_path('add-ons/facebook_fans.jpg'),
+						'avg_rate' => 5.0,
+						'pricing' => array(
+							array(
+								'id' => 1,
+								'annual_price' => 19.99
+							)
+						),
+						'version' => '',
+						'licenses' => ''
+					),
+					array(
+						'id' => 6,
+						'title' => 'Mobile Alerts',
+						'description' => 'Get push notification about every ratings on your site in real-time!',
+						'thumbnail_url' => rw_get_plugin_img_path('add-ons/mobile_alerts.jpg'),
+						'avg_rate' => 5.0,
+						'pricing' => array(
+							array(
+								'id' => 1,
+								'annual_price' => 19.99
+							)
+						),
+						'version' => '',
+						'licenses' => ''
+					),
+					array(
+						'id' => 7,
+						'title' => 'Tweets',
+						'description' => 'Ask your visitors to follow your Twitter account after a 5-star rating.',
+						'thumbnail_url' => rw_get_plugin_img_path('add-ons/tweets.jpg'),
+						'avg_rate' => 5.0,
+						'pricing' => array(
+							array(
+								'id' => 1,
+								'annual_price' => 19.99
+							)
+						),
+						'version' => '',
+						'licenses' => ''
+					),
+					array(
+						'id' => 8,
+						'title' => 'Facebook Likes',
+						'description' => 'Ask your visitors to like your Facebook Fans page after a 5-star rating.',
+						'thumbnail_url' => rw_get_plugin_img_path('add-ons/facebook_likes.png'),
+						'avg_rate' => 5.0,
+						'pricing' => array(
+							array(
+								'id' => 1,
+								'annual_price' => 19.99
+							)
+						),
+						'version' => '',
+						'licenses' => ''
+					)
+				);
+				
+				// Reorder the add-ons using the Fisher-Yates algorithm.
+				// Generate a seed value based on the site URL.
+				$seed = crc32(site_url());
+				mt_srand($seed);
+				
+				// Fisher-Yates shuffle algorithm
+				$total = count($addons);
+				for ( $i = $total - 1; $i > 0; $i-- ) {
+					$j = mt_rand(0, $i);
+					$tmp = $addons[$i];
+					$addons[$i] = $addons[$j];
+					$addons[$j] = $tmp;
+				}
+				
+				return $addons;
 			}
 			
 			/**
@@ -871,13 +1079,13 @@
 					}
 
 					RWLogger::Log( 'LoadPlan', 'in_license_sync = ' . json_encode( $in_license_sync ) );
-
+					
 					// Update plan once in every 24 hours.
 					if ( false === $current_site_plan || $site_plan_update < ( time() - WP_RW__TIME_24_HOURS_IN_SEC ) ) {
 						// Get plan from remote server once a day.
 						try {
 							$site = $this->ApiCall( '?fields=id,plan' );
-						} catch ( \Exception $e ) {
+						} catch ( Exception $e ) {
 							$site = false;
 						}
 
@@ -903,7 +1111,7 @@
 				}
 
 				define( 'WP_RW__SITE_PLAN', $site_plan );
-
+				
 				RWLogger::Log( 'WP_RW__SITE_PLAN', $site_plan );
 
 				if ( $update ) {
@@ -919,6 +1127,11 @@
 				/*{obfuscate}-->*/
 
 //				do_action('fs_after_license_loaded');
+					
+				$stats_updated = $this->GetOption(WP_RW__DB_OPTION_STATS_UPDATED);
+				if (!$stats_updated) {
+					$this->update_stats();
+				}
 			}
 			
 			/**
@@ -1441,7 +1654,7 @@
 					}
 
 					if ($this->_inDashboard)
-						$this->errors->add('rw_api_error', 'Unexpected RatingWidget API error: ' . $result->message);
+						$this->errors->add('rw_api_error', 'Unexpected RatingWidget API error: ' . $result->error->message);
 				}
 
 				return $result;
@@ -1664,44 +1877,50 @@
 				}
 				else
 				{
-					// Settings page includes.
-					rw_enqueue_script('rw_cp', 'vendors/colorpicker.js');
-					rw_enqueue_script('rw_cp_eye', 'vendors/eye.js');
-					rw_enqueue_script('rw_cp_utils', 'vendors/utils.js');
-					rw_enqueue_script('rw');
-					rw_enqueue_script('rw_wp', 'wordpress/settings.js');
-
-					// Include Chosen files.
-					rw_enqueue_script('rw_chosen', 'https://cdnjs.cloudflare.com/ajax/libs/chosen/1.1.0/chosen.jquery.min.js');
-					rw_enqueue_style('rw_chosen', 'https://cdnjs.cloudflare.com/ajax/libs/chosen/1.1.0/chosen.min.css');
-
-					// Reports includes.
-					rw_enqueue_style('rw_cp', 'colorpicker.php');
-					rw_enqueue_script('jquery-ui-datepicker', 'vendors/jquery-ui-1.8.9.custom.min.js');
-					rw_enqueue_style('jquery-theme-smoothness', 'vendors/jquery/smoothness/jquery.smoothness.css');
-					rw_enqueue_style('rw_external', 'style.css?all=t');
-					rw_enqueue_style('rw_wp_reports', 'wordpress/reports.php');
-
-					// Load the live preview styles
-					$class = isset($_GET['rating']) ? rtrim($_GET['rating'], 's') : '';
-					if (empty($class) && 'rating-widget' == $_GET['page']) {
-						$class = 'blog-post';
-					} else if (empty($class) && 'rating-widget-woocommerce' == $_GET['page']) {
-						$class = 'product';
-					} else if (empty($class) && 'rating-widget-bbpress' == $_GET['page']) {
-						$class = 'forum-post';
-					}
-
-					if ($this->has_multirating_options($class)) {
-						// Enqueue live preview JS and CSS
-						rw_enqueue_script('rw-js-live-preview', WP_RW__PLUGIN_URL . '/resources/js/live-preview.js');
-						rw_enqueue_style('rw-live-preview', WP_RW__PLUGIN_URL . 'resources/css/live-preview.css');
-					}
-
-					if ('rating-widget-affiliation' === $_GET['page']) {
+					if ('rating-widget-addons' === $_GET['page']) {
+						rw_enqueue_script('jquery-ui-dialog');
+						rw_enqueue_style('wp-jquery-ui-dialog');
+						
+						// Enqueue the add-ons page CSS
+						rw_enqueue_style('rw-addons-style', WP_RW__PLUGIN_URL . 'resources/css/addons.css');
+					} else if ('rating-widget-affiliation' === $_GET['page']) {
 						// Enqueue the affiliation page CSS
 						rw_enqueue_style('rw-affiliation-style', WP_RW__PLUGIN_URL . 'resources/css/affiliation.css');
-					}
+					} else {
+						// Settings page includes.
+						rw_enqueue_script('rw_cp', 'vendors/colorpicker.js');
+						rw_enqueue_script('rw_cp_eye', 'vendors/eye.js');
+						rw_enqueue_script('rw_cp_utils', 'vendors/utils.js');
+						rw_enqueue_script('rw');
+						rw_enqueue_script('rw_wp', 'wordpress/settings.js');
+
+						// Include Chosen files.
+						rw_enqueue_script('rw_chosen', 'https://cdnjs.cloudflare.com/ajax/libs/chosen/1.1.0/chosen.jquery.min.js');
+						rw_enqueue_style('rw_chosen', 'https://cdnjs.cloudflare.com/ajax/libs/chosen/1.1.0/chosen.min.css');
+
+						// Reports includes.
+						rw_enqueue_style('rw_cp', 'colorpicker.php');
+						rw_enqueue_script('jquery-ui-datepicker', 'vendors/jquery-ui-1.8.9.custom.min.js');
+						rw_enqueue_style('jquery-theme-smoothness', 'vendors/jquery/smoothness/jquery.smoothness.css');
+						rw_enqueue_style('rw_external', 'style.css?all=t');
+						rw_enqueue_style('rw_wp_reports', 'wordpress/reports.php');
+
+						// Load the live preview styles
+						$class = isset($_GET['rating']) ? rtrim($_GET['rating'], 's') : '';
+						if (empty($class) && 'rating-widget' == $_GET['page']) {
+							$class = 'blog-post';
+						} else if (empty($class) && 'rating-widget-woocommerce' == $_GET['page']) {
+							$class = 'product';
+						} else if (empty($class) && 'rating-widget-bbpress' == $_GET['page']) {
+							$class = 'forum-post';
+						}
+
+						if ($this->has_multirating_options($class)) {
+							// Enqueue live preview JS and CSS
+							rw_enqueue_script('rw-js-live-preview', WP_RW__PLUGIN_URL . '/resources/js/live-preview.js');
+							rw_enqueue_style('rw-live-preview', WP_RW__PLUGIN_URL . 'resources/css/live-preview.css');
+						}
+					}							
 				}
 			}
 
@@ -1958,6 +2177,13 @@
 				$submenu[] = array(
 					'menu_title' => __('Affiliation', WP_RW__ID),
 					'function' => 'affiliation_settings_page_render',
+				);
+
+				// Add Ons page
+				$submenu[] = array(
+					'menu_title' => __('Add Ons', WP_RW__ID),
+					'function' => 'addons_settings_page_render',
+					'slug' => 'addons'
 				);
 
 				$this->fs->add_action('fs_after_account_details', array(&$this, 'AccountPageRender'));
@@ -3183,6 +3409,16 @@
 				rw_require_once_view('pages/admin/affiliation.php');
 			}
 
+			/**
+			 * Generates the content of the Add Ons page.
+			 *
+			 * @author Leo Fajardo (@leorw)
+			 * @since  2.5.0
+			 */
+			function addons_settings_page_render() {
+				rw_require_once_view('pages/admin/addons.php');
+			}
+
 			function TopRatedSettingsPageLoad()
 			{
 				rw_enqueue_style('rw_toprated', rw_get_plugin_css_path('toprated.css'));
@@ -3886,11 +4122,11 @@
 															</select>
 															<input id="rw_align" name="rw_align" type="hidden" value="<?php echo $rw_align->ver . ' ' . $rw_align->hor ?>">
 															<script>
-																var $ = $ || jQuery;
-
-																$('.rw-post-rating-align select').chosen({width: '100%'}).change(function(evt, params){
-																	$('#rw_align').val(params.selected);
-																});
+																(function($) {
+																	$('.rw-post-rating-align select').chosen({width: '100%'}).change(function(evt, params){
+																		$('#rw_align').val(params.selected);
+																	});
+																})(jQuery);
 															</script>
 														</div>
 													<?php
