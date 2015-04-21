@@ -1134,157 +1134,174 @@
 				}
 				
 				if ( $this->IsProfessional() ) {
-					if ( !isset($_GET['schema_test'])
-						|| (isset($_GET['schema_test']) && !$_GET['schema_test']) ) {
-						$this->update_rich_snippets_settings();
+					// Only update the rich snippet settings if the query string
+					// doesn't contain the 'schema_test' parameter.
+					if ( !isset($_REQUEST['schema_test']) ) {
+						$this->update_rich_snippet_settings();
 					}
 				}
 			}
 
 			/**
-			 * Checks the latest post page if it contains specific metadata.
+			 * Retrieves the latest post's HTML content and checks the availability of the rich snippet properties.
 			 * 
 			 * @author Leo Fajardo (@leorw)
 			 * @since 2.5.2
 			 */
-			function update_rich_snippets_settings() {
-				RWLogger::LogEnterence('update_rich_snippet_properties_availability');
-				$rich_snippets_settings = $this->get_rich_snippets_settings();
-
-				$update_rich_snippets_settings = true;
+			function update_rich_snippet_settings() {
+				RWLogger::LogEnterence('update_rich_snippet_settings');
 				
-				if ( !$rich_snippets_settings->timestamp ) {
-					$update_rich_snippets_settings = true;
+				$update_rich_snippet_settings = false;
+
+				$rich_snippet_settings = $this->get_rich_snippet_settings();
+				if ( !$rich_snippet_settings->timestamp ) {
+					$update_rich_snippet_settings = true;
 				} else {
-					if (time() - $rich_snippets_settings->timestamp > WP_RW__TIME_WEEK_IN_SEC) {
-						$update_rich_snippets_settings = true;
+					// Update the rich snippet settings if one week has already passed since the last update.
+					if (time() - $rich_snippet_settings->timestamp > WP_RW__TIME_WEEK_IN_SEC) {
+						$update_rich_snippet_settings = true;
 					}
 				}
-				
-				if ( !$update_rich_snippets_settings ) {
-					RWLogger::LogDeparture('update_rich_snippets_settings');
+
+				if ( !$update_rich_snippet_settings ) {
+					RWLogger::LogDeparture('update_rich_snippet_settings');
 					return;
 				}
+
+				$reset_settings = true;
 				
-				$recent_posts = wp_get_recent_posts(array('numberposts' => 1, 'post_type' => 'post'));
-				if ( count($recent_posts) ) {
-					$recent_post = $recent_posts[0];
-					$post_id = $recent_post['ID'];
-					
-					$permalink = get_permalink($post_id);
-//					$permalink = 'http://localhost/ratingwidget2/?p=1';
-//					$permalink = 'http://goodorbademail.com/company-email/email-in-real-life-video/';
-					$permalink = add_query_arg(array('schema_test' => true), $permalink);
-					
+				if ( !class_exists('DOMDocument') ) {
 					if ( RWLogger::IsOn() ) {
-						RWLogger::Log('permalink', $permalink);
+						RWLogger::Log('DOMDocument', 'The DOM extension is not loaded.');
 					}
+				} else {
+					$recent_posts = wp_get_recent_posts(array('numberposts' => 1, 'post_type' => 'post'));
+					if ( $recent_posts && count($recent_posts) ) {
+						$recent_post = $recent_posts[0];
 
-					$html = $this->remote_get($permalink, array('timeout' => 20, 'blocking' => true), false);
-					if ( empty($html) ) {
-						if ( RWLogger::IsOn() ) {
-							RWLogger::Log('html_is_empty', 'true');
-						}
-						
-						unset($rich_snippets_settings->availability);
-					} else {
-						if ( RWLogger::IsOn() ) {
-							RWLogger::Log('html_content_length: ' . strlen($html));
-						}
+						$post_id = $recent_post['ID'];
 
-						$urid = $this->get_rating_id_by_element($post_id, 'blog-post', false);
-	//					$urid = 20;
-	//					$urid = 13040;
-
-						$rating_container_class = 'rw-urid-' . $urid;
-
-						$dom = new DOMDocument();
-						@$dom->loadHTML($html);
-
-						$xpath = new DomXPath($dom);
-
-						// Find all elements with "itemtype" attribute whose value is "http://schema.org/Article"
-						// and have div descendants that have a class specified by the rating_container_class field
-						$query_str = "//div[contains(concat(' ', normalize-space(@class), ' '), ' {$rating_container_class} ')]/ancestor::*[@itemtype = 'http://schema.org/Article']";
-						$itemtype_article_nodes = $xpath->query($query_str);
+						$permalink = get_permalink($post_id);
+						$permalink = add_query_arg(array('schema_test' => true), $permalink);
 
 						if ( RWLogger::IsOn() ) {
-							RWLogger::Log('total_article_elements: ' . $itemtype_article_nodes->length);
+							RWLogger::Log('permalink', $permalink);
 						}
 
-						if ( $itemtype_article_nodes->length ) {
-							$rich_snippets_settings->availability['type_wrapper'] = true;
+						$response = wp_remote_get($permalink, array('timeout' => 20, 'blocking' => true));
+						if ( RWLogger::IsOn() ) {
+							RWLogger::Log("wp_remote_get", 'Response: ' . var_export($response, true));
+						}
+
+						$html = wp_remote_retrieve_body($response);
+						if ( RWLogger::IsOn() ) {
+							RWLogger::Log('wp_remote_retrieve_body', 'HTML content length: ' . strlen($html));
+						}
+
+						if ( !empty($html) ) {
+							$rating_container_class = '';
 							
-							foreach ( $itemtype_article_nodes as $itemtype_article_node ) {
-								foreach ( array_keys($rich_snippets_settings->availability) as $property_name ) {
-									if ( 'type_wrapper' === $property_name ) {
-										continue;
+							$multirating_options = $this->get_multirating_options_by_class('blog-post');
+							if ( !$multirating_options->show_summary_rating ) {
+								$rating_container_class = 'rw-class-blog-post-criteria-1';
+							} else {
+								$urid = $this->get_rating_id_by_element($post_id, 'blog-post', false);
+								$rating_container_class = 'rw-urid-' . $urid;
+							}
+							
+							try {
+								$dom = new DOMDocument();
+								@$dom->loadHTML($html);
+
+								$xpath = new DomXPath($dom);
+
+								// Find elements with "itemscope" attribute and whose "itemtype" attribute's value is "http://schema.org/Article"
+								// and have div descendants that have $rating_container_class class.
+								$xpath_query = "//div[contains(concat(' ', normalize-space(@class), ' '), ' {$rating_container_class} ')]/ancestor::*[@itemscope and @itemtype = 'http://schema.org/Article']";
+
+								$article_wrapper_elements = $xpath->query($xpath_query);
+								if ( RWLogger::IsOn() ) {
+									RWLogger::Log('total_article_elements: ' . $article_wrapper_elements->length);
+								}
+
+								if ( $article_wrapper_elements->length ) {
+									$rich_snippet_settings->type_wrapper_available = true;
+
+									$property_names = array_keys($rich_snippet_settings->properties_availability);
+									foreach ( $article_wrapper_elements as $article_wrapper_element ) {
+										// Stop if all properties are already marked as available.
+										if ( empty($property_names) ) {
+											break;
+										}
+
+										foreach ( $property_names as $property_idx => $property_name ) {
+											// Check if a rich snippet property exists within the current article wrapper element.
+											$available = $this->rich_snippet_property_exists($xpath, $article_wrapper_element, $property_name);
+											$rich_snippet_settings->properties_availability[$property_name] = $available;
+
+											if ( $available ) {
+												unset($property_names[$property_idx]);
+											}
+										}
 									}
 									
-									$available = $this->rich_snippets_itemprop_exists($xpath, $itemtype_article_node, $property_name);
-									$rich_snippets_settings->availability[$property_name] = $available;
+									$reset_settings = false;
+								}
+							} catch (Exception $e) {
+								if ( RWLogger::IsOn() ) {
+									RWLogger::Log('parse_html', 'Error: ' . $e->getMessage());
 								}
 							}
 						}
-						
-						if ( RWLogger::IsOn() ) {
-							RWLogger::Log('rich_snippets_settings: ' . json_encode($rich_snippets_settings));
-						}
 					}
-					
-					$rich_snippets_settings->timestamp = time();
-					$this->SetOption(WP_RW__DB_OPTION_RICH_SNIPPETS_SETTINGS, $rich_snippets_settings);
-					$this->_options_manager->store();
 				}
 				
-				RWLogger::LogDeparture('update_rich_snippets_settings');
+				if ( $reset_settings ) {
+					$rich_snippet_settings->type_wrapper_available = false;
+					foreach ( $rich_snippet_settings->properties_availability as $property_idx => $property_name ) {
+						$rich_snippet_settings->properties_availability[$property_idx] = false;
+					}
+				}
+				
+				$rich_snippet_settings->timestamp = time();
+				$this->SetOption(WP_RW__DB_OPTION_RICH_SNIPPETS_SETTINGS, $rich_snippet_settings);
+				$this->_options_manager->store();
+				
+				RWLogger::LogDeparture('update_rich_snippet_settings');
 			}
 			
 			/**
-			 * 
-			 * $author Leo Fajardo (@leorw)
-			 * @since 2.5.2
-			 * 
-			 * @param type $url
-			 * @param type $args
-			 * @return string
-			 */
-			function remote_get($url, $args = array()) {
-				$response = wp_remote_get($url, $args);
-				$result = wp_remote_retrieve_body($response);
-
-				if ( RWLogger::IsOn() ) {
-					RWLogger::Log("remote_get", 'Result: ' . var_export($response, true));
-				}
-				
-				return $result;
-			}
-			
-			/**
-			 * Description
+			 * Checks if the rich snippet property element whose name is specified
+			 * by $prop_name exists within the wrapper article element.
 			 * 
 			 * @author Leo Fajardo (@leorw)
 			 * @since  2.5.2
 			 *
 			 * @param type $xpath
-			 * @param type $parent
-			 * @param type $prop_name
+			 * @param type $article_wrapper_element
+			 * @param type $property_name
 			 * @return boolean
 			 */
-			function rich_snippets_itemprop_exists($xpath, $parent, $prop_name) {
-				// Find the itemtype ancestors of all descendants whose ancestors have itemtype attribute and 
-				// descendants that have itemprop attribute whose value is "name".
-				$itemtype_nodes = $xpath->query(".//*[@itemprop = '$prop_name']/ancestor::*[@itemtype]", $parent);
-				if ( !$itemtype_nodes->length ) {
-					return false;
-				} else {
-					$itemtype_node = $itemtype_nodes->item(0);
-					if ( 'http://schema.org/Article' === $itemtype_node->getAttribute('itemtype') ) {
-						return true;
-					} else {
-						return false;
+			function rich_snippet_property_exists($xpath, $article_wrapper_element, $property_name) {
+				RWLogger::LogEnterence('rich_snippet_property_exists');
+				try {
+					// Find the ancestors with "itemscope" and "itemtype" attributes of the elements in the specified wrapper element
+					// whose itemprop attribute's value is specified by $property_name.
+					$ancestors = $xpath->query(".//*[@itemprop = '$property_name']/ancestor::*[@itemscope and @itemtype]", $article_wrapper_element);
+					if ( $ancestors->length ) {
+						$ancestor = $ancestors->item(0);
+						if ( 'http://schema.org/Article' === $ancestor->getAttribute('itemtype') ) {
+							return true;
+						}
+					}
+				} catch (Exception $e) {
+					if ( RWLogger::IsOn() ) {
+						RWLogger::Log('rich_snippet_property_exists', 'Error: ' . $e->getMessage());
 					}
 				}
+				
+				RWLogger::LogDeparture('rich_snippet_property_exists');
+				return false;
 			}
 
 			/**
@@ -1514,8 +1531,8 @@
 					WP_RW__DB_OPTION_STATS_UPDATED => false,
 					WP_RW__DB_OPTION_RICH_SNIPPETS_SETTINGS => (object) array(
 						'timestamp' => false,
-						'availability' => array(
-							'type_wrapper' => false,
+						'type_wrapper_available' => false,
+						'properties_availability' => array(
 							'name' => false,
 							'url' => false,
 							'description' => false
@@ -2179,19 +2196,27 @@
 				
 				return $multirating_settings_list->{$rclass};
 			}
-
-			function get_rich_snippets_settings() {
-				$rich_snippets_settings = $this->GetOption(WP_RW__DB_OPTION_RICH_SNIPPETS_SETTINGS);
-				if (!$rich_snippets_settings) {
-					$rich_snippets_settings = new stdClass();
+			
+			/**
+			 * Retrieves the current rich snippet settings
+			 * 
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.5.2
+			 * 
+			 * @return object
+			 */
+			function get_rich_snippet_settings() {
+				$rich_snippet_settings = $this->GetOption(WP_RW__DB_OPTION_RICH_SNIPPETS_SETTINGS);
+				if (!$rich_snippet_settings) {
+					$rich_snippet_settings = new stdClass();
 				}
 				
-				if ( !isset($rich_snippets_settings->availability) ) {
-					$default_rich_snippets_settings = $this->_OPTIONS_DEFAULTS[WP_RW__DB_OPTION_RICH_SNIPPETS_SETTINGS];
-					$rich_snippets_settings->availability = $default_rich_snippets_settings->availability;
+				if ( !isset($rich_snippet_settings->properties_availability) ) {
+					$default_rich_snippet_settings = $this->_OPTIONS_DEFAULTS[WP_RW__DB_OPTION_RICH_SNIPPETS_SETTINGS];
+					$rich_snippet_settings->properties_availability = $default_rich_snippet_settings->properties_availability;
 				}
 				
-				return $rich_snippets_settings;
+				return $rich_snippet_settings;
 			}
 
 			/**
@@ -5029,7 +5054,7 @@
 			 * @param array $pOptions
 			 * @return string Rating container HTML.
 			 */
-			private function GetRatingHtml($pUrid, $pElementClass, $pAddSchema = false, $pTitle = "", $pPermaink = '', $pOptions = array())
+			private function GetRatingHtml($pUrid, $pElementClass, $pAddSchema = false, $pTitle = "", $pPermalink = '', $pOptions = array())
 			{
 				if (RWLogger::IsOn()){ $params = func_get_args(); RWLogger::LogEnterence("GetRatingHtml", $params); }
 
@@ -5046,41 +5071,51 @@
 				$rating_html = '<div class="rw-ui-container rw-class-' . $pElementClass . ' rw-urid-' . $pUrid . '"' . $ratingData . '></div>';
 				
 				/*<--{obfuscate}*/
-				if (true === $pAddSchema && 'front-post' !== $pElementClass && $this->IsProfessional() && !isset($_GET['schema_test']) )
+				if (true === $pAddSchema && 'front-post' !== $pElementClass && $this->IsProfessional() && !isset($_REQUEST['schema_test']) )
 				{
-					$rich_snippets_settings = $this->get_rich_snippets_settings();
-					$availability = $rich_snippets_settings->availability;
+					$rich_snippet_settings = $this->get_rich_snippet_settings();
+					$type_wrapper_available = $rich_snippet_settings->type_wrapper_available;
+					$properties_availability = $rich_snippet_settings->properties_availability;
 					
 					RWLogger::Log('GetRatingHtml', "Adding schema for: urid={$pUrid}; rclass={$pElementClass}");
 
 					$data = $this->GetRatingDataByRatingID($pUrid, 2);
 					if (false !== $data && $data['votes'] > 0)
 					{
-						if (false !== strpos($pElementClass, 'product'))
-						{
-							// WooCommerce is already adding all the product schema metadata.
-							/*$schema_root = 'itemscope itemtype="http://schema.org/Product"';
-							$schema_title_prop = 'itemprop="name"';
-							*/
-						}
-						else
-						{
-							if ( !$availability['type_wrapper'] ) {
+						// WooCommerce is already adding all the product schema metadata.
+						/*$schema_root = 'itemscope itemtype="http://schema.org/Product"';
+						$schema_title_prop = 'itemprop="name"';
+						*/
+						if ( false === strpos($pElementClass, 'product') ) {
+							if ( !$type_wrapper_available ) {
 								$rating_html = '<div itemscope itemtype="http://schema.org/Article">' . $rating_html;
 							}
 							
 							if ( !empty($pTitle) ) {
-								if ( !$availability['name'] ) {
+								if ( !$properties_availability['name'] ) {
 									$rating_html .= '<meta itemprop="name" content="' . esc_attr($pTitle) . '" />';
 								}
 								
-								if ( !$availability['description'] ) {
-									$rating_html .= '<meta itemprop="description" content="' . esc_attr($pTitle) . '" />';
+								if ( !$properties_availability['description'] ) {
+									$post_excerpt = '';
+									
+									$wp_post_id = $pUrid;
+									if ( false !== strpos($wp_post_id, '-') ) {
+										$urid_parts = explode('-', $pUrid);
+										$wp_post_id = $urid_parts[0];
+									}
+									
+									$wp_post = get_post($this->Urid2PostId($wp_post_id));
+									if ( $wp_post ) {
+										$post_excerpt =	$this->GetPostExcerpt($wp_post);
+									}
+
+									$rating_html .= '<meta itemprop="description" content="' . esc_attr($post_excerpt) . '" />';
 								}
 							}
 							
-							if ( !$availability['url'] && !empty($pPermaink) ) {
-								$rating_html .= '<meta itemprop="url" content="' . esc_attr($pPermaink) . '" />';
+							if ( !$properties_availability['url'] && !empty($pPermalink) ) {
+								$rating_html .= '<meta itemprop="url" content="' . esc_attr($pPermalink) . '" />';
 							}
 						}
 
@@ -5091,9 +5126,9 @@
         <meta itemprop="bestRating" content="5" />
         <meta itemprop="ratingValue" content="' . $data['rate'] . '" />
         <meta itemprop="ratingCount" content="' . $data['votes'] . '" />
-    </div';
+    </div>';
 							
-						if ( !$availability['type_wrapper'] ) {
+						if ( !$type_wrapper_available ) {
 							$rating_html . '</div>';
 						}
 					}

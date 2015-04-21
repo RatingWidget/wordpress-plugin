@@ -7,7 +7,8 @@
     $hide_recommendations = isset($mr_embed_options['hide-recommendations']) ? $mr_embed_options['hide-recommendations'] : false;
 	$original_uarid = isset($mr_embed_options['uarid']) ? $mr_embed_options['uarid'] : false;
 
-	$multi_criteria = count($mr_multi_options->criteria) > 1;
+	$criteria_count = count($mr_multi_options->criteria);
+	$multi_criteria = $criteria_count > 1;
 
 	if ($multi_criteria) {
 	    $mr_embed_options['uarid'] = $mr_summary_urid;
@@ -20,13 +21,23 @@
 	foreach ($mr_multi_options->criteria as $criteria_key => $criteria) {
 		$rclass = $mr_element_class;
 		
+		$add_schema = $mr_add_schema;
+		
 		if ($multi_criteria) {
 			$rclass .= '-criteria-' . $criteria_id;
+			
+			// Do not add schema if the summary rating is visible 
+			// or append schema to the last criterion rating if the summary rating
+			// is not visible.
+			if ( $mr_multi_options->show_summary_rating 
+				|| (!$mr_multi_options->show_summary_rating && $criteria_id < $criteria_count) ) {
+				$add_schema = false;
+			}
 		}
 		
 		$criteria_urid = ratingwidget()->get_rating_id_by_element($mr_element_id, $mr_element_class, $multi_criteria ? $criteria_id++ : false);
 		
-		$raw_rating = ratingwidget()->EmbedRawRating($criteria_urid, $mr_title, $mr_permalink, $rclass, $mr_add_schema, $mr_hor_align, $mr_custom_style, $mr_embed_options);
+		$raw_rating = ratingwidget()->EmbedRawRating($criteria_urid, $mr_title, $mr_permalink, $rclass, $add_schema, $mr_hor_align, $mr_custom_style, $mr_embed_options);
 		
 		// Defaults to &nbsp; instead of empty to keep the widths of all rating widgets same
 		if (isset($criteria['label'])) {
