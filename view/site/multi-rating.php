@@ -26,11 +26,14 @@
 		if ($multi_criteria) {
 			$rclass .= '-criteria-' . $criteria_id;
 			
-			// Do not add schema if the summary rating is visible 
-			// or append schema to the last criterion rating if the summary rating
-			// is not visible.
-			if ( $mr_multi_options->show_summary_rating 
-				|| (!$mr_multi_options->show_summary_rating && $criteria_id < $criteria_count) ) {
+			// If summary rating is visible, don't add snippets because they are
+			// already added through the 2nd call to the EmbedRawRating method below.
+			if ( $mr_multi_options->show_summary_rating ) {
+				$add_schema = false;
+			} else if ( !$mr_multi_options->show_summary_rating && ($criteria_id < $criteria_count) ) {
+				// If the summary rating is not visible, don't add snippets for every call to
+				// EmbedRawRating method for each criterion and only add snippets after reaching
+				// the last criterion.
 				$add_schema = false;
 			}
 		}

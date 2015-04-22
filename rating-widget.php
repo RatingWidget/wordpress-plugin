@@ -1176,19 +1176,19 @@
 					}
 				} else {
 					$recent_posts = wp_get_recent_posts(array('numberposts' => 1, 'post_type' => 'post'));
-					if ( $recent_posts && count($recent_posts) ) {
+					if ( is_array($recent_posts) && 0 < count($recent_posts) ) {
 						$recent_post = $recent_posts[0];
 
 						$post_id = $recent_post['ID'];
 
 						$permalink = get_permalink($post_id);
-						$permalink = add_query_arg(array('schema_test' => true), $permalink);
-
+						$permalink = esc_url(add_query_arg(array('schema_test' => true), $permalink));
+						
 						if ( RWLogger::IsOn() ) {
 							RWLogger::Log('permalink', $permalink);
 						}
 
-						$response = wp_remote_get($permalink, array('timeout' => 20, 'blocking' => true));
+						$response = wp_remote_get($permalink, array('timeout' => 5));
 						if ( RWLogger::IsOn() ) {
 							RWLogger::Log("wp_remote_get", 'Response: ' . var_export($response, true));
 						}
@@ -1264,6 +1264,11 @@
 				}
 				
 				$rich_snippet_settings->timestamp = time();
+				
+				if ( RWLogger::IsOn() ) {
+					RWLogger::Log('rich_snippet_settings', json_encode($rich_snippet_settings));
+				}
+				
 				$this->SetOption(WP_RW__DB_OPTION_RICH_SNIPPETS_SETTINGS, $rich_snippet_settings);
 				$this->_options_manager->store();
 				
@@ -5078,6 +5083,10 @@
 					$properties_availability = $rich_snippet_settings->properties_availability;
 					
 					RWLogger::Log('GetRatingHtml', "Adding schema for: urid={$pUrid}; rclass={$pElementClass}");
+					
+					if ( isset($pOptions['uarid']) ) {
+						$pUrid = $pOptions['uarid'];
+					}
 
 					$data = $this->GetRatingDataByRatingID($pUrid, 2);
 					if (false !== $data && $data['votes'] > 0)
@@ -5099,13 +5108,7 @@
 								if ( !$properties_availability['description'] ) {
 									$post_excerpt = '';
 									
-									$wp_post_id = $pUrid;
-									if ( false !== strpos($wp_post_id, '-') ) {
-										$urid_parts = explode('-', $pUrid);
-										$wp_post_id = $urid_parts[0];
-									}
-									
-									$wp_post = get_post($this->Urid2PostId($wp_post_id));
+									$wp_post = get_post($this->Urid2PostId($pUrid));
 									if ( $wp_post ) {
 										$post_excerpt =	$this->GetPostExcerpt($wp_post);
 									}
