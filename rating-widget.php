@@ -95,7 +95,7 @@
 				if ( ! RWLogger::IsOn() && $this->GetOption( WP_RW__LOGGER ) ) {
 					$this->InitLogger();
 				}
-
+				
 				// If not in admin dashboard and account don't exist, don't continue with plugin init.
 				if ( ! $this->fs->is_registered() && ! is_admin() ) {
 					return;
@@ -103,6 +103,9 @@
 
 				// Load config after keys are loaded.
 				require_once( WP_RW__PLUGIN_DIR . "/lib/config.php" );
+				
+				// Load top-rated
+				require_once(WP_RW__PLUGIN_LIB_DIR . "rw-top-rated-widget.php");
 			}
 
 			function Init()
@@ -7268,9 +7271,6 @@
 				return true;
 			}
 		}
-
-
-		require_once(WP_RW__PLUGIN_LIB_DIR . "rw-top-rated-widget.php");
 
 		/* Plugin page extra links.
 --------------------------------------------------------------------------------------------*/
