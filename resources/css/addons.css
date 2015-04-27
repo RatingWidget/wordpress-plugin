@@ -583,18 +583,15 @@ ul.rw-addon-grid > li {
 }
 
 @media screen and (max-width: 815px) {
-    .rw-addon-grid .rw-addon,
-    .app-grid .rw-addon {
+    .rw-addon-grid .rw-addon {
         width: 50%;
     }
 	
-    .rw-addon-grid .rw-addon:nth-child(3n+1),
-    .app-grid .rw-addon:nth-child(3n+1) {
+    .rw-addon-grid .rw-addon:nth-child(3n+1) {
         clear: none;
     }
 	
-    .rw-addon-grid .rw-addon:nth-child(2n+1),
-    .app-grid .rw-addon:nth-child(2n+1) {
+    .rw-addon-grid .rw-addon:nth-child(2n+1) {
         clear: both;
     }
 	
@@ -605,22 +602,15 @@ ul.rw-addon-grid > li {
     .rw-addon .rw-addon-description {
         height: 130px;
     }
-	
-    #embeds-content .rw-addon .rw-addon-description {
-        height: auto;
-    }
 }
 
 @media screen and (max-width: 480px) {
-    .descriptive-app-group-grid,
-    .rw-addon-grid,
-    .app-grid {
+    .rw-addon-grid {
         margin-left: 0;
     }
 	
     .rw-addon,
-    .rw-addon-grid .rw-addon,
-    .app-grid .rw-addon {
+    .rw-addon-grid .rw-addon {
         width: 100%;
         padding-left: 0;
     }
@@ -628,9 +618,7 @@ ul.rw-addon-grid > li {
     .rw-addon:nth-child(3n+1),
     .rw-addon:nth-child(2n+1),
     .rw-addon-grid .rw-addon:nth-child(3n+1),
-    .rw-addon-grid .rw-addon:nth-child(2n+1),
-    .app-grid .rw-addon:nth-child(3n+1),
-    .app-grid .rw-addon:nth-child(2n+1) {
+    .rw-addon-grid .rw-addon:nth-child(2n+1) {
         clear: none;
     }
 	
