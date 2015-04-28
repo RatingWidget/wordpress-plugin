@@ -1,0 +1,661 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Rating-Widget: Star Rating System\n"
+"POT-Creation-Date: 2014-08-19 19:12-0500\n"
+"PO-Revision-Date: 2014-08-19 19:12-0500\n"
+"Last-Translator: RatingWidget <translate@rating-widget.com>\n"
+"Language-Team: RatingWidget <translate@rating-widget.com>\n"
+"Language: fa_IR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.6.5\n"
+"X-Poedit-Basepath: ..\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"X-Poedit-KeywordsList: __;_e;_n:1,2;_x:1,2c;_ex:1,2c;_nx:4c,1,2;esc_attr__;"
+"esc_attr_e;esc_attr_x:1,2c;esc_html__;esc_html_e;esc_html_x:1,2c;_n_noop:1,2;"
+"_nx_noop:3c,1,2;__ngettext_noop:1,2\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Poedit-SearchPath-0: .\n"
+
+#: lib/rw-top-rated-widget.php:25
+msgid "A list of your top rated posts."
+msgstr "فهرستی از بهترین نوشته‌های شما"
+
+#: lib/rw-top-rated-widget.php:162
+msgid "Top Rated"
+msgstr "بهترین‌ها"
+
+#: lib/rw-top-rated-widget.php:613
+msgid "Widget Title"
+msgstr "عنوان ابزارک"
+
+#: lib/rw-top-rated-widget.php:614
+msgid "Title Max Length"
+msgstr "حداکثر طول"
+
+#: lib/rw-top-rated-widget.php:672 rating-widget.php:1574
+#: rating-widget.php:1633
+msgid "Title"
+msgstr "عنوان"
+
+#: lib/rw-top-rated-widget.php:677
+msgid "Max Items"
+msgstr "حداکثر موارد"
+
+#: lib/rw-top-rated-widget.php:688
+msgid "Min Votes"
+msgstr "حداقل رأی"
+
+#: lib/rw-top-rated-widget.php:693 rating-widget.php:1570
+#: rating-widget.php:1928 rating-widget.php:2231
+msgid "Order By"
+msgstr "مرتب‌شده بر اساس"
+
+#: lib/rw-top-rated-widget.php:705
+msgid "Order"
+msgstr "مرتب‌سازی"
+
+#: lib/rw-top-rated-widget.php:713 rating-widget.php:1515
+#: rating-widget.php:1902 rating-widget.php:2205
+msgid "Date Range"
+msgstr "محدوده‌ی تاریخ"
+
+#: rating-widget.php:1209 rating-widget.php:1212 rating-widget.php:1214
+msgid "Rating-Widget Settings"
+msgstr "تنظیمات ابزارک رتبه‌دهی"
+
+#: rating-widget.php:1209 rating-widget.php:1212 rating-widget.php:1214
+msgid "Ratings"
+msgstr "رتبه‌ها"
+
+#: rating-widget.php:1541 rating-widget.php:4637 rating-widget.php:4643
+msgid "Element"
+msgstr "بخش"
+
+#: rating-widget.php:1545
+msgid "Posts"
+msgstr "نوشته‌ها"
+
+#: rating-widget.php:1546
+msgid "Pages"
+msgstr "برگه‌ها"
+
+#: rating-widget.php:1547
+msgid "Comments"
+msgstr "دیدگاه‌ها"
+
+#: rating-widget.php:1552
+msgid "Activity-Updates"
+msgstr "به‌روزرسانی فعالیت‌ها"
+
+#: rating-widget.php:1553
+msgid "Activity-Comments"
+msgstr "دیدگاه‌های روی فعالیت‌ها"
+
+#: rating-widget.php:1554
+msgid "Users-Profiles"
+msgstr "پرونده‌های کاربران"
+
+#: rating-widget.php:1557
+msgid "Forum-Posts"
+msgstr "نوشته‌های انجمن"
+
+#: rating-widget.php:1575 rating-widget.php:1634 rating-widget.php:2235
+msgid "Id"
+msgstr "شناسه"
+
+#: rating-widget.php:1576 rating-widget.php:1635 rating-widget.php:1933
+#: rating-widget.php:2236
+msgid "Start Date"
+msgstr "تاریخ شروع"
+
+#: rating-widget.php:1577 rating-widget.php:1636 rating-widget.php:1934
+#: rating-widget.php:2237
+msgid "Last Update"
+msgstr "آخرین به‌روزرسانی"
+
+#: rating-widget.php:1578 rating-widget.php:1637 rating-widget.php:4637
+#: rating-widget.php:4655
+msgid "Votes"
+msgstr "رأی"
+
+#: rating-widget.php:1579 rating-widget.php:1638
+msgid "Average Rate"
+msgstr "رتبه‌ی میانگین"
+
+#: rating-widget.php:1592 rating-widget.php:1951 rating-widget.php:2254
+msgid "Show"
+msgstr "نمایش"
+
+#: rating-widget.php:1599
+msgid "Votes Timeline"
+msgstr "سیاهه‌ی رأی‌ها"
+
+#: rating-widget.php:1626
+msgid "No ratings here."
+msgstr "بدون رتبه"
+
+#: rating-widget.php:1662
+msgid "Rating Report"
+msgstr "گزارش رتبه‌بندی"
+
+#: rating-widget.php:1722 rating-widget.php:2101 rating-widget.php:2411
+msgid "Show rows"
+msgstr "نمایش سطرها"
+
+#: rating-widget.php:1932 rating-widget.php:2007
+msgid "Rating Id"
+msgstr "شناسه‌ی رتبه‌بندی"
+
+#: rating-widget.php:1935 rating-widget.php:2012 rating-widget.php:2238
+#: rating-widget.php:2329 rating-widget.php:4657
+msgid "Rate"
+msgstr "رتبه"
+
+#: rating-widget.php:1936 rating-widget.php:2008 rating-widget.php:2239
+#: rating-widget.php:2325
+msgid "User Id"
+msgstr "شناسه‌ی کاربر"
+
+#: rating-widget.php:1937 rating-widget.php:2009 rating-widget.php:2240
+#: rating-widget.php:2326
+msgid "PC Id"
+msgstr "شناسه‌ی رایانه"
+
+#: rating-widget.php:1938 rating-widget.php:2010 rating-widget.php:2241
+#: rating-widget.php:2327
+msgid "IP"
+msgstr "آی‌پی"
+
+#: rating-widget.php:2001 rating-widget.php:2319
+msgid "No votes here."
+msgstr "بدون نظر"
+
+#: rating-widget.php:2011 rating-widget.php:2328
+msgid "Date"
+msgstr "تاریخ"
+
+#: rating-widget.php:2116 rating-widget.php:2426
+msgid "Previous"
+msgstr "قبلی"
+
+#: rating-widget.php:2120 rating-widget.php:2430
+msgid "Next"
+msgstr "بعدی"
+
+#: rating-widget.php:2539 rating-widget.php:2985
+msgid "Settings successfully saved."
+msgstr "تنظیمات ذخیره شدند"
+
+#: rating-widget.php:2564
+msgid "Increase User Retention and Pageviews"
+msgstr "آمار نمایش صفحات و مدت حضور بازدیدکنندگان خود را افزایش دهید"
+
+#: rating-widget.php:2566
+msgid ""
+"With the Top-Rated Sidebar Widget readers will stay on your site for a "
+"longer period of time."
+msgstr ""
+"با استفاده از ابزارک برترین‌ها در حاشیه‌ی سایت، خوانندگان شما مدت بیشتری در "
+"سایت شما باقی می‌مانند"
+
+#: rating-widget.php:2583 rating-widget.php:2607
+msgid "Add Widget Now!"
+msgstr "هم‌اکنون ابزارک را اضافه نمایید"
+
+#: rating-widget.php:2586
+msgid "How"
+msgstr "چگونه"
+
+#: rating-widget.php:2587
+msgid ""
+"Expose your readers to the top rated posts onsite that they might not have "
+"otherwise noticed and increase your chance to reduce the bounce rate."
+msgstr ""
+"خوانندگان خود را در معرض بهترین نوشته‌های خود که ممکن است از دیدشان پنهان "
+"مانده باشد، قرار دهید و با این کار آمار بازدیدهای تصادفی کوتاه‌مدت سایت خود "
+"را کاهش دهید"
+
+#: rating-widget.php:2590
+msgid "What"
+msgstr "وسیله"
+
+#: rating-widget.php:2591
+msgid ""
+"The Top-Rated Widget is a beautiful sidebar widget containing the top rated "
+"posts on your blog."
+msgstr ""
+"ابزارک بهترین‌ها، به‌زیبایی در حاشیه‌ی سایت شما قرار می‌گیرد و بهترین نوشته‌های "
+"وبلاگ شما را نمایش می‌دهد"
+
+#: rating-widget.php:2594
+msgid "Install"
+msgstr "نصب"
+
+#: rating-widget.php:2595
+msgid "Go to"
+msgstr "بروید"
+
+#: rating-widget.php:2599
+msgid "New"
+msgstr "تازه"
+
+#: rating-widget.php:2600
+msgid ""
+"Thumbnails: a beautiful new thumbnail display, for themes which use post "
+"thumbnails (featured images)."
+msgstr ""
+"نمایه‌ها: نمایش نمایه‌ی مطالب، در پوسته‌هایی که از نمایه‌ها پشیبانی می‌کنند "
+"(تصاویر ویژه)"
+
+#: rating-widget.php:2603
+msgid "Performance"
+msgstr "کارآیی"
+
+#: rating-widget.php:2604
+msgid ""
+"The widget is performant, caching the top posts and featured images' "
+"thumbnails as your site is visited."
+msgstr ""
+"این ابزارک، به طور خودکار نمایه‌ی تصاویر ویژه‌ی شما را در بازدیدهایی که از "
+"سایتتان می‌شود تهیه کرده و در حافظه نگاه می‌دارد."
+
+#: rating-widget.php:2652
+msgid "You do not have sufficient permissions to access this page."
+msgstr "شما اجازه‌ی دسترسی به این صفحه را ندارید"
+
+#: rating-widget.php:4567
+msgid "Invalid element selection."
+msgstr "چنین بخشی وجود ندارد"
+
+#: rating-widget.php:4572
+msgid "Invalid element id."
+msgstr "بخشی با این شناسه وجود ندارد"
+
+#: rating-widget.php:4577
+msgid "Invalid votes number."
+msgstr "تعداد آراء قابل قبول نیست"
+
+#: rating-widget.php:4582
+msgid "Invalid votes rate."
+msgstr "رتبه‌بندی آراء صحیح نیست"
+
+#: rating-widget.php:4631
+msgid "Rating-Widget Boosting"
+msgstr "تقویت ابزارک رتبه‌بندی"
+
+#: rating-widget.php:4634
+msgid "Here you can boost your ratings."
+msgstr "اینجا می‌توانید رتبه‌بندی‌های خود را تقویت کنید"
+
+#: rating-widget.php:4635
+msgid ""
+"Note: This action impact the rating record directly - it's on your own "
+"responsibility!"
+msgstr ""
+"هشدار: این کار تمام سابقه‌ی رتبه‌بندی‌های شما را مستقیماً تحت تأثیر قرار خواهد "
+"داد. مسؤولیت با خود شماست!"
+
+#: rating-widget.php:4636
+msgid "Example:"
+msgstr "مثال:"
+
+#: rating-widget.php:4637
+msgid "Post"
+msgstr "نوشته"
+
+#: rating-widget.php:4637 rating-widget.php:4653
+msgid "Id:"
+msgstr "شناسه:"
+
+#: rating-widget.php:4637
+msgid "Rate:"
+msgstr "رتبه:"
+
+#: rating-widget.php:4638
+msgid "This will add 3 votes with the rate of 4 stars to Post with Id=2."
+msgstr "با این کار، سه رأی چهار ستاره‌ای به نوشته‌ی کد ۲ اضافه می‌شود."
+
+#: rating-widget.php:4645
+msgid "Post/Page"
+msgstr "نوشته/برگه"
+
+#: rating-widget.php:4646
+msgid "Comment"
+msgstr "دیدگاه"
+
+#: rating-widget.php:4647
+msgid "Activity Update"
+msgstr "به‌روزرسانی فعالیت‌ها"
+
+#: rating-widget.php:4648
+msgid "Forum Post"
+msgstr "نوشته‌ی انجمن"
+
+#: rating-widget.php:4649
+msgid "User"
+msgstr "کاربر"
+
+#: rating-widget.php:4659
+msgid "Note: Rate must be a number between -5 to 5."
+msgstr "توجه: رتبه می‌بایست عددی بین ۵- تا ۵ باشد"
+
+#: rating-widget.php:4752 rating-widget.php:4753
+msgid "Rating-Widget Exclude Option"
+msgstr "امکان استثنا کردن ابزارک رتبه‌بندی"
+
+#: rating-widget.php:4775
+msgid "Show Rating (Uncheck to Hide)"
+msgstr "نمایش رتبه‌ها (علامت را بردارید تا پنهان شوند)"
+
+#: rating-widget.php:5351
+msgid "Settings"
+msgstr "تنظیمات"
+
+#: rating-widget.php:5352
+msgid "Blog"
+msgstr "وبلاگ"
+
+#: rating-widget.php:5353 view/pages/admin/account.php:8
+#: view/pages/admin/account.php:45
+msgid "Upgrade"
+msgstr "ارتقا"
+
+#: view/availability_options.php:9
+msgid "User Availability Settings"
+msgstr "تنظیمات نمایش بر اساس کاربران"
+
+#: view/categories_availability_options.php:12
+msgid "Categories Visibility Settings"
+msgstr "تنظیمات نمایش بر اساس دسته‌بندی"
+
+#: view/categories_availability_options.php:15
+msgid "All Categories"
+msgstr "همه‌ی دسته‌بندی‌ها"
+
+#: view/fb.php:2
+msgid "Find us on Facebook"
+msgstr "ما را در فیسبوک بیابید"
+
+#: view/options.php:4
+msgid "Rating-Widget Options"
+msgstr "تنظیمات ابزارک رتبه‌بندی"
+
+#: view/pages/admin/account.php:6
+msgid "Account"
+msgstr "حساب"
+
+#: view/pages/admin/account.php:16
+msgid "Account Details"
+msgstr "جزئیات حساب"
+
+#: view/pages/admin/account.php:22
+msgid "User ID"
+msgstr "شناسه‌ی کاربری"
+
+#: view/pages/admin/account.php:25
+msgid "User Email"
+msgstr "ایمیل کاربر"
+
+#: view/pages/admin/account.php:28
+msgid "Site ID"
+msgstr "شناسه‌ی سایت"
+
+#: view/pages/admin/account.php:30
+msgid "Site Public Key"
+msgstr "کلید عمومی سایت"
+
+#: view/pages/admin/account.php:32
+msgid "Site Secret"
+msgstr "کلید مخفی سایت"
+
+#: view/pages/admin/account.php:32
+msgid "No Secret"
+msgstr "بدون مخفی‌سازی"
+
+#: view/pages/admin/account.php:34
+msgid "Site Plan"
+msgstr "نقشه‌ی سایت"
+
+#: view/pages/admin/account.php:47
+msgid "Change Plan"
+msgstr "تغییر طرح"
+
+#: view/pages/admin/account.php:52
+msgid "Sync License"
+msgstr "همسان‌سازی مجوزها"
+
+#: view/pages/admin/account.php:55
+msgid "What is your secret key?"
+msgstr "کلید مخفی شما چیست"
+
+#: view/pages/admin/account.php:59
+msgid "Update Secret"
+msgstr "به‌روزرسانی کلید مخفی"
+
+#: view/pages/admin/advanced.php:11
+msgid "Visitor Identification Method"
+msgstr ""
+
+#: view/pages/admin/advanced.php:14
+msgid "Identify visitor by Cookie / Device."
+msgstr ""
+
+#: view/pages/admin/advanced.php:16
+msgid ""
+"Visitor by IP identification is only supported in Professional plan and "
+"above."
+msgstr ""
+
+#: view/pages/admin/advanced.php:17
+msgid ""
+"Identify visitor by IP / Location. <b>Especially for Voting Contests</b> "
+"(included in Professional Plan)."
+msgstr ""
+
+#: view/pages/admin/advanced.php:19
+msgid ""
+"Social connect is part of our upcoming Roadmap, but it's not ready yet. "
+"Appreciate your patience."
+msgstr ""
+
+#: view/pages/admin/advanced.php:20
+msgid ""
+"Require connect with Social identity like Facebook and Google connect "
+"(Coming soon...)."
+msgstr ""
+
+#: view/pages/admin/advanced.php:29
+msgid "Flash Dependency"
+msgstr "وابستگی به فلش"
+
+#: view/pages/admin/advanced.php:32
+msgid "Enable Flash dependency (track devices using LSO)."
+msgstr "وابستگی به فلش فعال شود (ردیابی دستگاه‌ها از طریق تکنیک LSO)"
+
+#: view/pages/admin/advanced.php:35
+msgid ""
+"Disable Flash dependency (devices with identical IPs won't be distinguished)."
+msgstr ""
+"وابستگی به فلش غیرفعال شود (دستگاه‌های دارای آی‌پی یکسان شناسایی نمی‌شوند)"
+
+#: view/pages/admin/advanced.php:45
+msgid "Mobile Settings"
+msgstr "تنظیمات تلفن همراه"
+
+#: view/pages/admin/advanced.php:60
+msgid "Critical Actions"
+msgstr "اقدامات حیاتی"
+
+#: view/pages/admin/advanced.php:106
+msgid "Restore all Rating-Widget settings to factory."
+msgstr "بازگرداندن همه‌ی تنظیمات افزونه‌ی رتبه‌دهی به روز نخست"
+
+#: view/pages/admin/advanced.php:115
+msgid "Create new FREE ratings account."
+msgstr "ایجاد رایگان حساب کاربری تازه"
+
+#: view/pages/admin/advanced.php:115
+msgid "Notice: All your current ratings data will be lost."
+msgstr "اخطار: همه‌ی اطلاعات رتبه‌های فعلی شما از دست خواهند رفت."
+
+#: view/pages/admin/report-dummy.php:4
+msgid "Upgrade now to get reports and more Professional Features"
+msgstr ""
+"برای دریافت گزارش‌ها و بهره‌مندی از سایر ویژگی‌های حرفه‌ای، هم‌اکنون ارتقا دهید"
+
+# It is possible to translate this triple-lined paragraph into a triple-lined Persian equivallent. However, in order to provide a clear native translation, I had no way but to break the structure, by mixing the second and third lines.  - TAHA
+#: view/pages/admin/report-dummy.php:10
+msgid ""
+"Reports provides you with an analytical overview of your blog-ratings' votes "
+"in one page.\n"
+"                                Here, you can gain an understanding of how "
+"interesting and attractive your blog elements (e.g. posts, pages),\n"
+"                                how active your users, and check the "
+"segmentation of the votes."
+msgstr ""
+"گزارش‌ها آماری تحلیلی از رأی‌های واردشده بر یک صفحه‌ی خاص از وبلاگ شما را فراهم "
+"می‌آورند \n"
+"از این طریق می‌توانید به فهمی روشن از میزان محبوبیت و جذابیت بخش‌های مختلف "
+"وبلاگ خود، اعم از نوشته‌ها و برگه‌ها پی ببرید و از میزان فعالیت کاربرانتان "
+"آگاه شده، جزئیات رأی آن‌ها را کنترل نمایید."
+
+#: view/pages/admin/report-dummy.php:16 view/upgrade.php:18
+msgid "Learn More"
+msgstr "بیشتر بدانید"
+
+#: view/pages/admin/report-dummy.php:21 view/upgrade.php:5
+msgid "Google Rich Snippets (schema.org)"
+msgstr "شرح کوتاه گوگل در نتایج جستجو (schema.org)"
+
+#: view/pages/admin/report-dummy.php:22 view/upgrade.php:6
+msgid "Advanced Ratings' Analytics"
+msgstr "تحلیل پیشرفته‌ی رتبه‌بندی‌ها"
+
+#: view/pages/admin/report-dummy.php:23 view/upgrade.php:7
+msgid "White-labeled - Ads free"
+msgstr "بدون ذکر نام تولیدکننده، بدون تبلیغات"
+
+#: view/pages/admin/report-dummy.php:24 view/upgrade.php:8
+msgid "bbPress Forum Ratings"
+msgstr "رتبه‌بندی به سبک انجمن‌های bbPress"
+
+#: view/pages/admin/report-dummy.php:25
+msgid "User Reputation-Rating (BuddyPress/bbPress)"
+msgstr "سوابق رتبه‌های کاربر (مثل buddyPress و bbPress) "
+
+#: view/pages/admin/report-dummy.php:26 view/upgrade.php:12
+msgid "Priority Email Support"
+msgstr "پشتیبانی از ایمیل ترجیحی"
+
+#: view/pages/admin/report-dummy.php:27 view/upgrade.php:13
+msgid "SSL Support"
+msgstr "پشتیبانی از پروتکل امن انتقال اطلاعات (اس‌اس‌ال)"
+
+#: view/pages/admin/report-dummy.php:28 view/upgrade.php:14
+msgid "Secure Connection (Fraud protection)"
+msgstr "اتصال امن (پیشگیری از تقلب)"
+
+#: view/pages/admin/report-dummy.php:29 view/upgrade.php:15
+msgid "WMPL Language Auto-Selection"
+msgstr "انتخاب خودکار زبان"
+
+#: view/post_views_visibility.php:23
+msgid "Post Views Visibility Settings"
+msgstr "تنظیمات رؤیت‌پذیری بازدید از نوشته‌ها"
+
+#: view/powerusers.php:8
+msgid "Power User Settings"
+msgstr "تنظیمات کاربر اصلی"
+
+#: view/preview.php:11
+msgid "Follow"
+msgstr "دنبال کنید"
+
+#: view/preview.php:147 view/save.php:7
+msgid "Save Changes"
+msgstr "ذخیره‌ی تغییرات"
+
+#: view/preview.php:149 view/save.php:9
+msgid "Upgrade Now!"
+msgstr "هم‌اکنون ارتقا دهید"
+
+#: view/preview.php:151
+msgid "Like it?"
+msgstr "خوشتان آمد؟"
+
+#: view/preview.php:153
+msgid "Support the plugin with ★ 5 Stars"
+msgstr "از این افزونه، با امتیاز پنج ستاره پشتیبانی کنید"
+
+#: view/twitter.php:2
+msgid "Follow us on Twitter"
+msgstr "در توییتر پی‌گیر ما شوید"
+
+# As I stated in my email, I think it would be best to keep twitter follow buttons as they are. They are familiar for Persian visitors.
+#: view/twitter.php:5
+msgid "Follow @ratingwidget"
+msgstr "@ratingwidget را دنبال کنید"
+
+# As I stated in my email, I think it would be best to keep twitter follow buttons as they are. They are familiar for Persian visitors.
+#: view/twitter.php:7
+msgid "Follow @vovafeldman"
+msgstr "@vovafeldman را دنبال کنید"
+
+#: view/upgrade.php:2
+msgid "Why Go Professional?"
+msgstr "چرا بهتر است ارتقا دهیم؟"
+
+#: view/upgrade.php:9
+msgid "Votings Contest: Visitor by IP identification"
+msgstr ""
+
+#: view/upgrade.php:10
+msgid "Custom Ratings Image"
+msgstr ""
+
+#: view/upgrade.php:11
+#, fuzzy
+msgid "User Reputation for BuddyPress / bbPress"
+msgstr "سوابق رتبه‌های کاربر (مثل buddyPress و bbPress) "
+
+#: view/user_rating_type_options.php:10
+msgid "Rating Type"
+msgstr "نوع رتبه‌بندی"
+
+#: view/user_rating_type_options.php:13
+msgid ""
+"Reputational (Pro Feature) - aggregated average of user's rated elements."
+msgstr "سوابق (فقط در نسخه‌ی حرفه‌ای) ـ جمع‌بندی‌ای از بخش‌های رتبه‌بندی‌شده‌ی کاربر"
+
+#: view/user_rating_type_options.php:16
+msgid "Standard - directly affected by rating user's profile page."
+msgstr "استاندارد ـ مستقیماً متأثر از صفحه‌ی پروفایل کاربر"
+
+#: view/userkey_generation.php:5
+msgid "You are just 30 sec away from boosting your blog with ratings..."
+msgstr "تا ارتقای وبلاگ خود با سیستم رتبه‌بندی، تنها سی ثانیه فاصله دارید"
+
+#: view/visibility_options.php:21
+msgid "Specific Visibility Settings"
+msgstr "تنظیمات مخصوص برای رؤیت‌پذیری"
+
+#: view/visibility_options.php:24
+#, php-format
+msgid "Show rating on every %s"
+msgstr "نمایش رتبه‌بندی‌ها در هر %s"
+
+#: view/visibility_options.php:27
+#, php-format
+msgid "Show rating on every %1$s except the listed %2$s"
+msgstr "نمایش رتبه‌بندی در هر %1$s، به غیر از %2$sهای فهرست‌شده"
+
+#: view/visibility_options.php:30
+#, php-format
+msgid "Show rating on only the listed %s"
+msgstr "نمایش فهرست برای %sهای فهرست‌شده"
+
+#: view/visibility_options.php:32
+msgid "Seperate ids with commas (e.g. \"3,17,8\")."
+msgstr "شناسه‌ها را با ویرگول انگلیسی از هم جدا کنید. مثل 3,17,8"

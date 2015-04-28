@@ -1,0 +1,98 @@
+body, td {
+	font-family: sans-serif !important;
+}
+
+input, select, textarea, label, span {
+	font-size: 12px !important;
+}
+
+#rw-options-panel {
+	position: relative;
+	top: 5px;
+	width: 100%;
+}
+
+#rw-options-panel label {
+	cursor: pointer;
+}
+
+#rw-options-panel td, #rw-options-panel th {
+	height: 22px;
+	padding-bottom: 3px;
+	text-align: left;
+}
+
+#rw-options-panel th {
+	font-weight: normal;
+	width: 120px;
+}
+
+#rw-options-panel [type="radio"] {
+	border: none !important;
+	outline: none !important;
+}
+
+#rw-options-panel [type="text"] {
+	box-sizing: border-box;
+}
+
+#rw-options-panel [type="text"], #rw-options-panel select {
+	width: 100%;
+}
+
+#rw-options-tab span {
+	padding-top: 4px;
+}
+
+#rw-panel-wrapper {
+	background: white;
+	border: 1px solid #919B9C;
+	border-top: 0px;
+	clear: both;
+	height: 260px;
+	margin-bottom: 7px;
+	padding: 10px;
+	padding-top: 5px;
+}
+
+#rw-toprated-direction input {
+	margin-right: 0;
+}
+
+#rw-toprated-direction span {
+	position: relative;
+	top: -2px;
+}
+
+#rw-toprated-insert-shortcode {
+	background-color: #eee;
+	background-image: -webkit-gradient(linear, left bottom, left top, from(#ddd), to(#fff));
+	background-image: -webkit-linear-gradient(bottom, #ddd, #fff);
+	background-image: -moz-linear-gradient(bottom, #ddd, #fff);
+	background-image: -o-linear-gradient(bottom, #ddd, #fff);
+	background-image: linear-gradient(to top, #ddd, #fff);
+	border: 1px solid #bbb;
+	border-radius: 3px;
+	color: #000;
+	cursor: pointer;
+	float: right;
+	font-size: 11px;
+	font-weight: bold;
+	height: 24px;
+	margin: 0;
+	padding: 0 0 1px;
+	position: relative;
+	width: 94px;
+	-webkit-border-radius: 3px;
+}
+
+#rw-toprated-note {
+	font-size: 10px;
+	margin-top: 10px;
+}
+
+.mceActionPanel {
+	padding-top: 0px;
+	text-align: right;
+	margin: 0;
+}

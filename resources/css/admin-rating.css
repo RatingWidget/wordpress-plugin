@@ -1,0 +1,16 @@
+.rw-rating-table {
+	width: 100%;
+}
+
+.rw-rating-table.rw-rtl {
+	direction: rtl;
+	text-align: right;
+}
+
+.rw-rating-table.rw-rtl td {
+	text-align: right;
+}
+
+.rw-rating-table.rw-rtl .rw-left {
+	text-align: right;
+}
