@@ -313,7 +313,7 @@
 					add_action( 'wp_ajax_rw-toprated-popup-html', array( &$this, 'generate_toprated_popup_html' ) );
 					add_action( 'wp_ajax_rw-affiliate-apply', array( &$this, 'send_affiliate_application' ) );
 					add_action( 'wp_ajax_rw-addon-request', array( &$this, 'send_addon_request' ) );
-					add_action( 'admin_init', array( &$this, 'register_toprated_shortcode_hooks' ) );
+					add_action( 'admin_init', array( &$this, 'register_admin_page_hooks' ) );
 					add_action( 'admin_menu', array( &$this, 'AddPostMetaBox' ) ); // Metabox for posts/pages
 					add_action( 'save_post', array( &$this, 'SavePostData' ) );
 
@@ -322,7 +322,6 @@
 						// the API won't be able to work for them - therefore, all API related
 						// hooks must be executed within this scope.
 						add_action( 'trashed_post', array( &$this, 'DeletePostData' ) );
-						add_action( 'wp_dashboard_setup', array( &$this, 'add_dashboard_widgets' ) );
 						add_action('wp_ajax_rw-five-star-wp-rate', array(&$this, 'five_star_wp_rate_action'));
 
 						$min_votes_trigger = $this->GetOption(WP_RW__DB_OPTION_WP_RATE_NOTICE_MIN_VOTES_TRIGGER);
@@ -758,11 +757,16 @@
 			 * @author Leo Fajardo (@leorw)
 			 * @since 2.4.1
 			 */
-			function register_toprated_shortcode_hooks() {
+			function register_admin_page_hooks() {
 				if ($this->admin_page_has_editor()) {
 					add_action('admin_footer', array(&$this, "init_toprated_shortcode_settings"));
 					add_filter('mce_external_plugins', array(&$this, 'register_tinymce_plugin'));
 					add_filter('mce_buttons', array(&$this, 'add_tinymce_button'));
+				}
+				
+				// If API is supported and the current user is an administrator, add the statistics dashboard widget.
+				if ( $this->is_api_supported() && current_user_can('administrator') ) {
+					add_action( 'wp_dashboard_setup', array(&$this, 'add_dashboard_widgets') );
 				}
 			}
 
@@ -5087,13 +5091,29 @@
 					
 					RWLogger::Log('GetRatingHtml', "Adding schema for: urid={$pUrid}; rclass={$pElementClass}");
 					
-					if ( isset($pOptions['uarid']) ) {
+					/*
+					 * Replace the value of the $pUrid variable with the value of the $pOptions['uarid'] array element
+					 * if the rating is multi-criterion.
+					 * 
+					 * If the rating is multi-criterion, each criterion rating has a uarid property whose value is the ID of the summary rating.
+					 * Each criterion rating's urid is in this format: {{$pUrid-$criterionId}}.
+					 * 
+					 * If $pUrid contains the hyphen ( - ) character and the uarid property is set, we assume that this is a criterion rating,
+					 * and replacing the value of the $pUrid with the value of the uarid property is necessary in order to set the correct
+					 * number of votes in the rich snippet schema which is the number of votes of the summary rating.
+					 */
+					if ( FALSE !== strpos($pUrid, '-') && isset($pOptions['uarid']) ) {
 						$pUrid = $pOptions['uarid'];
 					}
 
 					$data = $this->GetRatingDataByRatingID($pUrid, 2);
 					if (false !== $data && $data['votes'] > 0)
 					{
+						if (RWLogger::IsOn()) {
+							RWLogger::Log('ratingValue', $data['rate']);
+							RWLogger::Log('ratingCount', $data['votes']);
+						}
+						
 						// WooCommerce is already adding all the product schema metadata.
 						/*$schema_root = 'itemscope itemtype="http://schema.org/Product"';
 						$schema_title_prop = 'itemprop="name"';
