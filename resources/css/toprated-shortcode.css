@@ -1,0 +1,35 @@
+label.rw-toprated-ltr {
+	padding-right: 20px !important;
+}
+
+#rw-toprated-direction label {
+	cursor: pointer;
+}
+
+/* Fix the radio buttons' appearance */
+#rw-toprated-direction [name="rw-toprated-direction"]:before {
+	margin: 5px !important;
+}
+
+#rw-toprated-direction [name="rw-toprated-direction"] {
+	width: 18px !important;
+	height: 18px !important;
+	box-sizing: border-box !important;
+}
+
+/* Align the insert button to the form fields */
+#rw-toprated-insert-shortcode {
+	padding-left: 3px;
+	padding-right: 3px;
+	margin-left: -15px;
+}
+
+#rw-toprated-min-votes {
+	width: 60px !important;
+}
+
+span#rw-toprated-note {
+	font-size: 11px;
+	position: relative;
+	top: 12px;
+}

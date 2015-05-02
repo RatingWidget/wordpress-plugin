@@ -1,0 +1,51 @@
+#fs_account_settings
+{
+    .postbox
+    {
+        width: 700px;
+    }
+    table
+    {
+        width: 100%;
+
+        tr
+        {
+            td:first-child
+            {
+                font-weight: bold;
+                text-align: right;
+            }
+
+            td.fs-right
+            {
+                text-align: right;
+            }
+
+            &.fs-odd
+            {
+                background: #ebebeb;
+            }
+        }
+
+        td, th
+        {
+            padding: 10px;
+        }
+
+        var, code
+        {
+            color: green;
+            font-size: 16px;
+        }
+    }
+}
+@media screen and (max-width: 782px)
+{
+    #fs_account_settings
+    {
+        .postbox
+        {
+            width: 100%;
+        }
+    }
+}

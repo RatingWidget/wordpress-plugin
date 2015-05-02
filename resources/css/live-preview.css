@@ -1,0 +1,201 @@
+#rw_wp_preview #rw_preview_container {
+	background: transparent;
+	border: 1px solid #ccc;
+	border-radius: 3px;
+	box-shadow: inset 0 1px 1px #ccc;
+	padding-bottom: 15px;
+	padding-top: 15px;
+}
+
+#rw_preview_container > table {
+	width: 100%;
+}
+
+#rw_preview_container > table td {
+	padding-bottom: 14px;
+}
+
+.rw-action {
+	visibility: hidden;
+	max-width: 24px;
+	width: 24px;
+}
+
+.rw-rating td:first-child {
+	width: 10px;
+}
+
+#rw_preview_container > table .rw-summary-rating td, #rw_preview_container > table .rw-add-rating-container td {
+	padding-bottom: 0px;
+}
+
+.rw-add-label {
+	margin-right: 7px;
+	vertical-align: middle;
+}
+
+.rw-add-label a.has-custom-value {
+	text-decoration: none;
+	border-bottom: 1px dashed #aaa;
+}
+
+.rw-add-label input {
+	cursor: auto;
+}
+
+.rw-add-label a:focus, .rw-summary-label a:focus, .rw-dash a:focus, .rw-remove-button:focus {
+	box-shadow: none;
+	outline: none;
+}
+	
+.rw-dash > a {
+	font-weight: bold;
+	left: 10px;
+	position: relative;
+	text-decoration: none;
+}
+
+.rw-dash {
+	border-top: 1px dashed #aaa;
+	margin-top: 1px;
+	padding-top: 10px;
+}
+
+.rw-summary-rating, .summary-rating-option {
+	display: none;
+}
+
+
+.summary-rating-option > label {
+	left: 10px;
+	position: relative;
+}
+
+.rw-template-rating {
+	display: none;
+}
+
+#rw_preview_container + h3 {
+	display: none;
+	padding-left: 0;
+	padding-top: 10px;
+}
+
+#multi-rating-options {
+	display: none;
+}
+
+#multi-rating-options {
+	padding-bottom: 1px;
+}
+
+#multi-rating-options > div {
+	margin-bottom: 5px;
+}
+
+#multi-rating-options label {
+	left: 10px;
+	position: relative;
+}
+
+.multi-rating .rw-action {
+	visibility: visible;
+}
+
+.multi-rating #rw_preview_container + h3, .multi-rating #multi-rating-options {
+	display: block;
+}
+
+.multi-rating .rw-summary-rating {
+	display: table-row;
+}
+
+.multi-rating .summary-rating-option {
+	display: block;
+}
+
+.multi-rating #rw_preview_container > table .rw-summary-rating td {
+	padding-top: 15px;
+}
+
+.multi-rating .rw-dash {
+	border-bottom: 1px dashed #aaa;
+	margin-bottom: 10px;
+	padding-bottom: 10px;
+}
+
+.multi-rating.rw-floating #rw-preview-scrollable {
+	max-height: 160px;
+	overflow-y: auto;
+}
+
+.rw-remove-button {
+	text-decoration: none;
+}
+
+.rw-remove-button:hover:before {
+	color: #c00;
+}
+
+.rw-remove-button:before {
+	background: 0 0;
+	color: #bbb;
+	content: '\f153';
+	display: block!important;
+	font: 400 20px/1 dashicons;
+	margin: 2px 0;
+	text-align: center;
+	width: 10px;
+	height: 100%;
+	position: relative;
+	left: -10px;
+}
+
+.rw-preview.rw-preview-star .rw-ui-container.rw-ui-star {
+	display: inherit;
+}
+
+.rw-preview.rw-preview-star .rw-ui-container.rw-ui-nero {
+	display: none !important;
+}
+
+.rw-preview.rw-preview-nero .rw-ui-container.rw-ui-nero {
+	display: inherit;
+}
+
+.rw-preview.rw-preview-nero .rw-ui-container.rw-ui-star {
+	display: none !important;
+}
+
+/* RTL */
+.rw-rtl .rw-preview {
+	direction: rtl;
+}
+
+.rw-rtl .rw-add-label {
+	margin-right: 0;
+	margin-left: 7px;
+}
+
+.rw-rtl .rw-add-label input {
+	direction: rtl;
+}
+
+.rw-rtl .rw-dash, .rw-rtl .summary-rating-option {
+	text-align: left;
+}
+
+.rw-rtl .rw-remove-button:before {
+	left: 0;
+	right: -10px;
+}
+
+.rw-rtl.multi-rating .summary-rating-option {
+	display: block;
+	direction: ltr;
+}
+
+.rw-rtl .rw-add-rating, .rw-rtl .rw-add-label {
+	display: block;
+	direction: ltr;
+}

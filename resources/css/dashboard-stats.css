@@ -1,0 +1,133 @@
+#rw-stats-dashboard-widget p {
+	line-height: 100%;
+	margin: 0;
+}
+
+#rw-stats-dashboard-widget .inside {
+	padding: 2px;
+	margin: 0;
+}
+
+#rw-stats-dashboard-widget .hndle {
+	border-bottom: 1px #ddd solid;
+	background: url('../img/header-logo.png') 15px 50% no-repeat;
+	height: 30px;
+}
+
+#rw-stats-dashboard-widget .handlediv {
+	color: #ddd;
+	padding: 0;
+}
+
+#rw-stats-dashboard-widget .handlediv:before {
+	padding: 0;
+	right: 0;
+	top: 5px;
+}
+
+.rw-stats-container {
+	text-align: center;
+}
+
+.rw-stats-container, .rw-stats-container * {
+	-moz-box-sizing: border-box;
+	-webkit-box-sizing: border-box;
+	box-sizing: border-box;
+}
+
+.rw-stats-pos-bottom {
+	border-top: 1px #f4f4f4 solid;
+}
+
+.rw-stats-width-full {
+	width: 100%;
+	padding: 10px;
+	clear: both;
+}
+
+.rw-stats-width-half {
+	float: left;
+	width: 50%;
+	padding: 15px;
+	text-align: center;
+
+}
+
+.rw-stats-numbers {
+	font-weight: bold;
+	font-size: 14px;
+	line-height: 100%;
+	padding: 10px 15px;
+	text-transform: uppercase;
+}
+
+.rw-stats-numbers span {
+	color: #0094FF;
+	display: block;
+	font-size: 37px;
+	line-height: 100%;
+	padding: 5px 0;
+	width: 100%;
+}
+
+.rw-stats-container .clear:before,
+.rw-stats-container .clear:after {
+	content: " ";
+	display: table;
+}
+
+.rw-stats-container .clear:after {
+	clear: both;
+}
+
+.rw-stats-icon {
+	background-image: url('//img.rating-widget.com/blog/layout/social-sharing.png');
+	display: inline-block;
+	height: 40px;
+	width: 40px;
+	vertical-align: middle;
+	-moz-transform:scale(0.7);
+	zoom: 0.7;
+}
+
+.rw-stats-icon-twitter {
+	background-position: -50px 0;
+}
+
+.rw-stats-share-icons a:hover .rw-stats-icon-twitter {
+	background-position: -50px -50px;
+}
+
+.rw-stats-share-icons a:hover .rw-stats-icon-facebook {
+	background-position: 0 -50px;
+}
+
+.rw-stats-icon-label {
+	position: relative;
+	left: 5px;
+	top: 2px;
+}
+
+.rw-stats-share-icons {
+	position: relative;
+	top: 6px;
+}
+
+.rw-stats-share-link {
+	width: 50%;
+	float: left;
+	text-align: center;
+	display: block;
+	margin: 0 0 10px 0;
+	text-transform: uppercase;
+	font-weight: bold;
+	font-size: 12px;
+}
+
+@media only screen and (max-width: 500px) {
+	.rw-stats-width-half,
+	.rw-stats-share-link {
+		float: none;
+		width: 100%;
+	}
+}
