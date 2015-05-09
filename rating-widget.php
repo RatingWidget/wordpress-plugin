@@ -5940,7 +5940,7 @@
 						if ( RWLogger::IsOn() )
 							RWLogger::Log( 'rw_attach_rating_js', 'Urid = ' . $urid . '; Class = ' . $rclass . ';' );
 
-						if (isset($rw_settings[$rclass]) && !isset($rw_settings[$rclass]["enabled"]))
+						if (isset($rw_settings[$rclass]) && is_array($rw_settings[$rclass]) && !isset($rw_settings[$rclass]["enabled"]))
 						{
 							if ( RWLogger::IsOn() )
 								RWLogger::Log( 'rw_attach_rating_js', 'Class = ' . $rclass . ';' );
@@ -5960,7 +5960,7 @@
 							}
 
 							$attach_js = true;
-						} else if (FALSE !== strpos($rclass, $criteria_suffix_part)) {
+						} else if (FALSE !== strpos($rclass, $criteria_suffix_part) && !isset($rw_settings[$rclass])) {
 							/* Use dummy value for the criteria options but
 							 * use the settings of the summary rating when
 							 * calling RW.initClass below
