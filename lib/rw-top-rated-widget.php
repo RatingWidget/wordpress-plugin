@@ -128,7 +128,12 @@
 				if ( null === $rw_ret_obj || true !== $rw_ret_obj->success ) {
 					return;
 				}
-
+				
+				// Check if data is available
+				if ( !isset($rw_ret_obj->data) ) {
+					return;
+				}
+				
 				$title = empty( $instance['title'] ) ? __( 'Top Rated', WP_RW__ID ) : apply_filters( 'widget_title', $instance['title'] );
 
 				$titleMaxLength = ( isset( $instance['title_max_length'] ) && is_numeric( $instance['title_max_length'] ) ) ? (int) $instance['title_max_length'] : 30;
@@ -332,7 +337,7 @@
 										$page      = bb_get_page_number( $forum_post->post_position );
 										$permalink = get_topic_link( $id, $page ) . "#post-{$id}";
 									} else if ( function_exists( 'bbp_get_reply_id' ) ) {
-										$forum_item = bbp_get_topic();
+										$forum_item = bbp_get_topic($id);
 
 										if ( is_object( $forum_item ) ) {
 											$is_topic = true;
@@ -374,9 +379,9 @@
 
 										if ( $is_reply ) {
 											// Get parent topic.
-											$forum_topic = bbp_get_topic( $forum_post->post_parent );
+											$forum_item = bbp_get_topic( $forum_post->post_parent );
 
-											if ( ! in_array( $forum_topic->post_status, $visible_statuses ) ) {
+											if ( ! in_array( $forum_item->post_status, $visible_statuses ) ) {
 												if ( RWLogger::IsOn() ) {
 													RWLogger::Log( 'BBP_PARENT_FORUM_TOPIC_IS_HIDDEN', 'TRUE' );
 												}
@@ -386,12 +391,11 @@
 											}
 										}
 
-										$title     = trim( strip_tags( $forum_post->post_title ) );
-										$permalink = get_permalink( $forum_post->ID );
+										$title     = trim( strip_tags( $forum_item->post_title ) );
+										$permalink = get_permalink( $forum_item->ID );
 									} else {
 										continue;
 									}
-									$types[ $type ]['handler']->GetElementInfoByRating();
 								} else {
 									$found_handler = false;
 
@@ -458,7 +462,7 @@
 						}
 					}
 				}
-
+	
 				if ( true === $empty ) {
 //            echo '<p style="margin: 0;">There are no rated items for this period.</p>';
 
@@ -521,16 +525,6 @@
 						"classes" => "activity-comment,user-activity-comment",
 						"options" => WP_RW__ACTIVITY_COMMENTS_OPTIONS,
 					);
-					$types['forum_posts']       = array(
-						"rclass"  => "forum-post",
-						"classes" => "forum-post,new-forum-post,user-forum-post",
-						"options" => WP_RW__FORUM_POSTS_OPTIONS,
-					);
-					$types['forum_replies']     = array(
-						"rclass"  => "forum-reply",
-						"classes" => "forum-reply",
-						"options" => WP_RW__FORUM_POSTS_OPTIONS,
-					);
 				}
 
 				$bbInstalled = ratingwidget()->IsBBPressInstalled();
@@ -540,6 +534,16 @@
 						"rclass"  => "user",
 						"classes" => "user",
 						"options" => WP_RW__USERS_OPTIONS,
+					);
+					$types['forum_posts'] = array(
+						"rclass"  => "forum-post",
+						"classes" => "forum-post,new-forum-post,user-forum-post",
+						"options" => WP_RW__FORUM_POSTS_OPTIONS,
+					);
+					$types['forum_replies'] = array(
+						"rclass"  => "forum-reply",
+						"classes" => "forum-reply",
+						"options" => WP_RW__FORUM_POSTS_OPTIONS,
 					);
 				}
 
