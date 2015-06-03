@@ -1,4 +1,4 @@
-﻿<?php
+<?php
     $dir = "rtl";
     $hor = "left";
     $dictionary = array(
@@ -16,4 +16,5 @@
         "outOf" => "از",
         "weRecommend" => "پیشنهاد ما",
     );
-?>
+    
+    $numbers = array('۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹');
