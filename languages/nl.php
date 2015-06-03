@@ -16,4 +16,3 @@
         "outOf" => "van de",
         "weRecommend" => "Wij raden",
     );
-?>

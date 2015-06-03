@@ -7,7 +7,7 @@
         "rateAverage" => "Promedio",
         "rateGood" => "Bueno",
         "rateExcellent" => "Excelente",
-        "rateThis" => "Califica este",
+        "rateThis" => "Calificar",
         "like" => "Gusta",
         "dislike" => "No gusta",
         "vote" => "Voto",
@@ -16,4 +16,3 @@
         "outOf" => "de cada",
         "weRecommend" => "Recomendamos",
     );
-?>

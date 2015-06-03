@@ -183,8 +183,9 @@ If you didn't find a solution to your problem yet, check out our [WordPress Know
 The RatingWidget Team
 
 == Change Log ==
-= 2.5.4 - 2015-06-02 =
+= 2.5.4 - 2015-06-03 =
 * Fix: Fixed a bug in displaying bbPress' forum posts/replies in the Top-Rated widget.
+* Update: Updated Spanish translation.
 
 = 2.5.3 - 2015-05-12 =
 * Fix: Admin homepage stats widget is now visible only for admin users.
