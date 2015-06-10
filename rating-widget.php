@@ -5939,7 +5939,18 @@
 
 						if ( RWLogger::IsOn() )
 							RWLogger::Log( 'rw_attach_rating_js', 'Urid = ' . $urid . '; Class = ' . $rclass . ';' );
-
+						
+						$suffix_pos = strpos($rclass, $criteria_suffix_part);
+						if (false !== $suffix_pos) {
+							/* Use dummy value for the criteria options but
+							 * use the settings of the summary rating when
+							 * calling RW.initClass below
+							 */
+							$rw_settings[$rclass] = 'DUMMY';
+							
+							$rclass = substr($rclass, 0, $suffix_pos);
+						}
+						
 						if (isset($rw_settings[$rclass]) && is_array($rw_settings[$rclass]) && !isset($rw_settings[$rclass]["enabled"]))
 						{
 							if ( RWLogger::IsOn() )
@@ -5960,12 +5971,6 @@
 							}
 
 							$attach_js = true;
-						} else if (false !== strpos($rclass, $criteria_suffix_part) && !isset($rw_settings[$rclass])) {
-							/* Use dummy value for the criteria options but
-							 * use the settings of the summary rating when
-							 * calling RW.initClass below
-							 */
-							$rw_settings[$rclass] = 'DUMMY';
 						}
 					}
 				}

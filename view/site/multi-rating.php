@@ -92,9 +92,6 @@
             $html .= '<td><nobr>' . $summary_label . '</nobr></td>';
             $html .= '<td>' . $raw_rating . '</td>';
             $html .= '</tr>';
-        } else if ($multi_criteria) {
-			// Ensure that the summary rating data is added to the queue; otherwise the criteria ratings will not render.
-			ratingwidget()->QueueRatingData($mr_summary_urid, $mr_title, $mr_permalink, $mr_element_class);
         }
 
         $dir = isset($mr_general_options->advanced) && isset($mr_general_options->advanced->layout) && is_string($mr_general_options->advanced->layout->dir) ?
