@@ -379,7 +379,7 @@
 
 										if ( $is_reply ) {
 											// Get parent topic.
-											$forum_item = bbp_get_topic( $forum_post->post_parent );
+											$forum_item = bbp_get_topic( $forum_item->post_parent );
 
 											if ( ! in_array( $forum_item->post_status, $visible_statuses ) ) {
 												if ( RWLogger::IsOn() ) {
