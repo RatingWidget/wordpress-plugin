@@ -5948,6 +5948,13 @@
 							 */
 							$rw_settings[$rclass] = 'DUMMY';
 							
+							/*
+							 * Make sure that the following code (the if block) will have the main option class, e.g. blog-post,
+							 * and not the criterion class, e.g. blog-post-criteria-1. This is because the following
+							 * code needs the main option class in order to load the type (blog, page, etc.) settings which include
+							 * the themes and other display options. A criterion rating will use these display options,
+							 * so this code extracts the main option class from the criterion class.
+							 */
 							$rclass = substr($rclass, 0, $suffix_pos);
 						}
 						
