@@ -5288,16 +5288,27 @@
 
 				}
 
-				if ($ver_top)
+				if ( $ver_top ) {
 					// Hook activity TOP rating.
 					add_filter("bp_get_activity_action", array(&$this, "rw_display_activity_rating_top"));
-				if ($ver_bottom)
+				}
+				
+				if ( $ver_bottom ) {
 					// Hook activity BOTTOM rating.
-					add_action("bp_activity_entry_meta", array(&$this, "rw_display_activity_rating_bottom"));
+					if ( is_user_logged_in() ) {
+						// The methods hooked into this action are invoked when the user is logged in.
+						// We hook into this action to align the rating to BuddyPress' Comment, Favorite, or Delete button which is available for logged in user.
+						add_action("bp_activity_entry_meta", array(&$this, "rw_display_activity_rating_bottom"));
+					} else {
+						// This is the only good action that we can use when there is no logged in user.
+						add_action("bp_activity_entry_content", array(&$this, "rw_display_activity_rating_bottom"));
+					}
+				}
 
-				if (true === $items["activity-comment"]["enabled"])
+				if ( true === $items["activity-comment"]["enabled"] ) {
 					// Hook activity-comment rating showup.
 					add_filter("bp_get_activity_content", array(&$this, "rw_display_activity_comment_rating"));
+				}
 
 				return true;
 			}
