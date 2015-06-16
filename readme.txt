@@ -4,7 +4,7 @@ Donate link: http://rating-widget.com/pricing/wordpress/
 Tags: rate, rating, ratings, vote, votes, voting, star, stars, like, dislike, thumbs, widget, widgets, star rating, thumb rating, rating platform, rating system, seo, post rating, comment rating, 5 star, five star, sidebar, comment, comments, post, posts, page, pages, google, admin, administrator, review, reviews, rich-snippets, plugin, plugins, ajax, buddypress, bbpress, social, javascript, js, wordpress, meta, woocommerce, jquery, contest, competition, voting contest, rtmedia
 Requires at least: 2.9
 Tested up to: 4.2
-Stable tag: 2.5.4
+Stable tag: 2.5.5
 License: GPLv2 or later
 
 The most popular Five Star Rating System on the web. User-friendly ratings for: posts, pages, comments, WooCommerce, BuddyPress and bbPress forums.
@@ -183,6 +183,11 @@ If you didn't find a solution to your problem yet, check out our [WordPress Know
 The RatingWidget Team
 
 == Change Log ==
+= 2.5.5 - 2015-06-16 =
+* Fix: BuddyPress activities' ratings are now visible also when the user is not logged and the position is bottom.
+* Fix: Muti-criterion ratings are now visible when the summary rating is hidden.
+* Fix: Fixed a bug that shows warnings in the top-rated widget when displaying bbPress topics.
+
 = 2.5.4 - 2015-06-03 =
 * Fix: Fixed a bug in displaying bbPress' forum posts/replies in the Top-Rated widget.
 * Update: Updated Spanish translation.
