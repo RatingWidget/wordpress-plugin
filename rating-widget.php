@@ -1378,7 +1378,8 @@
     -------------------------------------------------*/
 			private static function Urid2Id($pUrid, $pSubLength = 1, $pSubValue = 1)
 			{
-				return round((double)substr($pUrid, 0, strlen($pUrid) - $pSubLength) - $pSubValue);
+				// Casting the value to integer is important to prevent a warning that is usually thrown by WordPress' caching code.
+				return (int) round((double)substr($pUrid, 0, strlen($pUrid) - $pSubLength) - $pSubValue);
 			}
 
 			function _getPostRatingGuid($id = false, $criteria_id = false)
