@@ -5160,7 +5160,7 @@
     </div>';
 							
 						if ( !$type_wrapper_available ) {
-							$rating_html . '</div>';
+							$rating_html .= '</div>';
 						}
 					}
 				}
