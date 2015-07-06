@@ -4,7 +4,7 @@ Donate link: http://rating-widget.com/pricing/wordpress/
 Tags: rate, rating, ratings, vote, votes, voting, star, stars, like, dislike, thumbs, widget, widgets, star rating, thumb rating, rating platform, rating system, seo, post rating, comment rating, 5 star, five star, sidebar, comment, comments, post, posts, page, pages, google, admin, administrator, review, reviews, rich-snippets, plugin, plugins, ajax, buddypress, bbpress, social, javascript, js, wordpress, meta, woocommerce, jquery, contest, competition, voting contest, rtmedia
 Requires at least: 2.9
 Tested up to: 4.2
-Stable tag: 2.5.6
+Stable tag: 2.5.7
 License: GPLv2 or later
 
 The most popular Five Star Review System on the web. User-friendly ratings for: posts, pages, comments, WooCommerce, BuddyPress and bbPress forums.
@@ -181,6 +181,10 @@ If you didn't find a solution to your problem yet, check out our [WordPress Know
 The RatingWidget Team
 
 == Change Log ==
+= 2.5.7 - 2015-07-06 =
+* Fix: Fixed the HTML code for the Rich-Snippets.
+* Fix: Fixed a bug that shows warnings on the Activity Updates and Activity Comments tabs.
+
 = 2.5.6 - 2015-06-23 =
 * Fix: The users' ratings are now in sync with the server when the User Rating Type is Reputational.
 * Fix: Fixed a bug that shows warnings in the top-rated widget (cast the value produced by Urid2Id method to integer).
