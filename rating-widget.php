@@ -1515,8 +1515,8 @@
 				$bp_like = (object)array(
 					'type' => 'nero',
 					'theme' => 'thumbs_bp1',
-					'advanced' => array(
-						'nero' => array(
+					'advanced' => (object)array(
+						'nero' => (object)array(
 							'showDislike' => false,
 						)
 					)
