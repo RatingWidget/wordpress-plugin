@@ -111,6 +111,9 @@
 	define( 'WP_RW__DB_OPTION_OWNER_ID', 'rw_owner_id' );
 	define( 'WP_RW__DB_OPTION_OWNER_EMAIL', 'rw_owner_email' );
 	define( 'WP_RW__DB_OPTION_TRACKING', 'rw_tracking' );
+	define( 'WP_RW__DB_OPTION_WP_RATE_NOTICE_MIN_VOTES_TRIGGER', 'rw_wp_rate_notice_min_votes_trigger' );
+	define( 'WP_RW__DB_OPTION_STATS_UPDATED', 'rw_wp_stats_updated' );
+	define( 'WP_RW__DB_OPTION_RICH_SNIPPETS_SETTINGS', 'rw_wp_rich_snippet_settings' );
 
 	/* BuddyPress
 	-----------------------------------------------------------------------------------------*/
@@ -180,7 +183,7 @@
 	define( 'WP_RW__CUSTOM_SETTINGS', 'rw_custom_settings' );
 	define( 'WP_RW__MULTIRATING_SETTINGS', 'rw_multirating_settings' );
 	define( 'WP_RW__IS_ACCUMULATED_USER_RATING', 'rw_accumulated_user_rating' );
-
+	
 	/* Visibility Options
 	-----------------------------------------------------------------------------------------*/
 	define( 'WP_RW__VISIBILITY_ALL_VISIBLE', 0 );
@@ -238,6 +241,7 @@
 	define( 'WP_RW__CACHE_TIMEOUT_RICH_SNIPPETS', WP_RW__TIME_24_HOURS_IN_SEC );
 	define( 'WP_RW__CACHE_TIMEOUT_TOP_RATED', WP_RW__TIME_5_MIN_IN_SEC );
 	define( 'WP_RW__CACHE_TIMEOUT_POST_THUMB_EXTRACT', WP_RW__TIME_24_HOURS_IN_SEC );
+	define( 'WP_RW__CACHE_TIMEOUT_DASHBOARD_STATS', WP_RW__TIME_24_HOURS_IN_SEC );
 
 	/* Freemius Overrides
 	-----------------------------------------------------------------------------------------*/

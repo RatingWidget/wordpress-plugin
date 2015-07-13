@@ -4,6 +4,7 @@
 	}
 
 	define('WP_FS__SLUG', 'freemius');
+	define( 'WP_FS__DEV_MODE', false );
 
 	/**
 	 * Directories
@@ -18,6 +19,25 @@
 
 	if (!defined('WP_FS__ACCOUNTS_OPTION_NAME')) {
 		define( 'WP_FS__ACCOUNTS_OPTION_NAME', 'fs_accounts' );
+	}
+
+	/**
+	 * Domain / URL / Address
+	 */
+	define( 'WP_FS__TESTING_DOMAIN', 'fswp:8080' );
+	define( 'WP_FS__DOMAIN_PRODUCTION', 'wp.freemius.com' );
+	define( 'WP_FS__DOMAIN_LOCALHOST', 'wp.freemius' );
+	define( 'WP_FS__ADDRESS_LOCALHOST', 'http://' . WP_FS__DOMAIN_LOCALHOST . ':8080' );
+	define( 'WP_FS__ADDRESS_PRODUCTION', 'https://' . WP_FS__DOMAIN_PRODUCTION );
+
+	define( 'WP_FS__IS_PRODUCTION', !defined('WP_FS__DEV_MODE') || !WP_FS__DEV_MODE || (WP_FS__TESTING_DOMAIN !== $_SERVER['HTTP_HOST'] ) );
+
+	define( 'WP_FS__ADDRESS', ( WP_FS__IS_PRODUCTION ? WP_FS__ADDRESS_PRODUCTION : WP_FS__ADDRESS_LOCALHOST ) );
+
+	// Set API address for local testing.
+	if ( ! WP_FS__IS_PRODUCTION ) {
+		define( 'FS_API__ADDRESS', 'http://api.freemius:8080' );
+		define('FS_API__SANDBOX_ADDRESS', 'http://sandbox-api.freemius:8080');
 	}
 
 	/**

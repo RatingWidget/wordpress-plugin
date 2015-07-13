@@ -5,7 +5,8 @@
 
 <div class="wrap">
 	<h2 class="nav-tab-wrapper">
-		<a href="<?php $fs->get_account_url() ?>" class="nav-tab nav-tab-active"><?php _e('Account', WP_FS__SLUG) ?></a>
+		<a href="<?php echo $fs->get_account_url() ?>" class="nav-tab nav-tab-active"><?php _e('Account', WP_FS__SLUG) ?></a>
+		<a href="<?php echo fs_get_admin_plugin_url('addons') ?>" class="nav-tab"><?php _e('Add Ons', WP_FS__SLUG) ?></a>
 		<?php if (!$fs->is_paying()) : ?>
 			<a href="<?php echo $fs->get_upgrade_url() ?>" class="nav-tab"><?php _e('Upgrade', WP_FS__SLUG) ?></a>
 		<?php endif ?>
@@ -75,3 +76,4 @@
 		</div>
 	</div>
 </div>
+<?php fs_require_template('powered-by.php') ?>

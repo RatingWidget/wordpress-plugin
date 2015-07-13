@@ -14,6 +14,11 @@
             $excluded_post = (false === $rwp->rw_validate_visibility($post->ID, 'collection-product') && false === $rwp->rw_validate_visibility($post->ID, 'product'));
             $rclass = 'product';
             break;
+        case 'topic':
+        case 'reply':
+            $excluded_post = (false === $rwp->rw_validate_visibility($post->ID, 'forum-post'));
+            $rclass = ('reply' === $post_type ? 'forum-reply' : 'forum-post');
+            break;
         case 'post':
         default:
             $excluded_post = (false === $rwp->rw_validate_visibility($post->ID, 'front-post') && false === $rwp->rw_validate_visibility($post->ID, 'blog-post'));
@@ -25,8 +30,7 @@
 
 	add_action('admin_footer', array(&$rwp, "rw_attach_rating_js"), 5);
 	
-	$multirating_settings_list = $rwp->GetOption(WP_RW__MULTIRATING_SETTINGS);
-	$multirating_options = $multirating_settings_list->{$rclass};
+	$multirating_options = ratingwidget()->get_multirating_options_by_class($rclass);
 	$multi_criteria = count($multirating_options->criteria) > 1;
 	
 	$options = ratingwidget()->get_options_by_class($rclass);
@@ -37,7 +41,7 @@
 	<input type="hidden" name="rw_post_meta_box_nonce" value="<?php echo wp_create_nonce(basename(WP_RW__PLUGIN_FILE_FULL)) ?>" />
 	<table class="rw-rating-table rw-<?php echo $options->advanced->layout->dir;?>">
 		<?php
-		$urid_summary = $rwp->_getPostRatingGuid($post->ID);
+		$urid_summary = $rwp->get_rating_id_by_element($post->ID, $rclass, false);
 		
 		$criteria_id = 1;
 		foreach ($multirating_options->criteria as $criteria_key => $criteria) {
@@ -46,7 +50,7 @@
 				$criteria_rclass .= '-criteria-' . $criteria_id;
 			}
 			
-			$urid = $rwp->_getPostRatingGuid($post->ID, $multi_criteria ? $criteria_id++ : false);
+			$urid = $rwp->get_rating_id_by_element($post->ID, $rclass, $multi_criteria ? $criteria_id++ : false);
 			$rwp->QueueRatingData($urid, '', '', $criteria_rclass);
 		?>
 		<tr>

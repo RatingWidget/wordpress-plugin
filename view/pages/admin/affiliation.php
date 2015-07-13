@@ -29,7 +29,7 @@
 							<li><?php _e('Minimum payout is $100', WP_RW__ID); ?></li>
 							<li><?php _e('You must have a valid PayPal account to receive commission earnings, this is the only affiliate payout method we currently support.', WP_RW__ID); ?></li>
 						</ul>
-						<p><a id="apply-affiliate" class="button button-primary" title="<?php _e('Apply to become an affiliate', WP_RW__ID); ?>" href="#"><?php _e('Apply to become an affiliate', WP_RW__ID); ?></a></p>
+						<p><a id="apply-affiliate" class="button button-primary" title="<?php _e('Become an affiliate', WP_RW__ID); ?>" href="#"><?php _e('Apply to become an affiliate', WP_RW__ID); ?></a></p>
 					</div>
 				</div>
 			</div>
@@ -67,3 +67,4 @@
 		})(jQuery);
 	</script>
 </div>
+<?php fs_require_template('powered-by.php') ?>

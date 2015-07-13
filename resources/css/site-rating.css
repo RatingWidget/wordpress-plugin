@@ -89,6 +89,10 @@
     margin-bottom: 5px !important;
 	margin-left: 0 !important;
     height: 100px;
+    overflow: hidden;
+    box-sizing: content-box;
+    -moz-box-sizing: content-box;
+    -webkit-box-sizing: content-box;
 }
 
 .rw-wp-ui-top-rated-list-count 

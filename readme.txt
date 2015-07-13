@@ -1,17 +1,15 @@
-=== Rating-Widget: Star Rating System ===
+=== Rating-Widget: Star Review System ===
 Contributors: ratingwidget, svovaf, leorw, freemius
 Donate link: http://rating-widget.com/pricing/wordpress/
 Tags: rate, rating, ratings, vote, votes, voting, star, stars, like, dislike, thumbs, widget, widgets, star rating, thumb rating, rating platform, rating system, seo, post rating, comment rating, 5 star, five star, sidebar, comment, comments, post, posts, page, pages, google, admin, administrator, review, reviews, rich-snippets, plugin, plugins, ajax, buddypress, bbpress, social, javascript, js, wordpress, meta, woocommerce, jquery, contest, competition, voting contest, rtmedia
 Requires at least: 2.9
-Tested up to: 4.1
-Stable tag: 2.4.4
+Tested up to: 4.2
+Stable tag: 2.5.7
 License: GPLv2 or later
 
-The most popular Five Star Rating System on the web. User-friendly ratings for: posts, pages, comments, WooCommerce, BuddyPress and bbPress forums.
+The most popular Five Star Review System on the web. User-friendly ratings for: posts, pages, comments, WooCommerce, BuddyPress and bbPress forums.
 
 == Description ==
-
-#### New! Multi-Criteria Ratings is now fully supported!
 
 #### Ratings for your:
 * Posts
@@ -25,7 +23,7 @@ The most popular Five Star Rating System on the web. User-friendly ratings for: 
 
 [youtube https://www.youtube.com/watch?v=rRGKd_P5Oa4]
 
-The [Rating-Widget](http://rating-widget.com/wordpress-plugin/) **Star Ratings WordPress plugin** allows you to create and manage ratings from within your WordPress dashboard. You can embed thumb & star ratings into your posts, pages or comments. All Rating-Widget star ratings are fully customizable, cross-browser, support multi-language, CSS3 compliant and hosted by Rating-Widget.com. You can create unlimited thumb & star ratings and collect unlimited votes. The star ratings editor allows you to fully customize your ratings and its placement on your blog's layout. You can also avail of the 'Top Rated' widget that will allow you to place the widget in your sidebar. This widget will show you the top rated posts, pages and comments.
+The [Rating-Widget](http://rating-widget.com/wordpress-plugin/) **Star Ratings WordPress plugin** allows you to create and manage ratings from within your WordPress dashboard. You can embed thumb & star ratings into your posts, pages or comments. All Rating-Widget star ratings are fully customizable, cross-browser, support multi-language, CSS3 compliant. You can create unlimited thumb & star ratings and collect unlimited votes. The reviews editor allows you to fully customize your ratings and their placement on your blog's layout. You can also avail of the 'Top Rated' widget that will allow you to place the widget in your sidebar. This widget will show you the top rated posts, pages and comments.
 
 [youtube https://www.youtube.com/watch?v=xbo-dlXvB98]
 
@@ -33,7 +31,7 @@ The plugin has [PRO VERSIONS](http://rating-widget.com/pricing/wordpress/) with 
 
 > #### FREE:
 > * Unlimited ratings
-> * 2M pageviews / month
+> * 1M pageviews / month
 > * RatingWidget branded
 
 > #### STARTER - FREE FROM BRANDING:
@@ -183,6 +181,63 @@ If you didn't find a solution to your problem yet, check out our [WordPress Know
 The RatingWidget Team
 
 == Change Log ==
+= 2.5.7 - 2015-07-06 =
+* Fix: Fixed the HTML code for the Rich-Snippets.
+* Fix: Fixed a bug that shows warnings on the Activity Updates and Activity Comments tabs.
+
+= 2.5.6 - 2015-06-23 =
+* Fix: The users' ratings are now in sync with the server when the User Rating Type is Reputational.
+* Fix: Fixed a bug that shows warnings in the top-rated widget (cast the value produced by Urid2Id method to integer).
+
+= 2.5.5 - 2015-06-16 =
+* Fix: BuddyPress activities' ratings are now visible also when the user is not logged and the position is bottom.
+* Fix: Muti-criterion ratings are now visible when the summary rating is hidden.
+* Fix: Fixed a bug that shows warnings in the top-rated widget when displaying bbPress topics.
+
+= 2.5.4 - 2015-06-03 =
+* Fix: Fixed a bug in displaying bbPress' forum posts/replies in the Top-Rated widget.
+* Update: Updated Spanish translation.
+
+= 2.5.3 - 2015-05-12 =
+* Fix: Admin homepage stats widget is now visible only for admin users.
+* Fix: Fixed some dashboard warnings.
+
+= 2.5.2 - 2015-04-28 =
+* New: Adaptive Rich-Snippets for Pro users. We are now dynamically identify your theme's metadata to show only the required schema.org tags to prevent duplicates which breaks the schema.
+* New: Tested on WP 4.2 and fixed a small bug.
+* Fix: Fixed Rich-Snippets for multi-criteria ratings without aggregated summary rating shown.
+
+= 2.5.1 - 2015-04-16 =
+* New: Added new add-ons section with extended functionality.
+* Fix: Fixed admin settings category selection issue with jQuery.
+* Fix: Fixed warnings bug for Windows OS due to differences in filesystem path (slashes).
+* Fix: Removed "\" prefix for exceptions catching since namespaces are not supported on old PHP versions.
+* Optimization: If not registered, don't initiate any resources on site.
+* Fix: Fixed a bug in ApiCall error handler.
+
+= 2.5.0 - 2015-04-06 =
+* Update: Small text update on readme page.
+* Fix: Fixed posts/pages editor bug that was caused by JavaScript collision of Array.prototype.
+
+= 2.4.9 - 2015-03-31 =
+* New: Added 5-star ask from loyal users.
+* Fix: Fixed bbPress forum ratings for some users who installed version 2.4.5.
+* Fix: Fixed duplicate rating appearance for attachment pages.
+
+= 2.4.8 - 2015-03-25 =
+* Fix: Fixed the dashboard fatal error for our customers registered before mid 2014.
+
+= 2.4.7 - 2015-03-25 =
+* Fix: Fixed the dashboard fatal error when plugin still not activated - sorry :(
+
+= 2.4.6 - 2015-03-24 =
+* New: Added RatingWidget stats to the home dashboard.
+* New: Added multi-criteria rating to bbPress integration.
+* Fix: Fixed Slovenian translation.
+
+= 2.4.5 - 2015-03-18 =
+* Fix: Finally we managed to fix the BuddyPress Ajax comments ratings rendering. From now on, when user submit a new comment, the BuddyPress rating will appear right with the comment without the need to refresh the page.
+
 = 2.4.4 - 2015-03-02 =
 * New: Added affiliation section so you can apply to become RatingWidget's affiliate.
 * Fix: Fixed visibility settings for bbPress forum replies.
@@ -310,7 +365,7 @@ Update: Updated the FAQ section on the plugin's listing.
 * New: Added Rich-Snippets banner for non paying users.
 
 = 2.1.4 =
-* New: Finally Professional plan users can setup the visitor identification method to IP right from the dashboard.
+* New: Finally Professional plan users can setup the reviewer identification method to IP right from the dashboard.
 * Fix: Removed Upgrade tab from Account settings for premium users.
 
 = 2.1.3 =

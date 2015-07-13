@@ -1,0 +1,636 @@
+#rw-addons-page .entry-content {
+	margin-right: auto;
+}
+
+#rw-addons-page {
+	max-width: 1000px;
+	margin-right: auto;
+}
+
+#rw-addons-page .rw-ui-content-container {
+    width: 100%;
+}
+
+#rw-addons-page {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+#rw-addons-page * {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box
+}
+
+#poststuff .inside {
+	margin: 0;
+	padding: 20px;
+}
+
+.price-divider {
+    padding: 0 5px;
+}
+
+/* POPUP DIALOG */
+#rw-addons-page .ui-dialog-buttonpane {
+	padding: 10px;
+}
+
+#rw-addons-popup-dialog p {
+	margin: 1em;
+}
+
+.ui-dialog[aria-describedby="rw-addons-popup-dialog"] .ui-dialog-title {
+	width: 100%;
+}
+
+/* POPUP DIALOG - WORDPRESS 3.0 AND BELOW */
+.wp-custom-dialog .ui-dialog-titlebar {
+	background: #fcfcfc; 
+	border-bottom: 1px solid #dfdfdf; 
+	height: 36px; 
+	font-size: 18px;
+	line-height: 36px; 
+	padding: 0 36px 0 16px; 
+}
+
+.wp-custom-dialog .ui-dialog-content {
+	padding: 16px;
+	overflow: auto;
+}
+
+.wp-custom-dialog .ui-dialog-buttonpane {
+	background: #fcfcfc;
+	border-top: 1px solid #dfdfdf;
+	padding: 10px;
+}
+
+.wp-custom-dialog .ui-helper-clearfix:after {
+	clear: both;
+}
+
+.wp-custom-dialog .ui-helper-clearfix:after, .ui-helper-clearfix:before {
+  content: "";
+  display: table;
+  border-collapse: collapse;
+}
+
+.wp-custom-dialog .ui-dialog-buttonpane button {
+  margin-left: 10px;
+}
+
+.wp-custom-dialog .ui-button.ui-dialog-titlebar-close {
+	-webkit-box-shadow: none;
+	box-shadow: none;
+	color: #666;
+	position: absolute;
+	top: 0;
+	right: 0;
+	width: 36px;
+	height: 36px;
+	text-align: center;
+}
+
+.wp-custom-dialog .ui-dialog-buttonset {
+	float: right;
+}
+
+.wp-custom-dialog .ui-button {
+  display: inline-block;
+  text-decoration: none;
+  font-size: 13px;
+  line-height: 26px;
+  height: 28px;
+  margin: 0;
+  padding: 0 10px 1px;
+  cursor: pointer;
+  border-width: 1px;
+  border-style: solid;
+  -webkit-appearance: none;
+  -webkit-border-radius: 3px;
+  border-radius: 3px;
+  white-space: nowrap;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  color: #555;
+  border-color: #ccc;
+  background: #f7f7f7;
+  -webkit-box-shadow: inset 0 1px 0 #fff,0 1px 0 rgba(0,0,0,.08);
+  box-shadow: inset 0 1px 0 #fff,0 1px 0 rgba(0,0,0,.08);
+  vertical-align: top;
+}
+
+.wp-custom-dialog.ui-dialog {
+	background-color: #fff;
+	-webkit-box-shadow: 0 3px 6px rgba(0,0,0,.3);
+	box-shadow: 0 3px 6px rgba(0,0,0,.3);
+}
+
+.wp-custom-dialog .ui-dialog-titlebar-close {
+	text-decoration: none;
+  background: 0 0;
+  border: none;
+  -webkit-box-shadow: none;
+  box-shadow: none;
+  color: #666;
+  cursor: pointer;
+  display: block;
+  padding: 0;
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 36px;
+  height: 36px;
+  text-align: center;
+}
+
+.wp-custom-dialog .ui-dialog-titlebar-close:before {
+  font: 400 20px/1 dashicons;
+  vertical-align: top;
+  speak: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 36px;
+  width: 36px;
+  height: 36px;
+  content: '✖';
+}
+
+.wp-custom-dialog .ui-icon {
+  display: block;
+  text-indent: -99999px;
+  overflow: hidden;
+  background-repeat: no-repeat;
+}
+
+.wp-custom-dialog .ui-dialog-titlebar-close .ui-button-text {
+  display: none;
+}
+
+.wp-custom-dialog .ui-draggable .ui-dialog-titlebar {
+  cursor: move;
+}
+
+.wp-custom-dialog .ui-dialog-titlebar {
+  font-weight: normal;
+}
+
+.has-custom-dialog .ui-widget-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  min-height: 360px;
+  background: #000;
+  opacity: .7;
+  filter: alpha(opacity=70);
+  z-index: 100101;
+  width: 100%;
+  height: 100%;
+}
+
+/* ADMIN NOTICE */
+.addons-page-notice {
+	display:none;
+}
+
+.addons-page-notice:not(.success) {
+	color: green;
+	border-left-color: #e6db55;
+	font-weight: 700;
+	padding: 11px 15px 10px 15px;
+	text-align: left;
+	font-family: "Open Sans", sans-serif;
+}
+
+.addons-page-notice.updated .rw-slug b {
+	color: #004fc4;
+}
+
+.addons-page-notice.updated .rw-slug i {
+	color: #0094ff;
+}
+
+.addons-page-notice.updated .rw-sep {
+	color: #ffba00;
+}
+
+.addons-page-notice ul {
+	list-style-type: disc;
+	margin: 14px;
+	padding-left: 35px;
+}
+
+.addons-page-notice.success ul {
+	margin-bottom: 0;
+}
+
+/* CLEARFIX */
+.clearfix:before, .clearfix:after {
+    content: " ";
+    display: table;
+}
+
+.clearfix:after {
+    clear: both;
+}
+
+.clearfix {
+    *zoom: 1;
+}
+
+/* OVERLAY */
+.rw-addon-overlay {
+    color: #479ccf;
+    text-decoration: none;
+    -webkit-transition: all, 0.15s;
+    -moz-transition: all, 0.15s;
+    transition: all, 0.15s;
+}
+
+.rw-addon-overlay:hover {
+    color: #67b2ec;
+}
+
+.rw-addon-overlay:active, .rw-addon-overlay:hover {
+    outline: 0;
+}
+
+.rw-addon-overlay:focus {
+    background-color: rgba(124, 181, 216, 0.2);
+    border: 1px solid rgba(124, 181, 216, 0.5);
+    box-shadow: 0px 0px 6px #90c4e4;
+    outline: none;
+}
+
+.ie8 .rw-addon-overlay:focus {
+    border: solid 1px #98C0D8;
+}
+
+/* ADD-ONS GRID */
+.rw-addon-grid {
+    clear: both;
+	margin: 0;
+}
+
+.rw-addon-grid {
+    margin-left: -30px;
+}
+
+.rw-addon-grid .rw-addon {
+    width: 33.33%;
+}
+
+.rw-addon-grid .rw-addon:nth-child(2n+1) {
+    clear: none;
+}
+
+.rw-addon-grid .rw-addon:nth-child(3n+1) {
+    clear: left;
+}
+
+ul.rw-addon-grid > li {
+    background: transparent;
+}
+
+/* ADD-ONS */
+.rw-addon {
+    background-repeat: repeat-x;
+    background-color: #FFF;
+    float: left;
+    font-size: 14px;
+    height: 198px;
+    list-style: none;
+    margin: 0 0 30px 0;
+    padding: 0 0 0 30px;
+    position: relative;
+    width: 50%;
+}
+
+.rw-addon:nth-child(2n+1) {
+    clear: left;
+}
+
+.rw-addon:nth-child(7n), .rw-addon:nth-child(8n), .rw-addon:nth-child(9n) {
+	margin-bottom: 0;
+}
+
+.rw-addon .rw-addon-content-wrapper {
+    background-repeat: repeat-x;
+    display: block;
+    height: 198px;
+    overflow: hidden;
+    position: relative;
+    width: 100%;
+}
+
+.rw-addon .rw-addon-content-wrapper ul {
+    left: 0;
+    right: 0;
+    top: 0;
+    margin: 0;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+    -webkit-transition: all, 0.15s;
+    -moz-transition: all, 0.15s;
+    transition: all, 0.15s;
+}
+
+.rw-addon:not(.free):hover .purchase-text {
+	display:none;
+}
+
+.rw-addon:not(.free):hover .rw-addon-rating-reviews .button-primary {
+	display: inline;
+}
+
+.rw-addon:hover ul { 
+    top: -95px;
+}
+
+.rw-addon:hover div { 
+    background-position: 50% -100px;
+}
+
+.rw-addon .rw-addon-content {
+    -webkit-transition: all, 0.15s;
+    -moz-transition: all, 0.15s;
+    transition: all, 0.15s;
+    background-repeat: repeat-x;
+    background-position: 50% 0;
+    overflow: hidden;
+    height: 160px;
+    width: 100%;
+    background-color: #FFF
+}
+
+.rw-addon .rw-addon-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    -o-transition: none 0.3s ease-in-out 0s;
+    -webkit-transition: none 0.3s ease-in-out 0s;
+    -moz-transition: none 0.3s ease-in-out 0s;
+    display: block;
+    z-index: 99;
+    border: 1px solid #eee;
+    border-radius: 0 0 3px 3px;
+}
+
+.rw-addon .button-primary {
+	z-index: 100;
+	position: relative;
+}
+
+.rw-addon:hover .rw-addon-overlay {
+    -webkit-transition: none;
+    -moz-transition: none;
+    transition: none;
+    background-position: 50% 0;
+    border: 3px solid #479ccf;
+    margin-left: -2px;
+    margin-top: -2px
+}
+
+.rw-addon .rw-addon-banner {
+    height: 100px;
+    position: relative
+}
+
+.rw-addon .rw-addon-title {
+    margin: 10px 0 0 0;
+    height: 18px;
+    overflow: hidden;
+    color: #000;
+    white-space: nowrap;
+    text-overflow: ellipsis
+}
+
+.rw-addon .rw-addon-price,
+.rw-addon .rw-addon-description {
+    margin: 0 0 10px 0;
+    color: #666666
+}
+
+.rw-addon .rw-addon-rating {
+    background-color: #f9f9f9;
+    border-top: 1px solid #eee;
+    padding: 0 15px !important;
+	padding-right: 0 !important;
+    color: #999;
+    clear: both;
+    overflow: hidden;
+    min-height: 30px
+}
+
+.rw-addon .rw-addon-content-wrapper ul li {
+    list-style: none;
+    line-height: 18px;
+    padding: 0 15px;
+    width: 100%;
+    display: block
+}
+
+.rw-addon .rw-addon-rating-reviews .purchase-text {
+	line-height: 40px;
+}
+
+.rw-addon .rw-addon-rating-reviews {
+    float: right;
+    height: 40px;
+    display: block;
+	padding-right: 15px;
+}
+
+.rw-addon-inner {
+    position: relative;
+    max-width: 310px;
+    margin: 0 auto
+}
+
+.rw-addon .rw-addon-description {
+    background-color: #f9f9f9;
+    padding: 10px 15px 100px 15px !important;
+    border-top: 1px solid #eee
+}
+
+.rw-addon.free .rw-addon-price {
+	visibility: hidden;
+}
+
+/* RATING */
+.rw-addon-rating {
+	margin-bottom: 0;
+}
+
+.rw-addon-rating-reviews .button-primary {
+	display:none;
+}
+
+.appcard-rating-star, .appcard-rating-star span {
+    display: block;
+    float: left;
+    background-image: url(../img/add-ons/star-rating.png);
+    background-position: 0 0;
+    width: 65px;
+    height: 13px;
+	position: relative;
+}
+
+.appcard-rating-star {
+	top: 13px;
+}
+
+.appcard-rating-star span {
+	width: 0px;
+    background-position: 0 14px;
+}
+
+.appcard-rating-5 span {
+	width: 10%;
+}
+
+.appcard-rating-10 span {
+	width: 20%;
+}
+
+.appcard-rating-15 span {
+	width: 30%;
+}
+
+.appcard-rating-20 span {
+	width: 40%;
+}
+
+.appcard-rating-25 span {
+	width: 50%;
+}
+
+.appcard-rating-30 span {
+	width: 60%;
+}
+
+.appcard-rating-35 span {
+	width: 70%;
+}
+
+.appcard-rating-40 span {
+	width: 80%;
+}
+
+.appcard-rating-45 span {
+	width: 90%;
+}
+
+.appcard-rating-50 span {
+	width: 100%;
+}
+
+.rw-addon-rating-reviews .button-primary {
+	position: relative;
+	top: 6px !important;
+	margin-bottom: 0 !important;
+}
+
+/* FREEMIUS */
+#fs_promo_tab {
+	z-index: 101;
+}
+
+/* SCREENS */
+@media screen and (max-width: 1195px) {
+	.rw-addon .rw-addon-content {
+		background-position: left 0 top !important;
+	}
+}
+
+@media screen and (max-width: 945px) {
+	.rw-addon .rw-addon-content {
+		background-position: left 0 top !important;
+	}
+	
+    .rw-addon,
+    .rw-addon .rw-addon-content-wrapper,
+    .rw-addon .rw-addon-content {
+        height: auto;
+    }
+	
+    .rw-addon .rw-addon-content-wrapper ul {
+        position: relative;
+    }
+	
+	.rw-addon-rating-reviews .button-primary {
+		top: 5px !important;
+	}
+	
+    .rw-addon .rw-addon-description {
+        margin: 0;
+        padding-bottom: 15px !important;
+        height: 110px;
+    }
+	
+    .rw-addon:hover ul {
+        top: 0;
+    }
+	
+    .rw-addon:hover div {
+        background-position: 50% 0;
+    }
+}
+
+@media screen and (max-width: 815px) {
+    .rw-addon-grid .rw-addon {
+        width: 50%;
+    }
+	
+    .rw-addon-grid .rw-addon:nth-child(3n+1) {
+        clear: none;
+    }
+	
+    .rw-addon-grid .rw-addon:nth-child(2n+1) {
+        clear: both;
+    }
+	
+	.rw-addon-rating-reviews .button-primary {
+		top: 5px !important;
+	}
+	
+    .rw-addon .rw-addon-description {
+        height: 130px;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .rw-addon-grid {
+        margin-left: 0;
+    }
+	
+    .rw-addon,
+    .rw-addon-grid .rw-addon {
+        width: 100%;
+        padding-left: 0;
+    }
+	
+    .rw-addon:nth-child(3n+1),
+    .rw-addon:nth-child(2n+1),
+    .rw-addon-grid .rw-addon:nth-child(3n+1),
+    .rw-addon-grid .rw-addon:nth-child(2n+1) {
+        clear: none;
+    }
+	
+    .rw-addon-inner {
+        margin: 0 auto;
+    }
+	
+	.rw-addon-rating-reviews .button-primary {
+		top: 5px !important;
+	}
+	
+    .rw-addon .rw-addon-description {
+        height: auto;
+    }
+}
