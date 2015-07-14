@@ -908,8 +908,117 @@
 
 				// Rating-Widget main javascript load.
 				add_action('wp_footer', array(&$this, "rw_attach_rating_js"), 5);
+				
+				add_filter('comment_form_field_comment', array(&$this, "comment_form_field_comment"));
+				add_action('wp_insert_comment', array(&$this, 'wp_insert_comment'));
 			}
+			
+			function wp_insert_comment($id, $comment = false) {
+				RWLogger::LogEnterence("wp_insert_comment");
+				
+				if (isset($_POST['rw-vote']) && is_numeric($_POST['rw-vote'])) {
+					$vote = $_POST['rw-vote'];
+					
+					$options = $this->GetOption(WP_RW__COMMENTS_OPTIONS);
+					
+					
+					$fs   = rw_fs();
+					$site = $fs->get_site();
+					$user = $fs->get_user();
+					
+					$rate_related = array(
+						'urid' => $this->_getCommentRatingGuid($id),
+						'riid' => 0,
+						'rate' => ($vote)// ? 'true' : 'false')
+					);
 
+					RWLogger::Log('rate_related', json_encode($rate_related));
+					
+					$options = $this->GetOption(WP_RW__COMMENTS_OPTIONS);
+					if ( $options->type != 'star' ) {
+						unset($rate_related['rate']);
+						$rate_related['like'] = ($vote ? 'true' : 'false');
+					}
+					
+					$comment = get_comment($id);
+					$comment_author_id = $comment->user_id;
+					
+//					echo $comment_author_id . ';;;';
+					if ( $options->showAverage ) {
+//						if ($this->IsBBPressInstalled() || $this->IsBuddyPressInstalled()) {
+//							$user_options = $this->getOption(WP_RW__U)
+					//		$rate_related['uarid'] = $this->_getUserRatingGuid($comment_author_id);
+//						}
+					}
+					
+//					print_r($rate_related); exit;
+					$get_rating = array(
+						'ids' => '[' . $this->_getCommentRatingGuid($id) . ']'
+					);
+					
+					$params = array(
+						'v' => '2.0.5',
+	//					$sw = '';
+	//					$sh = '';
+	//					$sd = '';
+						'uid' => $site->public_key,
+						'huid' => $site->id,
+	//					'pcid' => '',
+						'by' => 'laccount',
+	//					$et = '';
+						'source' => 'wordpress',
+						'url' => urlencode(get_comment_link($id))
+	//					$cguid = '';
+					);
+					
+					if ( isset($_POST['rw-vid']) && is_numeric($_POST['rw-vid']) ) {
+						$params['vid'] = $_POST['rw-vid'];
+					}
+					
+					if ( isset($_POST['rw-vote-id']) && is_numeric($_POST['rw-vote-id']) ) {
+						$params['voteID'] = $_POST['rw-vote-id'];
+					}
+					
+					
+					// step1
+					$url = (add_query_arg(array_merge($params, $get_rating), 'http://js.rating-widget.com/api/rating/get.php'));
+					//echo $url.';;;';
+					$response = wp_remote_get($url, array('timeout' => 3));
+					$html = wp_remote_retrieve_body($response);
+					//echo '[html]' . $html . ']<br><br>';// exit;
+					//RWLogger::Log('url1', $url);
+					//RWLogger::Log('html1', $html);
+					
+					//echo '<pre>'; print_r(array_merge($rate_related, $params));
+					// step2
+					$url = (add_query_arg(array_merge($rate_related, $params), 'http://js.rating-widget.com/api/rating/rate.php'));
+					//echo $url.';;;';
+					$response = wp_remote_get($url, array('timeout' => 10));
+					$html = wp_remote_retrieve_body($response);
+					//echo '[html]' . $html . ']'; exit;
+					//RWLogger::Log('url2', $url);
+					//RWLogger::Log('html2', $html);
+					$a = '';
+					
+					RWLogger::LogDeparture("wp_insert_comment");
+				}
+			}
+			
+			function comment_form_field_comment($comment_field) {
+					
+					
+//				$_POST['rw-vote'] = 0;
+//				$this->wp_insert_comment(11);
+				
+				$options = array('show-report' => 'false', 'is-dummy' => 'true');
+				$html = $this->GetRatingHtml(4, 'comment', false, '', '', $options);
+				
+				//$html = '<div data-show-report="false" class="rw-ui-container" data-is-dummy="true" data-urid="4"></div>';
+				$comment_field .= $html;
+				
+				return $comment_field;
+			}
+			
 			private function IsHideOnMobile()
 			{
 				RWLogger::LogEnterence("IsHideOnMobile");
@@ -6136,7 +6245,7 @@
 								(function(){
 									var rw = document.createElement("script");
 									rw.type = "text/javascript"; rw.async = true;
-									rw.src = "<?php echo rw_get_js_url('external' . (!WP_RW__DEBUG ? '.min' : '') . '.php');?>?wp=<?php echo WP_RW__VERSION;?>";
+									rw.src = "http://answift.com/wp-content/plugins/rating-widget/external.js?wp=<?php echo WP_RW__VERSION;?>";
 									var s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(rw, s);
 								})();
 							}
