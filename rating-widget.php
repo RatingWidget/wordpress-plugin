@@ -909,114 +909,89 @@
 				// Rating-Widget main javascript load.
 				add_action('wp_footer', array(&$this, "rw_attach_rating_js"), 5);
 				
+				// Register the needed hooks for implementing comment "reviews" mode.
 				add_filter('comment_form_field_comment', array(&$this, "comment_form_field_comment"));
-				add_action('wp_insert_comment', array(&$this, 'wp_insert_comment'));
+				add_action('wp_insert_comment', array(&$this, 'insert_comment'));
 			}
 			
-			function wp_insert_comment($id, $comment = false) {
-				RWLogger::LogEnterence("wp_insert_comment");
-				
-				if (isset($_POST['rw-vote']) && is_numeric($_POST['rw-vote'])) {
-					$vote = $_POST['rw-vote'];
-					
-					$options = $this->GetOption(WP_RW__COMMENTS_OPTIONS);
-					
-					
-					$fs   = rw_fs();
-					$site = $fs->get_site();
-					$user = $fs->get_user();
-					
-					$rate_related = array(
-						'urid' => $this->_getCommentRatingGuid($id),
-						'riid' => 0,
-						'rate' => ($vote)// ? 'true' : 'false')
-					);
-
-					RWLogger::Log('rate_related', json_encode($rate_related));
-					
-					$options = $this->GetOption(WP_RW__COMMENTS_OPTIONS);
-					if ( $options->type != 'star' ) {
-						unset($rate_related['rate']);
-						$rate_related['like'] = ($vote ? 'true' : 'false');
-					}
-					
-					$comment = get_comment($id);
-					$comment_author_id = $comment->user_id;
-					
-//					echo $comment_author_id . ';;;';
-					if ( $options->showAverage ) {
-//						if ($this->IsBBPressInstalled() || $this->IsBuddyPressInstalled()) {
-//							$user_options = $this->getOption(WP_RW__U)
-					//		$rate_related['uarid'] = $this->_getUserRatingGuid($comment_author_id);
-//						}
-					}
-					
-//					print_r($rate_related); exit;
-					$get_rating = array(
-						'ids' => '[' . $this->_getCommentRatingGuid($id) . ']'
-					);
-					
-					$params = array(
-						'v' => '2.0.5',
-	//					$sw = '';
-	//					$sh = '';
-	//					$sd = '';
-						'uid' => $site->public_key,
-						'huid' => $site->id,
-	//					'pcid' => '',
-						'by' => 'laccount',
-	//					$et = '';
-						'source' => 'wordpress',
-						'url' => urlencode(get_comment_link($id))
-	//					$cguid = '';
-					);
-					
-					if ( isset($_POST['rw-vid']) && is_numeric($_POST['rw-vid']) ) {
-						$params['vid'] = $_POST['rw-vid'];
-					}
-					
-					if ( isset($_POST['rw-vote-id']) && is_numeric($_POST['rw-vote-id']) ) {
-						$params['voteID'] = $_POST['rw-vote-id'];
-					}
-					
-					
-					// step1
-					$url = (add_query_arg(array_merge($params, $get_rating), 'http://js.rating-widget.com/api/rating/get.php'));
-					//echo $url.';;;';
-					$response = wp_remote_get($url, array('timeout' => 3));
-					$html = wp_remote_retrieve_body($response);
-					//echo '[html]' . $html . ']<br><br>';// exit;
-					//RWLogger::Log('url1', $url);
-					//RWLogger::Log('html1', $html);
-					
-					//echo '<pre>'; print_r(array_merge($rate_related, $params));
-					// step2
-					$url = (add_query_arg(array_merge($rate_related, $params), 'http://js.rating-widget.com/api/rating/rate.php'));
-					//echo $url.';;;';
-					$response = wp_remote_get($url, array('timeout' => 10));
-					$html = wp_remote_retrieve_body($response);
-					//echo '[html]' . $html . ']'; exit;
-					//RWLogger::Log('url2', $url);
-					//RWLogger::Log('html2', $html);
-					$a = '';
-					
-					RWLogger::LogDeparture("wp_insert_comment");
-				}
-			}
-			
+			/**
+			 * Adds a dummy rating below the comment form's text area.
+			 *
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.5.8
+			 * 
+			 * @param string $comment_field The current HTML code for the comment field.
+			 * 
+			 * @return string The modified HTML code for the comment field.
+			 */
 			function comment_form_field_comment($comment_field) {
-					
-					
-//				$_POST['rw-vote'] = 0;
-//				$this->wp_insert_comment(11);
-				
+				// Hide report and make this rating a dummy.
 				$options = array('show-report' => 'false', 'is-dummy' => 'true');
-				$html = $this->GetRatingHtml(4, 'comment', false, '', '', $options);
 				
-				//$html = '<div data-show-report="false" class="rw-ui-container" data-is-dummy="true" data-urid="4"></div>';
+				$html = $this->GetRatingHtml("dummy-comment-rating", 'comment', false, '', '', $options);
+				
+				// Append the dummy rating's HTML to the current comment field's HTML.
 				$comment_field .= $html;
 				
 				return $comment_field;
+			}
+			
+			/**
+			 * Manually votes for the newly inserted comment.
+			 *
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.5.8
+			 * 
+			 * @param int $comment_id The newly inserted comment's ID.
+			 */
+			function insert_comment($comment_id) {
+				RWLogger::LogEnterence("insert_comment");
+				
+				if ( isset($_POST['rw-vote-data']) && !empty($_POST['rw-vote-data']) ) {
+					// Remove the slashes added by WordPress
+					$vote_data = stripslashes($_POST['rw-vote-data']);
+					
+					$request_params = (array) json_decode($vote_data);
+					if ( isset($request_params['url']) ) {
+						$request_params['url'] = urlencode($request_params['url']);
+					}
+					
+					$comment_urid = $this->_getCommentRatingGuid($comment_id);
+						
+					$remote_request_param = array(
+						'timeout' => 10
+					);
+
+					// Step 1: Submit the rating's ID to the server so that it will be created.
+					$submit_rating_params = array_merge(
+						array(
+							'ids' => "[$comment_urid]"
+						),
+						$request_params
+					);
+					
+					// Remove unneeded params
+					unset($submit_rating_params['rate']);
+					unset($submit_rating_params['like']);
+					unset($submit_rating_params['urid']);
+					unset($submit_rating_params['vid']);
+					unset($submit_rating_params['voteID']);
+					
+					$rating_endpoint = rw_get_js_url('api/rating/get.php');
+					$rating_endpoint = add_query_arg($submit_rating_params, $rating_endpoint);
+					$submit_rating_response = wp_remote_get($rating_endpoint, $remote_request_param);
+					$submit_rating_response_body = wp_remote_retrieve_body($submit_rating_response);
+
+					// Step 2: Submit the rating's vote data to the server.
+					$request_params['urid'] = $comment_urid;
+					
+					$vote_endpoint = rw_get_js_url('api/rating/rate.php');
+					$vote_endpoint = add_query_arg($request_params, $vote_endpoint);
+					$submit_vote_response = wp_remote_get($vote_endpoint, $remote_request_param);
+					$submit_vote_response_body = wp_remote_retrieve_body($submit_vote_response);
+
+					RWLogger::LogDeparture("insert_comment");
+				}
 			}
 			
 			private function IsHideOnMobile()
