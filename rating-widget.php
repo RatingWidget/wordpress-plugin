@@ -909,9 +909,13 @@
 				// Rating-Widget main javascript load.
 				add_action('wp_footer', array(&$this, "rw_attach_rating_js"), 5);
 				
-				// Register the needed hooks for implementing comment "reviews" mode.
-				add_filter('comment_form_field_comment', array(&$this, "comment_form_field_comment"));
-				add_action('wp_insert_comment', array(&$this, 'insert_comment'));
+				// Register the needed hooks for implementing the comment "Reviews" mode only when the selected mode in the "Comments" options tab is "Review".
+				if ( $this->is_comment_review_mode() ) {
+					// Filter the HTML for the comment form's text area so that we can append the dummy rating which will hold the temporary vote for the review.
+					add_filter('comment_form_field_comment', array(&$this, "comment_form_field_comment"));
+					
+					add_action('wp_insert_comment', array(&$this, 'wp_insert_comment'));
+				}
 			}
 			
 			/**
@@ -925,10 +929,15 @@
 			 * @return string The modified HTML code for the comment field.
 			 */
 			function comment_form_field_comment($comment_field) {
-				// Hide report and make this rating a dummy.
+				$urid = 'dummy-comment-rating';
+				
+				// Enqueue the rating data so that the dummy rating will have the correct styles set in the "Comments" options tab. 
+				$this->QueueRatingData($urid, '', '', 'comment');
+				
+				// Create a dummy rating and disable the report.
 				$options = array('show-report' => 'false', 'is-dummy' => 'true');
 				
-				$html = $this->GetRatingHtml("dummy-comment-rating", 'comment', false, '', '', $options);
+				$html = $this->GetRatingHtml($urid, 'comment', false, '', '', $options);
 				
 				// Append the dummy rating's HTML to the current comment field's HTML.
 				$comment_field .= $html;
@@ -937,16 +946,12 @@
 			}
 			
 			/**
-			 * Manually votes for the newly inserted comment.
-			 *
 			 * @author Leo Fajardo (@leorw)
 			 * @since 2.5.8
 			 * 
 			 * @param int $comment_id The newly inserted comment's ID.
 			 */
-			function insert_comment($comment_id) {
-				RWLogger::LogEnterence("insert_comment");
-				
+			function wp_insert_comment($comment_id) {
 				if ( isset($_POST['rw-vote-data']) && !empty($_POST['rw-vote-data']) ) {
 					// Remove the slashes added by WordPress
 					$vote_data = stripslashes($_POST['rw-vote-data']);
@@ -956,12 +961,48 @@
 						$request_params['url'] = urlencode($request_params['url']);
 					}
 					
-					$comment_urid = $this->_getCommentRatingGuid($comment_id);
-						
-					$remote_request_param = array(
-						'timeout' => 10
-					);
+					$this->set_comment_review_vote($comment_id, $request_params);
+				}
+			}
+			
+			/**
+			 * Manually votes for the newly inserted comment.
+			 *
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.5.8
+			 * 
+			 * @param int $comment_id The newly inserted comment's ID.
+			 * @param array $request_params The API request parameters.
+			 */
+			function set_comment_review_vote($comment_id, $request_params) {
+				RWLogger::LogEnterence("set_comment_review_vote");
+				
+				$comment_urid = $this->_getCommentRatingGuid($comment_id);
+				if ( RWLogger::IsOn() ) {
+					RWLogger::Log('comment_id', $comment_id);
+					RWLogger::Log('comment_urid', $comment_urid);
+				}
 
+				$request_params['urid'] = $comment_urid;
+
+				$remote_request_param = array(
+					'timeout' => 5
+				);
+
+				$comment_review_mode_settings = $this->get_comment_review_mode_settings();
+				$current_errors = $comment_review_mode_settings->errors;
+				if ( RWLogger::IsOn() ) {
+					RWLogger::Log('current_errors', json_encode($current_errors));
+				}
+				
+				$rating_submitted = false;
+				
+				if ( isset($current_errors[$comment_id]) ) {
+					$error = $current_errors[$comment_id];
+					$rating_submitted = isset($error['api_endpoint']) && false !== strpos($error['api_endpoint'], 'rate.php');
+				}
+				
+				if ( !$rating_submitted ) {
 					// Step 1: Submit the rating's ID to the server so that it will be created.
 					$submit_rating_params = array_merge(
 						array(
@@ -969,28 +1010,118 @@
 						),
 						$request_params
 					);
-					
+
 					// Remove unneeded params
 					unset($submit_rating_params['rate']);
 					unset($submit_rating_params['like']);
 					unset($submit_rating_params['urid']);
 					unset($submit_rating_params['vid']);
 					unset($submit_rating_params['voteID']);
-					
+
 					$rating_endpoint = rw_get_js_url('api/rating/get.php');
 					$rating_endpoint = add_query_arg($submit_rating_params, $rating_endpoint);
 					$submit_rating_response = wp_remote_get($rating_endpoint, $remote_request_param);
-					$submit_rating_response_body = wp_remote_retrieve_body($submit_rating_response);
-
+					$rating_submitted = $this->validate_submit_review_rating_api_response(array(
+						'comment_id' => $comment_id,
+						'request_params' => $request_params,
+						'api_endpoint' => $rating_endpoint,
+						'api_response' => $submit_rating_response
+					));
+				}
+				
+				if ( $rating_submitted ) {
 					// Step 2: Submit the rating's vote data to the server.
-					$request_params['urid'] = $comment_urid;
-					
 					$vote_endpoint = rw_get_js_url('api/rating/rate.php');
 					$vote_endpoint = add_query_arg($request_params, $vote_endpoint);
 					$submit_vote_response = wp_remote_get($vote_endpoint, $remote_request_param);
-					$submit_vote_response_body = wp_remote_retrieve_body($submit_vote_response);
 
-					RWLogger::LogDeparture("insert_comment");
+					$vote_submitted = $this->validate_submit_review_rating_api_response(array(
+						'comment_id' => $comment_id,
+						'request_params' => $request_params,
+						'api_endpoint' => $vote_endpoint,
+						'api_response' => $submit_vote_response
+					));
+					
+					if ( $vote_submitted ) {
+						if ( isset($current_errors[$comment_id]) ) {
+							unset($current_errors[$comment_id]);
+							$comment_review_mode_settings->errors = $current_errors;
+							$this->SetOption(WP_RW__DB_OPTION_COMMENT_REVIEW_MODE_SETTINGS, $comment_review_mode_settings);
+							$this->_options_manager->store();
+						}
+					}
+				}
+
+				RWLogger::LogDeparture("set_comment_review_vote");
+			}
+			
+			/**
+			 * Validates the API request's response and saves the comment ID and the errors to the database.
+			 * 
+			 * @author Leo Fajardo (leorw)
+			 * @since 2.5.8
+			 * 
+			 * @param array $api_request_info The API request parameters.
+			 * 
+			 * @return boolean True for success, false for failure.
+			 */
+			function validate_submit_review_rating_api_response($api_request_info) {
+				$comment_id = $api_request_info['comment_id'];
+				$request_params = $api_request_info['request_params'];
+				$api_endpoint = $api_request_info['api_endpoint'];
+				$api_response = $api_request_info['api_response'];
+				
+				$new_errors = array();
+				
+				if ( is_wp_error($api_response) ) {
+					$new_errors = $api_response->errors;
+				} else if ( 200 !== wp_remote_retrieve_response_code($api_response) ) {
+					// Follow the way the WP_Error object saves the error messages to make the code simpler.
+					$new_errors['invalid_response_code'] = array(
+						'Invalid response code'
+					);
+				} else {
+					$response_body = wp_remote_retrieve_body($api_response);
+
+					$json_obj = false;
+					
+					// Retrieve the JSON string that is passed as a parameter to a callback, e.g.: RW._rateCallback(JSON_STRING, ...);
+					if ( preg_match("/(?<={)(.*)(?=})/", $response_body, $matches) ) {
+						if ( !empty($matches) ) {
+							$json_str = '{' . $matches[0] . '}';
+							$json_obj = json_decode($json_str);
+						}
+					}
+
+					if ( !is_object($json_obj) ) {
+						$new_errors['invalid_response_string'] = array(
+							'Invalid response string'
+						);
+					} else if ( !$json_obj->success ) {
+						$new_errors['api_request_failed'] = array(
+							$json_obj->message
+						);
+					}
+				}
+				
+				$comment_review_mode_settings = $this->get_comment_review_mode_settings();
+				$current_errors = $comment_review_mode_settings->errors;
+				
+				if ( empty($new_errors) ) {
+					return true;
+				} else {
+					$current_errors[$comment_id] = array(
+						'request_params' => $request_params,
+						'api_request_errors' => $new_errors,
+						'api_endpoint' => $api_endpoint
+					);
+					
+					$comment_review_mode_settings->errors = $current_errors;
+					
+					$this->SetOption(WP_RW__DB_OPTION_COMMENT_REVIEW_MODE_SETTINGS, $comment_review_mode_settings);
+					$this->_options_manager->store();
+					
+					return false;
 				}
 			}
 			
@@ -1638,6 +1769,10 @@
 							'url' => false,
 							'description' => false
 						)
+					),
+					WP_RW__DB_OPTION_COMMENT_REVIEW_MODE_SETTINGS => (object) array(
+						'is_comment_review_mode' => false,
+						'errors' => array()
 					),
 					WP_RW__IS_ACCUMULATED_USER_RATING => true,
 
@@ -2318,6 +2453,23 @@
 				}
 				
 				return $rich_snippet_settings;
+			}
+			
+			/**
+			 * Retrieves the current comment review mode settings.
+			 * 
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.5.2
+			 * 
+			 * @return object
+			 */
+			function get_comment_review_mode_settings() {
+				$comment_review_mode_settings = $this->GetOption(WP_RW__DB_OPTION_COMMENT_REVIEW_MODE_SETTINGS);
+				if (!$comment_review_mode_settings) {
+					$comment_review_mode_settings = new stdClass();
+				}
+				
+				return $comment_review_mode_settings;
 			}
 
 			/**
@@ -4102,6 +4254,11 @@
 				if ('users' === $selected_key && $this->IsBBPressInstalled())
 					$rw_is_user_accumulated = $this->GetOption(WP_RW__IS_ACCUMULATED_USER_RATING);
 
+				// Comment "Reviews" mode support.
+				if ( 'comments' === $selected_key ) {
+					$rw_is_comment_review_mode = $this->is_comment_review_mode();
+				}
+				
 				// Reset categories.
 				$rw_categories = array();
 
@@ -4207,6 +4364,15 @@
 					{
 						$rw_is_user_accumulated = ('true' == (in_array($_POST['rw_accumulated_user_rating'], array('true', 'false')) ? $_POST['rw_accumulated_user_rating'] : 'true'));
 						$this->SetOption(WP_RW__IS_ACCUMULATED_USER_RATING, $rw_is_user_accumulated);
+					}
+
+					// Comment "Reviews" mode support
+					if ( 'comments' === $selected_key && isset($_POST['rw_comment_review_mode']) ) {
+						$rw_is_comment_review_mode = ('true' == (in_array($_POST['rw_comment_review_mode'], array('true', 'false')) ? $_POST['rw_comment_review_mode'] : 'false'));
+						
+						$comment_review_mode_settings = $this->get_comment_review_mode_settings();
+						$comment_review_mode_settings->is_comment_review_mode = $rw_is_comment_review_mode;
+						$this->SetOption(WP_RW__DB_OPTION_COMMENT_REVIEW_MODE_SETTINGS, $comment_review_mode_settings);
 					}
 
 					/* Visibility settings
@@ -4370,9 +4536,11 @@
 				$this->settings->custom_settings_enabled = $rw_custom_settings_enabled;
 				$this->settings->custom_settings = $rw_custom_settings;
 				// Accumulated user ratings support.
-				if ('users' === $selected_key && $this->IsBBPressInstalled())
+				if ( 'users' === $selected_key && $this->IsBBPressInstalled() ) {
 					$this->settings->is_user_accumulated = $rw_is_user_accumulated;
-
+				} else if ( 'comments' === $selected_key ) { // Comment "Reviews" mode support.
+					$this->settings->is_comment_review_mode = $rw_is_comment_review_mode;
+				}
 				?>
 				<div class="wrap rw-dir-ltr rw-wp-container">
 					<h2 class="nav-tab-wrapper rw-nav-tab-wrapper">
@@ -4439,8 +4607,11 @@
 									</div>
 								</div>
 								<?php
-									if ('users' === $selected_key)
+									if ( 'users' === $selected_key ) {
 										rw_require_once_view('user_rating_type_options.php');
+									} else if ( 'comments' === $selected_key ) {
+										rw_require_once_view('comment_rating_mode_options.php');
+									}
 
 									rw_require_once_view('options.php');
 									rw_require_once_view('availability_options.php');
@@ -5137,7 +5308,7 @@
 
 				if (!$this->IsVisibleCommentRating($comment))
 					return $content;
-
+				
 				$ratingHtml = $this->EmbedRatingByComment($comment, 'comment', $this->comment_align->hor);
 
 				return ('top' === $this->comment_align->ver) ?
@@ -7177,6 +7348,23 @@
 					$pOptions['uarid'] = $this->_getUserRatingGuid( $pComment->user_id );
 				}
 
+				$comment_review_mode_settings = $this->get_comment_review_mode_settings();
+				if ( RWLogger::IsOn() ) {
+					RWLogger::Log('comment_review_mode_options', json_encode($comment_review_mode_settings));
+				}
+				
+				$current_errors = $comment_review_mode_settings->errors;
+				
+				if ( isset($current_errors[$pComment->comment_ID]) ) {
+					$error = $current_errors[$pComment->comment_ID];
+					$this->set_comment_review_vote($pComment->comment_ID, $error['request_params']);
+				}
+				
+				// If "Reviews" mode, set the rating to read-only so that no other people can vote for the comment.
+				if ( $comment_review_mode_settings->is_comment_review_mode ) {
+					$pOptions['read-only'] = 'true';
+				}
+				
 				return $this->EmbedRating(
 					$pComment->comment_ID,
 					(int) $pComment->user_id,
@@ -7195,6 +7383,19 @@
 					return false;
 
 				return $this->GetOption(WP_RW__IS_ACCUMULATED_USER_RATING);
+			}
+
+			/**
+			 * Checks whether the selected rating mode in the "Comments" options tab is "Review".
+			 * 
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.5.8
+			 * 
+			 * @return boolean
+			 */
+			function is_comment_review_mode() {
+				$comment_review_mode_settings = $this->get_comment_review_mode_settings();
+				return $comment_review_mode_settings->is_comment_review_mode;
 			}
 
 			function GetRatingDataByRatingID($pRatingID, $pAccuracy = false)
