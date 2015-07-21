@@ -3,7 +3,7 @@
 	Plugin Name: Rating-Widget: Star Review System
 	Plugin URI: http://rating-widget.com/wordpress-plugin/
 	Description: Create and manage Rating-Widget ratings in WordPress.
-	Version: 2.5.7
+	Version: 2.5.8
 	Author: Rating-Widget
 	Author URI: http://rating-widget.com/wordpress-plugin/
 	License: GPLv2
@@ -5150,27 +5150,21 @@
 								}
 								
 								if ( !$properties_availability['description'] ) {
-									$post_excerpt = '';
-									
-									if ( $post ) {
-										$post_excerpt =	$this->GetPostExcerpt($post);
-									}
+									$post_excerpt =	$this->GetPostExcerpt($post);
 
 									$rating_html .= '<meta itemprop="description" content="' . esc_attr($post_excerpt) . '" />';
 								}
 							}
 							
-							if ( $post ) {
-								if ( !$properties_availability['image'] ) {
-									$image_url = $this->get_rich_snippet_default_image($post->ID);
-									$rating_html .= '<meta itemprop="image" content="' . $image_url . '" />';
-								}
-								
-								if ( !$properties_availability['datePublished'] ) {
-									// Use 'c' for ISO 8601 date format.
-									$iso8601_date = mysql2date( 'c', $post->post_date );
-									$rating_html .= '<meta itemprop="datePublished" content="' . $iso8601_date . '" />';
-								}
+							if ( !$properties_availability['image'] ) {
+								$image_url = $this->get_rich_snippet_default_image($post->ID);
+								$rating_html .= '<meta itemprop="image" content="' . $image_url . '" />';
+							}
+
+							if ( !$properties_availability['datePublished'] ) {
+								// Use 'c' for ISO 8601 date format.
+								$iso8601_date = mysql2date( 'c', $post->post_date );
+								$rating_html .= '<meta itemprop="datePublished" content="' . $iso8601_date . '" />';
 							}
 							
 							if ( !$properties_availability['url'] && !empty($pPermalink) ) {
