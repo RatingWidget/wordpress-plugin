@@ -5138,9 +5138,7 @@
 								$rating_html = '<div itemscope itemtype="http://schema.org/Article">' . $rating_html;
 							}
 							
-							$wp_post_id = $this->Urid2PostId($pUrid);
-							
-							$wp_post = get_post($wp_post_id);
+							global $post;
 									
 							if ( !empty($pTitle) ) {
 								if ( !$properties_availability['name'] ) {
@@ -5154,23 +5152,23 @@
 								if ( !$properties_availability['description'] ) {
 									$post_excerpt = '';
 									
-									if ( $wp_post ) {
-										$post_excerpt =	$this->GetPostExcerpt($wp_post);
+									if ( $post ) {
+										$post_excerpt =	$this->GetPostExcerpt($post);
 									}
 
 									$rating_html .= '<meta itemprop="description" content="' . esc_attr($post_excerpt) . '" />';
 								}
 							}
 							
-							if ( $wp_post ) {
+							if ( $post ) {
 								if ( !$properties_availability['image'] ) {
-									$image_url = $this->get_rich_snippet_default_image($wp_post_id);
+									$image_url = $this->get_rich_snippet_default_image($post->ID);
 									$rating_html .= '<meta itemprop="image" content="' . $image_url . '" />';
 								}
 								
 								if ( !$properties_availability['datePublished'] ) {
 									// Use 'c' for ISO 8601 date format.
-									$iso8601_date = mysql2date( 'c', $wp_post->post_date );
+									$iso8601_date = mysql2date( 'c', $post->post_date );
 									$rating_html .= '<meta itemprop="datePublished" content="' . $iso8601_date . '" />';
 								}
 							}
