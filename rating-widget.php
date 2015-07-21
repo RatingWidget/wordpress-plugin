@@ -909,26 +909,46 @@
 				// Rating-Widget main javascript load.
 				add_action('wp_footer', array(&$this, "rw_attach_rating_js"), 5);
 				
-				// Register the needed hooks for implementing the comment "Reviews" mode only when the selected mode in the "Comments" options tab is "Review".
+				// Register the needed hooks for implementing the comment "Reviews" mode (when the selected mode in the "Comments" options tab is "Review").
 				if ( $this->is_comment_review_mode() ) {
-					// Filter the HTML for the comment form's text area so that we can append the dummy rating which will hold the temporary vote for the review.
-					add_filter('comment_form_field_comment', array(&$this, "comment_form_field_comment"));
+					global $wp_version;
+					if ($wp_version < 3 ) {
+						add_action('comment_form', array(&$this, 'add_comment_form_rating'));
+					} else {
+						add_filter('comment_form_defaults', array(&$this, 'add_comment_form_rating'));
+					}
 					
 					add_action('wp_insert_comment', array(&$this, 'wp_insert_comment'));
 				}
 			}
 			
 			/**
-			 * Adds a dummy rating below the comment form's text area.
+			 * Adds a rating in the comment form when the comment's rating mode is set to "Review".
 			 *
 			 * @author Leo Fajardo (@leorw)
-			 * @since 2.5.8
+			 * @since 2.5.9
 			 * 
-			 * @param string $comment_field The current HTML code for the comment field.
-			 * 
-			 * @return string The modified HTML code for the comment field.
+			 * @param int|array $defaults
 			 */
-			function comment_form_field_comment($comment_field) {
+			function add_comment_form_rating($array_or_post_id) {
+				$comment_form_rating_html = $this->get_comment_form_rating_html();
+				
+				if ( is_array($array_or_post_id) ) {
+					$array_or_post_id['submit_field'] = $comment_form_rating_html . $array_or_post_id['submit_field'];
+					return $array_or_post_id;
+				} else {
+					echo $comment_form_rating_html;
+				}
+			}
+			
+			/**
+			 * Generates the HTML for the comment form's rating when in review mode.
+			 *
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.5.9
+			 * 
+			 */
+			function get_comment_form_rating_html() {
 				$urid = 'dummy-comment-rating';
 				
 				// Enqueue the rating data so that the dummy rating will have the correct styles set in the "Comments" options tab. 
@@ -939,15 +959,14 @@
 				
 				$html = $this->GetRatingHtml($urid, 'comment', false, '', '', $options);
 				
-				// Append the dummy rating's HTML to the current comment field's HTML.
-				$comment_field .= $html;
+				$html = '<p>' . $html . '</p>';
 				
-				return $comment_field;
+				return $html;
 			}
 			
 			/**
 			 * @author Leo Fajardo (@leorw)
-			 * @since 2.5.8
+			 * @since 2.5.9
 			 * 
 			 * @param int $comment_id The newly inserted comment's ID.
 			 */
@@ -969,7 +988,7 @@
 			 * Manually votes for the newly inserted comment.
 			 *
 			 * @author Leo Fajardo (@leorw)
-			 * @since 2.5.8
+			 * @since 2.5.9
 			 * 
 			 * @param int $comment_id The newly inserted comment's ID.
 			 * @param array $request_params The API request parameters.
@@ -1059,7 +1078,7 @@
 			 * Validates the API request's response and saves the comment ID and the errors to the database.
 			 * 
 			 * @author Leo Fajardo (leorw)
-			 * @since 2.5.8
+			 * @since 2.5.9
 			 * 
 			 * @param array $api_request_info The API request parameters.
 			 * 
@@ -7185,7 +7204,7 @@
 					$pOptions['read-only'] = 'true';
 				}
 				
-				if (!$this->has_multirating_options($pElementClass)) {
+				if ( !$this->has_multirating_options($pElementClass) || ($this->is_comment_review_mode() && 'comment' === $pElementClass) ) {
 					RWLogger::Log('EmbedRating', 'Not multi-criteria rating');
 
 					return $this->EmbedRawRating($urid, $pTitle, $pPermalink, $pElementClass, $pAddSchema, $pHorAlign, $pCustomStyle, $pOptions);
@@ -7389,7 +7408,7 @@
 			 * Checks whether the selected rating mode in the "Comments" options tab is "Review".
 			 * 
 			 * @author Leo Fajardo (@leorw)
-			 * @since 2.5.8
+			 * @since 2.5.9
 			 * 
 			 * @return boolean
 			 */

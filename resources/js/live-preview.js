@@ -21,6 +21,10 @@
         handleRatingReadOnlyStateChange();
         handleRatingTypeChange();
 
+		$('#rw_comment_rating_mode_settings').on('click', '.rw-ui-img-radio-review-mode', function() {
+			$('#rw_rate_type .rw-ui-img-radio:first').click();
+		});
+		
         $('.rw-add-rating').on('click', addRatingCriterion);
 
         $('.show-summary-rating').on('click', function() {
