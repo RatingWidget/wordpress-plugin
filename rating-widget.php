@@ -3,7 +3,7 @@
 	Plugin Name: Rating-Widget: Star Review System
 	Plugin URI: http://rating-widget.com/wordpress-plugin/
 	Description: Create and manage Rating-Widget ratings in WordPress.
-	Version: 2.5.7
+	Version: 2.5.8
 	Author: Rating-Widget
 	Author URI: http://rating-widget.com/wordpress-plugin/
 	License: GPLv2
@@ -1399,7 +1399,7 @@
 					$update_rich_snippet_settings = true;
 				} else {
 					// Update the rich snippet settings if one week has already passed since the last update.
-					if (time() - $rich_snippet_settings->timestamp > WP_RW__TIME_WEEK_IN_SEC) {
+					if ( time() - $rich_snippet_settings->timestamp > WP_RW__TIME_WEEK_IN_SEC ) {
 						$update_rich_snippet_settings = true;
 					}
 				}
@@ -1784,6 +1784,9 @@
 						'timestamp' => false,
 						'type_wrapper_available' => false,
 						'properties_availability' => array(
+							'headline' => false,
+							'image' => false,
+							'datePublished' => false,
 							'name' => false,
 							'url' => false,
 							'description' => false
@@ -2466,9 +2469,16 @@
 					$rich_snippet_settings = new stdClass();
 				}
 				
+				$default_rich_snippet_settings = $this->_OPTIONS_DEFAULTS[WP_RW__DB_OPTION_RICH_SNIPPETS_SETTINGS];
+				
 				if ( !isset($rich_snippet_settings->properties_availability) ) {
-					$default_rich_snippet_settings = $this->_OPTIONS_DEFAULTS[WP_RW__DB_OPTION_RICH_SNIPPETS_SETTINGS];
 					$rich_snippet_settings->properties_availability = $default_rich_snippet_settings->properties_availability;
+				} else {
+					foreach ($default_rich_snippet_settings->properties_availability as $name => $value ) {
+						if ( !isset($rich_snippet_settings->properties_availability[$name]) ) {
+							$rich_snippet_settings->properties_availability[$name] = $value;
+						}
+					}
 				}
 				
 				return $rich_snippet_settings;
@@ -5402,21 +5412,33 @@
 								$rating_html = '<div itemscope itemtype="http://schema.org/Article">' . $rating_html;
 							}
 							
+							global $post;
+									
 							if ( !empty($pTitle) ) {
 								if ( !$properties_availability['name'] ) {
 									$rating_html .= '<meta itemprop="name" content="' . esc_attr($pTitle) . '" />';
 								}
 								
+								if ( !$properties_availability['headline'] ) {
+									$rating_html .= '<meta itemprop="headline" content="' . esc_attr($pTitle) . '" />';
+								}
+								
 								if ( !$properties_availability['description'] ) {
-									$post_excerpt = '';
-									
-									$wp_post = get_post($this->Urid2PostId($pUrid));
-									if ( $wp_post ) {
-										$post_excerpt =	$this->GetPostExcerpt($wp_post);
-									}
+									$post_excerpt =	$this->GetPostExcerpt($post);
 
 									$rating_html .= '<meta itemprop="description" content="' . esc_attr($post_excerpt) . '" />';
 								}
+							}
+							
+							if ( !$properties_availability['image'] ) {
+								$image_url = $this->get_rich_snippet_default_image($post->ID);
+								$rating_html .= '<meta itemprop="image" content="' . $image_url . '" />';
+							}
+
+							if ( !$properties_availability['datePublished'] ) {
+								// Use 'c' for ISO 8601 date format.
+								$iso8601_date = mysql2date( 'c', $post->post_date );
+								$rating_html .= '<meta itemprop="datePublished" content="' . $iso8601_date . '" />';
 							}
 							
 							if ( !$properties_availability['url'] && !empty($pPermalink) ) {
@@ -5443,6 +5465,59 @@
 				return $rating_html;
 			}
 
+			/**
+			 * Retrieves the post's featured image or an image from the gallery if the featured image is not available. Returns a placeholder image if no image is retrieved.
+			 * 
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.5.8
+			 * 
+			 * @param int $wp_post_id The ID of a WordPress post.
+			 * 
+			 * @return string
+			 */
+			function get_rich_snippet_default_image($wp_post_id) {
+				// Retrieve the post's featured image URL if available.
+				$image_url = $this->GetPostFeaturedImage($wp_post_id);
+				
+				// Retrieve an image from the gallery if the post's featured image is not available.
+				if ( empty($image_url) ) {
+					$image_url = $this->get_attachment_image();
+				}
+				
+				// Retrieve the URL of the placeholder image if there is no available image from the site.
+				if ( empty($image_url) ) {
+					$image_url = rw_get_plugin_img_path('top-rated/placeholder.png');
+				}
+				
+				return $image_url;
+			}
+			
+			/**
+			 * Retrieves an image from the gallery and returns its URL.
+			 * 
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.5.8
+			 * 
+			 * @return string
+			 */
+			function get_attachment_image() {
+				$images = get_posts( array(
+					'post_type' => 'attachment',
+					'posts_per_page' => 1,
+					'post_status' => 'inherit',
+					'post_mime_type' => 'image'
+				) );
+
+				$image_url = '';
+				
+				if ( is_array($images) && !empty($images) ) {
+					$image = $images[0];
+					$image_url = $image->guid;
+				}
+				
+				return $image_url;
+			}
+			
 			function InBuddyPressPage()
 			{
 				if (!$this->IsBuddyPressInstalled())
