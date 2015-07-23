@@ -1004,10 +1004,18 @@
 				
 				// Remove the slashes added by WordPress
 				$vote_data = stripslashes($_POST['rw-vote-data']);
+				
+				// Enclose numbers with double quotes to prevent json_decode from converting them into exponential forms.
+				$vote_data = preg_replace('/:(\d+)/', ':"${1}"', $vote_data);
 
 				$request_params = (array) json_decode($vote_data);
 				if ( isset($request_params['url']) ) {
 					$request_params['url'] = urlencode($request_params['url']);
+				}
+
+				if ( isset($request_params['like']) ) {
+					// Convert boolean value to string in order to preserve the value when passed in the HTTP request.
+					$request_params['like'] = $request_params['like'] ? 'true' : 'false';
 				}
 
 				$this->set_comment_review_vote($comment_id, $request_params);
@@ -1161,7 +1169,7 @@
 						);
 					} else if ( !$json_obj->success ) {
 						$errors['api_request_failed'] = array(
-							$json_obj->message
+							$json_obj->msg
 						);
 					}
 				}
