@@ -3,7 +3,7 @@
 	Plugin Name: Rating-Widget: Star Review System
 	Plugin URI: http://rating-widget.com/wordpress-plugin/
 	Description: Create and manage Rating-Widget ratings in WordPress.
-	Version: 2.5.8
+	Version: 2.5.9
 	Author: Rating-Widget
 	Author URI: http://rating-widget.com/wordpress-plugin/
 	License: GPLv2
@@ -913,32 +913,63 @@
 				if ( $this->is_comment_review_mode() ) {
 					global $wp_version;
 					if ($wp_version < 3 ) {
-						add_action('comment_form', array(&$this, 'add_comment_form_rating'));
+						add_action('comment_form', array(&$this, 'add_rating_after_comment_form_submit_button'));
 					} else {
-						add_filter('comment_form_defaults', array(&$this, 'add_comment_form_rating'));
+						add_filter('comment_form_defaults', array(&$this, 'add_rating_before_comment_form_submit_button'));
 					}
 					
-					add_action('wp_insert_comment', array(&$this, 'wp_insert_comment'));
+					add_action('wp_insert_comment', array(&$this, 'create_comment_review_rating'));
 				}
 			}
 			
 			/**
-			 * Adds a rating in the comment form when the comment's rating mode is set to "Review".
+			 * Adds a rating before the comment form's submit button when the comment's rating mode is set to "Review".
 			 *
 			 * @author Leo Fajardo (@leorw)
 			 * @since 2.5.9
 			 * 
-			 * @param int|array $defaults
+			 * @param array $comment_form_defaults
 			 */
-			function add_comment_form_rating($array_or_post_id) {
-				$comment_form_rating_html = $this->get_comment_form_rating_html();
+			function add_rating_before_comment_form_submit_button($comment_form_defaults) {
+				RWLogger::LogEnterence('add_rating_before_comment_form_submit_button');
 				
-				if ( is_array($array_or_post_id) ) {
-					$array_or_post_id['submit_field'] = $comment_form_rating_html . $array_or_post_id['submit_field'];
-					return $array_or_post_id;
-				} else {
-					echo $comment_form_rating_html;
+				if ( RWLogger::IsOn() ) {
+					RWLogger::Log('comment_form_defaults', json_encode($comment_form_defaults));
 				}
+
+				if ( isset($comment_form_defaults['submit_field']) ) {
+					if ( RWLogger::IsOn() ) {
+						RWLogger::Log('Add rating above the submit field');
+					}
+					
+					$comment_form_defaults['submit_field'] = $this->get_comment_form_rating_html() . $comment_form_defaults['submit_field'];
+				} else if ( isset($comment_form_defaults['comment_notes_after']) ) {
+					if ( RWLogger::IsOn() ) {
+						RWLogger::Log('Add rating below the notes');
+					}
+					
+					$comment_form_defaults['comment_notes_after'] .= $this->get_comment_form_rating_html();
+				} else {
+					// HTML code for both the submit field and notes are not available. Probably the theme is incompatible.
+					if ( RWLogger::IsOn() ) {
+						RWLogger::Log('Incompatible comment form');
+					}
+				}
+				
+				RWLogger::LogDeparture('add_rating_before_comment_form_submit_button');
+				return $comment_form_defaults;
+			}
+			
+			/**
+			 * Adds a rating after the comment form's submit button when the comment's rating mode is set to "Review". This is for WordPress version 2.9 and below.
+			 *
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.5.9
+			 */
+			function add_rating_after_comment_form_submit_button() {
+				RWLogger::LogEnterence('add_rating_after_comment_form_submit_button');
+				
+				echo $this->get_comment_form_rating_html();
 			}
 			
 			/**
@@ -955,33 +986,31 @@
 				$this->QueueRatingData($urid, '', '', 'comment');
 				
 				// Create a dummy rating and disable the report.
-				$options = array('show-report' => 'false', 'is-dummy' => 'true');
-				
-				$html = $this->GetRatingHtml($urid, 'comment', false, '', '', $options);
-				
-				$html = '<p>' . $html . '</p>';
-				
-				return $html;
+				return $html = '<p>' . $this->GetRatingHtml($urid, 'comment', false, '', '', array('show-report' => 'false', 'is-dummy' => 'true')) . '</p>';
 			}
 			
 			/**
+			 * Creates a new rating for the newly inserted comment.
+			 * 
 			 * @author Leo Fajardo (@leorw)
 			 * @since 2.5.9
 			 * 
 			 * @param int $comment_id The newly inserted comment's ID.
 			 */
-			function wp_insert_comment($comment_id) {
-				if ( isset($_POST['rw-vote-data']) && !empty($_POST['rw-vote-data']) ) {
-					// Remove the slashes added by WordPress
-					$vote_data = stripslashes($_POST['rw-vote-data']);
-					
-					$request_params = (array) json_decode($vote_data);
-					if ( isset($request_params['url']) ) {
-						$request_params['url'] = urlencode($request_params['url']);
-					}
-					
-					$this->set_comment_review_vote($comment_id, $request_params);
+			function create_comment_review_rating($comment_id) {
+				if ( !isset($_POST['rw-vote-data']) || empty($_POST['rw-vote-data']) ) {
+					return;
 				}
+				
+				// Remove the slashes added by WordPress
+				$vote_data = stripslashes($_POST['rw-vote-data']);
+
+				$request_params = (array) json_decode($vote_data);
+				if ( isset($request_params['url']) ) {
+					$request_params['url'] = urlencode($request_params['url']);
+				}
+
+				$this->set_comment_review_vote($comment_id, $request_params);
 			}
 			
 			/**
@@ -1005,23 +1034,25 @@
 				$request_params['urid'] = $comment_urid;
 
 				$remote_request_param = array(
-					'timeout' => 5
+					'timeout' => 3
 				);
 
 				$comment_review_mode_settings = $this->get_comment_review_mode_settings();
-				$current_errors = $comment_review_mode_settings->errors;
+				$failed_requests = $comment_review_mode_settings->failed_requests;
 				if ( RWLogger::IsOn() ) {
-					RWLogger::Log('current_errors', json_encode($current_errors));
+					RWLogger::Log('failed_requests', json_encode($failed_requests));
 				}
 				
 				$rating_submitted = false;
 				
-				if ( isset($current_errors[$comment_id]) ) {
-					$error = $current_errors[$comment_id];
-					$rating_submitted = isset($error['api_endpoint']) && false !== strpos($error['api_endpoint'], 'rate.php');
+				if ( isset($failed_requests[$comment_id]) ) {
+					$request = $failed_requests[$comment_id];
+					$rating_submitted = isset($request['api_endpoint']) && (false !== strpos($request['api_endpoint'], 'rate.php'));
 				}
 				
-				if ( !$rating_submitted ) {
+				if ( $rating_submitted ) {
+					$request_errors = array();
+				} else {
 					// Step 1: Submit the rating's ID to the server so that it will be created.
 					$submit_rating_params = array_merge(
 						array(
@@ -1040,7 +1071,7 @@
 					$rating_endpoint = rw_get_js_url('api/rating/get.php');
 					$rating_endpoint = add_query_arg($submit_rating_params, $rating_endpoint);
 					$submit_rating_response = wp_remote_get($rating_endpoint, $remote_request_param);
-					$rating_submitted = $this->validate_submit_review_rating_api_response(array(
+					$request_errors = $this->comment_review_submission_errors(array(
 						'comment_id' => $comment_id,
 						'request_params' => $request_params,
 						'api_endpoint' => $rating_endpoint,
@@ -1048,55 +1079,67 @@
 					));
 				}
 				
-				if ( $rating_submitted ) {
+				$update_db_option = true;
+				
+				if ( empty($request_errors) ) {
 					// Step 2: Submit the rating's vote data to the server.
 					$vote_endpoint = rw_get_js_url('api/rating/rate.php');
 					$vote_endpoint = add_query_arg($request_params, $vote_endpoint);
 					$submit_vote_response = wp_remote_get($vote_endpoint, $remote_request_param);
 
-					$vote_submitted = $this->validate_submit_review_rating_api_response(array(
+					$request_errors = $this->comment_review_submission_errors(array(
 						'comment_id' => $comment_id,
 						'request_params' => $request_params,
 						'api_endpoint' => $vote_endpoint,
 						'api_response' => $submit_vote_response
 					));
 					
-					if ( $vote_submitted ) {
-						if ( isset($current_errors[$comment_id]) ) {
-							unset($current_errors[$comment_id]);
-							$comment_review_mode_settings->errors = $current_errors;
-							$this->SetOption(WP_RW__DB_OPTION_COMMENT_REVIEW_MODE_SETTINGS, $comment_review_mode_settings);
-							$this->_options_manager->store();
+					// If there is no issue with the vote submission, remove the failed request information related to this comment from the database.
+					if ( empty($request_errors) ) {
+						if ( isset($failed_requests[$comment_id]) ) {
+							unset($failed_requests[$comment_id]);
+						} else {
+							$update_db_option = false;
 						}
+					} else {
+						$failed_requests[$comment_id] = $request_errors;
 					}
+				} else {
+					$failed_requests[$comment_id] = $request_errors;
+				}
+				
+				if ( $update_db_option ) {
+					$comment_review_mode_settings->failed_requests = $failed_requests;
+					$this->SetOption(WP_RW__DB_OPTION_COMMENT_REVIEW_MODE_SETTINGS, $comment_review_mode_settings);
+					$this->_options_manager->store();
 				}
 
 				RWLogger::LogDeparture("set_comment_review_vote");
 			}
 			
 			/**
-			 * Validates the API request's response and saves the comment ID and the errors to the database.
+			 * Validates the API request's response.
 			 * 
 			 * @author Leo Fajardo (leorw)
 			 * @since 2.5.9
 			 * 
 			 * @param array $api_request_info The API request parameters.
 			 * 
-			 * @return boolean True for success, false for failure.
+			 * @return array Failed requests information. Empty if there are no errors.
 			 */
-			function validate_submit_review_rating_api_response($api_request_info) {
+			function comment_review_submission_errors($api_request_info) {
 				$comment_id = $api_request_info['comment_id'];
 				$request_params = $api_request_info['request_params'];
 				$api_endpoint = $api_request_info['api_endpoint'];
 				$api_response = $api_request_info['api_response'];
 				
-				$new_errors = array();
+				$errors = array();
 				
 				if ( is_wp_error($api_response) ) {
-					$new_errors = $api_response->errors;
+					$errors = $api_response->errors;
 				} else if ( 200 !== wp_remote_retrieve_response_code($api_response) ) {
 					// Follow the way the WP_Error object saves the error messages to make the code simpler.
-					$new_errors['invalid_response_code'] = array(
+					$errors['invalid_response_code'] = array(
 						'Invalid response code'
 					);
 				} else {
@@ -1104,7 +1147,7 @@
 
 					$json_obj = false;
 					
-					// Retrieve the JSON string that is passed as a parameter to a callback, e.g.: RW._rateCallback(JSON_STRING, ...);
+					// Retrieve the JSON string that is passed as a parameter to a callback function, e.g.: RW._rateCallback(JSON_STRING, ...);
 					if ( preg_match("/(?<={)(.*)(?=})/", $response_body, $matches) ) {
 						if ( !empty($matches) ) {
 							$json_str = '{' . $matches[0] . '}';
@@ -1113,35 +1156,25 @@
 					}
 
 					if ( !is_object($json_obj) ) {
-						$new_errors['invalid_response_string'] = array(
+						$errors['invalid_response_string'] = array(
 							'Invalid response string'
 						);
 					} else if ( !$json_obj->success ) {
-						$new_errors['api_request_failed'] = array(
+						$errors['api_request_failed'] = array(
 							$json_obj->message
 						);
 					}
 				}
 				
-				$comment_review_mode_settings = $this->get_comment_review_mode_settings();
-				$current_errors = $comment_review_mode_settings->errors;
-				
-				if ( empty($new_errors) ) {
-					return true;
-				} else {
-					$current_errors[$comment_id] = array(
-						'request_params' => $request_params,
-						'api_request_errors' => $new_errors,
-						'api_endpoint' => $api_endpoint
-					);
-					
-					$comment_review_mode_settings->errors = $current_errors;
-					
-					$this->SetOption(WP_RW__DB_OPTION_COMMENT_REVIEW_MODE_SETTINGS, $comment_review_mode_settings);
-					$this->_options_manager->store();
-					
-					return false;
+				if ( empty($errors) ) {
+					return array();
 				}
+				
+				return array(
+					'request_params' => $request_params,
+					'api_request_errors' => $errors,
+					'api_endpoint' => $api_endpoint
+				);
 			}
 			
 			private function IsHideOnMobile()
@@ -1794,7 +1827,7 @@
 					),
 					WP_RW__DB_OPTION_COMMENT_REVIEW_MODE_SETTINGS => (object) array(
 						'is_comment_review_mode' => false,
-						'errors' => array()
+						'failed_requests' => array()
 					),
 					WP_RW__IS_ACCUMULATED_USER_RATING => true,
 
@@ -5425,11 +5458,11 @@
 								
 								if ( !$properties_availability['description'] ) {
 									$post_excerpt =	$this->GetPostExcerpt($post);
-
+									
 									$rating_html .= '<meta itemprop="description" content="' . esc_attr($post_excerpt) . '" />';
 								}
 							}
-							
+
 							if ( !$properties_availability['image'] ) {
 								$image_url = $this->get_rich_snippet_default_image($post->ID);
 								$rating_html .= '<meta itemprop="image" content="' . $image_url . '" />';
@@ -5440,7 +5473,7 @@
 								$iso8601_date = mysql2date( 'c', $post->post_date );
 								$rating_html .= '<meta itemprop="datePublished" content="' . $iso8601_date . '" />';
 							}
-							
+
 							if ( !$properties_availability['url'] && !empty($pPermalink) ) {
 								$rating_html .= '<meta itemprop="url" content="' . esc_attr($pPermalink) . '" />';
 							}
@@ -6485,7 +6518,7 @@
 								(function(){
 									var rw = document.createElement("script");
 									rw.type = "text/javascript"; rw.async = true;
-									rw.src = "http://answift.com/wp-content/plugins/rating-widget/external.js?wp=<?php echo WP_RW__VERSION;?>";
+									rw.src = "<?php echo rw_get_js_url('external' . (!WP_RW__DEBUG ? '.min' : '') . '.php');?>?wp=<?php echo WP_RW__VERSION;?>";
 									var s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(rw, s);
 								})();
 							}
@@ -7447,11 +7480,11 @@
 					RWLogger::Log('comment_review_mode_options', json_encode($comment_review_mode_settings));
 				}
 				
-				$current_errors = $comment_review_mode_settings->errors;
+				$failed_requests = $comment_review_mode_settings->failed_requests;
 				
-				if ( isset($current_errors[$pComment->comment_ID]) ) {
-					$error = $current_errors[$pComment->comment_ID];
-					$this->set_comment_review_vote($pComment->comment_ID, $error['request_params']);
+				if ( isset($failed_requests[$pComment->comment_ID]) ) {
+					$request = $failed_requests[$pComment->comment_ID];
+					$this->set_comment_review_vote($pComment->comment_ID, $request['request_params']);
 				}
 				
 				// If "Reviews" mode, set the rating to read-only so that no other people can vote for the comment.
