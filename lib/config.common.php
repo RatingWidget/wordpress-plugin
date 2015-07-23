@@ -114,6 +114,7 @@
 	define( 'WP_RW__DB_OPTION_WP_RATE_NOTICE_MIN_VOTES_TRIGGER', 'rw_wp_rate_notice_min_votes_trigger' );
 	define( 'WP_RW__DB_OPTION_STATS_UPDATED', 'rw_wp_stats_updated' );
 	define( 'WP_RW__DB_OPTION_RICH_SNIPPETS_SETTINGS', 'rw_wp_rich_snippet_settings' );
+	define( 'WP_RW__DB_OPTION_COMMENT_REVIEW_MODE_SETTINGS', 'rw_wp_comment_review_mode_options' );
 
 	/* BuddyPress
 	-----------------------------------------------------------------------------------------*/
