@@ -21,9 +21,24 @@
         handleRatingReadOnlyStateChange();
         handleRatingTypeChange();
 		
-		// Change the rating style to stars when the user enables comment review mode.
 		$('#rw_comment_rating_mode_settings').on('click', '.rw-ui-img-radio-review-mode', function() {
+			// Change the rating style to stars when the user enables comment review mode.
 			$('#rw_rate_type .rw-ui-img-radio:first').click();
+			
+			// Change the rating position to Top Left when the user enables comment review mode.
+			var position = "top left";
+			
+			// The position option container element.
+			var $ratingAlignField = $('.rw-post-rating-align');
+			
+			// Retrieve translated text
+			var $topLeftOptionText = $ratingAlignField.find('select option[value="' + position + '"]').text();
+			
+			// Update the text of the positions dropdown element.
+			$ratingAlignField.find('.chosen-single > span').text($topLeftOptionText);
+			
+			// Update the value of the hidden field that holds the current selected position.
+			$('#rw_align').val(position);
 		});
 		
         $('.rw-add-rating').on('click', addRatingCriterion);
