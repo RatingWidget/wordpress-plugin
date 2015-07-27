@@ -903,23 +903,48 @@
 				// Register shortcode.
 				add_action('init', array(&$this, 'RegisterShortcodes'));
 
+				// Register hooks for comment review mode.
+				add_action('init', array(&$this, 'register_comment_review_hooks'));
+				
 				// wp_footer call validation.
 				// add_action('init', array(&$this, 'test_footer_init'));
 
 				// Rating-Widget main javascript load.
 				add_action('wp_footer', array(&$this, "rw_attach_rating_js"), 5);
-				
-				// Register the needed hooks for implementing the comment "Reviews" mode (when the selected mode in the "Comments" options tab is "Review").
-				if ( $this->is_comment_review_mode() ) {
-					global $wp_version;
-					if ($wp_version < 3 ) {
-						add_action('comment_form', array(&$this, 'add_rating_after_comment_form_submit_button'));
-					} else {
-						add_filter('comment_form_defaults', array(&$this, 'add_rating_before_comment_form_submit_button'));
-					}
-					
-					add_action('wp_insert_comment', array(&$this, 'create_comment_review_rating'));
+			}
+			
+			/**
+			 * Registers the necessary hooks for implementing the comment "Reviews" mode (when the selected mode in the "Comments" options tab is "Review").
+			 * 
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.5.9
+			 * 
+			 */
+			function register_comment_review_hooks() {
+				if ( !$this->is_comment_review_mode() ) {
+					return;
 				}
+				
+				// If comment rating is disabled, do not proceed.
+				if ( false === $this->GetRatingAlignByType( WP_RW__COMMENTS_ALIGN ) ) {
+					return;
+				}
+				
+				// If comment rating is hidden (e.g.: hidden for users who are not logged in), do not proceed.
+				if ( $this->IsHiddenRatingByType('comment') ) {
+					return;
+				}
+				
+				global $wp_version;
+				if ($wp_version < 3 ) {
+					// Since the comment_form_defaults filter is not available for version 2.9 and below, we use a different way of adding the rating to the form.
+					add_action('comment_form', array(&$this, 'add_rating_after_comment_form_submit_button'));
+				} else {
+					add_filter('comment_form_defaults', array(&$this, 'add_rating_before_comment_form_submit_button'));
+				}
+
+				// Listen to insert comment event so that we can set the vote of the newly inserted comment's rating when the comment rating mode is "Review".
+				add_action('wp_insert_comment', array(&$this, 'create_comment_review_rating'));
 			}
 			
 			/**
@@ -1041,8 +1066,12 @@
 
 				$request_params['urid'] = $comment_urid;
 
+				// The "referer" header is important, otherwise we may get an invalid referer error.
 				$remote_request_param = array(
-					'timeout' => 3
+					'timeout' => 3,
+					'headers' => array(
+						'referer' => site_url()
+					)
 				);
 
 				$comment_review_mode_settings = $this->get_comment_review_mode_settings();
@@ -6376,7 +6405,34 @@
 
 							// Get rating front posts settings.
 							$rw_settings[$rclass]["options"] = $this->GetOption($rw_settings[$rclass]["options"]);
+							
+							/*
+							 * We don't want to display the number of votes when the comment rating mode is "Review".
+							 * So we're modifying the rating label so that it will be based on the vote. e.g.: 5-star vote = "Excellent".
+							 */
+							if ( $this->is_comment_review_mode() && 'comment' === $rclass ) {
+								$options = $rw_settings[$rclass]["options"];
+								
+								if ( !isset($options->label) ) {
+									$options->label = new stdClass();
+								}
 
+								if ( !isset($options->label->text) ) {
+									$options->label->text = new stdClass();
+								}
+
+								if ( !isset($options->label->text->star) ) {
+									$options->label->text->star = new stdClass();
+								}
+
+								if ( !isset($options->label->text->nero) ) {
+									$options->label->text->nero = new stdClass();
+								}
+
+								$options->label->text->star->rated = '{{rating.lastVote}}';
+								$options->label->text->nero->rated = '{{rating.lastVote}}';
+							}
+					
 							if (WP_RW__AVAILABILITY_DISABLED === $this->rw_validate_availability($alias))
 							{
 								// Disable ratings (set them to be readOnly).
