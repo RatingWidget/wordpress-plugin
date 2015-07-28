@@ -182,7 +182,7 @@ The RatingWidget Team
 
 == Change Log ==
 = 2.5.9 - 2015-07-23 =
-* New: Added review mode for comment ratings.
+* New: Added “review mode” for comment ratings so users can submit a rating with their comments.
 
 = 2.5.8 - 2015-07-21 =
 * Update: Updated the rich snippet markup properties (headline, image, and datePublished) based on Google's latest requirement.
