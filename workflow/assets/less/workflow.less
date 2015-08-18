@@ -1,0 +1,424 @@
+// This is only for the specific part of the page.
+#rw-workflows-page {
+	margin: 20px 0 0;
+	font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+	font-size: 14px;
+	line-height: 1.42857143;
+	color: #333;
+	background-color: #fff;
+	max-width: 800px;
+	
+	@import (less) url("bootstrap/dist/css/bootstrap.css");
+	
+	#poststuff {
+		padding-top: 0;
+
+		.inside {
+			padding: 0;
+			margin: 20px;
+		}
+	}
+
+	ol.breadcrumb {
+		margin-left: 0;
+		width: 427px;
+
+		> li {
+			margin-bottom: 0;
+			
+			> a {
+				text-decoration: none;
+			}
+
+			span:last-child {
+				position: relative;
+				top: 2px;
+			}
+
+			&+li {
+				&:before {
+					position: relative;
+					top: 2px;
+				}
+			}
+		}
+	}
+
+	ul.dropdown-menu > li {
+		margin-bottom: 0;
+	}
+	
+	a:focus {
+		box-shadow: none;
+	}
+	
+	.modal {
+		top: 46px;
+	}
+
+	.btn.btn-link {
+		&:focus, &:active {
+			outline: none;
+		}
+	}
+	
+	.list-group-item {
+		.btn.btn-link {
+			padding-top: 0;
+			padding-bottom: 0;
+			cursor: default;
+
+			.glyphicon-trash {
+				cursor: pointer;
+			}
+		}
+
+		.list-group-item-content {
+			overflow: hidden;
+			cursor: pointer;
+		}
+
+		&.disabled {
+			cursor: pointer;
+
+			&:hover {
+				cursor: pointer;
+			}
+		}
+		
+		.pull-right {
+			position: relative;
+			left: 16px;
+		}
+	}
+
+	.label {
+		font-size: 85%;
+	}
+
+	.form-inline {
+		> .btn {
+			margin-top: 20px;
+		}
+
+		.form-group {
+			width: 100%;
+
+			> .col * {
+				width: 100%;
+			}
+
+			> .col+.col {
+				padding-left: 0;
+			}
+
+			> label {
+				padding-top: 5px;
+			}
+		}
+	}
+
+	.hidden-nav-tabs {
+		display: none;
+	}
+
+	/* WORKFLOWS */
+	.workflow-template {
+		display: none;
+	}
+
+	#workflows {
+		> .panel {
+			display: none;
+		}
+
+		> p {
+			margin-bottom: 20px;
+		}
+	}
+
+	#edit-workflow {
+		.save-name,
+		.save-conditions,
+		.save-actions,
+		.save-event-types,
+		.cancel-save,
+		.view-workflows {
+			display: none;
+		}
+		
+		&.is-editing {
+			&:not(.is-creating) {
+				.nav-pills {
+					display: none;
+				}
+			}
+
+			.edit-workflow-next-step,
+			.activate-workflow {
+				display: none;
+			}
+
+			.save-name,
+			.save-conditions,
+			.save-event-types,
+			.save-actions,
+			.cancel-save,
+			.view-workflows {
+				display: inline-block;
+			}
+		}
+
+		&.is-creating {
+			.workflow-title {
+				display: none;
+			}
+		}
+
+		> .form-horizontal {
+			> .tab-content {
+				margin-top: 20px;
+			}
+		}
+
+		.tab-pane h3 {
+			padding-top: 0;
+			padding-left: 0;
+			margin-top: 0;
+		}
+	}
+
+	#edit-workflow, #edit-conditions {
+		> .panel {
+			.panel-heading {
+				border-bottom-width: 0;
+			}
+
+			.panel {
+				position: relative;
+				margin-top: 10px;
+
+				&:last-child {
+					margin-bottom: 0;
+				}
+
+				.panel-body {
+					padding: 8px 15px;
+				}
+			}
+		}
+	}
+
+	.workflowHeader {
+		padding: 0 0 10px;
+	}
+
+	.workflowCondActions {
+		margin: 1em 0 2em;
+		margin-top: 5px;
+		color: #2b2b2b;
+		font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+		font-size: 12px;
+		line-height: 1.22;
+
+		p {
+			background: none;
+			font-size: 12px;
+			line-height: 16px;
+		}
+
+		a:focus {
+			outline: none;
+			box-shadow: none
+		}
+
+		.facet {
+			position: relative;
+			padding: 13px 30px 7px 20px;
+			border-bottom: 1px solid #e7e7e7;
+			border-top: 1px solid #fff;
+			padding-top: 0;
+			padding-left: 0;
+			padding-right: 0;
+			padding-bottom: 12px;
+
+			&+.facet {
+				padding-top: 4px;
+				.col, .pull-right {
+					margin-top: 10px;
+					margin-bottom: 3px;
+				}
+			}
+
+			&:first-child {
+				border-top: 0;
+
+				.wf-badge.or {
+					display: none;
+				}
+			}
+
+			&:before, &:after {
+				display: table;
+				content: "";
+				line-height: 0;
+			}
+
+			&:after {
+				clear:both;
+			}
+		}
+
+		> div + div .facet:first-child {
+			padding-top: 4px;
+		}
+
+		.condAction + div {
+			margin-left: -16px;
+			margin-right: -16px;
+			background: #fff;
+			padding-bottom: 7px;
+			margin-bottom: 9px;
+
+			.and em {
+				background: #fff;
+			}
+		}
+
+		.col {
+			float: left;
+			margin-right: 20px;
+			padding-bottom: 6px;
+			padding-bottom: 0;
+
+			select, input {
+				margin: 0;
+			}
+
+			select {
+				width: 200px;
+			}
+
+			input {
+				margin-right: 5px;
+				width: 185px;
+			}
+		}
+
+		.add-or {
+			border-top: 1px solid #fff;
+			text-align: center;
+
+			> .add {
+				left: -6.5px;
+				position: relative;
+				top: -9px;
+			}
+		}
+
+		.or, .add-or > .add {
+			background: #f5f5f5;
+			font-size: 1.2em;
+			padding: 0 10px;
+
+			outline: none;
+
+			&:hover, &:focus {
+				outline: none;
+			}
+		}
+
+		.or {
+			color: #484848;
+			font-weight: 500;
+			margin-left: -21px;
+			left: 50%;
+			position: absolute;
+			top: -9px;
+			text-transform: uppercase;
+			font-style: normal;
+		}
+
+		.actions a {
+			margin-left: 5px;
+
+			&:hover {
+				text-decoration: none;
+
+				.icon-add, .icon-remove {
+					color: #555;
+				}
+			}
+		}
+
+		.icon-add, .icon-remove {
+			color: #999;
+		}
+
+		.and {
+			border-bottom: 1px dashed #e1e1e1;
+			margin: .5em 0 1.7em;
+			margin-bottom: 9px;
+			text-align: center;
+
+			a {
+				left: -6.5px;
+				outline: none;
+				text-decoration: none;
+			}
+
+			em, a, label {
+				background: #f5f5f5;
+				font-size: 1.2em;
+				font-style: normal;
+				margin: 0 10px;
+				padding: 0 10px;
+				position: relative;
+				top: 9px;
+			}
+		}
+	}
+
+	.facetInputs {
+		display: none;
+	}
+
+	.edit-actions, .edit-event-types {
+		.facet {
+			border-bottom: 0;
+		}
+
+		.and {
+			margin-top: 0;
+		}
+	}
+
+	.workflow-summary {
+		.label-workflow-status {
+			font-size: 10.5px;
+			position: relative;
+			top: -4px;
+			display: none;
+		}
+
+		.pull-right + div {
+			margin-bottom: 12px;
+		}
+
+		.label {
+			margin: 0 10px;
+			text-transform: uppercase;
+
+			&.and {
+				margin-left: 0;
+			}
+		}
+	}
+}
+
+/* MODALS */
+.ratingwidget_page_rating-widget-workflows {
+	@import "bootstrap/variables";
+	@import "bootstrap/mixins";
+	@import "bootstrap/modals";
+}
