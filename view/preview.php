@@ -9,6 +9,10 @@
 		// Check if there are more than one criteria so that we can hide or show additional options
 		$total_criteria = count($multirating_options->criteria);
 		$multi_criterion = ($total_criteria > 1);
+		
+		if ( $multi_criterion && ( ! ratingwidget()->IsProfessional() ) && $total_criteria > 3 ) {
+			$multirating_options->criteria = array_splice( $multirating_options->criteria, 0, 3 );
+		}
 	}
 	
     $options = rw_options();

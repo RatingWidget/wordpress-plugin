@@ -43,6 +43,7 @@ options.showLoader = false;
 // Example: Hide the text bubble - only show the star ratings.
 options.showInfo = false;
 
+// (only supported in Professional and Business plans)
 // Example: Set custom rating file.
 //
 // More information:

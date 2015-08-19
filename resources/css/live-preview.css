@@ -130,6 +130,7 @@
 }
 
 .rw-remove-button {
+	display: block;
 	text-decoration: none;
 }
 
