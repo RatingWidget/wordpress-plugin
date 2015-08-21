@@ -11,6 +11,13 @@
 	Domain Path: /langs
 	*/
 
+	/**
+	 * @package     RatingWidget
+	 * @copyright   Copyright (c) 2015, Rating-Widget, Inc.
+	 * @license     http://opensource.org/licenses/gpl-2.0.php GNU Public License
+	 * @since       1.0.0
+	 */
+
 	if ( ! defined( 'ABSPATH' ) ) {
 		exit;
 	}
@@ -18,12 +25,14 @@
 
 	if (!class_exists('RatingWidgetPlugin')) :
 		// Load common config.
-		require_once( dirname( __FILE__ ) . "/freemius/start.php" );
 		require_once( dirname( __FILE__ ) . "/lib/rw-core-functions.php" );
 		require_once( dirname( __FILE__ ) . "/lib/config.common.php" );
 		require_once( WP_RW__PLUGIN_LIB_DIR . "rw-core-rw-functions.php" );
 		require_once( WP_RW__PLUGIN_LIB_DIR . "rw-core-actions.php" );
 		require_once( WP_RW__PLUGIN_LIB_DIR . "rw-core-admin.php" );
+		require_once( WP_RW__PLUGIN_LIB_DIR . "rw-options.php" );
+		require_once( WP_RW__PLUGIN_LIB_DIR . "rw-account-manager.php" );
+		require_once( WP_RW__PLUGIN_LIB_DIR . "rw-api.php" );
 		require_once( WP_RW__PLUGIN_LIB_DIR . "rw-settings.php" );
 		require_once( WP_RW__PLUGIN_LIB_DIR . "rw-shortcodes.php" );
 		require_once( WP_RW__PLUGIN_DIR . "/lib/logger.php" );
@@ -41,8 +50,16 @@
 			public $admin;
 			public $settings;
 
+			/**
+			 * @var RW_Account_Manager
+			 */
+			public $account;
+
 			private $errors;
 			private $success;
+			/**
+		     * @var \Freemius
+			 */
 			public $fs;
 			static $ratings = array();
 
@@ -60,6 +77,9 @@
 			var $_isRegistered = false;
 			var $_inBuddyPress;
 			var $_inBBPress;
+			/**
+			 * @var \FS_Option_Manager
+			 */
 			var $_options_manager;
 
 			static $VERSION;
@@ -80,6 +100,7 @@
 			/* Plugin setup.
 --------------------------------------------------------------------------------------------*/
 			private function __construct() {
+				$this->account          = rw_account();
 				$this->fs               = rw_fs();
 				$this->_options_manager = rw_fs_options();
 
@@ -110,8 +131,19 @@
 
 			function Init()
 			{
+				$this->init_fs_hooks();
+
+
 				if ( ! $this->fs->is_registered() && ! is_admin() ) {
 					return;
+				}
+
+				if ($this->fs->is_registered() && !$this->account->is_registered()) {
+					// Connected only with FS, therefore try to connect to RW.
+					$this->connect_account(
+						$this->fs->get_user(),
+						$this->fs->get_site()
+					);
 				}
 
 				// Load all extensions.
@@ -136,7 +168,7 @@
 				{
 					$this->fs->add_submenu_link_item(__('FAQ', WP_RW__ID), rw_get_site_url( 'support/wordpress/#platform' ), false, 'read', 25);
 
-					add_action( 'init', array( &$this, 'LoadPlan' ) );
+//					add_action( 'init', array( &$this, 'LoadPlan' ) );
 					// Clear cache has to be executed after LoadPlan, because clear
 					// cache is has a condition that checks the plan.
 					add_action( 'init', array( &$this, 'ClearCache' ) );
@@ -163,6 +195,26 @@
 				$this->languages_short = array_keys( $this->languages );
 
 				add_action( 'plugins_loaded', array( &$this, 'rw_load_textdomain' ) );
+			}
+
+
+			/**
+			 * Init Freemius related action & filter hooks.
+			 *
+			 * @author Vova Feldman (@svovaf)
+			 * @since 2.5.7
+			 */
+			function init_fs_hooks()
+			{
+				$this->fs->add_filter('connect_message', array(&$this, 'fs_connect_message'));
+				$this->fs->add_action('after_account_connection', array(&$this, 'connect_account'), 10, 2);
+				$this->fs->add_action('after_license_change', array(&$this, 'after_license_change_hook'), 10, 2);
+				$this->fs->add_action('after_account_delete', array(&$this, 'delete_account'));
+//				$this->fs->add_action('account_email_verified', array(&$this, 'verify_email'));
+
+				$this->fs->add_action('after_account_details', array(&$this, 'AccountPageRender'));
+
+				$this->fs->add_action('account_page_load_before_departure', array(&$this, 'AccountPageLoad'), 10, 3);
 			}
 
 			private function LoadExtensionsDefaultOptions()
@@ -205,8 +257,8 @@
 					return;
 
 				RWLogger::Log("WP_RW__VERSION", WP_RW__VERSION);
-				RWLogger::Log("WP_RW__SITE_PUBLIC_KEY", WP_RW__SITE_PUBLIC_KEY);
-				RWLogger::Log('WP_RW__SITE_ID', WP_RW__SITE_ID);
+				RWLogger::Log("Site Public Key", $this->account->site_public_key);
+				RWLogger::Log('Site ID', $this->account->site_id);
 				RWLogger::Log("WP_RW__DOMAIN", WP_RW__DOMAIN);
 				RWLogger::Log("WP_RW__CLIENT_ADDR", WP_RW__CLIENT_ADDR);
 				RWLogger::Log("WP_RW__PLUGIN_DIR", WP_RW__PLUGIN_DIR);
@@ -236,7 +288,8 @@
 
 				$this->_inDashboard = (isset($_GET['page']) && rw_starts_with($_GET['page'], $this->GetMenuSlug()));
 
-				if (!$this->fs->is_registered() && $this->_inDashboard && strtolower($_GET['page']) !== $this->GetMenuSlug())
+				if (!$this->fs->is_registered() &&
+				    $this->_inDashboard && strtolower($_GET['page']) !== $this->GetMenuSlug())
 					rw_admin_redirect();
 
 				$this->setup_dashboard_actions();
@@ -261,27 +314,39 @@
 				return true;
 			}
 
-			function _update_account($type, $property, $value)
-			{
-				if ('site' !== $type)
+			function _update_account() {
+				if ( strtoupper( $_SERVER['REQUEST_METHOD'] ) !== 'POST' ) {
 					return;
-
-				switch ($property)
-				{
-					case 'id':
-						$this->SetOption( WP_RW__DB_OPTION_SITE_ID, $value );
-						break;
-					case 'public_key':
-						$this->SetOption( WP_RW__DB_OPTION_SITE_PUBLIC_KEY, $value );
-						break;
-					case 'secret_key':
-						$this->SetOption( WP_RW__DB_OPTION_SITE_SECRET_KEY, $value );
-						break;
-					default:
-						return;
 				}
 
-				$this->_options_manager->store();
+				$properties = array( 'user_id', 'site_secret_key', 'site_id', 'site_public_key' );
+
+				foreach ( $properties as $p ) {
+					if ( rw_request_is_action( 'update_' . $p ) ) {
+						check_admin_referer( 'update_' . $p );
+
+						$value = fs_request_get( 'rw_' . $p );
+
+						switch ( $p ) {
+							case 'site_id':
+								$this->account->update_site_id( $value );
+								break;
+							case 'site_public_key':
+								$this->account->update_site_public_key( $value );
+								break;
+							case 'site_secret_key':
+								$this->account->update_site_secret_key( $value );
+								break;
+							case 'user_id':
+								$this->account->update_site_secret_key( $value );
+								break;
+							default:
+								return;
+						}
+
+						break;
+					}
+				}
 			}
 
 			/**
@@ -304,12 +369,11 @@
 				$this->fs->add_plugin_action_link( __( 'Blog', WP_RW__ADMIN_MENU_SLUG ), rw_get_site_url( '/blog/' ), true );
 
 
-				add_action( 'fs_account_property_edit_' . WP_RW__ID, array( &$this, '_update_account' ), 10, 3 );
 
 				// Add activation and de-activation hooks.
 				register_activation_hook( WP_RW__PLUGIN_FILE_FULL, 'rw_activated' );
 
-				if ($this->fs->is_registered()) {
+				if ($this->account->is_registered()) {
 					add_action( 'wp_ajax_rw-toprated-popup-html', array( &$this, 'generate_toprated_popup_html' ) );
 					add_action( 'wp_ajax_rw-affiliate-apply', array( &$this, 'send_affiliate_application' ) );
 					add_action( 'wp_ajax_rw-addon-request', array( &$this, 'send_addon_request' ) );
@@ -332,97 +396,18 @@
 				}
 
 				add_action( 'admin_head', array( &$this, "rw_admin_menu_icon_css" ) );
-				add_action( 'admin_menu', array( &$this, 'admin_menu' ) );
 
+//				add_action( 'admin_menu', array( &$this, "admin_menu" ) );
+				$this->fs->add_action('before_admin_menu_init', array( &$this, 'admin_menu' ) );
 
 				add_action( 'updated_post_meta', array( &$this, 'PurgePostFeaturedImageTransient' ), 10, 4 );
 
 				{
-					if ( $this->GetOption( WP_RW__DB_OPTION_TRACKING ) ) {
-//						add_action( 'admin_head', array( &$this, "GoogleAnalytics" ) );
-					}
-
 					// wp_footer call validation.
 					// add_action('init', array(&$this, 'test_footer_init'));
 				}
 			}
 			
-			/**
-			 * Sends one-time anonymous plugin stats, only for registered users who accepted the terms of service.
-			 *
-			 * @author Leo Fajardo (@leorw)
-			 * @since 2.5.0
-			 *
-			 */
-			private function update_stats() {
-				RWLogger::LogEnterence( 'update_stats' );
-				if ( ! function_exists( 'get_plugins' ) ) {
-					require_once ABSPATH . 'wp-admin/includes/plugin.php';
-				}
-				
-				// Get available plugins
-				$all_plugins = get_plugins();
-				if ( RWLogger::IsOn() ) {
-					RWLogger::Log('all_plugins', json_encode($all_plugins));
-				}
-				
-				// Get active plugins
-				$active_plugins = get_option('active_plugins');
-				if ( RWLogger::IsOn() ) {
-					RWLogger::Log('active_plugins', json_encode($active_plugins));
-				}
-				
-				if ( ! is_array($active_plugins) ) {
-					$active_plugins = array();
-				} else {
-					$active_plugins = array_flip($active_plugins);
-					if ( RWLogger::IsOn() ) {
-						RWLogger::Log('active_plugins_keys', json_encode($active_plugins));
-					}
-					
-					// Exclude invalid plugins, e.g.: deleted plugins
-					$invalid_active_plugins = array_diff_key($active_plugins, $all_plugins);
-					if ( RWLogger::IsOn() ) {
-						RWLogger::Log('invalid_active_plugins', json_encode($invalid_active_plugins));
-					}
-					
-					$active_plugins = array_diff($active_plugins, $invalid_active_plugins);
-				}
-				
-				if ( RWLogger::IsOn() ) {
-					RWLogger::Log('filtered_active_plugins', json_encode($active_plugins));
-				}
-				
-				$inactive_plugins = array_diff_key($all_plugins, $active_plugins);
-				
-				$active_plugins_count = count($active_plugins);
-				$inactive_plugins_count = count($inactive_plugins);
-				
-				$site = $this->fs->get_site();
-				$domain = $_SERVER['HTTP_HOST'];
-				
-				$params = array(
-					'site_id' => $site->id,
-					'active_plugins' => $active_plugins_count,
-					'inactive_plugins' => $inactive_plugins_count,
-					'is_production' => json_encode( strpos($domain, 'localhost') === false )
-				);
-				
-				if ( RWLogger::IsOn() ) {
-					RWLogger::Log('params', json_encode($params));
-				}
-				
-				$response = $this->RemoteCall( "action/api/update-stats.php", $params);
-				if ( RWLogger::IsOn() ) {
-					RWLogger::Log('apicall_result', $response);
-				}
-				
-				$this->SetOption(WP_RW__DB_OPTION_STATS_UPDATED, true);
-				$this->_options_manager->store();
-				
-				RWLogger::LogDeparture("update_stats");
-			}
-
 			/**
 			 * Sends an affiliate application to affiliate@rating-widget.com
 			 *
@@ -436,7 +421,6 @@
 
 				$admin_email = get_option('admin_email');
 				$user = $this->fs->get_user();
-				$site = $this->fs->get_site();
 
 				$posts_count = wp_count_posts('post');
 				$pages_count = wp_count_posts('page');
@@ -453,7 +437,7 @@
 				$email_details = array(
 					'aff_admin_email' => $admin_email,
 					'aff_user_id' => $user->id,
-					'aff_site_id' => $site->id,
+					'aff_site_id' => $this->account->site_id,
 					'aff_site_address' => $blog_address,
 					'aff_total_posts' => $total_posts,
 					'aff_total_comments' => $total_approved_comments
@@ -891,7 +875,7 @@
 				RWLogger::LogEnterence("setup_site_actions");
 
 				// If not registered, don't add any actions to site.
-				if (!$this->fs->is_registered())
+				if (!$this->account->is_registered())
 					return;
 
 				// Posts / Pages / Comments.
@@ -1013,7 +997,7 @@
 
 					RWLogger::Log( "AccountPageLoad", 'clear_ratings' );
 
-					$this->ApiCall( '/ratings.json', 'DELETE' );
+					rwapi()->call( '/ratings.json', 'DELETE' );
 
 					$this->ClearTransients();
 
@@ -1025,7 +1009,7 @@
 
 					RWLogger::Log( "AccountPageLoad", 'go_factory' );
 
-					$this->ApiCall( '/ratings.json', 'DELETE' );
+					rwapi()->call( '/ratings.json', 'DELETE' );
 
 					$this->ClearTransients();
 
@@ -1033,6 +1017,8 @@
 
 					add_action( 'all_admin_notices', array( &$this, 'StartFreshConfirmNotice' ) );
 				}
+
+				$this->_update_account();
 			}
 
 			/**
@@ -1056,90 +1042,13 @@
 				}
 			}
 
-			function LoadPlan() {
-				RWLogger::LogEnterence( "LoadPlan" );
-
-				/*<--{obfuscate}*/
-				$current_site_plan = $this->GetOption( WP_RW__DB_OPTION_SITE_PLAN );
-
-				if ( is_admin() ) {
-					RWLogger::Log( 'LoadPlan', 'current_plan = ' . $current_site_plan );
-				}
-
-				$site_plan = $current_site_plan;
-
-				$update = false;
-
-				if ( ! is_string( $this->fs->get_site()->secret_key ) ) {
-					if ( 'free' !== $site_plan ) {
-						$site_plan = 'free';
-						$update    = true;
-					}
-				} else {
-					$site_plan_update = $this->GetOption( WP_RW__DB_OPTION_SITE_PLAN_UPDATE, false, 0 );
-					$in_license_sync  = false;
-					// Check if user asked to sync license.
-					if ( rw_request_is_action( 'sync_license' ) ) {
-//						check_admin_referer( 'sync_license' );
-						$site_plan_update = 0;
-						$in_license_sync  = true;
-					}
-
-					RWLogger::Log( 'LoadPlan', 'in_license_sync = ' . json_encode( $in_license_sync ) );
-					
-					// Update plan once in every 24 hours.
-					if ( false === $current_site_plan || $site_plan_update < ( time() - WP_RW__TIME_24_HOURS_IN_SEC ) ) {
-						// Get plan from remote server once a day.
-						try {
-							$site = $this->ApiCall( '?fields=id,plan' );
-						} catch ( Exception $e ) {
-							$site = false;
-						}
-
-						if ( is_object( $site ) && isset( $site->id ) && $site->id == WP_RW__SITE_ID ) {
-							$site_plan = $site->plan;
-							$update    = true;
-
-							if ( $in_license_sync ) {
-								if ( $current_site_plan !== $site_plan ) {
-									add_action( 'all_admin_notices', array( &$this, 'LicenseSyncNotice' ) );
-								} else {
-									add_action( 'all_admin_notices', array( &$this, 'LicenseSyncSameNotice' ) );
-								}
-							}
-						} else {
-							if ( ! rwapi()->Test() ) {
-								add_action( 'all_admin_notices', array( &$this, 'ApiAccessBlockedNotice' ) );
-							} else {
-								add_action( 'all_admin_notices', array( &$this, 'ApiUnauthorizedAccessNotice' ) );
-							}
-						}
-					}
-				}
-
-				define( 'WP_RW__SITE_PLAN', $site_plan );
-				
-				RWLogger::Log( 'WP_RW__SITE_PLAN', $site_plan );
-
-				if ( $update ) {
-					$this->SetOption( WP_RW__DB_OPTION_SITE_PLAN, $site_plan );
-					$this->SetOption( WP_RW__DB_OPTION_SITE_PLAN_UPDATE, time() );
-					$this->_options_manager->store();
-
-//            if ($current_site_plan !== $site->plan)
-//            {
-					$this->ClearTransients();
-//            }
-				}
-				/*{obfuscate}-->*/
-
-//				do_action('fs_after_license_loaded');
-					
-				$stats_updated = $this->GetOption(WP_RW__DB_OPTION_STATS_UPDATED);
-				if (!$stats_updated) {
-					$this->update_stats();
-				}
-				
+			/**
+			 * Update rich snippets settings after upgrade to Professional.
+			 *
+			 * @author Vova Feldman (@svovaf)
+			 * @since 2.5.7
+			 */
+			function after_license_change_hook($change, $plan){
 				if ( $this->IsProfessional() ) {
 					// Only update the rich snippet settings if the query string
 					// doesn't contain the 'schema_test' parameter.
@@ -1325,7 +1234,7 @@
 			 */
 			function five_star_wp_rate_notice() {
 				$min_votes_trigger = $this->GetOption(WP_RW__DB_OPTION_WP_RATE_NOTICE_MIN_VOTES_TRIGGER);
-				$response = $this->ApiCall("/votes/count.json", 'GET', array(), WP_RW__CACHE_TIMEOUT_DASHBOARD_STATS);
+				$response = rwapi()->get("/votes/count.json", false, WP_RW__CACHE_TIMEOUT_DASHBOARD_STATS);
 				if ( empty($response) ) {
 					return;
 				}
@@ -1727,6 +1636,11 @@
 				$this->_options_manager->set_option($pOption, $pValue);
 			}
 
+			function store_options()
+			{
+				$this->_options_manager->store();
+			}
+
 			/* API.
 --------------------------------------------------------------------------------------------*/
 			function GenerateToken($pTimestamp, $pServerCall = false)
@@ -1750,7 +1664,7 @@
 					}
 				}
 
-				$token = md5($pTimestamp . $this->fs->get_site()->secret_key);
+				$token = md5($pTimestamp . $this->account->site_secret_key);
 
 				if (RWLogger::IsOn()){ RWLogger::Log("TOKEN", $token); }
 
@@ -1769,91 +1683,6 @@
 				$pData["token"] = $token;
 
 				return $pData;
-			}
-
-			private $_api_clock_diff;
-			function ApiCall($pPath, $pMethod = 'GET', $pParams = array(), $pExpiration = false, $pRetry = false)
-			{
-				RWLogger::LogEnterence("ApiCall");
-
-				if (false === WP_RW__CACHING_ON)
-					// No caching on debug mode.
-					$pExpiration = false;
-
-				$transient = '';
-				$cached = false;
-				$result = false;
-				if (false !== $pExpiration)
-				{
-					$transient = 'rw_' . md5($pMethod . $pPath . var_export($pParams, true));
-
-					// Try to get cached item.
-					$cached = get_transient($transient);
-
-					if (RWLogger::IsOn())
-					{
-						RWLogger::Log("ApiCall", "TRANSIENT_KEY - " . $transient);
-						RWLogger::Log("ApiCall", "TRANSIENT_VAL - " . $cached);
-					}
-
-					// If found returned cached value.
-					if (false !== $cached)
-					{
-						if (RWLogger::IsOn())
-							RWLogger::Log('ApiCall', 'IS_CACHED: TRUE');
-
-						$result = $cached;
-					}
-				}
-
-				if (false === $cached)
-				{
-					if (!isset($this->_api_clock_diff))
-					{
-						$this->_api_clock_diff = $this->GetOption('api_clock_diff', false, 0);
-						rwapi()->SetClockDiff($this->_api_clock_diff);
-					}
-
-					$result = rwapi()->Api($pPath, $pMethod, $pParams);
-
-					if (RWLogger::IsOn())
-						RWLogger::Log("ApiCall", 'Result: ' . var_export($result, true));
-
-					if (false !== $pExpiration)
-						set_transient($transient, $result, $pExpiration);
-				}
-
-				if (isset($result->error))
-				{
-					if (RWLogger::IsOn())
-						RWLogger::Log("ApiCall", 'API Error: ' . var_export($result, true));
-
-					if ('request_expired' === $result->error->code)
-					{
-						if (RWLogger::IsOn())
-							RWLogger::Log("ApiCall", 'Found API clock diff - syncing...');
-
-						// Sync clock and store.
-						$this->_api_clock_diff = rwapi()->FindClockDiff();
-						rwapi()->SetClockDiff($this->_api_clock_diff);
-						$this->SetOption('api_clock_diff', $this->_api_clock_diff);
-						$this->_options_manager->store();
-
-						if (!$pRetry)
-						{
-							if (RWLogger::IsOn())
-								RWLogger::Log("ApiCall", 'Retrying API call after clock sync.');
-
-							// Retry call with synced clock.
-							return $this->ApiCall($pPath, $pMethod, $pParams, $pExpiration, true);
-						}
-					}
-
-					if ($this->_inDashboard)
-						$this->errors->add('rw_api_error', 'Unexpected RatingWidget API error: ' . $result->error->message);
-				}
-
-				return $result;
 			}
 
 			function RemoteCall($pPage, &$pData, $pExpiration = false)
@@ -1910,6 +1739,11 @@
 
 				if (RWLogger::IsOn())
 					RWLogger::Log("wp_remote_post", "exist");
+
+				if (isset($_REQUEST['XDEBUG_SESSION']))
+				{
+					$pPage = add_query_arg('XDEBUG_SESSION', $_REQUEST['XDEBUG_SESSION'], $pPage);
+				}
 
 				$rw_ret_obj = wp_remote_post(WP_RW__ADDRESS . "/{$pPage}", array('body' => $pData));
 
@@ -2008,12 +1842,6 @@
 				rw_require_view('/pages/admin/menu-item.php');
 			}
 
-			function GoogleAnalytics()
-			{
-				$params = array('is_registered' => $this->fs->is_registered());
-				rw_require_view('/pages/admin/ga.php', $params);
-			}
-
 			function InitScriptsAndStyles()
 			{
 				global $pagenow;
@@ -2028,7 +1856,7 @@
 				}
 
 				// Enqueue the top-rated shortcode and dashboard stats widget stylesheets
-				if ($this->fs->is_registered()) {
+				if ($this->account->is_registered()) {
 					if ($this->admin_page_has_editor()) {
 						rw_enqueue_style('rw-toprated-shortcode-style', WP_RW__PLUGIN_URL . 'resources/css/toprated-shortcode.css');
 					}
@@ -2063,7 +1891,7 @@
 
 				rw_register_script('rw', 'index.php');
 
-				if (!$this->fs->is_registered())
+				if (!$this->account->is_registered())
 				{
 					// Account activation page includes.
 					rw_enqueue_script('rw_wp_validation', 'rw/validation.js');
@@ -2250,49 +2078,55 @@
 				$this->Notice('<a href="edit.php?page=' . WP_RW__ADMIN_MENU_SLUG . '">Activate your account now</a> to start seeing the ratings.');
 			}
 
-			function admin_menu()
-			{
-				$this->is_admin = (bool)current_user_can('manage_options');
+			function admin_menu() {
+				$this->is_admin = (bool) current_user_can( 'manage_options' );
 
-				if (!$this->is_admin)
+				if ( ! $this->is_admin ) {
 					return;
+				}
 
 				$pageLoaderFunction = 'SettingsPage';
-				if (!$this->fs->is_registered())
-				{
-					$pageLoaderFunction = 'rw_user_key_page';
+//				if ( ! $this->fs->is_registered() ) {
+//					$pageLoaderFunction = 'rw_user_key_page';
 
-					if (empty($_GET['page']) || WP_RW__ADMIN_MENU_SLUG != $_GET['page'])
-						add_action('all_admin_notices', array(&$this, 'ActivationNotice'));
+//					if ( empty( $_GET['page'] ) || WP_RW__ADMIN_MENU_SLUG != $_GET['page'] ) {
+//						add_actÅiÅoÅnÅ( 'all_admin_notices', array( &$this, 'ActivationNotice' ) );
+//					}
+//				}
+
+				if ( $this->account->is_registered() && ! $this->account->has_owner() ) {
+					if ( ! $this->_inDashboard || ! $this->TryToConfirmEmail() ) {
+						add_action( 'all_admin_notices', array( &$this, 'ConfirmationNotice' ) );
+					}
 				}
 
-				if ($this->fs->is_registered() && !WP_RW__OWNER_ID)
+				$title = WP_RW__NAME . ' ' . __( 'Settings', WP_RW__ID );
+
+				add_options_page( $title, WP_RW__NAME, 'edit_posts', WP_RW__ADMIN_MENU_SLUG, array(
+						&$this,
+						$pageLoaderFunction
+					) );
+
+				if ( function_exists( 'add_object_page' ) ) // WP 2.7+
 				{
-					if (!$this->_inDashboard || !$this->TryToConfirmEmail())
-						add_action('all_admin_notices', array(&$this, 'ConfirmationNotice'));
+					$hook = add_object_page( $title, WP_RW__NAME, 'edit_posts', WP_RW__ADMIN_MENU_SLUG, array(
+							&$this,
+							$pageLoaderFunction
+						), WP_RW__PLUGIN_URL . "icon.png" );
+				} else {
+					$hook = add_management_page( $title, WP_RW__NAME, 'edit_posts', WP_RW__ADMIN_MENU_SLUG, array(
+							&$this,
+							$pageLoaderFunction
+						) );
 				}
 
-				$title = WP_RW__NAME . ' ' . __('Settings', WP_RW__ID);
-
-				add_options_page($title, WP_RW__NAME, 'edit_posts', WP_RW__ADMIN_MENU_SLUG, array(&$this, $pageLoaderFunction));
-
-				if ( function_exists('add_object_page') ) // WP 2.7+
-					$hook = add_object_page($title, WP_RW__NAME, 'edit_posts', WP_RW__ADMIN_MENU_SLUG, array(&$this, $pageLoaderFunction), WP_RW__PLUGIN_URL . "icon.png" );
-				else
-					$hook = add_management_page($title, WP_RW__NAME, 'edit_posts', WP_RW__ADMIN_MENU_SLUG, array(&$this, $pageLoaderFunction) );
-
-
-				if (!$this->fs->is_registered())
-					add_action("load-$hook", array(&$this, 'SignUpPageLoad'));
-				else
-					// Setup menu items.
-					$this->SetupMenuItems();
+				$this->SetupMenuItems();
 			}
 
 			function RW_IsTrial()/*{obfuscate-method}*/
 			{
 				/*<--{obfuscate}*/
-				return ('trial' === WP_RW__SITE_PLAN);
+				return $this->fs->is_trial();
 				/*{obfuscate}-->*/
 			}
 
@@ -2304,7 +2138,7 @@
 			function RW_IsFreePlan()/*{obfuscate-method}*/
 			{
 				/*<--{obfuscate}*/
-				return (!is_string($this->fs->get_site()->secret_key) || 'free' === WP_RW__SITE_PLAN || 'basic' === WP_RW__SITE_PLAN);
+				return (!$this->account->has_secret_key() || $this->fs->is_free_plan());
 				/*{obfuscate}-->*/
 			}
 
@@ -2314,17 +2148,17 @@
 				if ($this->RW_IsTrial())
 					return true;
 
-				return (is_string($this->fs->get_site()->secret_key) && ('professional' === WP_RW__SITE_PLAN || 'premium' === WP_RW__SITE_PLAN || 'business' === WP_RW__SITE_PLAN));
+				return $this->fs->is_plan('professional');
 				/*{obfuscate}-->*/
 			}
 
 			/**
-			 * @var array of RW_AbstractExtension
+			 * @var RW_AbstractExtension[]
 			 */
 			private $_extensions = array();
 
 			/**
-			 * @return array of RW_AbstractExtension
+			 * @return RW_AbstractExtension[]
 			 */
 			function GetExtensions()
 			{
@@ -2404,9 +2238,6 @@
 					'slug' => 'addons'
 				);
 
-				$this->fs->add_action('fs_after_account_details', array(&$this, 'AccountPageRender'));
-				$this->fs->add_action('fs_account_page_load_before_departure', array(&$this, 'AccountPageLoad'));
-
 				/*if ($this->IsProfessional() && !$this->RW_IsTrial())
 					// Boosting.
 					$submenu[] = array(
@@ -2428,6 +2259,9 @@
 				}
 			}
 
+			/**
+			 * @deprecated Old sign-up page callback.
+			 */
 			function SignUpPageLoad()
 			{
 				if ($this->fs->is_registered())
@@ -2450,11 +2284,11 @@
 				}
 			}
 
-			function rw_user_key_page()
-			{
-				$this->_printErrors();
-				rw_require_once_view('userkey_generation.php');
-			}
+//			function rw_user_key_page()
+//			{
+//				$this->_printErrors();
+//				rw_require_once_view('userkey_generation.php');
+//			}
 
 			/* Reports
     ---------------------------------------------------------------------------------------------------------------*/
@@ -2555,7 +2389,7 @@
 					false;
 
 				$details = array(
-					"uid" => WP_RW__SITE_PUBLIC_KEY,
+					"uid" => $this->account->site_public_key,
 					"rclasses" => $rclass,
 					"orderby" => $orderby,
 					"order" => $order,
@@ -2934,7 +2768,7 @@
 					false;
 
 				$details = array(
-					"uid" => WP_RW__SITE_PUBLIC_KEY,
+					"uid" => $this->account->site_public_key,
 					"rclasses" => $rclass,
 					"orderby" => $orderby,
 					"order" => $order,
@@ -3238,7 +3072,7 @@
 				$rw_offset = isset($_REQUEST["offset"]) ? max(0, (int)$_REQUEST["offset"]) : 0;
 
 				$details = array(
-					"uid" => WP_RW__SITE_PUBLIC_KEY,
+					"uid" => $this->account->site_public_key,
 					"orderby" => $orderby,
 					"order" => $order,
 					"since" => "{$date_from} 00:00:00",
@@ -3536,11 +3370,11 @@
 				$this->SetOption( WP_RW__DB_OPTION_TRACKING, $tracking );
 
 				// Restore account details.
-				$this->SetOption( WP_RW__DB_OPTION_SITE_PUBLIC_KEY, WP_RW__SITE_PUBLIC_KEY );
-				$this->SetOption( WP_RW__DB_OPTION_SITE_ID, WP_RW__SITE_ID );
-				$this->SetOption( WP_RW__DB_OPTION_SITE_SECRET_KEY, WP_RW__SITE_SECRET_KEY );
-				$this->SetOption( WP_RW__DB_OPTION_OWNER_ID, WP_RW__OWNER_ID );
-				$this->SetOption( WP_RW__DB_OPTION_OWNER_EMAIL, WP_RW__OWNER_EMAIL );
+				$this->SetOption( WP_RW__DB_OPTION_SITE_PUBLIC_KEY, $this->account->site_public_key );
+				$this->SetOption( WP_RW__DB_OPTION_SITE_ID, $this->account->site_id );
+				$this->SetOption( WP_RW__DB_OPTION_SITE_SECRET_KEY, $this->account->site_secret_key );
+				$this->SetOption( WP_RW__DB_OPTION_OWNER_ID, $this->account->user_id );
+				$this->SetOption( WP_RW__DB_OPTION_OWNER_EMAIL, $this->account->user_email );
 
 				$this->_options_manager->store();
 
@@ -6039,11 +5873,11 @@
 							function RW_Async_Init(){
 								RW.init({<?php
                         // User key (uid).
-                        echo 'uid: "' . WP_RW__SITE_PUBLIC_KEY . '"';
+                        echo 'uid: "' . $this->account->site_public_key . '"';
 
                         // User id (huid).
-                        if (defined('WP_RW__SITE_ID') && is_numeric(WP_RW__SITE_ID))
-                            echo ', huid: "' . WP_RW__SITE_ID . '"';
+                        if ($this->account->has_site_id())
+                            echo ', huid: "' . $this->account->site_id . '"';
 
                         $user = wp_get_current_user();
                         if ($user->ID !== 0)
@@ -6204,7 +6038,7 @@
 				}
 
 				$details = array(
-					"uid" => WP_RW__SITE_PUBLIC_KEY,
+					"uid" => $this->account->site_public_key,
 					"urid" => $urid,
 					"votes" => $votes,
 					"rate" => $rate,
@@ -6390,11 +6224,11 @@
 				);
 
 				// Retrieve ratings and votes count
-				$response = $this->ApiCall("/votes/count.json", 'GET', array(), WP_RW__CACHE_TIMEOUT_DASHBOARD_STATS);
+				$response = rwapi()->get("/votes/count.json", false, WP_RW__CACHE_TIMEOUT_DASHBOARD_STATS);
 				if (!isset($response->error)) {
 					$stats['votes'] = $response->count;
 				
-					$response = $this->ApiCall("/ratings/count.json", 'GET', array(), WP_RW__CACHE_TIMEOUT_DASHBOARD_STATS);
+					$response = rwapi()->get("/ratings/count.json", false, WP_RW__CACHE_TIMEOUT_DASHBOARD_STATS);
 					if (!isset($response->error)) {
 						$stats['ratings'] = $response->count;
 					}
@@ -6495,6 +6329,8 @@
 				if (RWLogger::IsOn()) {
 					RWLogger::LogDeparture("SavePostData");
 				}
+
+				return $post_id;
 			}
 
 			function DeletePostData($post_id) {
@@ -6506,7 +6342,7 @@
 
 				$rating_id = $this->_getPostRatingGuid( $post_id );
 
-				$this->ApiCall( '/ratings/' . $rating_id . '.json?is_external=true', 'DELETE' );
+				rwapi()->call( '/ratings/' . $rating_id . '.json?is_external=true', 'DELETE' );
 			}
 
 			function PurgePostFeaturedImageTransient($meta_id = 0, $post_id = 0, $meta_key = '', $_meta_value = '')
@@ -6589,7 +6425,7 @@
 					return false;
 
 				$details = array(
-					"uid" => WP_RW__SITE_PUBLIC_KEY,
+					"uid" => $this->account->site_public_key,
 				);
 
 				$queries = array();
@@ -6697,120 +6533,6 @@
 
 				return $html;
 			}
-
-			function GetTopRated()
-			{
-				$rw_ret_obj = $this->GetTopRatedData(array('posts', 'pages'));
-
-				if (false === $rw_ret_obj || count($rw_ret_obj->data) == 0)
-					return '';
-
-				$html = '<div id="rw_top_rated_page">';
-				foreach($rw_ret_obj->data as $type => $ratings)
-				{
-					if (is_array($ratings) && count($ratings) > 0)
-					{
-						$html .= '<div id="rw_top_rated_page_' . $type . '" class="rw-wp-ui-top-rated-list-container">';
-						if ($instance["show_{$type}_title"])
-						{
-							$instance["{$type}_title"] = empty($instance["{$type}_title"]) ? ucwords($type) : $instance["{$type}_title"];
-							$html .= '<p style="margin: 0;">' . $instance["{$type}_title"] . '</p>';
-						}
-						$html .= '<ul class="rw-wp-ui-top-rated-list">';
-
-						$count = 1;
-						foreach ($ratings as $rating)
-						{
-							$urid = $rating->urid;
-							$rclass = $types[$type]["rclass"];
-							$thumbnail = '';
-							ratingwidget()->QueueRatingData($urid, "", "", $rclass);
-
-							switch ($type)
-							{
-								case "posts":
-								case "pages":
-									$id = RatingWidgetPlugin::Urid2PostId($urid);
-									$post = get_post($id);
-									$title = trim(strip_tags($post->post_title));
-									$excerpt = $this->GetPostExcerpt($post, 15);
-									$permalink = get_permalink($post->ID);
-									$thumbnail = $this->GetPostFeaturedImage($post->ID);
-									break;
-								case "comments":
-									$id = RatingWidgetPlugin::Urid2CommentId($urid);
-									$comment = get_comment($id);
-									$title = trim(strip_tags($comment->comment_content));
-									$permalink = get_permalink($comment->comment_post_ID) . '#comment-' . $comment->comment_ID;
-									break;
-								case "activity_updates":
-								case "activity_comments":
-									$id = RatingWidgetPlugin::Urid2ActivityId($urid);
-									$activity = new bp_activity_activity($id);
-									$title = trim(strip_tags($activity->content));
-									$permalink = bp_activity_get_permalink($id);
-									break;
-								case "users":
-									$id = RatingWidgetPlugin::Urid2UserId($urid);
-									$title = trim(strip_tags(bp_core_get_user_displayname($id)));
-									$permalink = bp_core_get_user_domain($id);
-									break;
-								case "forum_posts":
-									$id = RatingWidgetPlugin::Urid2ForumPostId($urid);
-									$forum_post = bp_forums_get_post($id);
-									$title = trim(strip_tags($forum_post->post_text));
-									$page = bb_get_page_number($forum_post->post_position);
-									$permalink = get_topic_link($id, $page) . "#post-{$id}";
-									break;
-							}
-							$short = (mb_strlen($title) > 30) ? trim(mb_substr($title, 0, 30)) . "..." : $title;
-
-							$html .= '
-<li class="rw-wp-ui-top-rated-list-item">
-    <div>
-        <b class="rw-wp-ui-top-rated-list-count">' . $count . '</b>
-        <img class="rw-wp-ui-top-rated-list-item-thumbnail" src="' . $thumbnail . '" alt="" />
-        <div class="rw-wp-ui-top-rated-list-item-data">
-            <div>
-                <a class="rw-wp-ui-top-rated-list-item-title" href="' . $permalink . '" title="' . $title . '">' . $short . '</a>
-                <div class="rw-ui-container rw-class-' . $rclass . ' rw-urid-' . $urid . ' rw-size-small rw-prop-readOnly-true" data-sync="false"></div>
-            </div>
-            <p class="rw-wp-ui-top-rated-list-item-excerpt">' . $excerpt . '</p>
-        </div>
-    </div>
-</li>';
-							$count++;
-						}
-						$html .= "</ul>";
-						$html .= "</div>";
-					}
-				}
-
-				// Set a flag that the widget is loaded.
-				$this->TopRatedWidgetLoaded();
-
-				ob_start();
-				?>
-				<script type="text/javascript">
-					// Hook render widget.
-					if (typeof(RW_HOOK_READY) === "undefined"){ RW_HOOK_READY = []; }
-					RW_HOOK_READY.push(function(){
-						RW._foreach(RW._getByClassName("rw-wp-ui-top-rated-list", "ul"), function(list){
-							RW._foreach(RW._getByClassName("rw-ui-container", "div", list), function(rating){
-								// Deactivate rating.
-								RW._Class.remove(rating, "rw-active");
-								var i = (RW._getByClassName("rw-report-link", "a", rating))[0];
-								if (RW._is(i)){ i.parentNode.removeChild(i); }
-							});
-						});
-					});
-				</script>
-				<?php
-				$html .= ob_get_clean();
-				$html .= '</div>';
-				return $html;
-			}
-
 
 			function get_rating_id_by_element($element_id, $element_type, $criteria_id = false)
 			{
@@ -7120,10 +6842,9 @@
 				if (!$this->IsProfessional() || false === rwapi())
 					return false;
 
-				$rating = $this->ApiCall(
+				$rating = rwapi()->get(
 					'/ratings/' . $pRatingID . '.json?is_external=true&fields=id,approved_count,avg_rate',
-					'GET',
-					array(),
+					false,
 					WP_RW__CACHE_TIMEOUT_RICH_SNIPPETS
 				);
 
@@ -7153,18 +6874,18 @@
 				add_shortcode('ratingwidget', 'rw_the_post_shortcode');
 				add_shortcode('ratingwidget_raw', 'rw_the_rating_shortcode');
 
-				if ($this->fs->is_registered()) {
+				if ($this->account->is_registered()) {
 					add_shortcode('ratingwidget_toprated', 'rw_toprated_shortcode');
 				}
 			}
 
 			function GetUpgradeUrl($pImmediate = false, $pPeriod = 'annually', $pPlan = 'professional')
 			{
-				if (!($this->fs->get_site()->secret_key) || !defined('WP_RW__SITE_ID'))
+				if (!$this->account->has_secret_key() || !$this->account->has_site_id())
 				{
-					// Backwards competability //////////////////////////////////////
+					// Backwards compatibility //////////////////////////////////////
 					$params = array(
-						'uid' => WP_RW__SITE_PUBLIC_KEY
+						'uid' => $this->account->site_public_key
 					);
 
 					if (!$pImmediate)
@@ -7181,9 +6902,14 @@
 					// New pricing page ////////////////////////////////////////////
 					$timestamp = time();
 					$params = array(
-						'context_site' => WP_RW__SITE_ID,
+						'context_site' => $this->account->site_id,
 						's_ctx_ts' => $timestamp,
-						's_ctx_secure' => md5($timestamp . WP_RW__SITE_ID . $this->fs->get_site()->secret_key . WP_RW__SITE_PUBLIC_KEY . 'upgrade'),
+						's_ctx_secure' => md5(
+							$timestamp .
+							$this->account->site_id .
+							$this->account->site_secret_key .
+							$this->account->site_public_key .
+							'upgrade'),
 					);
 
 					if (!$pImmediate)
@@ -7217,11 +6943,11 @@
 
 				$params = array(
 					'ts' => $timestamp,
-					'key' => WP_RW__SITE_PUBLIC_KEY,
+					'key' => $this->account->site_public_key,
 					'src' =>  $uri,
 				);
 
-				$confirmation = $timestamp . WP_RW__SITE_PUBLIC_KEY . $uri;
+				$confirmation = $timestamp . $this->account->site_public_key . $uri;
 
 				$params['s'] = md5($confirmation);
 
@@ -7269,7 +6995,7 @@
 
 			function LicenseSyncSameNotice()
 			{
-				$this->Notice('Hmm... it looks like your license remained the same. If you did upgrade, it\'s probably an issue on our side (sorry). Please contact us <a href="' . rw_get_site_url('/contact/?' . http_build_query(array('topic' => 'Report an Issue', 'email' => WP_RW__OWNER_EMAIL, 'site_id' => $this->fs->get_site()->id, 'user_id' => $this->fs->get_user()->id, 'website' => get_site_url(), 'platform' => 'wordpress', 'message' => 'I\'ve upgraded my account but when I try to Sync the License in my WordPress Dashboard -> Ratings -> Account, the license remains the same.' . "\n" . 'Your Upgraded Plan: [REPLACE WITH PLAN NAME]' . "\n" . 'Your PayPal Email: [REPLACE WITH PAYPAL ADDRESS]'))) . '" target="_blank">here</a>.');
+				$this->Notice('Hmm... it looks like your license remained the same. If you did upgrade, it\'s probably an issue on our side (sorry). Please contact us <a href="' . rw_get_site_url('/contact/?' . http_build_query(array('topic' => 'Report an Issue', 'email' => $this->account->user_email, 'site_id' => $this->account->site_id, 'user_id' => $this->account->user_id, 'website' => get_site_url(), 'platform' => 'wordpress', 'message' => 'I\'ve upgraded my account but when I try to Sync the License in my WordPress Dashboard -> Ratings -> Account, the license remains the same.' . "\n" . 'Your Upgraded Plan: [REPLACE WITH PLAN NAME]' . "\n" . 'Your PayPal Email: [REPLACE WITH PAYPAL ADDRESS]'))) . '" target="_blank">here</a>.');
 			}
 
 			private function TryToConfirmEmail() {
@@ -7288,7 +7014,9 @@
 
 				$is_valid = true;
 
-				if ( $secure !== md5( strtolower( $user_id . $email . $timestamp . WP_RW__SITE_PUBLIC_KEY ) ) ) {
+				if ( $secure !== md5( strtolower(
+						$user_id . $email . $timestamp . $this->account->site_public_key ) )
+				) {
 					$is_valid = false;
 				}
 				if ( ! is_numeric( $user_id ) ) {
@@ -7313,11 +7041,47 @@
 
 				$this->_options_manager->store();
 
-				$this->fs->update_account($user_id, $email, $site_id);
+//				$this->fs->update_account($user_id, $email, $site_id);
 
 				add_action( 'all_admin_notices', array( &$this, 'SuccessfulEmailConfirmNotice' ) );
 
 				return true;
+			}
+
+			function fs_connect_message($message){
+				$params = array();
+				return rw_get_view('pages/admin/connect-message.php', $params);
+			}
+
+			function connect_account(FS_User $user, FS_Site $site)
+			{
+				// Generate secret signature.
+				$context_params = FS_Security::instance()->get_context_params(
+					$site,
+					time(),
+					'install'
+				);
+				$result = $this->RemoteCall('action/api/user/connect/', $context_params);
+
+				$result = json_decode($result);
+
+				if (!is_object($result) || !isset($result->success) || false === $result->success)
+					return;
+
+				$result = $result->data;
+
+				$this->account->set(
+					$result->site_id,
+					$result->public_key,
+					$result->secret_key,
+					$result->user_id,
+					$result->user_email
+				);
+			}
+
+			function delete_account()
+			{
+				$this->account->clear();
 			}
 		}
 
@@ -7337,8 +7101,10 @@
 		function ratingwidget() {
 			global $rwp;
 			if (!isset($rwp)) {
+				// Init Freemius.
 				rw_fs();
-				rw_load_constants();
+
+//				rw_load_constants();
 				$rwp = RatingWidgetPlugin::Instance();
 				$rwp->Init();
 			}
@@ -7346,168 +7112,116 @@
 			return $rwp;
 		}
 
-		function rw_fs() {
-			global $rw_fs;
+//		function rw_fs() {
+//			global $rw_fs;
+//
+//			if ( ! isset( $rw_fs ) ) {
+//				$rw_fs = fs_init( WP_RW__ID, 1, 'mypublickey', array(
+//						'menu' => array(
+//							'wp_support_forum' => true,
+//							'upgrade'          => true,
+//						)
+//					)
+//				);
+//			}
+//
+//			return $rw_fs;
+//		}
 
+		// Create a helper function for easy SDK access.
+		/**
+		 * @return \Freemius
+		 */
+		function rw_fs() {
+			/**
+			 * @var Freemius $rw_fs
+			 */
+			global $rw_fs;
 			if ( ! isset( $rw_fs ) ) {
-				$rw_fs = fs_init( WP_RW__ID, 1, 'mypublickey', array(
-						'menu' => array(
-							'wp_support_forum' => true,
-							'upgrade'          => true,
-						)
-					)
-				);
+				// Include Freemius SDK.
+				require_once dirname(dirname(__FILE__)) . '/test-plugin/freemius/start.php';
+
+				$rw_fs = fs_dynamic_init( array(
+					'id'                => '30',
+					'slug'              => 'rating-widget',
+					'menu_slug'         => 'rating-widget',
+					'public_key'        => 'pk_d859cee50e9d63917b6d3f324cbaf',
+					'is_live'           => true,
+					'is_premium'        => true,
+					'has_addons'        => false,
+					'has_paid_plans'    => true,
+					'enable_anonymous'  => false,
+					// Set the SDK to work in a sandbox mode (for development & testing).
+					// IMPORTANT: MAKE SURE TO REMOVE SECRET KEY BEFORE DEPLOYMENT.
+					'secret_key'  => 'sk_j2nR2@g<Ts3jl]));Oi.k<wO]kKSH',
+				) );
 			}
 
 			return $rw_fs;
 		}
 
-		function rw_fs_options()
+		function rw_migration_to_freemius()
 		{
-			global $rw_fs_options;
+			if (rw_fs()->is_registered())
+				// Already registered correctly.
+				return true;
 
-			if ( ! isset( $rw_fs_options ) ) {
-				$rw_fs_options = rw_fs()->get_options_manager( WP_RW__OPTIONS, true, false );
-			}
+			if (false === rwapi())
+				// RW identity is not complete, cannot make API calls.
+				return true;
 
-			return $rw_fs_options;
-		}
+			// Pull Freemius information from RatingWidget.
+			$result = rwapi()->get(
+				'freemius.json',
+				false,
+				// Cache result for 5 min, we don't want to cause slowdowns.
+				WP_RW__TIME_5_MIN_IN_SEC
+			);
 
-		/**
-		 * Load RW constants based on FS account (used after migration).
-		 * @todo Should be removed after changing all constants to the relevant properties from Freemius.
-		 */
-		function rw_load_constants() {
-			$fs   = rw_fs();
-			$site = $fs->get_site();
-			$user = $fs->get_user();
-
-			if ( is_object( $site ) ) {
-				if ( ! defined( 'WP_RW__SITE_ID' ) ) {
-					define( 'WP_RW__SITE_ID', $site->id );
-				}
-				if ( ! defined( 'WP_RW__SITE_PUBLIC_KEY' ) ) {
-					define( 'WP_RW__SITE_PUBLIC_KEY', $site->public_key );
-				}
-				if ( ! defined( 'WP_RW__SITE_SECRET_KEY' ) ) {
-					define( 'WP_RW__SITE_SECRET_KEY', $site->secret_key );
-				}
-			}
-			if ( is_object( $user ) ) {
-				if ( ! defined( 'WP_RW__OWNER_ID' ) ) {
-					define( 'WP_RW__OWNER_ID', $user->id );
-				}
-				if ( ! defined( 'WP_RW__OWNER_EMAIL' ) ) {
-					define( 'WP_RW__OWNER_EMAIL', $user->email );
-				}
-			}
-		}
-
-		/**
-		 * Load account information from RatingWidget to Freemius.
-		 * It's a migration method that should be only executed once.
-		 * @return array
-		 */
-		function rw_fs_load_external_account()
-		{
-			/*<--{obfuscate}*/
-			$options = FS_Option_Manager::get_manager(WP_RW__OPTIONS, true);
-
-			$site_public_key = $options->get_option( WP_RW__DB_OPTION_SITE_PUBLIC_KEY, false );
-			$site_id         = $options->get_option( WP_RW__DB_OPTION_SITE_ID, false );
-			$owner_id        = $options->get_option( WP_RW__DB_OPTION_OWNER_ID, false );
-			$owner_email     = $options->get_option( WP_RW__DB_OPTION_OWNER_EMAIL, false );
-
-			$update = false;
-
-			if ( ! defined( 'WP_RW__SITE_PUBLIC_KEY' ) ) {
-				define( 'WP_RW__SITE_PUBLIC_KEY', $site_public_key );
-				define( 'WP_RW__SITE_ID', $site_id );
-				define( 'WP_RW__OWNER_ID', $owner_id );
-				define( 'WP_RW__OWNER_EMAIL', $owner_email );
-			} else {
-				if ( is_string( WP_RW__SITE_PUBLIC_KEY ) && WP_RW__SITE_PUBLIC_KEY !== $site_public_key ) {
-					// Override user key.
-					$options->set_option( WP_RW__DB_OPTION_SITE_PUBLIC_KEY, WP_RW__SITE_PUBLIC_KEY );
-					$options->set_option( WP_RW__DB_OPTION_SITE_ID, WP_RW__SITE_ID );
-					if ( defined( 'WP_RW__OWNER_ID' ) ) {
-						$options->set_option( WP_RW__DB_OPTION_OWNER_ID, WP_RW__OWNER_ID );
-					}
-					if ( defined( 'WP_RW__OWNER_EMAIL' ) ) {
-						$options->set_option( WP_RW__DB_OPTION_OWNER_EMAIL, WP_RW__OWNER_EMAIL );
-					}
-
-					$update = true;
-				}
-			}
-
-			$secret_key = $options->get_option( WP_RW__DB_OPTION_SITE_SECRET_KEY, false );
-
-			if ( ! defined( 'WP_RW__SITE_SECRET_KEY' ) ) {
-				define( 'WP_RW__SITE_SECRET_KEY', $secret_key );
-			} else {
-				if ( is_string( WP_RW__SITE_SECRET_KEY ) && WP_RW__SITE_SECRET_KEY !== $secret_key ) {
-					// Override user key.
-					$options->set_option( WP_RW__DB_OPTION_SITE_SECRET_KEY, WP_RW__SITE_SECRET_KEY );
-
-					$update = true;
-				}
-			}
-
-			if ( $update ) {
-				$options->store();
-			}
-
-			$site = false;
-			$user = false;
-
-			if (false !== WP_RW__SITE_PUBLIC_KEY) {
-				$site = new FS_Site();
-				$site->id = $options->get_option(WP_RW__DB_OPTION_SITE_ID);
-				$site->public_key = $options->get_option(WP_RW__DB_OPTION_SITE_PUBLIC_KEY);
-				$site->secret_key = $options->get_option(WP_RW__DB_OPTION_SITE_SECRET_KEY);
-
-				$user = new FS_User();
-				$user->id = $options->get_option( WP_RW__DB_OPTION_OWNER_ID );
-				$user->email = $options->get_option( WP_RW__DB_OPTION_OWNER_EMAIL );
-			}
-
-			return array('user' => $user, 'site' => $site);
-
-			/*{obfuscate}-->*/
-		}
-
-		add_filter('fs_load_account_' . WP_RW__ID, 'rw_fs_load_external_account');
-
-		function rwapi()
-		{
-			global $rwapi;
-
-			if (!isset($rwapi))
+			if (!is_object($result) || isset($result->error))
 			{
-				require_once(WP_RW__PLUGIN_LIB_DIR . 'sdk/ratingwidget.php');
-
-				$site = rw_fs()->get_site();
-
-				if (empty($site->secret_key))
-				{
-					// API can not be accessed without a secret key.
-					$rwapi = false;
-				}
-				else
-				{
-					// Init API.
-					$rwapi = new RatingWidget(
-						'site',
-						rw_fs()->get_site()->id,
-						rw_fs()->get_site()->public_key,
-						rw_fs()->get_site()->secret_key
-					);
-				}
+				// Failed to pull account information.
+				return false;
 			}
 
-			return $rwapi;
-		};
+			rw_fs()->setup_account(
+				new FS_User($result->user),
+				new FS_Site($result->install)
+			);
+
+			return true;
+		}
+
+		// Init Freemius.
+		$fs = rw_fs();
+
+		// Init options
+		rw_fs_options();
+
+		// Try to load RatingWidget's account.
+		$account = rw_account();
+
+		// Init RW API (must be called after account is loaded).
+		rwapi();
+
+		global $rw_fs;
+
+		if ($account->is_registered())
+		{
+			// RW account info is available.
+			if ($rw_fs->is_sdk_upgrade_mode() && '1.0.9' === $rw_fs->version)
+			{
+				// Migration to new Freemius account management.
+				if (rw_migration_to_freemius())
+				{
+					$rw_fs->set_sdk_upgrade_complete();
+				}
+			}
+		}
+		else
+		{
+			// New install.
+		}
 
 		/**
 		 * Hook Rating-Widget early onto the 'plugins_loaded' action.
