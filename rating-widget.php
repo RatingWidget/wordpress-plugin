@@ -47,7 +47,13 @@
 		 */
 		class RatingWidgetPlugin
 		{
+			/**
+			 * @var RatingWidgetPlugin_Admin
+			 */
 			public $admin;
+			/**
+			 * @var RatingWidgetPlugin_Settings
+			 */
 			public $settings;
 
 			/**
@@ -209,7 +215,7 @@
 				$this->fs->add_filter('connect_message', array(&$this, 'fs_connect_message'));
 				$this->fs->add_action('after_account_connection', array(&$this, 'connect_account'), 10, 2);
 				$this->fs->add_action('after_license_change', array(&$this, 'after_license_change_hook'), 10, 2);
-				$this->fs->add_action('after_account_delete', array(&$this, 'delete_account'));
+				$this->fs->add_action('after_account_delete', array(&$this, 'delete_account_and_settings'));
 //				$this->fs->add_action('account_email_verified', array(&$this, 'verify_email'));
 
 				$this->fs->add_action('after_account_details', array(&$this, 'AccountPageRender'));
@@ -2065,8 +2071,10 @@
 			}
 
 			/**
-			 * Checks if this option type supports multi-rating
-			 * @param type $class
+			 * Checks if this option type supports multi-rating.
+			 *
+			 * @param string $class
+			 *
 			 * @return boolean
 			 */
 			function has_multirating_options($class) {
@@ -7083,6 +7091,11 @@
 			{
 				$this->account->clear();
 			}
+
+			function delete_account_and_settings()
+			{
+				$this->_options_manager->delete();
+			}
 		}
 
 		/* Plugin page extra links.
@@ -7112,21 +7125,7 @@
 			return $rwp;
 		}
 
-//		function rw_fs() {
-//			global $rw_fs;
-//
-//			if ( ! isset( $rw_fs ) ) {
-//				$rw_fs = fs_init( WP_RW__ID, 1, 'mypublickey', array(
-//						'menu' => array(
-//							'wp_support_forum' => true,
-//							'upgrade'          => true,
-//						)
-//					)
-//				);
-//			}
-//
-//			return $rw_fs;
-//		}
+		#region Freemius Helpers
 
 		// Create a helper function for easy SDK access.
 		/**
@@ -7139,7 +7138,7 @@
 			global $rw_fs;
 			if ( ! isset( $rw_fs ) ) {
 				// Include Freemius SDK.
-				require_once dirname(dirname(__FILE__)) . '/test-plugin/freemius/start.php';
+				require_once dirname(__FILE__) . '/freemius/start.php';
 
 				$rw_fs = fs_dynamic_init( array(
 					'id'                => '30',
@@ -7192,6 +7191,10 @@
 			return true;
 		}
 
+		#endregion
+
+		#region Plugin Initialization
+
 		// Init Freemius.
 		$fs = rw_fs();
 
@@ -7231,8 +7234,11 @@
 		 * way.
 		 */
 //define('WP_RW___LATE_LOAD', 20);
-		if (defined('WP_RW___LATE_LOAD'))
-			add_action('plugins_loaded', 'ratingwidget', (int)WP_RW___LATE_LOAD);
-		else
+		if (defined('WP_RW___LATE_LOAD')) {
+			add_action( 'plugins_loaded', 'ratingwidget', (int) WP_RW___LATE_LOAD );
+		}else {
 			$GLOBALS['rw'] = ratingwidget();
+		}
+
+		#endregion
 	endif;
