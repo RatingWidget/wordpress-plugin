@@ -15,9 +15,9 @@ The most popular Five Star Review System on the web. User-friendly ratings for: 
 * Posts
 * Pages
 * Comments
-* [WooCommerce Products](https://rating-widget.com/blog/woocommerce-product-ratings/)
+* [WooCommerce Products](https://rating-widget.com/blog/woocommerce-product-ratings/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org)
 * BuddyPress Users and Activities
-* [bbPress Forum Topics](https://rating-widget.com/blog/bbpress-buddypress-star-rating-plugin/), Replies and Users ([PROFESSIONAL plan](http://rating-widget.com/pricing/wordpress/))
+* [bbPress Forum Topics](https://rating-widget.com/blog/bbpress-buddypress-star-rating-plugin/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org), Replies and Users ([PROFESSIONAL plan](http://rating-widget.com/pricing/wordpress/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org))
 * Custom Post Types
 * Author Review
 
@@ -27,7 +27,7 @@ The [Rating-Widget](http://rating-widget.com/wordpress-plugin/) **Star Ratings W
 
 [youtube https://www.youtube.com/watch?v=xbo-dlXvB98]
 
-The plugin has [PRO VERSIONS](http://rating-widget.com/pricing/wordpress/) with [extra features](http://rating-widget.com/wordpress-plugin/).
+The plugin has [PRO VERSIONS](http://rating-widget.com/pricing/wordpress/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org) with [extra features](http://rating-widget.com/wordpress-plugin/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org).
 
 > #### FREE:
 > * Unlimited ratings
@@ -42,7 +42,7 @@ The plugin has [PRO VERSIONS](http://rating-widget.com/pricing/wordpress/) with 
 > * 50k PageViews / month
 > * 1,000 ratings
 > * Unlimited votes
-> * Email Support & [Help Center](http://rating-widget.com/support/)
+> * Email Support & [Help Center](http://rating-widget.com/support/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org)
 
 > #### PROFESSIONAL - SEO, DASHBOARD & ADVANCED ANALYTICS:
 > * All Starter Features
@@ -96,12 +96,12 @@ Check our full features list: http://rating-widget.com/wordpress-plugin/
 ---
  
 > #### Follow Us
-> [Blog](http://rating-widget.com/blog/) | [Twitter](http://twitter.com/ratingwidget) | [Facebook](http://www.facebook.com/rating.widget) | [Google+](https://plus.google.com/103776958800403053498/) | [LinkedIn](http://www.linkedin.com/company/1856639) | [YouTube](https://www.youtube.com/ratingwidget)
+> [Blog](http://rating-widget.com/blog/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org) | [Twitter](http://twitter.com/ratingwidget) | [Facebook](http://www.facebook.com/rating.widget) | [Google+](https://plus.google.com/103776958800403053498/) | [LinkedIn](http://www.linkedin.com/company/1856639) | [YouTube](https://www.youtube.com/ratingwidget)
 
 ---
  
 > #### Rating-Widget Support Forum
-> Please visit [RatingWidget WordPress FAQ](http://rating-widget.com/support/wordpress/faq/) and [RatingWidget WordPress Support Forum](http://wordpress.org/support/plugin/rating-widget) for additional help with using this plugin. You may also post feature requests, ideas and bug reports there.
+> Please visit [RatingWidget WordPress FAQ](http://rating-widget.com/support/wordpress/faq/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org) and [RatingWidget WordPress Support Forum](https://wordpress.org/support/plugin/rating-widget/) for additional help with using this plugin. You may also post feature requests, ideas and bug reports there.
 
 == Installation ==
 
@@ -135,8 +135,8 @@ If you are here that means you've installed the [RatingWidget for WordPress Plug
 
 We know that your time is valuable, therefore we've created this sticky topic to help you find a solution as quickly as possible.
 
-1. If you have a [feature suggestion/request](http://rating-widget.com/contact/?platform=wordpress&topic=feature%20request) please follow [this link](http://rating-widget.com/contact/?platform=wordpress&topic=feature%20request).
-2. If you need some [special customization of the plugin](http://rating-widget.com/contact/?platform=wordpress&subject=customization) for your Blog, please follow [this link](http://rating-widget.com/contact/?platform=wordpress&subject=customization).
+1. If you have a [feature suggestion/request](http://rating-widget.com/contact/?platform=wordpress&topic=feature%20request&utm_medium=link&utm_campaign=free&utm_source=wordpress.org) please follow [this link](http://rating-widget.com/contact/?platform=wordpress&topic=feature%20request&utm_medium=link&utm_campaign=free&utm_source=wordpress.org).
+2. If you need some [special customization of the plugin](http://rating-widget.com/contact/?platform=wordpress&subject=customization&utm_medium=link&utm_campaign=free&utm_source=wordpress.org) for your Blog, please follow [this link](http://rating-widget.com/contact/?platform=wordpress&subject=customization&utm_medium=link&utm_campaign=free&utm_source=wordpress.org).
 3. If you face a technical problem/issue, please keep reading.
 
 Before you rush into adding another topic to the support forum, please read the following most **Frequently Asked Questions** and solutions:
@@ -157,18 +157,18 @@ Before you rush into adding another topic to the support forum, please read the 
 
 > **Problem: The RatingWidget WordPress plugin don’t show ratings on my comments, what’s wrong?**
 >
-> **Solution:** First, make sure you’ve enabled the ratings for comments in your admin’s dashboard. Once you sure it’s enabled, but still doesn’t work, a common cause can be that your theme isn’t using `comment_text()` to display the comments text. A common mistake by theme developers is the use of `get_comment_text()` instead of `comment_text()`. Try to switch between those and it should fix the issue. If you are awesome, contact the theme developer and let him know about the issue so he can fix it for everyone else.
+> **Solution:** First, make sure you’ve enabled the ratings for comments in your admin’s dashboard. Once you sure it’s enabled, but still doesn't work, a common cause can be that your theme isn’t using `comment_text()` to display the comments text. A common mistake by theme developers is the use of `get_comment_text()` instead of `comment_text()`. Try to switch between those and it should fix the issue. If you are awesome, contact the theme developer and let him know about the issue so he can fix it for everyone else.
 
 ---
 
 > ####Additional common questions and solutions (follow the links):
 >
-> * [Can I add a rating inside my WordPress post’s content?](http://rating-widget.com/support/wordpress/can-i-add-a-rating-inside-my-wordpress-posts-content/)
-> * [Is there any PHP shortcodes I can use for my custom posts templates?](http://rating-widget.com/support/wordpress/is-there-any-php-shortcodes-i-can-use-for-my-custom-posts-templates/)
-> * [Do you have a refresh code for Ajax loaded content?](http://rating-widget.com/support/wordpress/do-you-have-a-refresh-code-for-ajax-loaded-content/)
+> * [Can I add a rating inside my WordPress post’s content?](http://rating-widget.com/support/wordpress/can-i-add-a-rating-inside-my-wordpress-posts-content/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org)
+> * [Is there any PHP shortcodes I can use for my custom posts templates?](http://rating-widget.com/support/wordpress/is-there-any-php-shortcodes-i-can-use-for-my-custom-posts-templates/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org)
+> * [Do you have a refresh code for Ajax loaded content?](http://rating-widget.com/support/wordpress/do-you-have-a-refresh-code-for-ajax-loaded-content/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org)
 
-If you didn't find a solution to your problem yet, check out our [WordPress Knowledge Base](http://rating-widget.com/support/wordpress/):
-[http://rating-widget.com/support/wordpress/](http://rating-widget.com/support/wordpress/)
+If you didn't find a solution to your problem yet, check out our [WordPress Knowledge Base](http://rating-widget.com/support/wordpress/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org):
+[http://rating-widget.com/support/wordpress/](http://rating-widget.com/support/wordpress/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org)
 
 **If you reading this section it means you still didn't find a solution to your problem. Try to [search our WordPress support forum](http://wordpress.org/support/plugin/rating-widget) - maybe someone else already asked it. If you can't find it, it's time  create a new topic in the forum.** To make it super-efficient, please follow this guidelines:
 
@@ -177,7 +177,7 @@ If you didn't find a solution to your problem yet, check out our [WordPress Know
 * If you are running your WordPress from LOCALHOST, please add a screenshot or a video of the problem you are facing.
 * Otherwise, provide a link to the page that has the ratings code and the problem you are facing.
 
-**Thanks for using our [WordPress plugin](http://rating-widget.com/wordpress-plugin/)**,
+**Thanks for using our [WordPress plugin](http://rating-widget.com/wordpress-plugin/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org)**,
 The RatingWidget Team
 
 == Change Log ==
