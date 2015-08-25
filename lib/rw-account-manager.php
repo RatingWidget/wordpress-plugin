@@ -130,12 +130,12 @@
 			$this->update_site_id($site_id, false);
 			$this->update_site_public_key($site_public_key, false);
 			$this->update_site_secret_key($site_secret_key, false);
-			rw_options()->store();
+			rw_fs_options()->store();
 		}
 
 		function clear()
 		{
-			$options = rw_options();
+			$options = rw_fs_options();
 			$options->unset_option( WP_RW__DB_OPTION_OWNER_ID );
 			$options->unset_option( WP_RW__DB_OPTION_OWNER_EMAIL );
 			$options->unset_option( WP_RW__DB_OPTION_SITE_PUBLIC_KEY );
@@ -166,31 +166,31 @@
 
 		function update_site_id($id, $flush = true)
 		{
-			rw_options()->set_option( WP_RW__DB_OPTION_SITE_ID, $id, $flush );
+			rw_fs_options()->set_option( WP_RW__DB_OPTION_SITE_ID, $id, $flush );
 			$this->site_id = $id;
 		}
 
 		function update_site_public_key($public_key, $flush = true)
 		{
-			rw_options()->set_option( WP_RW__DB_OPTION_SITE_PUBLIC_KEY, $public_key, $flush );
+			rw_fs_options()->set_option( WP_RW__DB_OPTION_SITE_PUBLIC_KEY, $public_key, $flush );
 			$this->site_public_key = $public_key;
 		}
 
 		function update_site_secret_key($secret_key, $flush = true)
 		{
-			rw_options()->set_option( WP_RW__DB_OPTION_SITE_SECRET_KEY, $secret_key, $flush );
+			rw_fs_options()->set_option( WP_RW__DB_OPTION_SITE_SECRET_KEY, $secret_key, $flush );
 			$this->site_secret_key = $secret_key;
 		}
 
 		function update_user_id($id, $flush = true)
 		{
-			rw_options()->set_option( WP_RW__DB_OPTION_OWNER_ID, $id, $flush );
+			rw_fs_options()->set_option( WP_RW__DB_OPTION_OWNER_ID, $id, $flush );
 			$this->user_id = $id;
 		}
 
 		function update_user_email($email, $flush = true)
 		{
-			rw_options()->set_option( WP_RW__DB_OPTION_OWNER_EMAIL, $email, $flush );
+			rw_fs_options()->set_option( WP_RW__DB_OPTION_OWNER_EMAIL, $email, $flush );
 			$this->user_email = $email;
 		}
 	}
