@@ -62,10 +62,10 @@
 
 	/* Uncomment for debug mode.
 	-----------------------------------------------------------------------------------------*/
-	define( 'WP_RW__DEBUG_PARAMS', false || ( ! empty( $_GET['rwdbge'] ) && 'true' === $_GET['rwdbge'] ) );
-	define( 'WP_RW__DEBUG', WP_RW__DEBUG_PARAMS || false || ( ! empty( $_GET['rwdbg'] ) && 'true' === $_GET['rwdbg'] ) );
-	define( 'WP_RW__SHOW_PHP_ERRORS', false );
-	define( 'WP_RW__LOCALHOST_SCRIPTS', WP_RW__DEBUG && false );
+	define( 'WP_RW__DEBUG_PARAMS', true || ( ! empty( $_GET['rwdbge'] ) && 'true' === $_GET['rwdbge'] ) );
+	define( 'WP_RW__DEBUG', WP_RW__DEBUG_PARAMS || true || ( ! empty( $_GET['rwdbg'] ) && 'true' === $_GET['rwdbg'] ) );
+	define( 'WP_RW__SHOW_PHP_ERRORS', true );
+	define( 'WP_RW__LOCALHOST_SCRIPTS', WP_RW__DEBUG && true );
 	define( 'WP_RW__CACHING_ON', ! WP_RW__DEBUG );
 	define( 'WP_RW__STAGING', false );
 	define( 'WP_RW__LOG_DUMP', WP_RW__DEBUG &&  ! empty( $_GET['rwdbge'] ));
@@ -148,7 +148,7 @@
 	// User
 	define( 'WP_RW__USERS_ALIGN', 'rw_users_align' );
 	define( 'WP_RW__USERS_OPTIONS', 'rw_users_options' );
-	// User accamulated ratings
+	// User accumulated ratings
 	// Posts
 	define( 'WP_RW__USERS_POSTS_ALIGN', 'rw_users_posts_align' );
 	define( 'WP_RW__USERS_POSTS_OPTIONS', 'rw_users_posts_options' );
@@ -288,4 +288,10 @@
 	}
 	if ( ! defined( 'WP_RW__CLIENT_ADDR' ) ) {
 		define( 'WP_RW__CLIENT_ADDR', $_SERVER['REMOTE_ADDR'] );
+	}
+
+	define( 'WP_RW__SCRIPT_START_TIME', time() );
+
+	if ( WP_RW__LOCALHOST_SCRIPTS ) {
+		define( 'RW_API__ADDRESS', 'http://api.rating-widget:8080' );
 	}
