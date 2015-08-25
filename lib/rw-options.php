@@ -49,47 +49,38 @@
 		 * Optional data migration based on the database stored options.
 		 *
 		 * @author Vova Feldman (@svovaf)
-		 * @since 2.6.0
+		 * @since  2.6.0
 		 */
-		private function optional_migration()
-		{
-			$rw_options = get_option(WP_RW__OPTIONS);
+		private function optional_migration() {
+			$rw_options = get_option( WP_RW__OPTIONS );
 
-			if (false === $rw_options)
-			{
-				$public_key = get_option(WP_RW__DB_OPTION_SITE_PUBLIC_KEY);
+			if ( false === $rw_options ) {
+				$public_key = get_option( WP_RW__DB_OPTION_SITE_PUBLIC_KEY );
 
-				if (false !== $public_key) {
+				if ( false !== $public_key ) {
 					// Very old plugin versions, when each account property was stored in separated option.
 					$this->migrate_from_separated_to_json();
 					$this->migrate_from_json_to_serialized();
-				}
-				else
-				{
+				} else {
 					// No options are stored, probably new plugin install.
 				}
-			}
-			else if (is_object($rw_options)) {
-				// New versions, where account details are PHP serialized in one option record.
-			}
-			else
-			{
-				$rw_options = json_decode($rw_options);
+			} else if ( is_string( $rw_options ) ) {
+				$rw_options = json_decode( $rw_options );
 
-				if (is_string($rw_options)) {
+				if ( is_string( $rw_options ) ) {
 					// Don't remember why, but sometimes double decoding works.
 					$rw_options = json_decode( $rw_options );
 				}
 
-				if (is_null($rw_options))
-				{
+				if ( is_null( $rw_options ) ) {
 					// Ignore account option record.
-				}
-				else
-				{
+				} else {
 					// Old plugin versions, when account details serialized into one JSON option record.
 					$this->migrate_from_json_to_serialized();
 				}
+			} else // Object or Array
+			{
+				// New versions, where account details are PHP serialized in one option record.
 			}
 		}
 
@@ -97,7 +88,7 @@
 		 * Migration from separated option records into one option with all the settings in JSON format.
 		 *
 		 * @author Vova Feldman (@svovaf)
-		 * @since 2.6.0
+		 * @since  2.6.0
 		 */
 		private function migrate_from_separated_to_json() {
 			$rw_options = new stdClass();
@@ -111,12 +102,10 @@
 				WP_RW__DB_OPTION_SITE_PLAN_UPDATE,
 				WP_RW__DB_OPTION_OWNER_ID,
 				WP_RW__DB_OPTION_OWNER_EMAIL,
-
 				WP_RW__DB_OPTION_TRACKING,
 				WP_RW__DB_OPTION_WP_RATE_NOTICE_MIN_VOTES_TRIGGER,
 				WP_RW__DB_OPTION_STATS_UPDATED,
 				WP_RW__DB_OPTION_RICH_SNIPPETS_SETTINGS,
-
 				WP_RW__SHOW_ON_EXCERPT,
 				WP_RW__SHOW_ON_ARCHIVE,
 				WP_RW__SHOW_ON_CATEGORY,
@@ -129,7 +118,6 @@
 				WP_RW__CUSTOM_SETTINGS,
 				WP_RW__MULTIRATING_SETTINGS,
 				WP_RW__IS_ACCUMULATED_USER_RATING,
-
 				// Posts
 				WP_RW__BLOG_POSTS_ALIGN,
 				WP_RW__BLOG_POSTS_OPTIONS,
@@ -181,7 +169,7 @@
 				}
 			}
 
-			update_option(WP_RW__OPTIONS, json_encode($rw_options));
+			update_option( WP_RW__OPTIONS, json_encode( $rw_options ) );
 
 			foreach ( $option_names as $option ) {
 				// Clear old options from DB.
@@ -193,7 +181,7 @@
 		 * Migration from one option with all settings in JSON format, into PHP serialized format.
 		 *
 		 * @author Vova Feldman (@svovaf)
-		 * @since 2.6.0
+		 * @since  2.6.0
 		 */
 		private function migrate_from_json_to_serialized() {
 			$rw_options = get_option( WP_RW__OPTIONS );
@@ -227,26 +215,28 @@
 		}
 
 		function clear( $flush = false ) {
-			$this->_logger->entrance();
-
-			$this->_options->clear($flush);
+			$this->_options->clear( $flush );
 		}
 
-		function has_option ($option)
+		function delete()
 		{
-			return $this->_options->has_option($option);
+			$this->_options->delete();
+		}
+
+		function has_option( $option ) {
+			return $this->_options->has_option( $option );
 		}
 
 		function get_option( $option, $default = null ) {
-			return $this->_options->get_option($option, $default);
+			return $this->_options->get_option( $option, $default );
 		}
 
 		function set_option( $option, $value, $flush = false ) {
-			$this->_options->get_option($option, $value, $flush);
+			$this->_options->set_option( $option, $value, $flush );
 		}
 
 		function unset_option( $option, $flush = false ) {
-			$this->_options->get_option($option, $flush);
+			$this->_options->unset_option( $option, $flush );
 		}
 
 		function store() {
