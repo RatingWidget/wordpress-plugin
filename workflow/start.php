@@ -6,6 +6,8 @@
 		require_once WP_WF__DIR_INCLUDES . '/class-workflows.php';
 		
 		/**
+		 * Returns an instance of this class.
+		 * 
 		 * @return Workflows
 		 */
 		function wf( $slug ) {
@@ -13,7 +15,7 @@
 		}
 
 		/**
-		 * Initializes an instance of Workflows.
+		 * Initializes an instance of this class.
 		 * 
 		 * @param string $slug
 		 * @param array $options

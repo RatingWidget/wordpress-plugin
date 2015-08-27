@@ -1,11 +1,10 @@
 <?php
-$wf = rw_wf();
-
+$wf = rw_wf( $VARS['slug'] );
 ?>
 
 <script type="text/javascript">
 function Class_WF_Engine( options, $ ) {
-	var _options = $.extend({}, options),
+	var _options = $.extend({}, options ),
 		_init = function() {
 			if ( ! _options.workflows ) {
 				_options.workflows = {};
@@ -22,8 +21,16 @@ function Class_WF_Engine( options, $ ) {
 					
 					return number;
 				},
-				filterText: function( string ) {
+				getAverageRating: function() {
+					var rating = _options.ratingData.rating,
+						ratingInstance = rating.getFirstInstance(),
+						averageRatingString = ratingInstance.formatLabel( "{{rating.avg_rate}}" );
+				
+					return Util.toNumber( averageRatingString );
+				},
+				formatText: function( string ) {
 					string = string.replace( '{{vote}}', _options.ratingData.score );
+					string = string.replace( '{{avg_rate}}', Util.getAverageRating() );
 					string = string.replace( '{{post.title}}', _options.currentPost.post_title );
 					string = string.replace( '{{url}}', encodeURIComponent( window.location.href ) );
 					
@@ -43,7 +50,7 @@ function Class_WF_Engine( options, $ ) {
 				+	'			{{modal.body}}'
 				+	'		</div>'
 				+	'		<div class="rw-wf-modal-footer">'
-				+	'			<input type="button" href="#close" class="rw-wf-btn-close btn" value="Cancel" />'
+				+	'			<input type="button" href="#close" class="rw-wf-btn-close rw-wf-btn" value="Cancel" />'
 				+	'		</div>'
 				+	'	</div>'
 				+	'</div>',
@@ -57,12 +64,12 @@ function Class_WF_Engine( options, $ ) {
 			
 			return {
 				show: function( args ) {
-					args.body = Util.filterText( args.body );
+					args.body = Util.formatText( args.body );
 					
 					var modalHTML = _modalHTML;
 					
 					if ( args.title ) {
-						args.title = Util.filterText( args.title );
+						args.title = Util.formatText( args.title );
 						modalHTML = modalHTML.replace( '{{modal.title}}', args.title );
 						modalHTML = modalHTML.replace( '{{modal.body}}', args.body );
 					} else {
@@ -77,7 +84,7 @@ function Class_WF_Engine( options, $ ) {
 					
 					for ( var buttonId in args.buttons ) {
 						var button = args.buttons[ buttonId ];
-						button.html = Util.filterText( button.html );
+						button.html = Util.formatText( button.html );
 						
 						var $button = $( button.html );
 						$button.attr( 'id', buttonId );
@@ -86,7 +93,7 @@ function Class_WF_Engine( options, $ ) {
 								button.click( evt, $modal );
 							});
 						}
-						$button.addClass( 'btn btn-primary' );
+						$button.addClass( 'rw-wf-btn rw-wf-btn-primary' );
 						$button.insertBefore( $modal.find( '.rw-wf-modal-footer .rw-wf-btn-close' ) );
 					}
 					
@@ -129,7 +136,7 @@ function Class_WF_Engine( options, $ ) {
 				}
 			};
 
-			_methods = $.extend(_methods, _options.methods);
+			_methods = $.extend( _methods, _options.methods );
 
 			return {
 				process: function( method, operands ) {
@@ -200,9 +207,8 @@ function Class_WF_Engine( options, $ ) {
 						
 						operands[1] = rclass;
 					} else if ( ratingInstance.isStar() && ( 'average-rate' === operandType ) ) {
-						var avgRateString = ratingInstance.formatLabel( "{{rating.avg_rate}}" );
 						operands[1] = operands[0];
-						operands[0] = Util.toNumber( avgRateString );
+						operands[0] = Util.getAverageRating();
 					} else if ( 'votes-count' === operandType ) {
 						operands[1] = operands[0];
 						operands[0] = rating.votes;
@@ -288,7 +294,7 @@ var engineOptions = {
 	actions: {}
 };
 
-<?php do_action('rw_wf_after_init_engine_options'); ?>
+<?php do_action( 'rw_wf_after_init_engine_options' ); ?>
 
 var WF_Engine = new Class_WF_Engine( engineOptions, jQuery );
 </script>

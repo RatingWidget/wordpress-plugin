@@ -22,7 +22,7 @@
 		/**
 		 * @var object
 		 */
-		private $_addons;
+		private $_addons_settings;
 		
 		/**
 		 * @var array 
@@ -93,24 +93,27 @@
 		 * Loads options.
 		 */
 		private function _load_options() {
+			// Load workflows
 			$workflows = self::$_options->get_option( 'workflows' );
-			if ( ! is_array( $workflows ) ) {
-				$workflows = array();
+			if ( ! is_object( $workflows ) ) {
+				$workflows = new stdClass();
 			}
 			
+			// Load sorted workflows' IDs
 			$workflows_id_order = self::$_options->get_option( 'workflows_id_order' );
 			if ( ! is_array( $workflows_id_order ) ) {
 				$workflows_id_order = array();
 			}
-
-			$addons = self::$_options->get_option( 'addons' );
-			if ( ! is_object( $addons ) ) {
-				$addons = new stdClass();
+			
+			// Load add-ons
+			$addons_settings = self::$_options->get_option( 'addons' );
+			if ( ! is_object( $addons_settings ) ) {
+				$addons_settings = new stdClass();
 			}
 			
 			$this->_workflows = $workflows;
 			$this->_workflows_id_order = $workflows_id_order;
-			$this->_addons = $addons;
+			$this->_addons_settings = $addons_settings;
 		}
 
 		function init( $options = array() ) {
@@ -134,8 +137,8 @@
 			// AJAX request handlers
 			add_action( 'wp_ajax_create-workflow', array( &$this, 'create_workflow' ) );
 			add_action( 'wp_ajax_update-workflow', array( &$this, 'update_workflow' ) );
-			add_action( 'wp_ajax_delete-workflow', array( &$this, 'delete_workflow' ) );
 			add_action( 'wp_ajax_update-workflows-id-order', array( &$this, 'update_workflows_id_order' ) );
+			add_action( 'wp_ajax_delete-workflow', array( &$this, 'delete_workflow' ) );
 		}
 		
 		private function _init_site() {
@@ -147,44 +150,53 @@
 		}
 		
 		/**
-		 * Retrieves an array of workflows.
+		 * Retrieves all workflows.
 		 * 
-		 * @return array
+		 * @return object
 		 */
 		function get_workflows() {
 			return $this->_workflows;
 		}
-			
-		function get_addons_settings() {
-			return is_object( $this->_addons ) ? $this->_addons : false;
-		}
 		
-		function get_addon_settings( $addon ) {
-			if ( ! is_object( $this->_addons ) ) {
-				return false;
-			}
-			
-			if ( ! isset( $this->_addons->{ $addon } ) ) {
-				return false;
-			}
-			
-			if ( ! is_object( $this->_addons->{ $addon } ) ) {
-				return false;
-			}
-			
-			return $this->_addons->{ $addon };
+		/**
+		 * Retrieves all add-ons' settings.
+		 * 
+		 * @return object
+		 */
+		function get_addons_settings() {
+			return is_object( $this->_addons_settings ) ? $this->_addons_settings : false;
 		}
 		
 		/**
-		 * Retrieve the active workflows in the order specified by the user.
+		 * Retrieves the settings of the specified add-on.
+		 * 
+		 * @param type $addon The id of the target add-on.
+		 * 
+		 * @return boolean|object
+		 */
+		function get_single_addon_settings( $addon ) {
+			if ( ! isset( $this->_addons_settings->{ $addon } ) ) {
+				return false;
+			}
+			
+			if ( ! is_object( $this->_addons_settings->{ $addon } ) ) {
+				return false;
+			}
+			
+			return $this->_addons_settings->{ $addon };
+		}
+		
+		/**
+		 * Retrieves the active workflows in the order specified by the user.
 		 * Reordering of the workflows can be done in the workflows list page via drag and drop method.
 		 */
 		function get_active_workflows() {
 			$active_workflows = array();
 			
 			foreach ( $this->_workflows_id_order as $workflow_id ) {
-				if ( isset( $this->_workflows[ $workflow_id ] ) ) {
-					$workflow = $this->_workflows[ $workflow_id ];
+				if ( isset( $this->_workflows->{ $workflow_id } ) ) {
+					$workflow = $this->_workflows->{ $workflow_id };
+					
 					if ( isset( $workflow->active ) && ( true === $workflow->active ) ) {
 						$active_workflows[ $workflow_id ] = $workflow;
 					}
@@ -195,7 +207,7 @@
 		}
 		
 		/**
-		 * Retrieves an array of workflow IDs. The workflows list is sorted based on the order these IDs.
+		 * Retrieves an array of workflow IDs. The visual workflows list is sorted based on the order these IDs.
 		 * 
 		 * @return array
 		 */
@@ -235,14 +247,12 @@
 		function get_variable_types() {
 			$_post_types = get_post_types();
 			$post_types = array();
-			
 			foreach ( $_post_types as $_post_type => $_post_type_title ) {
 				$post_types[ $_post_type ] = array( 'title' => $_post_type_title );
 			}
 			
 			$_categories = get_categories();
 			$categories = array();
-			
 			foreach ( $_categories as $_category ) {
 				$categories[ $_category->cat_ID ] = array( 'title' => $_category->name );
 			}
@@ -340,7 +350,8 @@
 		}
 		
 		function print_site_script() {
-			wf_require_once_template( 'workflows_site_script.php' );
+			$vars = array( 'slug' => $this->_slug );
+			wf_require_once_template( 'workflows_site_script.php', $vars );
 		}
 
 		/**
@@ -420,7 +431,7 @@
 				'eventTypes'	=> array()
 			);
 			
-			$this->_workflows[ $id ] = $workflow;
+			$this->_workflows->{ $id } = $workflow;
 			$this->_workflows_id_order[] = $id;
 			
 			self::$_options->set_option( 'workflows', $this->_workflows, true );
@@ -440,7 +451,7 @@
 		}
 		
 		/**
-		 * Updates the information of a specific of workflow.
+		 * Updates the information of a workflow specified by ID.
 		 */
 		function update_workflow() {
 			// Target workflow's ID
@@ -463,7 +474,7 @@
 			$event_types = isset( $_POST['event_types'] ) ? $_POST['event_types'] : false;
 			$name = isset( $_POST['name'] ) ? trim( stripslashes( $_POST['name'] ) ) : false;
 			
-			$workflow = $this->_workflows[ $id ];
+			$workflow = $this->_workflows->{ $id };
 			
 			$update = false;
 			
@@ -516,8 +527,8 @@
 			
 			$update = false;
 			
-			if ( isset( $this->_workflows[ $id ] ) ) {
-				unset( $this->_workflows[ $id ] );
+			if ( isset( $this->_workflows->{ $id } ) ) {
+				unset( $this->_workflows->{ $id } );
 				$update = true;
 			}
 			
@@ -600,46 +611,47 @@
 
 		function _workflows_page_load() {
 			add_action( 'admin_footer', array( &$this, '_admin_footer' ) );
-			wp_enqueue_script( 'jquery-ui-sortable' );
-			wf_enqueue_local_script( 'bootstrap-script', 'bootstrap.min.js' );
-			wf_enqueue_local_script( 'workflows-script', 'workflow.js' );
-			wf_enqueue_local_style( 'workflows-style', 'workflow.css' );
+			wf_enqueue_local_script( 'jquery-ui-sortable' );
+			wf_enqueue_local_script( 'bootstrap', 'bootstrap.min.js' );
+			wf_enqueue_local_script( 'workflows', 'workflow.js' );
+			wf_enqueue_local_style( 'workflows', 'workflow.css' );
 		}
 		
 		function _addons_config_page_load() {
 			$this->handle_addons_settings_save();
-			wf_enqueue_local_style( 'workflows-style', 'addons-config.css' );
-//			add_action( 'admin_footer', array( &$this, '_admin_footer' ) );
-//			wp_enqueue_script( 'jquery-ui-sortable' );
-//			wf_enqueue_local_script( 'bootstrap-script', 'bootstrap.min.js' );
-//			wf_enqueue_local_script( 'workflows-script', 'workflow.js' );
-//			wf_enqueue_local_style( 'workflows-style', 'workflow.css' );
+			
+			wf_enqueue_local_style( 'addons-config', 'addons-config.css' );
 		}
 		
+		/**
+		 * Checks if the add-ons settings are being saved.
+		 */
 		function handle_addons_settings_save() {
 			if ( isset( $_POST['rw-save-addons-settings'] ) ) {
-				$addon = $_POST['addon'];
-				if ( ! is_object( $this->_addons ) ) {
-					$this->_addons = new stdClass();
-				}
-				
-				$settings = isset( $this->_addons->{ $addon } ) ? $this->_addons->{ $addon } : false;
-				if ( ! is_object( $settings ) ) {
-					$settings = new stdClass();
-					$this->_addons->{ $addon } = $settings;
-				}
-				
-				foreach ( $_POST as $field_name => $field_value ) {
-					if ( false !== strpos( $field_name, 'field-' ) ) {
-						$field_name = str_replace( 'field-', '', $field_name );
-						$settings->{ $field_name } = stripslashes( $field_value );
+				$addon = isset( $_POST['add-on'] ) ? trim( $_POST['add-on'] ) : '';
+				if ( ! empty( $addon ) ) {
+					$settings = isset( $this->_addons_settings->{ $addon } ) ? $this->_addons_settings->{ $addon } : false;
+					if ( false === $settings ) {
+						$settings = new stdClass();
+						$this->_addons_settings->{ $addon } = $settings;
+					}
+
+					if ( isset( $_POST['addon-fields'] ) ) {
+						foreach ( $_POST['addon-fields'] as $field_name => $field_value ) {
+							// Remove the extra slashes added by WordPress.
+							$settings->{ $field_name } = stripslashes( $field_value );
+						}
+
+						self::$_options->set_option( 'addons', $this->_addons_settings, true );
 					}
 				}
-				
-				self::$_options->set_option( 'addons', $this->_addons, true );
 			}
 		}
 		
+		/**
+		 * Loads the workflows settings into a JavaScript variable.
+		 * These settings are used when creating, editing, and sorting workflows.
+		 */
 		function _admin_footer() {
 			$data = array(
 				'workflows'				=> $this->get_workflows(),

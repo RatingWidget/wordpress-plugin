@@ -5,11 +5,11 @@
 		initWorkflows();
 		
 		$(function() {
-			// Make the workflows list sortable
-			$('.list-group').sortable({
+			// Create a sortable workflows list.
+			$( '.list-group' ).sortable({
 				// When the order of the items has changed, notify the server via AJAX request.
-				update: function(event, ui ) {
-					var sortedIDs = $('.list-group').sortable( "toArray", {attribute: 'data-id'} );
+				update: function( event, ui ) {
+					var sortedIDs = $( '.list-group' ).sortable( 'toArray', {attribute: 'data-id'});
 
 					$.ajax({
 						url: ajaxurl,
@@ -36,21 +36,21 @@
 					return;
 				}
 				
-				$variablesContainer.css('display', 'block');
+				$variablesContainer.css( 'display', 'block' );
 				
-				var $colOperator = $variablesContainer.find('.col:first'),
-					$colVariable = $variablesContainer.find('.col:last'),
-					$operators = createFromTemplate('operators'),
+				var $colOperator = $variablesContainer.find( '.col:first' ),
+					$colVariable = $variablesContainer.find( '.col:last' ),
+					$operators = createFromTemplate( 'operators' ),
 					allOperators = WORKFLOWS_SETTINGS.operators,
 					supportedOperators = allOperators[ variableDataType ];
 
-				$colOperator.html('');
-				$colVariable.html('');
+				$colOperator.html( '' );
+				$colVariable.html( '' );
 
-				$colOperator.append($operators);
+				$colOperator.append( $operators );
 				
 				for ( var operatorId in supportedOperators ) {
-					$operators.append('<option value="' + operatorId + '">' + supportedOperators[ operatorId ].title + '</option>');
+					$operators.append( '<option value="' + operatorId + '">' + supportedOperators[ operatorId ].title + '</option>' );
 				}
 				
 				$colVariable.append( createFromTemplate( variableTypeId ) );
@@ -98,6 +98,8 @@
 									$listGroupItemTemplate = createFromTemplate( 'list-group-item' );
 									$listGroupItemTemplate.attr( 'data-id', workflowId );
 									$listGroup.append( $listGroupItemTemplate );
+									
+									$( '#workflows > .panel' ).show();
 								}
 
 								$listGroupItemTemplate.find( '.list-group-item-content' ).html( name );
@@ -123,30 +125,30 @@
 							$( '.nav-pills li:nth-child(1)' ).removeClass( 'active' );
 							$( '.nav-pills li:nth-child(2)' ).removeClass( 'disabled' ).find( 'a' ).attr( 'data-toggle', 'tab' ).tab( 'show' );
 						},
-						complete: function(a, b) {
-							$button.button('reset');
+						complete: function() {
+							$button.button( 'reset' );
 						},
 						beforeSend: function() {
-							$button.button('loading');
+							$button.button( 'loading' );
 						}
 					});
 				} else if ( 'edit-conditions' === currentStep ) {
-					$button.button('loading');
+					$button.button( 'loading' );
 
 					updateConditions(function() {
-						var $editActions = $('#edit-actions').find('.edit-actions');
+						var $editActions = $( '#edit-actions' ).find( '.edit-actions' );
 
 						if ( 0 === $editActions.length ) {
-							$editActions = createFromTemplate('edit-actions');
-							$('#edit-actions').prepend( $editActions );
+							$editActions = createFromTemplate( 'edit-actions' );
+							$( '#edit-actions' ).prepend( $editActions );
 
-							$editActions.find('.operation > .col').append( createFromTemplate('actions') );
+							$editActions.find( '.operation > .col' ).append( createFromTemplate( 'actions' ) );
 						}
 
-						$('.nav-pills li:nth-child(2)').removeClass('active');
-						$('.nav-pills li:nth-child(3)').removeClass('disabled').find('a').attr('data-toggle', 'tab').tab('show');
+						$( '.nav-pills li:nth-child(2)' ).removeClass( 'active' );
+						$( '.nav-pills li:nth-child(3)' ).removeClass( 'disabled' ).find( 'a' ).attr( 'data-toggle', 'tab' ).tab( 'show' );
 					}, function() {
-						$button.button('reset');
+						$button.button( 'reset' );
 					});
 				} else if ( 'edit-actions' === currentStep ) {
 					$button.button( 'loading' );
@@ -176,27 +178,27 @@
 							$workflowSummary = createFromTemplate( 'workflow-summary' );
 							$( '#edit-summary' ).prepend( $workflowSummary );
 						} else {
-							$workflowSummary.find( '.list-group:first' ).html('');
-							$workflowSummary.find( '.list-group:last' ).html('');
+							$workflowSummary.find( '.list-group:first' ).html( '' );
+							$workflowSummary.find( '.list-group:last' ).html( '' );
 						}
 
 						var title = $( '#workflow-name' ).val(),
-							$allConditions = $('#edit-conditions .edit-conditions .operations-container'),
-							$allActions = $('#edit-actions .edit-actions .operations-container'),
-							$allEvents = $('#edit-events .edit-events .operations-container');
+							$allConditions = $( '#edit-conditions .edit-conditions .operations-container' ),
+							$allActions = $( '#edit-actions .edit-actions .operations-container' ),
+							$allEvents = $( '#edit-events .edit-events .operations-container' );
 
 						var conditionsHtml = '';
 						$allConditions.each(function() {
 							var conditions = [];
 
 							$( this ).find( '.operations-list' ).children().each(function() {
-								var $condition = $(this),
-									variableTypeId = $condition.find('.variable-types').val(),
+								var $condition = $( this ),
+									variableTypeId = $condition.find( '.variable-types' ).val(),
 									variableType = WORKFLOWS_SETTINGS['variable-types'][ variableTypeId ],
 									operatorId = $condition.find( '.operators' ).val(),
-									operand = ( 'dropdown' === variableType.field.type ) ? $condition.find('.operation-inputs .col:last select').val() : $condition.find('.operation-inputs .col:last input').val(),
+									operand = ( 'dropdown' === variableType.field.type ) ? $condition.find( '.operation-inputs .col:last select' ).val() : $condition.find( '.operation-inputs .col:last input' ).val(),
 									condition = '',
-									operandTypeValues = (variableType.values ? variableType.values : []);
+									operandTypeValues = ( variableType.values ? variableType.values : [] );
 
 
 								var conditionItem = 
@@ -209,8 +211,7 @@
 									conditionItem += ' ' + '<strong>' + operand + '</strong>';
 								}
 
-								conditions.push(conditionItem);
-
+								conditions.push( conditionItem );
 							});
 
 							var condition = '<li class="list-group-item">';
@@ -219,15 +220,15 @@
 								condition += '<span class="label label-default and">and</span>';
 							}
 
-							condition += conditions.join('<span class="label label-default or">or</span>') + '</li>';
+							condition += conditions.join( '<span class="label label-default or">or</span>' ) + '</li>';
 
 							conditionsHtml += condition;
 						});
 
 						var actionsHtml = '';
 						$allActions.each(function() {
-							var $action = $(this),
-								actionId = $action.find('select.actions').val();
+							var $action = $( this ),
+								actionId = $action.find( 'select.actions' ).val();
 
 
 							var action = '<li class="list-group-item">';
@@ -243,8 +244,8 @@
 
 						var eventTypesHtml = '';
 						$allEvents.each(function() {
-							var $eventType = $(this),
-								eventTypeId = $eventType.find('select.event-types').val();
+							var $eventType = $( this ),
+								eventTypeId = $eventType.find( 'select.event-types' ).val();
 
 
 							var eventType = '<li class="list-group-item">';
@@ -258,25 +259,25 @@
 							eventTypesHtml += eventType;
 						});
 
-						$workflowSummary.find('.workflow-title').text(title);
-						$workflowSummary.find('.list-group:eq(0)').html(conditionsHtml);
-						$workflowSummary.find('.list-group:eq(1)').html(actionsHtml);
-						$workflowSummary.find('.list-group:eq(2)').html(eventTypesHtml);
+						$workflowSummary.find( '.workflow-title' ).text( title );
+						$workflowSummary.find( '.list-group:eq(0)' ).html( conditionsHtml );
+						$workflowSummary.find( '.list-group:eq(1)' ).html( actionsHtml );
+						$workflowSummary.find( '.list-group:eq(2)' ).html( eventTypesHtml );
 
-						$('.nav-pills li:nth-child(4)').removeClass('active');
-						$('.nav-pills li:nth-child(5)').removeClass('disabled').find('a').attr('data-toggle', 'tab').tab('show');
+						$( '.nav-pills li:nth-child(4)' ).removeClass( 'active' );
+						$( '.nav-pills li:nth-child(5)' ).removeClass( 'disabled' ).find( 'a' ).attr( 'data-toggle', 'tab' ).tab( 'show' );
 
-						$('#edit-workflow').addClass('is-editing');
+						$( '#edit-workflow' ).addClass( 'is-editing' );
 					}, function() {
-						$button.button('reset');
+						$button.button( 'reset' );
 					});
 				}
 			});
 			
-			$('body').on('click', '.button.save', function(e) {
-				e.preventDefault();
+			$( 'body' ).on( 'click', '.button.save', function( evt ) {
+				evt.preventDefault();
 				
-				var	$button	 = $(this),
+				var	$button	 = $( this ),
 					$currentTab = $button.parents( '.tab-pane:first' ),
 					currentTabId = $currentTab.attr( 'id' );
 					
@@ -297,11 +298,11 @@
 							name: name,
 							id: workflowId ? workflowId : ''
 						},
-						success: function( result ) {
+						success: function() {
 							updateSummary();
 							showSummary();
 						},
-						complete: function(a, b) {
+						complete: function() {
 							$button.button( 'reset' );
 						},
 						beforeSend: function() {
@@ -335,21 +336,20 @@
 				}
 			});
 			
-			
-			$( '#new-workflow' ).click(function(e) {
-				e.preventDefault();
+			$( '#new-workflow' ).click(function( evt ) {
+				evt.preventDefault();
 				
 				resetWorkflow();
 				
-				$( 'a[href="#edit-name"]' ).tab('show');
+				$( 'a[href="#edit-name"]' ).tab( 'show' );
 				$( this ).tab( 'show' );
 			});
 			
-			$('body').on('click', '.workflow-summary .button.edit-workflow', function(e) {
-				e.preventDefault();
+			$( 'body' ).on( 'click', '.workflow-summary .button.edit-workflow', function( evt ) {
+				evt.preventDefault();
 				
 				if ( $( this ).hasClass( 'edit-conditions' ) ) {
-					var href = $(this).attr('href');
+					var href = $( this ).attr( 'href' );
 					$( '.nav-pills' ).children().removeClass( 'active' ).find( 'a[href="' + href + '"]' ).parent().addClass( 'active' );
 					var workflowId = $( '#edit-workflow' ).attr( 'data-id' ),
 						workflow = WORKFLOWS_SETTINGS.workflows[ workflowId ],
@@ -359,28 +359,19 @@
 						$editConditions = createFromTemplate( 'edit-conditions' );
 						$( '#edit-conditions' ).prepend( $editConditions );
 					} else {
-						$editConditions.find( '.panel-heading' ).html('');
+						$editConditions.find( '.panel-heading' ).html( '' );
 					}
 					
 					var $newCondition = createFromTemplate( 'condition' );
 					$editConditions.find( '.panel-heading' ).append( $newCondition );
 					
-					var totalConditions = workflow.conditions.length;
 					for ( var idx in workflow.conditions ) {
 						if ( ! workflow.conditions.hasOwnProperty( idx ) ) {
 							continue;
 						}
 						
-//							$newOperation = createFromTemplate( 'operation' ),
-//							$operationsList = $newCondition.find( '.operations-list' );
-//							
-//						$operationsList.append( $newOperation );
-							
-						if ( totalConditions > 1 && ( idx < totalConditions - 1 ) ) {
-						}
-						
 						if ( idx > 0 ) {
-							$editConditions.find( '.and-operation-container > p:last' ).replaceWith('<div><p class="and-operation"><em>' + WORKFLOWS_SETTINGS.text.and + '</em></p></div>');
+							$editConditions.find( '.and-operation-container > p:last' ).replaceWith( '<div><p class="and-operation"><em>' + WORKFLOWS_SETTINGS.text.and + '</em></p></div>' );
 							$newCondition = createFromTemplate( 'condition' );
 							$editConditions.find( '.and-operation-container' ).append( $newCondition.children() );
 						}
@@ -411,9 +402,9 @@
 							}
 						}
 					}
-				} else if ( $(this).hasClass('edit-actions') ) {
-					var href = $(this).attr( 'href' );
-					$( '.nav-pills' ).children().removeClass( 'active' ).find( 'a[href="' + href + '"]' ).parent().addClass('active');
+				} else if ( $( this ).hasClass( 'edit-actions' ) ) {
+					var href = $( this ).attr( 'href' );
+					$( '.nav-pills' ).children().removeClass( 'active' ).find( 'a[href="' + href + '"]' ).parent().addClass( 'active' );
 					var workflowId = $( '#edit-workflow' ).attr( 'data-id' ),
 						workflow = WORKFLOWS_SETTINGS.workflows[ workflowId ],
 						$editActions = $( '#edit-actions' ).find( '.edit-actions' );
@@ -426,7 +417,7 @@
 						$editActions.find( '.and-operation-container' ).html( '' );
 					}
 					
-					$editActions.find( 'select' ).html('');
+					$editActions.find( 'select' ).html( '' );
 					
 					if ( 0 === workflow.actions.length ) {
 						var $newAction = createFromTemplate( 'action-template' );
@@ -442,7 +433,7 @@
 
 						if ( idx > 0 ) {
 							var $lastAction = $editActions.find( '.and-operation-container > div:last' );
-							$lastAction.find(' > p.and').replaceWith('<div><p class="and"><em>AND</em></p></div>');
+							$lastAction.find( ' > p.and' ).replaceWith( '<div><p class="and"><em>AND</em></p></div>' );
 						}
 						
 						var actionId = workflow.actions[ idx ];
@@ -452,9 +443,9 @@
 						$newAction.find( 'select' ).val( actionId );
 						$editActions.find( '.and-operation-container' ).append( $newAction.children() );
 					}
-				} else if ( $(this).hasClass( 'edit-events' ) ) {
-					var href = $(this).attr('href');
-					$( '.nav-pills' ).children().removeClass( 'active' ).find( 'a[href="' + href + '"]' ).parent().addClass('active');
+				} else if ( $( this ).hasClass( 'edit-events' ) ) {
+					var href = $( this ).attr( 'href' );
+					$( '.nav-pills' ).children().removeClass( 'active' ).find( 'a[href="' + href + '"]' ).parent().addClass( 'active' );
 					var workflowId = $( '#edit-workflow' ).attr( 'data-id' ),
 						workflow = WORKFLOWS_SETTINGS.workflows[ workflowId ],
 						$editEventTypes = $( '#edit-events' ).find( '.edit-events' );
@@ -470,7 +461,7 @@
 					$editEventTypes.find( 'select' ).html( '' );
 					
 					if ( 0 === workflow.eventTypes.length ) {
-						var $newTrigger = createFromTemplate('event-type-template');
+						var $newTrigger = createFromTemplate( 'event-type-template' );
 						$newTrigger.find( '.operation > .col' ).append( createFromTemplate( 'event-types' ) );
 						$editEventTypes.find( '.and-operation-container' ).append( $newTrigger );
 						
@@ -484,10 +475,10 @@
 
 						if ( idx > 0 ) {
 							var $lastTrigger = $editEventTypes.find( '.workflowCondActions > div:last' );
-							$lastTrigger.find(' > p.and').replaceWith( '<div><p class="and"><em>OR</em></p></div>' );
+							$lastTrigger.find( ' > p.and' ).replaceWith( '<div><p class="and"><em>OR</em></p></div>' );
 						}
 						
-						var $newTrigger = createFromTemplate('event-type-template');
+						var $newTrigger = createFromTemplate( 'event-type-template' );
 						$editEventTypes.find( '.and-operation-container' ).append( $newTrigger );
 						
 						var eventTypeId = workflow.eventTypes[ idx ];
@@ -499,24 +490,24 @@
 					return;
 				}
 				
-				$(this).tab('show');
+				$( this ).tab( 'show' );
 			});
 			
 			$( '#workflows' ).on( 'click', '.button.remove-workflow', function() {
 				var	$button = $( this ),
-					targetWorkflowId = $button.parents('.list-group-item:first').attr('data-id');
+					targetWorkflowId = $button.parents( '.list-group-item:first' ).attr( 'data-id' );
 				
-				$('#confirm-delete-workflow').attr('data-target-workflow-id', targetWorkflowId);
-				$('#confirm-delete-workflow').addClass( 'active' );
+				$( '#confirm-delete-workflow' ).attr( 'data-target-workflow-id', targetWorkflowId );
+				$( '#confirm-delete-workflow' ).addClass( 'active' );
 			});
 
-			$('#confirm-delete-workflow').on( 'click', '.button-primary', function( evt ) {
+			$( '#confirm-delete-workflow' ).on( 'click', '.button-primary', function( evt ) {
 				evt.preventDefault();
 				
-				$('#confirm-delete-workflow').removeClass('active');
+				$( '#confirm-delete-workflow' ).removeClass( 'active' );
 				
-				var workflowId		= $('#confirm-delete-workflow').attr('data-target-workflow-id'),
-					$listGroupItem	= $('.list-group.ui-sortable a.list-group-item[data-id="'+workflowId+'"]'),
+				var workflowId		= $( '#confirm-delete-workflow' ).attr( 'data-target-workflow-id' ),
+					$listGroupItem	= $( '.list-group.ui-sortable a.list-group-item[data-id="'+workflowId+'"]' ),
 					len				= $listGroupItem.length;
 
 				if ( workflowId ) {
@@ -527,26 +518,21 @@
 							action: 'delete-workflow',
 							id: workflowId
 						},
-						success: function(result) {
-							result = JSON.parse(result);
-//							if (result.success) {
-								$('.list-group-item[data-id="'+workflowId+'"]').remove();
-//							}
+						success: function( result ) {
+							result = JSON.parse( result );
+							$( '.list-group-item[data-id="'+workflowId+'"]' ).remove();
 						},
 						beforeSend: function() {
-							$listGroupItem.addClass('disabled');
+							$listGroupItem.addClass( 'disabled' );
 
-							text = $listGroupItem.find('.list-group-item-content').text();
-							$listGroupItem.find('.list-group-item-content').text(text + ' (deleting...)');
-						},
-						complete: function(a, b) {
-							var a;
+							var text = $listGroupItem.find( '.list-group-item-content' ).text();
+							$listGroupItem.find( '.list-group-item-content' ).text( text + ' (deleting...)' );
 						}
 					});
 				}
 			});
 
-			$( '#workflows' ).on( 'change', '.workflow-state', function(evt) {
+			$( '#workflows' ).on( 'change', '.workflow-state', function() {
 				var workflowId	= $( this ).parents( '.list-group-item:first' ).attr( 'data-id' ),
 					active		= $( this ).prop( 'checked' );
 
@@ -561,7 +547,7 @@
 				});
 			});
 			
-			$( '#workflows' ).on( 'click', '.list-group-item-content', function(evt) {
+			$( '#workflows' ).on( 'click', '.list-group-item-content', function( evt ) {
 				evt.preventDefault();
 
 				var $workflowSummary = $( '#edit-summary' ).find( '.workflow-summary' );
@@ -570,8 +556,8 @@
 					$workflowSummary = createFromTemplate( 'workflow-summary' );
 					$( '#edit-summary' ).prepend( $workflowSummary );
 				} else {
-					$workflowSummary.find('.list-group:first').html('');
-					$workflowSummary.find('.list-group:last').html('');
+					$workflowSummary.find( '.list-group:first' ).html( '' );
+					$workflowSummary.find( '.list-group:last' ).html( '' );
 				}
 				
 				var workflowId = $( this ).parent().attr( 'data-id' );
@@ -618,7 +604,7 @@
 						condition += '<span class="label label-default and">and</span>';
 					}
 
-					condition += conditions.join('<span class="label label-default or">or</span>') + '</li>';
+					condition += conditions.join( '<span class="label label-default or">or</span>' ) + '</li>';
 
 					conditionsHtml += condition;
 				}
@@ -660,16 +646,16 @@
 					eventTypesHtml += eventType;
 				}
 
-				$workflowSummary.find('.workflow-title').text(workflow.name);
-				$workflowSummary.find('.list-group:eq(0)').html(conditionsHtml);
-				$workflowSummary.find('.list-group:eq(1)').html(actionsHtml);
-				$workflowSummary.find('.list-group:eq(2)').html(eventTypesHtml);
+				$workflowSummary.find( '.workflow-title' ).text( workflow.name );
+				$workflowSummary.find( '.list-group:eq(0)' ).html( conditionsHtml );
+				$workflowSummary.find( '.list-group:eq(1)' ).html( actionsHtml );
+				$workflowSummary.find( '.list-group:eq(2)' ).html( eventTypesHtml );
 				
-				$( '#edit-workflow' ).addClass('is-editing').attr('data-id', workflowId);
+				$( '#edit-workflow' ).addClass( 'is-editing' ).attr( 'data-id', workflowId );
 				$( '#workflows' ).removeClass( 'active' );
 				$( '#edit-workflow' ).addClass( 'active' );
 				$( 'a[href="#edit-summary"]' ).parent().removeClass( 'active' );
-				$( 'a[href="#edit-summary"]' ).tab('show');
+				$( 'a[href="#edit-summary"]' ).tab( 'show' );
 			});
 			
 			$( 'body' ).on( 'click', '.rw-wf-modal .btn-close', function() {
@@ -696,7 +682,7 @@
 							
 							$operationsList.append( $newOperation );
 							
-							$currentTab.find( '.and-operation-container > p:last' ).replaceWith('<div><p class="and-operation"><em>' + WORKFLOWS_SETTINGS.text.and + '</em></p></div>');
+							$currentTab.find( '.and-operation-container > p:last' ).replaceWith( '<div><p class="and-operation"><em>' + WORKFLOWS_SETTINGS.text.and + '</em></p></div>' );
 							$currentTab.find( '.and-operation-container' ).append( $newCondition.children() );
 							$newOperation.find( 'select.variable-types' ).change();
 						} else if ( 'edit-actions' === currentTabId ) {
@@ -715,8 +701,8 @@
 					}
 				} else if ( $( this ).hasClass( 'remove-operation' ) ) {
 					if ( 'edit-conditions' === currentTabId ) {
-						var $operationsList = $( this ).parents('.operations-list:first'),
-							totalOperations = $operationsList.children('.operation').length;
+						var $operationsList = $( this ).parents( '.operations-list:first' ),
+							totalOperations = $operationsList.children( '.operation' ).length;
 
 						if ( totalOperations > 1 ) {
 							var $operation = $( this ).parents( '.operation:first' ),
@@ -808,7 +794,7 @@
 	
 		$currentTab.find( '.and-operation-container' ).children( '.operations-container' ).each(function() {
 			var conditions = [];
-			$(this).find( '.operations-list' ).children().each(function() {
+			$( this ).find( '.operations-list' ).children().each(function() {
 				var variableTypeId = $( this ).find( '.variable-types' ).val();
 				var variableType = WORKFLOWS_SETTINGS['variable-types'][ variableTypeId ];
 				var operator = $( this ).find( '.operators' ).val();
@@ -826,11 +812,11 @@
 					operand: operand
 				};
 
-				conditions.push(condition);
+				conditions.push( condition );
 			});
 
 			if ( conditions.length > 0 ) {
-				allConditions.push(conditions);
+				allConditions.push( conditions );
 			}
 		});
 
@@ -839,12 +825,12 @@
 			method: 'POST',
 			data: {
 				action: 'update-workflow',
-				id: $('#edit-workflow').attr('data-id'),
+				id: $( '#edit-workflow' ).attr( 'data-id' ),
 				conditions: allConditions
 			},
 			success: function( result ) {
-				WORKFLOWS_SETTINGS.workflows[ $('#edit-workflow').attr('data-id') ].conditions = allConditions;
-				successCallback( JSON.parse(result) );
+				WORKFLOWS_SETTINGS.workflows[ $( '#edit-workflow' ).attr( 'data-id' ) ].conditions = allConditions;
+				successCallback( JSON.parse( result ) );
 			},
 			complete: function() {
 				completeCallback();
@@ -891,12 +877,12 @@
 			method: 'POST',
 			data: {
 				action: 'update-workflow',
-				id: $('#edit-workflow').attr('data-id'),
+				id: $( '#edit-workflow' ).attr( 'data-id' ),
 				event_types: event_types
 			},
 			success: function( result ) {
-				WORKFLOWS_SETTINGS.workflows[ $('#edit-workflow').attr('data-id') ].eventTypes = event_types;
-				successCallback( JSON.parse(result) );
+				WORKFLOWS_SETTINGS.workflows[ $( '#edit-workflow' ).attr( 'data-id' ) ].eventTypes = event_types;
+				successCallback( JSON.parse( result ) );
 			},
 			complete: function() {
 				completeCallback();
@@ -940,7 +926,7 @@
 					operandType = WORKFLOWS_SETTINGS['variable-types'][ operandId ],
 					operand = singleCondition.operand,
 					condition = '',
-					operandTypeValues = (operandType.values ? operandType.values : []);
+					operandTypeValues = ( operandType.values ? operandType.values : [] );
 
 				var conditionItem = 
 					WORKFLOWS_SETTINGS['variable-types'][ operandId ].title
@@ -952,7 +938,7 @@
 					conditionItem += ' ' + '<strong>' + operand + '</strong>';
 				}
 				
-				conditions.push(conditionItem);
+				conditions.push( conditionItem );
 			}
 
 			var condition = '<li class="list-group-item">';
@@ -961,7 +947,7 @@
 				condition += '<span class="label label-default and">and</span>';
 			}
 
-			condition += conditions.join('<span class="label label-default or">or</span>') + '</li>';
+			condition += conditions.join( '<span class="label label-default or">or</span>' ) + '</li>';
 
 			conditionsHtml += condition;
 		}
@@ -1004,10 +990,10 @@
 			eventTypesHtml += eventType;
 		}
 
-		$workflowSummary.find('.workflow-title').text(workflow.name);
-		$workflowSummary.find('.list-group:eq(0)').html(conditionsHtml);
-		$workflowSummary.find('.list-group:eq(1)').html(actionsHtml);
-		$workflowSummary.find('.list-group:eq(2)').html(eventTypesHtml);
+		$workflowSummary.find( '.workflow-title' ).text( workflow.name );
+		$workflowSummary.find( '.list-group:eq(0)' ).html( conditionsHtml );
+		$workflowSummary.find( '.list-group:eq(1)' ).html( actionsHtml );
+		$workflowSummary.find( '.list-group:eq(2)' ).html( eventTypesHtml );
 	}
 	
 	/**
@@ -1015,7 +1001,7 @@
 	 */
 	function showSummary() {
 		$( '.nav-pills' ).children().removeClass( 'active' );
-		$( 'a[href="#edit-summary"]' ).attr( 'data-toggle', 'tab' ).tab('show');
+		$( 'a[href="#edit-summary"]' ).attr( 'data-toggle', 'tab' ).tab( 'show' );
 	}
 	
 	/**
@@ -1107,7 +1093,7 @@
 				
 				$listGroupItemTemplate.find( '.list-group-item-content' ).html( workflow.name );
 				if ( workflow.active ) {
-					$listGroupItemTemplate.find( '.workflow-state').prop( 'checked', true );
+					$listGroupItemTemplate.find( '.workflow-state' ).prop( 'checked', true );
 				}
 				
 				$listGroup.append( $listGroupItemTemplate );
@@ -1124,20 +1110,20 @@
 	 * @param Array itemsArray An array of values that will be added as options of the select HTML element.
 	 */
 	function populateDropdownTemplate( elementClass, itemsArray ) {
-		var $element = $('select.workflow-template[data-class="' + elementClass + '"]');
+		var $element = $( 'select.workflow-template[data-class="' + elementClass + '"]' );
 		
 		// Create the element if it doesn't exist and append it to the form.
 		if ( ! $element.length ) {
 			$element = $( '<select class="workflow-template" data-class="' + elementClass + '"></select>' ).appendTo( $( '#workflows-page' ) );
 		}
 		
-		$element.html('');
+		$element.html( '' );
 		
 		if ( false !== itemsArray ) {
 			for ( var idx in itemsArray ) {
 				var item = itemsArray[ idx ];
-				$element.append('<option value="' + idx + '">' + item.title +'</option>');
+				$element.append( '<option value="' + idx + '">' + item.title +'</option>' );
 			}
 		}
 	}
-}) (jQuery);
+}) ( jQuery );

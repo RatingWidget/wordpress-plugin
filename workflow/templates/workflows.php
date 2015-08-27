@@ -3,8 +3,7 @@
  * The template view for the Workflows page.
  */
 
-$slug = $VARS['slug'];
-$wf = wf($slug);
+$wf = wf( $VARS['slug'] );
 ?>
 <div class="wrap rw-dir-ltr">
 	<form id="workflows-page" method="post" action="">
@@ -52,24 +51,24 @@ $wf = wf($slug);
 											<button type="submit" class="button button-secondary next-step" href="#edit-actions"><?php _e( 'Next Step', WP_WF__SLUG ) ; ?></button>
 											<button type="submit" class="button button-secondary save" href="#edit-summary"><?php _e( 'Update Conditions', WP_WF__SLUG ); ?></button>
 											<button type="submit" class="button cancel-save" href="#edit-summary" data-toggle="tab"><?php _e( 'Cancel', WP_WF__SLUG ); ?></button>
-											<p class="" style="margin-top: 20px;"></p>
+											<p></p>
 										</div>
 										<div id="edit-actions" class="tab-pane workflow-step">
 											<button type="submit" class="button button-secondary next-step" href="#edit-events"><?php _e( 'Next Step', WP_WF__SLUG ); ?></button>
 											<button type="submit" class="button button-secondary save" href="#edit-summary"><?php _e( 'Update Actions', WP_WF__SLUG ); ?></button>
 											<button type="submit" class="button cancel-save" href="#edit-summary" data-toggle="tab"><?php _e( 'Cancel', WP_WF__SLUG ); ?></button>
-											<p class="" style="margin-top: 20px;"></p>
+											<p></p>
 										</div>
 										<div id="edit-events" class="tab-pane workflow-step">
 											<button type="submit" class="button button-secondary next-step" href="#edit-summary"><?php _e( 'Next Step', WP_WF__SLUG ); ?></button>
 											<button type="submit" class="button button-secondary save" href="#edit-summary"><?php _e( 'Update Events', WP_WF__SLUG ); ?></button>
 											<button type="submit" class="button cancel-save" href="#edit-summary" data-toggle="tab"><?php _e( 'Cancel', WP_WF__SLUG ); ?></button>
-											<p class="" style="margin-top: 20px;"></p>
+											<p></p>
 										</div>
 										<div id="edit-summary" class="tab-pane workflow-step">
 											<button type="submit" class="button button-secondary activate-workflow"><?php _e( 'Activate', WP_WF__SLUG ); ?></button>
 											<button type="submit" class="button button-secondary view-workflows" href="#workflows" data-toggle="tab"><?php _e( 'View all Workflows', WP_WF__SLUG ); ?></button>
-											<p class="" style="margin-top: 20px;"></p>
+											<p></p>
 										</div>
 									</div>
 								</div>
@@ -85,7 +84,7 @@ $wf = wf($slug);
 			<div class="rw-wf-modal-dialog">
 				<div class="rw-wf-modal-header">
 					<p><?php _e( 'Are you sure you would like to delete this workflow?', WP_WF__SLUG ); ?></p>
-					<a href="#close" class="btn-close" aria-hidden="true">&times;</a>
+					<a href="#close" class="rw-wf-btn-close" aria-hidden="true">&times;</a>
 				</div>
 				<div class="rw-wf-modal-footer">
 					<button href="#" class="button button-primary"><?php _e( 'Delete', WP_WF__SLUG ); ?></button>
