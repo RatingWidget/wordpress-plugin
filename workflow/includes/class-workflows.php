@@ -39,7 +39,7 @@
 
 			$bt = debug_backtrace();
 			$i  = 1;
-			while ( $i < count($bt) - 1 && false !== strpos( $bt[ $i ]['file'], DIRECTORY_SEPARATOR . 'workflow' . DIRECTORY_SEPARATOR ) ) {
+			while ( $i < count( $bt ) - 1 && false !== strpos( $bt[ $i ]['file'], DIRECTORY_SEPARATOR . 'workflow' . DIRECTORY_SEPARATOR ) ) {
 				$i++;
 			}
 
@@ -594,10 +594,10 @@
 		}
 
 		function add_submenu_item( $menu_title, $render_function, $page_title = false, $capability = 'manage_options', $menu_slug = false, $before_render_function = false, $priority = 10  ) {
-			if (!isset($this->_menu_items[$priority]))
-				$this->_menu_items[$priority] = array();
+			if ( ! isset( $this->_menu_items[ $priority ] ) )
+				$this->_menu_items[ $priority ] = array();
 
-			$this->_menu_items[$priority][] = array(
+			$this->_menu_items[ $priority ][] = array(
 				'page_title'             => is_string( $page_title ) ? $page_title : $menu_title,
 				'menu_title'             => $menu_title,
 				'capability'             => $capability,
@@ -655,7 +655,7 @@
 		function _admin_footer() {
 			$data = array(
 				'workflows'				=> $this->get_workflows(),
-				'workflows_id_order'	=> ($this->get_workflow_ids()),
+				'workflows_id_order'	=> $this->get_workflow_ids(),
 				'text'			=> array(
 					'invalid_workflow'	=> __( 'Invalid Workflow Name', $this->_slug ),
 					'no_workflows'		=> __( 'No workflows to load', $this->_slug ),

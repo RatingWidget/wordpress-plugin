@@ -8,7 +8,7 @@
 			// Create a sortable workflows list.
 			$( '.list-group' ).sortable({
 				// When the order of the items has changed, notify the server via AJAX request.
-				update: function( event, ui ) {
+				update: function( evt, ui ) {
 					var sortedIDs = $( '.list-group' ).sortable( 'toArray', {attribute: 'data-id'});
 
 					$.ajax({
@@ -61,11 +61,10 @@
 				
 				var	$button	 = $( this ),
 					$currentTab = $button.parents( '.tab-pane:first' ),
-					$nextTab = $( $currentTab.data( 'next-step' ) ),
 					currentStep = $currentTab.attr( 'id' ),
 					workflowId = $( '#edit-workflow' ).attr( 'data-id' );
 					
-				if ( ! workflowId ) {
+				if ( undefined === workflowId || null === workflowId ) {
 					workflowId = '';
 				}
 				
@@ -283,8 +282,8 @@
 					
 				if ( 'edit-name' === currentTabId ) {
 					var name = $( '#workflow-name' ).val().trim();
-					if ( ! name ) {
-						alert( 'Invalid Workflow Name' );
+					if ( 0 === name.length ) {
+						showError( WORKFLOWS_SETTINGS.text.invalid_workflow );
 						return false;
 					}
 
@@ -501,6 +500,12 @@
 				$( '#confirm-delete-workflow' ).addClass( 'active' );
 			});
 
+			$( '#information-message' ).on( 'click', '.rw-wf-btn-close, .btn-close', function( evt ) {
+				evt.preventDefault();
+				
+				$( '#information-message' ).removeClass( 'active' );
+			});
+			
 			$( '#confirm-delete-workflow' ).on( 'click', '.button-primary', function( evt ) {
 				evt.preventDefault();
 				
@@ -770,7 +775,9 @@
 	 * @param string msg
 	 */
 	function showError( message ) {
-		alert( message );
+		var $modal = $( '#information-message' );
+		$modal.find( 'p' ).html( message );
+		$modal.addClass( 'active' );
 	}
 	
 	/**
@@ -1080,7 +1087,7 @@
 			$workflowsPanel.show().find( '> .panel-heading' ).text( WORKFLOWS_SETTINGS.text.has_workflows );
 			
 			var workflowIds = WORKFLOWS_SETTINGS.workflows_id_order;
-			if ( ! workflowIds || 0 === workflowIds.length ) {
+			if ( undefined === workflowIds || null === workflowIds || 0 === workflowIds.length ) {
 				workflowIds = Object.keys( workflows );
 			}
 
