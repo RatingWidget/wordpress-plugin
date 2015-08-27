@@ -15,9 +15,14 @@
 		private static $_instances = array();
 		
 		/**
-		 * @var array 
+		 * @var object 
 		 */
 		private $_workflows;
+		
+		/**
+		 * @var object
+		 */
+		private $_addons;
 		
 		/**
 		 * @var array 
@@ -98,8 +103,14 @@
 				$workflows_id_order = array();
 			}
 
+			$addons = self::$_options->get_option( 'addons' );
+			if ( ! is_object( $addons ) ) {
+				$addons = new stdClass();
+			}
+			
 			$this->_workflows = $workflows;
 			$this->_workflows_id_order = $workflows_id_order;
+			$this->_addons = $addons;
 		}
 
 		function init( $options = array() ) {
@@ -111,6 +122,8 @@
 				}
 
 				$this->_init_admin();
+			} else {
+				$this->_init_site();
 			}
 		}
 
@@ -124,7 +137,15 @@
 			add_action( 'wp_ajax_delete-workflow', array( &$this, 'delete_workflow' ) );
 			add_action( 'wp_ajax_update-workflows-id-order', array( &$this, 'update_workflows_id_order' ) );
 		}
+		
+		private function _init_site() {
+			add_action( 'wp_enqueue_scripts', array( &$this, 'add_site_scripts' ) );
+		}
 
+		function add_site_scripts() {
+			wf_enqueue_local_style( 'workflows-site-style', 'workflow-site.css' );
+		}
+		
 		/**
 		 * Retrieves an array of workflows.
 		 * 
@@ -132,6 +153,45 @@
 		 */
 		function get_workflows() {
 			return $this->_workflows;
+		}
+			
+		function get_addons_settings() {
+			return is_object( $this->_addons ) ? $this->_addons : false;
+		}
+		
+		function get_addon_settings( $addon ) {
+			if ( ! is_object( $this->_addons ) ) {
+				return false;
+			}
+			
+			if ( ! isset( $this->_addons->{ $addon } ) ) {
+				return false;
+			}
+			
+			if ( ! is_object( $this->_addons->{ $addon } ) ) {
+				return false;
+			}
+			
+			return $this->_addons->{ $addon };
+		}
+		
+		/**
+		 * Retrieve the active workflows in the order specified by the user.
+		 * Reordering of the workflows can be done in the workflows list page via drag and drop method.
+		 */
+		function get_active_workflows() {
+			$active_workflows = array();
+			
+			foreach ( $this->_workflows_id_order as $workflow_id ) {
+				if ( isset( $this->_workflows[ $workflow_id ] ) ) {
+					$workflow = $this->_workflows[ $workflow_id ];
+					if ( isset( $workflow->active ) && ( true === $workflow->active ) ) {
+						$active_workflows[ $workflow_id ] = $workflow;
+					}
+				}
+			}
+			
+			return $active_workflows;
 		}
 		
 		/**
@@ -143,65 +203,139 @@
 			return $this->_workflows_id_order;
 		}
 		
+		/**
+		 * Returns the default supported operators.
+		 * 
+		 * @return array
+		 */
 		function get_operators() {
 			return array(
-				'is'	=> array(
-					'title' => __( 'is', $this->_slug ),
-					'min' => 40,
-					'max' => 70
+				'boolean'	=> array(
+					'is'	=> array( 'title' => __( 'is', $this->_slug ) )
 				),
-				'isnot' => array(
-					'title' => __( 'is not', $this->_slug ),
-					'min' => 40,
-					'max' => 70
+				'string' => array(
+					'is'	=> array( 'title' => __( 'is', $this->_slug ) ),
+					'isNot' => array( 'title' => __( 'is not', $this->_slug ) )
 				),
-//						'=' => __( 'is equal to', $this->_slug ),
-//						'!=' => __( 'is not equal to', $this->_slug ),
-//						'<' => __( 'is less than', $this->_slug ),
-//						'<=' => __( 'is less than or equal to', $this->_slug ),
-//						'>' => __( 'is greater than', $this->_slug ),
-//						'>=' => __( 'is greater than or equal to', $this->_slug )
+				'number' => array(
+					'isEqualTo'					=> array( 'title' => __( 'is equal to', $this->_slug ) ),
+					'isLessThan'				=> array( 'title' => __( 'is less than', $this->_slug ) ),
+					'isLessThanOrEqualTo'		=> array( 'title' => __( 'is less than or equal to', $this->_slug ) ),
+					'isGreaterThan'				=> array( 'title' => __( 'is greater than', $this->_slug ) ),
+					'isGreaterThanOrEqualTo'	=> array( 'title' => __( 'is greater than or equal to', $this->_slug ) )
+				)
 			);
 		}
 		
-		function get_operand_types() {
+		/**
+		 * Returns an array of variable types.
+		 * 
+		 * @return array
+		 */
+		function get_variable_types() {
 			$_post_types = get_post_types();
 			$post_types = array();
 			
 			foreach ( $_post_types as $_post_type => $_post_type_title ) {
-				$post_types[ $_post_type ] = array(
-					'ID' => $_post_type,
-					'value' => $_post_type_title
-				);
+				$post_types[ $_post_type ] = array( 'title' => $_post_type_title );
 			}
-			
 			
 			$_categories = get_categories();
 			$categories = array();
 			
 			foreach ( $_categories as $_category ) {
-				$categories[ $_category->cat_ID ] = array(
-					'ID' => $_category->cat_ID,
-					'value' => $_category->name
-				);
+				$categories[ $_category->cat_ID ] = array( 'title' => $_category->name );
 			}
 			
+			
+			$rating_types = array(
+				'blog-post'				=> array( 'title' => __( 'Blog Post', $this->_slug ) ),
+				'front-post'			=> array( 'title' => __( 'Front Post', $this->_slug ) ),
+				'page'					=> array( 'title' => __( 'Page', $this->_slug ) ),
+				'product'				=> array( 'title' => __( 'Product', $this->_slug ) ),
+				'collection-product'	=> array( 'title' => __( 'Collection Product', $this->_slug ) ),
+				'comment'				=> array( 'title' => __( 'Comment', $this->_slug ) )
+			);
+			
 			return array(
-				40 => array(
-					'title' => __( 'Category', $this->_slug ),
-					'slug'	=> 'categories',
-					'value' => $categories
+				'category'		=> array(
+					'title'			=> __( 'Category', $this->_slug ),
+					'dataType'		=> 'string',
+					'field'				=> array(
+						'type'			=> 'dropdown'
+					),
+					'values'		=> $categories
 				),
-				41 => array(
-					'title' => __( 'Item Type', $this->_slug ),
-					'slug' => 'post_types',
-					'value' => $post_types
+				'post-type'		=> array(
+					'title'			=> __( 'Post Type', $this->_slug ),
+					'dataType'		=> 'string',
+					'field'				=> array(
+						'type'			=> 'dropdown'
+					),
+					'values'		=> $post_types
 				),
-//						70 => __( 'Average Rate', $this->_slug ),
-//						71 => __( 'Votes Count', $this->_slug ),
-//						72 => __( 'Current Star Vote', $this->_slug ),
-//						10 => __( 'Current Thumbs Vote', $this->_slug ),
-//						42 => __( 'User', $this->_slug )
+				'rating-type'	=> array(
+					'title'			=> __( 'Rating Type', $this->_slug ),
+					'dataType'		=> 'string',
+					'field'				=> array(
+						'type'			=> 'dropdown'
+					),
+					'values'		=> $rating_types
+				),
+				'average-rate'	=> array(
+					'title'				=> __( 'Average Rate', $this->_slug ),
+					'dataType'			=> 'number',
+					'field'				=> array(
+						'type'			=> 'textfield',
+						'placeholder'	=> __( 'e.g. 4.3', $this->_slug )
+					),
+					'values'			=> 'false'
+				),
+				'votes-count'	=> array(
+					'title'			=> __( 'Votes Count', $this->_slug ),
+					'dataType'		=> 'number',
+					'field'				=> array(
+						'type'			=> 'textfield',
+						'placeholder'	=> __( 'e.g. 10', $this->_slug )
+					),
+					'values'		=> 'false'
+				),
+				'star-vote'		=> array(
+					'title'			=> __( 'Current Star Vote', $this->_slug ),
+					'dataType'		=> 'number',
+					'field'				=> array(
+						'type'			=> 'dropdown'
+					),
+					'values'	=> array(
+						'1'			=> array( 'title' => 1 ),
+						'2'			=> array( 'title' => 2 ),
+						'3'			=> array( 'title' => 3 ),
+						'4'			=> array( 'title' => 4 ),
+						'5'			=> array( 'title' => 5 )
+					)
+				),
+				'thumb-vote'		=> array(
+					'title'			=> __( 'Current Thumbs Vote', $this->_slug ),
+					'dataType'		=> 'string',
+					'field'				=> array(
+						'type'			=> 'dropdown'
+					),
+					'values'		=> array(
+						'like'			=> array( 'title' => 'Like' ),
+						'dislike'		=> array( 'title' => 'Dislike' ),
+					)
+				),
+				'user'			=> array(
+					'title'			=> __( 'User', $this->_slug ),
+					'dataType'		=> 'string',
+					'field'				=> array(
+						'type'			=> 'dropdown'
+					),
+					'values'		=> array(
+						'anonymous'		=> array( 'title' =>  __( 'Anonymous', $this->_slug ) ),
+						'registered'	=> array( 'title' =>  __( 'Registered', $this->_slug ) )
+					)
+				)
 			);
 		}
 		
@@ -279,9 +413,10 @@
 			$id = $this->generate_workflow_id( $name );
 			
 			$workflow = (object) array(
-				'name'		=> $name,
-				'conditions' => array(),
-				'actions'	=> array(),
+				'name'			=> $name,
+				'active'		=> false,
+				'conditions'	=> array(),
+				'actions'		=> array(),
 				'eventTypes'	=> array()
 			);
 			
@@ -294,8 +429,8 @@
 			$message = array(
 				'success' => 1,
 				'data'    => array(
-					'id' => $id,
-					'workflow' => $workflow
+					'id'		=> $id,
+					'workflow'	=> $workflow
 				)
 			);
 
@@ -352,15 +487,20 @@
 				$update = true;
 			}
 			
+			if ( isset( $_POST['active'] ) ) {
+				$workflow->active = ( 'true' === $_POST['active'] ) ? true : false;
+				$update = true;
+			}
+			
 			if ( $update ) {
 				self::$_options->set_option( 'workflows', $this->_workflows, true );
 			}
 			
 			$message = array(
 				'success' => 1,
-				'data'    => array(
-					'id' => $id,
-					'workflow' => $workflow
+				'data'	  => array(
+					'id'		=> $id,
+					'workflow'	=> $workflow
 				)
 			);
 
@@ -374,32 +514,23 @@
 		function delete_workflow() {
 			$id = isset( $_POST['id'] ) ? trim( $_POST['id'] ) : $_POST['id'];
 			
-			$error_message = array(
-				'success' => 0,
-				'errors'  => array(
-					'Invalid ID'
-				)
-			);
-
-			// Validate the workflow's ID.
-			if ( empty( $id ) ) {
-				echo json_encode( $error_message );
-				exit;
+			$update = false;
+			
+			if ( isset( $this->_workflows[ $id ] ) ) {
+				unset( $this->_workflows[ $id ] );
+				$update = true;
 			}
 			
-			if ( ! isset( $this->_workflows[ $id ] ) ) {
-				echo json_encode( $error_message );
-				exit;
-			}
-			
-			unset( $this->_workflows[ $id ] );
 			$idx = array_search( $id, $this->_workflows_id_order );
 			if ( false !== $idx ) {
 				unset( $this->_workflows_id_order[ $idx ] );
 				self::$_options->set_option( 'workflows_id_order', $this->_workflows_id_order, true );
+				$update = true;
 			}
 			
-			self::$_options->set_option( 'workflows', $this->_workflows, true );
+			if ( $update ) {
+				self::$_options->set_option( 'workflows', $this->_workflows, true );
+			}
 			
 			$message = array(
 				'success' => 1,
@@ -419,6 +550,19 @@
 		private $_menu_items = array();
 
 		function _add_dashboard_menu( $ratingwidget_submenus ) {
+			// Add Ons Config submenu
+			
+			// Check if there is any active add ons
+			$settings_tab = apply_filters( 'wf_addons_settings_tab', array() );
+			if ( ! empty( $settings_tab ) ) {
+				$ratingwidget_submenus[] = array(
+					'menu_title'	=> __( 'Add Ons Config', $this->_slug ),
+					'function'		=> array( &$this, '_addons_config_page_render' ),
+					'load_function' => array( &$this, '_addons_config_page_load' ),
+					'slug'			=> 'addons-config'
+				);
+			}
+			
 			// Workflows submenu
 			$ratingwidget_submenus[] = array(
 				'menu_title'	=> __( 'Workflows', $this->_slug ),
@@ -462,34 +606,74 @@
 			wf_enqueue_local_style( 'workflows-style', 'workflow.css' );
 		}
 		
+		function _addons_config_page_load() {
+			$this->handle_addons_settings_save();
+			wf_enqueue_local_style( 'workflows-style', 'addons-config.css' );
+//			add_action( 'admin_footer', array( &$this, '_admin_footer' ) );
+//			wp_enqueue_script( 'jquery-ui-sortable' );
+//			wf_enqueue_local_script( 'bootstrap-script', 'bootstrap.min.js' );
+//			wf_enqueue_local_script( 'workflows-script', 'workflow.js' );
+//			wf_enqueue_local_style( 'workflows-style', 'workflow.css' );
+		}
+		
+		function handle_addons_settings_save() {
+			if ( isset( $_POST['rw-save-addons-settings'] ) ) {
+				$addon = $_POST['addon'];
+				if ( ! is_object( $this->_addons ) ) {
+					$this->_addons = new stdClass();
+				}
+				
+				$settings = isset( $this->_addons->{ $addon } ) ? $this->_addons->{ $addon } : false;
+				if ( ! is_object( $settings ) ) {
+					$settings = new stdClass();
+					$this->_addons->{ $addon } = $settings;
+				}
+				
+				foreach ( $_POST as $field_name => $field_value ) {
+					if ( false !== strpos( $field_name, 'field-' ) ) {
+						$field_name = str_replace( 'field-', '', $field_name );
+						$settings->{ $field_name } = stripslashes( $field_value );
+					}
+				}
+				
+				self::$_options->set_option( 'addons', $this->_addons, true );
+			}
+		}
+		
 		function _admin_footer() {
 			$data = array(
-				'workflows' => $this->get_workflows(),
-				'workflows_id_order' => ($this->get_workflow_ids()),
-				'text' => array(
-					'no_workflows' => __( 'No workflows to load', $this->_slug ),
-					'has_workflows' => __( 'All workflows, processed from top to bottom', $this->_slug )
+				'workflows'				=> $this->get_workflows(),
+				'workflows_id_order'	=> ($this->get_workflow_ids()),
+				'text'			=> array(
+					'invalid_workflow'	=> __( 'Invalid Workflow Name', $this->_slug ),
+					'no_workflows'		=> __( 'No workflows to load', $this->_slug ),
+					'has_workflows'		=> __( 'All workflows, processed from top to bottom', $this->_slug ),
+					'and'				=> __( 'AND', $this->_slug ),
+					'or'				=> __( 'OR', $this->_slug ),
+					'add_and'			=> __( '+ AND', $this->_slug ),
+					'add_or'			=> __( '+ OR', $this->_slug ),
+					'activate'			=> __( 'Activate', $this->_slug ),
+					'deactivate'		=> __( 'Deactivate', $this->_slug )
 				),
-				'operators' => $this->get_operators(),
-				'operandTypes' => $this->get_operand_types(),
-				'actions' => apply_filters( 'rw_wf_actions', array() ),
-				'eventTypes' => array(
-					'afterVote' => array(
-						'ID' => 'afterVote',
-						'value' => __( 'After Vote', $this->_slug )
-					),
-					'beforeVote' => array(
-						'ID' => 'beforeVote',
-						'value' => __( 'Before Vote', $this->_slug )
-					)
+				'operators'				=> $this->get_operators(),
+				'variable-types'		=> $this->get_variable_types(),
+				'actions'				=> apply_filters( 'rw_wf_actions', array() ),
+				'event-types'	=> array(
+					'afterVote'			=> array( 'title' => __( 'After Vote', $this->_slug ) ),
+					'beforeVote'		=> array( 'title' => __( 'Before Vote', $this->_slug ) )
 				)
 			);
 			
-			echo '<script>WORKFLOWS_SETTINGS = ' . json_encode( $data ) . '</script>';
+			echo '<script>var WORKFLOWS_SETTINGS = ' . json_encode( $data ) . '</script>';
 		}
 		
 		function _workflows_page_render() {
 			$vars = array( 'slug' => $this->_slug );
 			wf_require_once_template( 'workflows.php', $vars );
+		}
+		
+		function _addons_config_page_render() {
+			$vars = array( 'slug' => $this->_slug );
+			wf_require_once_template( 'addons_config.php', $vars );
 		}
 	}

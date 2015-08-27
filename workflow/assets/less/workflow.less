@@ -1,5 +1,5 @@
 // This is only for the specific part of the page.
-#rw-workflows-page {
+#workflows-page {
 	margin: 20px 0 0;
 	font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 	font-size: 14px;
@@ -48,31 +48,50 @@
 		margin-bottom: 0;
 	}
 	
+	a { 
+		text-decoration: none;
+	}
+
 	a:focus {
 		box-shadow: none;
 	}
 	
-	.modal {
-		top: 46px;
+	.rw-wf-modal {
+	//	top: 46px;
 	}
 
-	.btn.btn-link {
+	.button {
+		padding-top: 2px;
+
+		&:not(.button-small) {
+			height: 29px;
+		}
+		
+		&.button-primary {
+			padding-top: 1px;
+			color: #fff;
+		}
+
+		&.button-small {
+			padding-top: 2px;
+		}
+	}
+
+	.button.button-link {
 		&:focus, &:active {
 			outline: none;
 		}
 	}
 	
 	.list-group-item {
-		.btn.btn-link {
-			padding-top: 0;
-			padding-bottom: 0;
-			cursor: default;
-
-			.glyphicon-trash {
-				cursor: pointer;
+		.button {
+			&.remove-workflow {
+				position: relative;
+				top: -2px;
+				margin-right: 5px;
 			}
 		}
-
+		
 		.list-group-item-content {
 			overflow: hidden;
 			cursor: pointer;
@@ -97,7 +116,7 @@
 	}
 
 	.form-inline {
-		> .btn {
+		> .button {
 			margin-top: 20px;
 		}
 
@@ -121,7 +140,7 @@
 	.hidden-nav-tabs {
 		display: none;
 	}
-
+	
 	/* WORKFLOWS */
 	.workflow-template {
 		display: none;
@@ -154,7 +173,7 @@
 				}
 			}
 
-			.edit-workflow-next-step,
+			.next-step,
 			.activate-workflow {
 				display: none;
 			}
@@ -170,8 +189,13 @@
 		}
 
 		&.is-creating {
+			.button.save,
 			.workflow-title {
 				display: none;
+			}
+
+			.next-step {
+				display: inline-block;
 			}
 		}
 
@@ -213,7 +237,7 @@
 		padding: 0 0 10px;
 	}
 
-	.workflowCondActions {
+	.and-operation-container {
 		margin: 1em 0 2em;
 		margin-top: 5px;
 		color: #2b2b2b;
@@ -232,7 +256,25 @@
 			box-shadow: none
 		}
 
-		.facet {
+		a:hover {
+			text-decoration: underline;
+		}
+		
+		.operations-container {
+			&+div {
+				margin-left: -16px;
+				margin-right: -16px;
+				background: #fff;
+				padding-bottom: 7px;
+				margin-bottom: 9px;
+
+				.and-operation em {
+					background: #fff;
+				}
+			}
+		}
+
+		.operation {
 			position: relative;
 			padding: 13px 30px 7px 20px;
 			border-bottom: 1px solid #e7e7e7;
@@ -242,7 +284,7 @@
 			padding-right: 0;
 			padding-bottom: 12px;
 
-			&+.facet {
+			&+.operation {
 				padding-top: 4px;
 				.col, .pull-right {
 					margin-top: 10px;
@@ -253,7 +295,7 @@
 			&:first-child {
 				border-top: 0;
 
-				.wf-badge.or {
+				.badge.or {
 					display: none;
 				}
 			}
@@ -269,20 +311,8 @@
 			}
 		}
 
-		> div + div .facet:first-child {
+		> div + div .operation:first-child {
 			padding-top: 4px;
-		}
-
-		.condAction + div {
-			margin-left: -16px;
-			margin-right: -16px;
-			background: #fff;
-			padding-bottom: 7px;
-			margin-bottom: 9px;
-
-			.and em {
-				background: #fff;
-			}
 		}
 
 		.col {
@@ -291,17 +321,14 @@
 			padding-bottom: 6px;
 			padding-bottom: 0;
 
-			select, input {
-				margin: 0;
-			}
-
-			select {
+			select, [type="text"], [type="number"] {
 				width: 200px;
+				height: 28px;
+				margin: 0;
 			}
 
 			input {
 				margin-right: 5px;
-				width: 185px;
 			}
 		}
 
@@ -318,7 +345,7 @@
 
 		.or, .add-or > .add {
 			background: #f5f5f5;
-			font-size: 1.2em;
+			font-size: 14px;
 			padding: 0 10px;
 
 			outline: none;
@@ -339,23 +366,7 @@
 			font-style: normal;
 		}
 
-		.actions a {
-			margin-left: 5px;
-
-			&:hover {
-				text-decoration: none;
-
-				.icon-add, .icon-remove {
-					color: #555;
-				}
-			}
-		}
-
-		.icon-add, .icon-remove {
-			color: #999;
-		}
-
-		.and {
+		.and-operation {
 			border-bottom: 1px dashed #e1e1e1;
 			margin: .5em 0 1.7em;
 			margin-bottom: 9px;
@@ -365,11 +376,15 @@
 				left: -6.5px;
 				outline: none;
 				text-decoration: none;
+					
+				&:hover {
+					text-decoration: underline;
+				}
 			}
 
 			em, a, label {
 				background: #f5f5f5;
-				font-size: 1.2em;
+				font-size: 14px;
 				font-style: normal;
 				margin: 0 10px;
 				padding: 0 10px;
@@ -377,14 +392,37 @@
 				top: 9px;
 			}
 		}
+
+		.actions {
+			a {
+				margin-left: 5px;
+
+				&:hover {
+					text-decoration: none;
+
+					.icon-add, .icon-remove {
+						color: #555;
+					}
+				}
+			}
+
+			.button {
+				padding-top: 0;
+				padding-bottom: 0;
+			}
+		}
+
+		.icon-add, .icon-remove {
+			color: #999;
+		}
 	}
 
-	.facetInputs {
+	.operation-inputs {
 		display: none;
 	}
 
-	.edit-actions, .edit-event-types {
-		.facet {
+	.edit-actions, .edit-events {
+		.operation {
 			border-bottom: 0;
 		}
 
@@ -414,11 +452,250 @@
 			}
 		}
 	}
+
+
+/* MODAL */
+.btn {
+  background: #428bca;
+  border: #357ebd solid 1px;
+  border-radius: 3px;
+  color: #fff;
+  display: inline-block;
+  font-size: 14px;
+  padding: 8px 15px;
+  text-decoration: none;
+  text-align: center;
+  min-width: 60px;
+  position: relative;
+  transition: color .1s ease;
+  /* top: 40em;*/
+}
+.btn:hover {
+  background: #357ebd;
+}
+.btn.btn-big {
+  font-size: 18px;
+  padding: 15px 20px;
+  min-width: 100px;
+}
+a.btn-close {
+  color: #aaaaaa;
+  font-size: 30px;
+  text-decoration: none;
+  position: absolute;
+  right: 5px;
+  top: -6px;
+
+	&:hover, &:focus {
+		text-decoration: none;
+	}
+}
+a.btn-close:hover {
+  color: #919191;
+}
+.rw-wf-modal:before {
+  content: "";
+  display: none;
+  background: rgba(0, 0, 0, 0.6);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+}
+.rw-wf-modal.active:before {
+  display: block;
+}
+.rw-wf-modal.active .rw-wf-modal-dialog {
+  -webkit-transform: translate(0, 0);
+  -ms-transform: translate(0, 0);
+  transform: translate(0, 0);
+  top: 20%;
+}
+.rw-wf-modal-dialog {
+  background: #fefefe;
+  border: #333333 solid 1px;
+  border-radius: 5px;
+  margin-left: -200px;
+  position: fixed;
+  left: 50%;
+  top: -100%;
+  z-index: 11;
+  width: 360px;
+  -webkit-transform: translate(0, -500%);
+  -ms-transform: translate(0, -500%);
+  transform: translate(0, -500%);
+  -webkit-transition: -webkit-transform 0.3s ease-out;
+  -moz-transition: -moz-transform 0.3s ease-out;
+  -o-transition: -o-transform 0.3s ease-out;
+  transition: transform 0.3s ease-out;
+}
+.rw-wf-modal-body {
+  padding: 20px;
+}
+.rw-wf-modal-header,
+.rw-wf-modal-footer {
+  padding: 20px;
+}
+.rw-wf-modal-header {
+  border-bottom: #eeeeee solid 1px;
+	p {
+		margin: 0;
+	}
+}
+.rw-wf-modal-header h2 {
+  font-size: 20px;
 }
 
-/* MODALS */
-.ratingwidget_page_rating-widget-workflows {
-	@import "bootstrap/variables";
-	@import "bootstrap/mixins";
-	@import "bootstrap/modals";
+.rw-wf-modal-footer {
+	border-top: #eeeeee solid 1px;
+	text-align: right;
+	padding-top: 15px;
+	padding-bottom: 15px;
+
+	> button {
+		margin: 0 7px;
+
+		&:last-child {
+			margin: 0;
+		}
+	}
+}
+
+}
+
+:root {
+	input[type="checkbox"].workflow-state {
+		position: absolute;
+		opacity: 0;
+
+		&+div {
+			-webkit-box-sizing: border-box;
+			box-sizing: border-box;
+			display: inline-block;
+			vertical-align: middle;
+			width: 60px; height: 22px;
+			border: 1px solid rgba(0,0,0,.3);
+			border-radius: 999px;
+			margin-right: 10px;
+			background: white;
+			background-image: -webkit-linear-gradient(rgba(0, 0, 0, .1), transparent),
+							  -webkit-linear-gradient(0deg, #53d76a 50%, transparent 50%);
+			background-image: linear-gradient(rgba(0,0,0,.1), transparent),
+							  linear-gradient(90deg, hsl(130,62%,58%) 50%, transparent 50%);
+			background-size: 200% 100%;
+			background-position: 100% 0;
+			background-origin: border-box;
+			background-clip: border-box;
+			overflow: hidden;
+			-webkit-transition-duration: .4s;
+			-webkit-transition-property: padding, width, background-position, text-indent;
+			transition-duration: .4s;
+			transition-property: padding, width, background-position, text-indent;
+			box-shadow: 0 .1em .1em rgba(0,0,0,.2) inset,
+						0 .45em 0 .1em rgba(0,0,0,.05) inset;
+			font-size: 150%; /* change this and see how they adjust! */
+
+			&:before {
+				-webkit-box-sizing: border-box;
+				box-sizing: border-box;
+				position: relative;
+				content: 'On';
+				float: left;
+				width: 21px; height: 21px;
+				margin: -.1em;
+				border: 1px solid rgba(0,0,0,.35);
+				border-radius: inherit;
+				background: white;
+				background-image: linear-gradient(rgba(0,0,0,.2), transparent);
+				box-shadow: 0 .1em .1em .1em hsla(0,0%,100%,.8) inset,
+							0 0 .5em rgba(0,0,0,.3);
+				color: white;
+				text-shadow: 0 -1px 1px rgba(0,0,0,.3);
+				text-indent: -2.5em;
+			}
+
+			&:before, &:after {
+				font: bold 60%/1.9 sans-serif;
+				text-transform: uppercase;
+			}
+
+			&:after {
+				content: 'Off';
+				float: left;
+				text-indent: .5em;
+				color: rgba(0,0,0,.45);
+				text-shadow: none;
+				position: relative;
+			}
+		}
+
+		&:checked + div {
+			padding-left: 2em;
+			background-position: 0 0;
+		}
+
+		&:active + div {
+			&:before {
+				background-color: #eee;
+			}
+		}
+
+		&:focus + div {
+			box-shadow: 0 .1em .1em rgba(0,0,0,.2) inset,
+			0 .45em 0 .1em rgba(0,0,0,.05) inset,
+			0 0 .4em 1px rgba(255,0,0,.5);
+		}
+
+		/*
+		position: relative;
+		top: -4px;
+		margin-right: 10px;
+		outline: none;
+		appearance: none;
+		background-color: #fafafa;
+		border: 1px solid #d3d3d3;
+		border-radius: 26px;
+		box-shadow: inset 0 0 0 1px #d3d3d3;
+		cursor: pointer;
+		height: 20px;
+		position: relative;
+		transition: border .25s .15s, box-shadow .25s .3s, padding .25s;
+		width: 38px;
+		vertical-align: top;
+
+		&:after {
+			background-color: #fff;
+			border: 1px solid #d3d3d3;
+			border-radius: 24px;
+			box-shadow: inset 0 -3px 3px rgba(0, 0, 0, 0.025), 0 1px 4px rgba(0, 0, 0, 0.15), 0 4px 4px rgba(0, 0, 0, 0.1);
+			content: '';
+			display: block;
+			height: 18px;
+			left: 0;
+			position: absolute;
+			right: 16px;
+			top: 0;
+			transition: border .25s .15s, left .25s .1s, right .15s .175s;
+		}
+
+		&:before {
+			display: none;
+		}
+
+		&:checked {
+			border-color: #53d76a;
+			box-shadow: inset 0 0 0 13px #53d76a;
+			padding-left: 18px;
+			transition: border .25s, box-shadow .25s, padding .25s .15s;
+
+			&:after {
+				border-color: #53d76a;
+				left: 16px;
+				right: 0;
+				transition: border .25s, left .15s .25s, right .25s .175s;
+			}
+		}*/
+	}
 }

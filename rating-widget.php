@@ -6098,9 +6098,9 @@
 								};
 								
 								var _afterRate = options.afterRate ? options.afterRate : false;
-								options.afterRate = function(rating, score) {
+								options.afterRate = function(success, score, rating) {
 									if (false !== _afterRate) {
-										_afterRate(rating, score);
+										_afterRate(success, score, rating);
 									}
 									
 									WF_Engine.eval( 'afterVote', rating, score );
@@ -7086,9 +7086,18 @@
 					$pOptions['show-report'] = 'false';
 				}
 
+				$user_id = false;
+				if ( isset( $pUser->ID ) ) {
+					$user_id = $pUser->ID;
+				} else if ( isset( $pUser->userdata ) ) {
+					$user_id = $pUser->userdata->ID;
+				} else if ( isset( $pUser->id ) ) {
+					$user_id = $pUser->id;
+				}
+				
 				return $this->EmbedRating(
-					$pUser->ID,
-					$pUser->ID,
+					$user_id,
+					$user_id,
 					$pUser->fullname,
 					$pUser->domain,
 					$pClass,

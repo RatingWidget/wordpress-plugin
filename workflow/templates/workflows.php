@@ -7,34 +7,33 @@ $slug = $VARS['slug'];
 $wf = wf($slug);
 ?>
 <div class="wrap rw-dir-ltr">
-	<form id="rw-workflows-page" method="post" action="">
+	<form id="workflows-page" method="post" action="">
 		<div id="poststuff">
 			<div class="postbox rw-body">
 				<div class="inside rw-no-radius">
 					<div>
 						<div class="tab-content">
 							<div id="workflows" class="tab-pane active">
-								<p><button data-toggle="tab" href="#edit-workflow" id="new-workflow-btn" class="btn btn-primary"><?php _e( 'New Workflow', WP_WF__SLUG ); ?></button></p>
+								<p><button data-toggle="tab" href="#edit-workflow" id="new-workflow" class="button button-primary"><?php _e( 'New Workflow', WP_WF__SLUG ); ?></button></p>
 								<div class="panel panel-default">
 									<div class="panel-heading"></div>
 									<div class="panel-body">
 										<p><?php _e( 'To change the order, drag the target workflow and drop into the desired position.', WP_WF__SLUG ); ?></p>
 									</div>
-									<div class="list-group">
-									</div>
+									<div class="list-group"></div>
 								</div>
 							</div>
 							<div id="edit-workflow" class="tab-pane">
 								<div class="form-horizontal">
 									<ul class="nav nav-pills">
-										<li class="active"><a href="#edit-workflow-step1" data-toggle="tab"><?php _e( 'Name', WP_WF__SLUG ); ?></a></li>
-										<li class="disabled"><a href="#edit-workflow-step2"><?php _e( 'Conditions', WP_WF__SLUG ); ?></a></li>
-										<li class="disabled"><a href="#edit-workflow-step3"><?php _e( 'Actions', WP_WF__SLUG ); ?></a></li>
-										<li class="disabled"><a href="#edit-workflow-step4"><?php _e( 'Triggers', WP_WF__SLUG ); ?></a></li>
-										<li class="disabled"><a href="#edit-workflow-summary"><?php _e( 'Summary', WP_WF__SLUG ); ?></a></li>
+										<li class="active"><a href="#edit-name" data-toggle="tab"><?php _e( 'Name', WP_WF__SLUG ); ?></a></li>
+										<li class="disabled"><a href="#edit-conditions"><?php _e( 'Conditions', WP_WF__SLUG ); ?></a></li>
+										<li class="disabled"><a href="#edit-actions"><?php _e( 'Actions', WP_WF__SLUG ); ?></a></li>
+										<li class="disabled"><a href="#edit-events"><?php _e( 'Events', WP_WF__SLUG ); ?></a></li>
+										<li class="disabled"><a href="#edit-summary"><?php _e( 'Summary', WP_WF__SLUG ); ?></a></li>
 									</ul>
 									<div class="tab-content">
-										<div id="edit-workflow-step1" class="tab-pane workflow-step active" data-step="enter-workflow-name">
+										<div id="edit-name" class="tab-pane workflow-step active" data-step="edit-workflow-name" data-next-step="#edit-conditions">
 											<h3><span><?php _e( 'Workflow Name', WP_WF__SLUG ); ?></span></h3>
 											<div class="form-group">
 												<div class="col-sm-5">
@@ -43,33 +42,33 @@ $wf = wf($slug);
 											</div>
 											<div class="form-group">
 												<div class="col-sm-5">
-													<button type="submit" class="btn btn-default edit-workflow-next-step" data-next-tab="#edit-workflow-step2" data-loading-text="Saving..." ><?php _e(' Next Step', WP_WF__SLUG ); ?></button>
-													<button type="submit" class="btn btn-default save-name" href="#edit-workflow-summary"><?php _e( 'Update Name', WP_WF__SLUG ); ?></button>
-													<button type="submit" class="btn btn-link cancel-save" href="#edit-workflow-summary" data-toggle="tab"><?php _e( 'Cancel', WP_WF__SLUG ); ?></button>
+													<button type="submit" class="button button-secondary next-step" data-loading-text="Saving..." ><?php _e(' Next Step', WP_WF__SLUG ); ?></button>
+													<button type="submit" class="button btn-secondary save" href="#edit-summary"><?php _e( 'Update Name', WP_WF__SLUG ); ?></button>
+													<button type="submit" class="button cancel-save" href="#edit-summary" data-toggle="tab"><?php _e( 'Cancel', WP_WF__SLUG ); ?></button>
 												</div>
 											</div>
 										</div>
-										<div id="edit-workflow-step2" class="tab-pane workflow-step" data-step="select-condition">
-											<button type="submit" class="btn btn-default edit-workflow-next-step" data-next-step="select-action" href="#edit-workflow-step3"><?php _e( 'Next Step', WP_WF__SLUG ) ; ?></button>
-											<button type="submit" class="btn btn-default save-conditions" href="#edit-workflow-summary"><?php _e( 'Update Conditions', WP_WF__SLUG ); ?></button>
-											<button type="submit" class="btn btn-link cancel-save" href="#edit-workflow-summary" data-toggle="tab"><?php _e( 'Cancel', WP_WF__SLUG ); ?></button>
+										<div id="edit-conditions" class="tab-pane workflow-step">
+											<button type="submit" class="button button-secondary next-step" href="#edit-actions"><?php _e( 'Next Step', WP_WF__SLUG ) ; ?></button>
+											<button type="submit" class="button button-secondary save" href="#edit-summary"><?php _e( 'Update Conditions', WP_WF__SLUG ); ?></button>
+											<button type="submit" class="button cancel-save" href="#edit-summary" data-toggle="tab"><?php _e( 'Cancel', WP_WF__SLUG ); ?></button>
 											<p class="" style="margin-top: 20px;"></p>
 										</div>
-										<div id="edit-workflow-step3" class="tab-pane workflow-step" data-step="select-action">
-											<button type="submit" class="btn btn-default edit-workflow-next-step" data-next-step="show-event-type" href="#edit-workflow-step4"><?php _e( 'Next Step', WP_WF__SLUG ); ?></button>
-											<button type="submit" class="btn btn-default save-actions" href="#edit-workflow-summary"><?php _e( 'Update Actions', WP_WF__SLUG ); ?></button>
-											<button type="submit" class="btn btn-link cancel-save" href="#edit-workflow-summary" data-toggle="tab"><?php _e( 'Cancel', WP_WF__SLUG ); ?></button>
+										<div id="edit-actions" class="tab-pane workflow-step">
+											<button type="submit" class="button button-secondary next-step" href="#edit-events"><?php _e( 'Next Step', WP_WF__SLUG ); ?></button>
+											<button type="submit" class="button button-secondary save" href="#edit-summary"><?php _e( 'Update Actions', WP_WF__SLUG ); ?></button>
+											<button type="submit" class="button cancel-save" href="#edit-summary" data-toggle="tab"><?php _e( 'Cancel', WP_WF__SLUG ); ?></button>
 											<p class="" style="margin-top: 20px;"></p>
 										</div>
-										<div id="edit-workflow-step4" class="tab-pane workflow-step" data-step="select-event-type">
-											<button type="submit" class="btn btn-default edit-workflow-next-step" data-next-step="show-summary" href="#edit-workflow-summary"><?php _e( 'Next Step', WP_WF__SLUG ); ?></button>
-											<button type="submit" class="btn btn-default save-event-types" href="#edit-workflow-summary"><?php _e( 'Update Triggers', WP_WF__SLUG ); ?></button>
-											<button type="submit" class="btn btn-link cancel-save" href="#edit-workflow-summary" data-toggle="tab"><?php _e( 'Cancel', WP_WF__SLUG ); ?></button>
+										<div id="edit-events" class="tab-pane workflow-step">
+											<button type="submit" class="button button-secondary next-step" href="#edit-summary"><?php _e( 'Next Step', WP_WF__SLUG ); ?></button>
+											<button type="submit" class="button button-secondary save" href="#edit-summary"><?php _e( 'Update Events', WP_WF__SLUG ); ?></button>
+											<button type="submit" class="button cancel-save" href="#edit-summary" data-toggle="tab"><?php _e( 'Cancel', WP_WF__SLUG ); ?></button>
 											<p class="" style="margin-top: 20px;"></p>
 										</div>
-										<div id="edit-workflow-summary" class="tab-pane workflow-step" data-step="show-summary">
-											<button type="submit" class="btn btn-default activate-workflow"><?php _e( 'Activate', WP_WF__SLUG ); ?></button>
-											<button type="submit" class="btn btn-default view-workflows" href="#workflows" data-toggle="tab"><?php _e( 'View all Workflows', WP_WF__SLUG ); ?></button>
+										<div id="edit-summary" class="tab-pane workflow-step">
+											<button type="submit" class="button button-secondary activate-workflow"><?php _e( 'Activate', WP_WF__SLUG ); ?></button>
+											<button type="submit" class="button button-secondary view-workflows" href="#workflows" data-toggle="tab"><?php _e( 'View all Workflows', WP_WF__SLUG ); ?></button>
 											<p class="" style="margin-top: 20px;"></p>
 										</div>
 									</div>
@@ -82,180 +81,200 @@ $wf = wf($slug);
 		</div>
 
 		<!-- MODAL -->
-		<div id="confirm-delete-workflow" class="modal fade" data-target-workflow-id="" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel">
-			<div class="modal-dialog">
-				<div class="modal-content">
-					<div class="modal-body">
-						<button type="button" class="close" data-dismiss="modal">&times;</button>
-						<?php _e('Are you sure you would like to delete this workflow?', WP_WF__SLUG); ?>
-					</div>
-					<div class="modal-footer">
-						<button type="button" class="btn btn-primary">Delete</button>
-						<button type="button" class="btn btn-default" data-dismiss="modal"><?php _e( 'Cancel', WP_WF__SLUG ); ?></button>
-					</div>
+		<div class="rw-wf-modal no-body" id="confirm-delete-workflow" aria-hidden="true">
+			<div class="rw-wf-modal-dialog">
+				<div class="rw-wf-modal-header">
+					<p><?php _e( 'Are you sure you would like to delete this workflow?', WP_WF__SLUG ); ?></p>
+					<a href="#close" class="btn-close" aria-hidden="true">&times;</a>
+				</div>
+				<div class="rw-wf-modal-footer">
+					<button href="#" class="button button-primary"><?php _e( 'Delete', WP_WF__SLUG ); ?></button>
+					<button href="#" class="button btn-close"><?php _e( 'Cancel', WP_WF__SLUG ); ?></button>
 				</div>
 			</div>
 		</div>
 		
 		<!-- TEMPLATES -->
-		<a id="list-group-item-template" class="workflow-template" href="#edit-workflow" data-toggle="tab">
+		<!-- Edit workflow -->
+		<a class="workflow-template" href="#edit-workflow" data-class="list-group-item">
 			<span class="pull-right">
-				<button type="button" class="btn btn-link">
+				<button type="button" class="button button-small remove-workflow">
 					<span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
 				</button>
+				<label>
+					<input type="checkbox" class="workflow-state" />
+					<div class="switch"></div>
+				</label>
 			</span>
 			<div class="list-group-item-content"></div>
 		</a>
-		<select class="workflow-template" data-class="operators"></select>
-		<select class="workflow-template" data-class="actions"></select>
-		<select class="workflow-template" data-class="event-types"></select>
-		<select class="workflow-template" data-class="operand-types">
-			<option value="-1"><?php _e( 'Select a Condition ...', WP_WF__SLUG ); ?></option>
-		</select>
+		
+		<!-- Edit conditions -->
 		<div class="workflow-template" data-class="edit-conditions">
 			<h3><span><?php _e( 'Conditions', WP_WF__SLUG ); ?></span></h3>
 			<div class="panel panel-default">
 				<div class="panel-heading">
-					<section class="workflowCondActions">
-					</section>
 				</div>
 			</div>
 		</div>
+		
+		<!-- Edit actions -->
 		<div class="workflow-template" data-class="edit-actions">
 			<h3><span><?php _e( 'Actions', WP_WF__SLUG ); ?></span></h3>
 			<div class="panel panel-default">
 				<div class="panel-heading">
-					<section class="workflowCondActions">
-						<div>
-							<section class="condAction">
-								<div class="facetList">
-									<div class="facet">
-										<div class="col">
-										</div>
-										<div class="actions pull-right">
-											<button type="button" class="btn btn-link btn-lg" style="padding-top: 0; padding-bottom: 0">
-												<span class="glyphicon glyphicon-minus-sign remove-action" aria-hidden="true" style="vertical-align: middle;"></span>
-											</button>
-										</div>
+					<div class="and-operation-container">
+						<div class="operations-container">
+							<div class="operations-list">
+								<div class="operation">
+									<div class="col"></div>
+									<div class="actions pull-right">
+										<button type="button" class="button button-small">
+											<span class="glyphicon glyphicon-minus-sign remove-operation"></span>
+										</button>
 									</div>
 								</div>
-							</section>
-							<p class="and">
-								<a href="javascript:void(0);" class="addAction" tabindex="-1"><?php _e( '+ AND', WP_WF__SLUG ); ?></a>
-							</p>
+							</div>
 						</div>
-					</section>
+						<p class="and-operation">
+							<a href="javascript:void(0);" class="add-operation" tabindex="-1"><?php _e( '+ AND', WP_WF__SLUG ); ?></a>
+						</p>
+					</div>
 				</div>
 			</div>
 		</div>
-		<div class="workflow-template" data-class="edit-event-types">
-			<h3><span><?php _e( 'Triggers', WP_WF__SLUG ); ?></span></h3>
+		
+		<!-- Edit event types -->
+		<div class="workflow-template" data-class="edit-events">
+			<h3><span><?php _e( 'Events', WP_WF__SLUG ); ?></span></h3>
 			<div class="panel panel-default">
 				<div class="panel-heading">
-					<section class="workflowCondActions">
-						<div>
-							<section class="condAction">
-								<div class="facetList">
-									<div class="facet">
-										<div class="col">
-										</div>
-										<div class="actions pull-right">
-											<button type="button" class="btn btn-link btn-lg" style="padding-top: 0; padding-bottom: 0">
-												<span class="glyphicon glyphicon-minus-sign remove-event-type" aria-hidden="true" style="vertical-align: middle;"></span>
-											</button>
-										</div>
+					<div class="and-operation-container">
+						<div class="operations-container">
+							<div class="operations-list">
+								<div class="operation">
+									<div class="col"></div>
+									<div class="actions pull-right">
+										<button type="button" class="button button-small">
+											<span class="glyphicon glyphicon-minus-sign remove-operation" aria-hidden="true"></span>
+										</button>
 									</div>
 								</div>
-							</section>
-							<p class="and">
-								<a href="javascript:void(0);" class="addTrigger" tabindex="-1"><?php _e( '+ OR', WP_WF__SLUG ); ?></a>
-							</p>
+							</div>
 						</div>
-					</section>
+						<p class="and-operation">
+							<a href="javascript:void(0);" class="add-operation" tabindex="-1"><?php _e( '+ OR', WP_WF__SLUG ); ?></a>
+						</p>
+					</div>
 				</div>
 			</div>
 		</div>
+		
+		<!-- Workflow summary -->
 		<div class="workflow-template" data-class="workflow-summary">
 			<h3 class="workflow-title"><span></span> <span class="label label-default label-workflow-status"></span></h3>
 			<div class="panel panel-default">
 				<div class="panel-heading">
-					<div><span class="pull-right"><button class="btn btn-primary btn-xs edit-workflow edit-conditions" data-toggle="tab" href="#edit-workflow-step2"><?php _e( 'Edit', WP_WF__SLUG ); ?></button></span><div><?php _e( 'If ...', WP_WF__SLUG ); ?></div></div>
+					<!-- IF part of the operation -->
+					<div>
+						<span class="pull-right">
+							<button class="button button-primary button-small edit-workflow edit-conditions" data-toggle="tab" href="#edit-conditions"><?php _e( 'Edit', WP_WF__SLUG ); ?></button>
+						</span>
+						<div><?php _e( 'If ...', WP_WF__SLUG ); ?></div>
+					</div>
 					<ul class="list-group"></ul>
-					<div><span class="pull-right"><button class="btn btn-primary btn-xs edit-workflow edit-actions" data-toggle="tab" href="#edit-workflow-step3"><?php _e( 'Edit', WP_WF__SLUG ); ?></button></span><div><?php _e( 'Then ...', WP_WF__SLUG ); ?></div></div>
+					
+					<!-- THEN part of the operation -->
+					<div>
+						<span class="pull-right">
+							<button class="button button-primary button-small edit-workflow edit-actions" data-toggle="tab" href="#edit-actions"><?php _e( 'Edit', WP_WF__SLUG ); ?></button>
+						</span>
+						<div><?php _e( 'Then ...', WP_WF__SLUG ); ?></div>
+					</div>
 					<ul class="list-group"></ul>
-					<div><span class="pull-right"><button class="btn btn-primary btn-xs edit-workflow edit-event-types" data-toggle="tab" href="#edit-workflow-step4"><?php _e( 'Edit', WP_WF__SLUG ); ?></button></span><div><?php _e( 'When ...', WP_WF__SLUG ); ?></div></div>
+					
+					<!-- WHEN part of the operation -->
+					<div>
+						<span class="pull-right">
+							<button class="button button-primary button-small edit-workflow edit-events" data-toggle="tab" href="#edit-events"><?php _e( 'Edit', WP_WF__SLUG ); ?></button>
+						</span>
+						<div><?php _e( 'When ...', WP_WF__SLUG ); ?></div>
+					</div>
 					<ul class="list-group"></ul>
 				</div>
 			</div>
 		</div>
-		<div class="workflow-template" data-class="facet">
-			<i class="wf-badge or"><?php _e( 'or', WP_WF__SLUG ); ?></i>
-			<div class="col">
-			</div>
-			<div class="facetInputs">
+		
+		<!-- Single operation -->
+		<div class="workflow-template" data-class="operation">
+			<i class="badge or"><?php _e( 'or', WP_WF__SLUG ); ?></i>
+			<div class="col"></div>
+			<div class="operation-inputs">
 				<div>
 					<div class="col">
-						<select class="operator">
-						</select>
+						<select class="operator"></select>
 					</div>
 					<div class="col">
-						<select class="value">
-						</select>
+						<select class="value"></select>
 					</div>
 				</div>
 			</div>
 			<div class="actions pull-right">
-				<button type="button" class="btn btn-link btn-lg" style="padding-top: 0; padding-bottom: 0">
-					<span class="glyphicon glyphicon-minus-sign remove-condition" aria-hidden="true" style="vertical-align: middle;"></span>
+				<button type="button" class="button button-small">
+					<span class="glyphicon glyphicon-minus-sign remove-operation" aria-hidden="true"></span>
 				</button>
 			</div>
 		</div>
-		<div class="workflow-template" data-class="action-template">
-			<section class="condAction">
-				<div class="facetList">
-					<div class="facet">
-						<div class="col">
-						</div>
-						<div class="actions pull-right">
-							<button type="button" class="btn btn-link btn-lg" style="padding-top: 0; padding-bottom: 0">
-								<span class="glyphicon glyphicon-minus-sign remove-action" aria-hidden="true" style="vertical-align: middle;"></span>
-							</button>
-						</div>
-					</div>
-				</div>
-			</section>
-			<p class="and">
-				<a href="javascript:void(0);" class="addAction" tabindex="-1"><?php _e( '+ AND', WP_WF__SLUG ); ?></a>
-			</p>
-		</div>
-		<div class="workflow-template" data-class="event-type-template">
-			<section class="condAction">
-				<div class="facetList">
-					<div class="facet">
-						<div class="col">
-						</div>
-						<div class="actions pull-right">
-							<button type="button" class="btn btn-link btn-lg" style="padding-top: 0; padding-bottom: 0">
-								<span class="glyphicon glyphicon-minus-sign remove-event-type" aria-hidden="true" style="vertical-align: middle;"></span>
-							</button>
-						</div>
-					</div>
-				</div>
-			</section>
-			<p class="and">
-				<a href="javascript:void(0);" class="addTrigger" tabindex="-1"><?php _e( '+ OR', WP_WF__SLUG ); ?></a>
-			</p>
-		</div>
-		<div class="workflow-template" data-class="condition-template">
-			<section class="condAction">
-				<div class="facetList">
+		
+		<!-- Single condition -->
+		<div class="workflow-template" data-class="condition and-operation-container">
+			<div class="operations-container">
+				<div class="operations-list">
 				</div>
 				<div class="add-or">
-					<a href="javascript:void(0)" class="add addFacet" tabindex="-1"><?php _e( '+ OR', WP_WF__SLUG ); ?></a>
+					<a href="javascript:void(0)" class="add add-operation" tabindex="-1">+ OR</a>
 				</div>
-			</section>
-			<p class="and">
-				<a href="javascript:void(0);" class="addCondition" tabindex="-1"><?php _e( '+ AND', WP_WF__SLUG ); ?></a>
+			</div>
+			<p class="and-operation">
+				<a href="javascript:void(0);" class="add-operation" tabindex="-1"><?php _e( '+ AND', WP_WF__SLUG ); ?></a>
+			</p>
+		</div>
+		
+		<!-- Single action -->
+		<div class="workflow-template" data-class="action-template operations-container">
+			<div class="operations-container">
+				<div class="operations-list">
+					<div class="operation">
+						<div class="col"></div>
+						<div class="actions pull-right">
+							<button type="button" class="button button-small">
+								<span class="glyphicon glyphicon-minus-sign remove-operation"></span>
+							</button>
+						</div>
+					</div>
+				</div>
+			</div>
+			<p class="and-operation">
+				<a href="javascript:void(0);" class="add-operation" tabindex="-1"><?php _e( '+ AND', WP_WF__SLUG ); ?></a>
+			</p>
+		</div>
+		
+		<!-- Single event type -->
+		<div class="workflow-template" data-class="event-type-template">
+			<div class="operations-container">
+				<div class="operations-list">
+					<div class="operation">
+						<div class="col"></div>
+						<div class="actions pull-right">
+							<button type="button" class="button button-small">
+								<span class="glyphicon glyphicon-minus-sign remove-operation"></span>
+							</button>
+						</div>
+					</div>
+				</div>
+			</div>
+			<p class="and-operation">
+				<a href="javascript:void(0);" class="add-operation" tabindex="-1"><?php _e( '+ OR', WP_WF__SLUG ); ?></a>
 			</p>
 		</div>
 	</form>
