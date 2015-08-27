@@ -564,7 +564,7 @@
 			// Add Ons Config submenu
 			
 			// Check if there is any active add ons
-			$settings_tab = apply_filters( 'wf_addons_settings_tab', array() );
+			$settings_tab = apply_filters( 'rw_wf_addons_settings_tab', array() );
 			if ( ! empty( $settings_tab ) ) {
 				$ratingwidget_submenus[] = array(
 					'menu_title'	=> __( 'Add Ons Config', $this->_slug ),

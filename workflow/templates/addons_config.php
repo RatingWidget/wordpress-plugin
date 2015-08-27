@@ -3,7 +3,7 @@ $slug = $VARS['slug'];
 $wf = wf( $slug );
 
 // Retrieve available add-on settings tabs and their form fields.
-$addons_settings_tab = apply_filters( 'wf_addons_settings_tab', array() );
+$addons_settings_tab = apply_filters( 'rw_wf_addons_settings_tab', array() );
 
 // Get the selected add-on tab
 $selected_key = '';
