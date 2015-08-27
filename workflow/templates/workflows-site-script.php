@@ -294,6 +294,16 @@ var engineOptions = {
 	actions: {}
 };
 
+<?php
+$active_actions = $wf->get_active_actions();
+
+if ( ! empty( $active_actions ) ) {
+	foreach( $active_actions as $action_id ) {
+		do_action( 'init_workflow_action', $action_id );
+	}
+}
+?>
+	
 <?php do_action( 'rw_wf_after_init_engine_options' ); ?>
 
 var WF_Engine = new Class_WF_Engine( engineOptions, jQuery );

@@ -25,11 +25,16 @@
 		private $_addons_settings;
 		
 		/**
+		 * @var array
+		 */
+		private $_active_actions;
+		
+		/**
 		 * @var array 
 		 */
 		private $_workflows_id_order;
-
-		/**
+        
+        /**
 		 * @var Workflows_Option_Manager
 		 */
 		private static $_options;
@@ -50,7 +55,9 @@
 
 			$base_name_split = explode( '/', $this->_plugin_basename );
 			$this->_plugin_dir_name = $base_name_split[0];
-
+			
+			$this->_active_actions = array();
+			
 			$this->_load_options();
 		}
 
@@ -198,12 +205,31 @@
 					$workflow = $this->_workflows->{ $workflow_id };
 					
 					if ( isset( $workflow->active ) && ( true === $workflow->active ) ) {
+						if ( ! empty( $workflow->actions ) ) {
+							// Get all actions used by this workflow that are not yet added to the active actions array.
+							$action_ids = array_diff( $workflow->actions, $this->_active_actions );
+							
+							// Add the actions to the active actions array.
+							if ( ! empty( $action_ids ) ) {
+								$this->_active_actions = array_merge( $this->_active_actions, $action_ids );
+							}
+						}
+						
 						$active_workflows[ $workflow_id ] = $workflow;
 					}
 				}
 			}
 			
 			return $active_workflows;
+		}
+		
+		/**
+		 * Returns all actions in use by active workflows.
+		 * 
+		 * @return array
+		 */
+		function get_active_actions() {
+			return $this->_active_actions;
 		}
 		
 		/**
@@ -351,7 +377,7 @@
 		
 		function print_site_script() {
 			$vars = array( 'slug' => $this->_slug );
-			wf_require_once_template( 'workflows_site_script.php', $vars );
+			wf_require_once_template( 'workflows-site-script.php', $vars );
 		}
 
 		/**
@@ -686,6 +712,6 @@
 		
 		function _addons_config_page_render() {
 			$vars = array( 'slug' => $this->_slug );
-			wf_require_once_template( 'addons_config.php', $vars );
+			wf_require_once_template( 'addons-config.php', $vars );
 		}
 	}
