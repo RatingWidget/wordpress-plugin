@@ -38,12 +38,6 @@
 		private $_is_live;
 
 		/**
-		 * @since 1.0.5
-		 * @var bool Hints the SDK if running a premium plugin or free.
-		 */
-		private $_is_premium;
-
-		/**
 		 * @since 1.0.9
 		 * @var bool Hints the SDK if plugin can support anonymous mode (if skip connect is visible).
 		 */
@@ -175,7 +169,7 @@
 			}
 
 			$plugin_version = $this->get_plugin_version();
-			if (!isset($this->_storage->plugin_version) ||$this->_storage->plugin_version != $plugin_version){
+			if (!isset($this->_storage->plugin_version) || $this->_storage->plugin_version != $plugin_version){
 				// Freemius version upgrade mode.
 				$this->_storage->plugin_last_version = $this->_storage->plugin_version;
 				$this->_storage->plugin_version = $plugin_version;
@@ -394,6 +388,8 @@
 		 */
 		static function get_instance_by_file($plugin_file) {
 			$sites = self::get_all_sites();
+
+			$plugin_file = str_replace( '-premium/', '/', $plugin_file );
 
 			return isset( $sites[ $plugin_file ] ) ?
 				self::instance( $sites[ $plugin_file ]->slug ) :
@@ -632,8 +628,8 @@
 
 			if ( isset( $plugin_info['parent'] ) ) {
 				$parent_id         = $this->_get_numeric_option( $plugin_info['parent'], 'id', null );
-				$parent_slug       = $this->_get_option( $plugin_info['parent'], 'slug', null );
-				$parent_public_key = $this->_get_option( $plugin_info['parent'], 'public_key', null );
+//				$parent_slug       = $this->_get_option( $plugin_info['parent'], 'slug', null );
+//				$parent_public_key = $this->_get_option( $plugin_info['parent'], 'public_key', null );
 				$parent_name       = $this->_get_option( $plugin_info['parent'], 'name', null );
 			}
 
@@ -656,21 +652,20 @@
 			$plugin->update('title', $this->get_plugin_name());
 			$plugin->update('version', $this->get_plugin_version());
 			$plugin->update('file', $this->_free_plugin_basename);
+			$plugin->update('is_premium', $this->_get_bool_option( $plugin_info, 'is_premium', true ));
 
 			if ($plugin->is_updated()) {
 				// Update plugin details.
 				$this->_plugin = FS_Plugin_Manager::instance( $this->_slug )->store( $plugin );
 			}
+			$this->_plugin->secret_key = $secret_key;
 
 			$this->_menu_slug        = plugin_basename( isset( $plugin_info['menu_slug'] ) ? $plugin_info['menu_slug'] : $this->_slug );
 			$this->_is_live          = $this->_get_bool_option( $plugin_info, 'is_live', true );
 			$this->_has_addons       = $this->_get_bool_option( $plugin_info, 'has_addons', false );
-			$this->_is_premium       = $this->_get_bool_option( $plugin_info, 'is_premium', true );
-			$this->_is_premium       = $this->_get_bool_option( $plugin_info, 'is_premium', true );
 			$this->_has_paid_plans   = $this->_get_bool_option( $plugin_info, 'has_paid_plans', true );
 			$this->_is_org_compliant = $this->_get_bool_option( $plugin_info, 'is_org_compliant', true );
 			$this->_enable_anonymous = $this->_get_bool_option( $plugin_info, 'enable_anonymous', true );
-
 
 			// Check if Freemius is on for the current plugin.
 			// This MUST be executed after all the plugin variables has been loaded.
@@ -734,7 +729,7 @@
 						// Override request for plugin information for Add-ons.
 						add_filter( 'plugins_api', array( &$this, '_get_addon_info_filter' ), 10, 3 );
 					} else {
-						if ( $this->is_paying__fs__() || $this->_has_addons() ) {
+						if ( $this->is_paying() || $this->_has_addons() ) {
 							new FS_Plugin_Updater( $this );
 						}
 					}
@@ -757,6 +752,16 @@
 						$this->_storage->activation_timestamp = WP_FS__SCRIPT_START_TIME;
 					}
 
+					if ($this->_storage->prev_is_premium !== $this->_plugin->is_premium)
+					{
+						if (isset($this->_storage->prev_is_premium)) {
+							add_action( is_admin() ? 'admin_init' : 'init', array(
+									&$this,
+									'_plugin_code_type_changed'
+								) );
+						}
+					}
+
 					$this->do_action( 'after_init_plugin_registered' );
 				} else if ( $this->is_anonymous() ) {
 					$this->do_action( 'after_init_plugin_anonymous' );
@@ -772,6 +777,34 @@
 					$this->do_action( 'after_init_addon_pending_activations' );
 				}
 			}
+		}
+
+		/**
+		 * Handles plugin's code type change (free <--> premium).
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since 1.0.9
+		 */
+		function _plugin_code_type_changed() {
+			// Send code type changes event.
+			$this->get_api_site_scope()->call( '/', 'put', array( 'is_premium' => $this->_plugin->is_premium ) );
+
+			if ( true === $this->_plugin->is_premium ) {
+				// Activated premium code.
+				$this->do_action( 'after_premium_version_activation' );
+
+				// Remove all sticky messages related to download of the premium version.
+				$this->_admin_notices->remove_sticky(array(
+					'trial_started',
+					'plan_upgraded',
+				));
+			} else {
+				// Activated free code (after had the premium before).
+				$this->do_action( 'after_free_version_reactivation' );
+			}
+
+			// Update is_premium of latest version.
+			$this->_storage->prev_is_premium = $this->_plugin->is_premium;
 		}
 
 		#endregion ------------------------------------------------------------------
@@ -1106,19 +1139,26 @@
 		 */
 		private function _background_sync() {
 			// Don't sync license on AJAX calls.
-			if ($this->is_ajax())
+			if ( $this->is_ajax() ) {
 				return false;
+			}
+
+			// Asked to sync explicitly, no need for background sync.
+			if ( fs_request_is_action( $this->_slug . '_sync_license' ) ) {
+				return false;
+			}
 
 			$sync_timestamp = $this->_storage->get( 'sync_timestamp' );
 
 			if ( ! is_numeric( $sync_timestamp ) || $sync_timestamp >= time() ) {
 				// If updated not set or happens to be in the future, set as if was 24 hours earlier.
-				$sync_timestamp = time() - WP_FS__TIME_24_HOURS_IN_SEC;
+				$sync_timestamp                 = time() - WP_FS__TIME_24_HOURS_IN_SEC;
 				$this->_storage->sync_timestamp = $sync_timestamp;
 			}
 
-			if ( ( /*defined( 'WP_FS__DEV_MODE' ) && WP_FS__DEV_MODE &&*/ ! fs_request_is_action( $this->_slug . '_sync_license' ) ) ||
-			     ($sync_timestamp <= time() - WP_FS__TIME_24_HOURS_IN_SEC) ) {
+			if ( /*( defined( 'WP_FS__DEV_MODE' ) && WP_FS__DEV_MODE && ) ||*/
+			( $sync_timestamp <= time() - WP_FS__TIME_24_HOURS_IN_SEC )
+			) {
 
 				if ( $this->is_registered() ) {
 					// Initiate background plan sync.
@@ -1268,11 +1308,14 @@
 		 *
 		 * @param bool $store
 		 */
-		function _delete_site($store = true)
-		{
+		function _delete_site($store = true) {
+			$site_index = '';
+			$this->_find_site( $site_index );
+
 			$sites = self::get_all_sites();
-			if ( isset( $sites[ $this->_free_plugin_basename ] ) ) {
-				unset( $sites[ $this->_free_plugin_basename ] );
+
+			if ( isset( $sites[ $site_index ] ) ) {
+				unset( $sites[ $site_index ] );
 			}
 
 			self::$_accounts->set_option( 'sites', $sites, $store );
@@ -1861,7 +1904,7 @@
 		 */
 		function is_premium()
 		{
-			return $this->_is_premium;
+			return $this->_plugin->is_premium;
 		}
 
 		/**
@@ -1949,12 +1992,13 @@
 		}
 
 		/**
-		 * @author Vova Feldman (@svovaf)
-		 * @since 1.0.1
+		 * Check if the user has an activated and valid paid license on current plugin's install.
+		 *
+		 * @since 1.0.9
 		 *
 		 * @return bool
 		 */
-		function is_paying__fs__() {
+		function is_paying(){
 			$this->_logger->entrance();
 
 			if (!$this->is_registered())
@@ -2239,6 +2283,45 @@
 				if ($plan === $this->_plans[$i]->name)
 					$required_plan_order = $i;
 				else if ($this->_site->plan->name === $this->_plans[$i]->name)
+					$current_plan_order = $i;
+			}
+
+			return ($current_plan_order > $required_plan_order);
+		}
+
+		/**
+		 * Check if plan based on trial. If not in trial mode, should return false.
+		 *
+		 * @since  1.0.9
+		 *
+		 * @param string $plan Plan name
+		 * @param bool   $exact If true, looks for exact plan. If false, also check "higher" plans.
+		 *
+		 * @return bool
+		 */
+		function is_trial_plan( $plan, $exact = false ){
+			$this->_logger->entrance();
+
+			if (!$this->is_registered())
+				return false;
+
+			if (!$this->is_trial())
+				return false;
+
+			if ($this->_storage->trial_plan->name === $plan)
+				// Exact plan.
+				return true;
+			else if ($exact)
+				// Required exact, but plans are different.
+				return false;
+
+			$current_plan_order = -1;
+			$required_plan_order = -1;
+			for ($i = 0, $len = count($this->_plans); $i < $len; $i++)
+			{
+				if ($plan === $this->_plans[$i]->name)
+					$required_plan_order = $i;
+				else if ($this->_storage->trial_plan->name === $this->_plans[$i]->name)
 					$current_plan_order = $i;
 			}
 
@@ -2673,6 +2756,30 @@
 		#region Account (Loading, Updates & Activation) ------------------------------------------------------------------
 
 		/***
+		 * Find plugin install information based on slug.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.0.9
+		 *
+		 * @param string $index
+		 *
+		 * @return bool|\FS_Site
+		 */
+		private function _find_site(&$index) {
+			$sites = self::get_all_sites();
+			foreach ( $sites as $filename => $site ) {
+				if ( $this->_slug === $site->slug ) {
+					$index = $filename;
+					return $site;
+				}
+			}
+
+			$index = false;
+
+			return false;
+		}
+
+		/***
 		 * Load account information (user + site).
 		 *
 		 * @author Vova Feldman (@svovaf)
@@ -2693,13 +2800,15 @@
 				$this->_logger->log( 'licenses = ' . var_export( $licenses, true ) );
 			}
 
-			if ( isset( $sites[ $this->_free_plugin_basename ] ) &&
-			     is_object( $sites[ $this->_free_plugin_basename ] ) &&
-			     is_numeric($sites[ $this->_free_plugin_basename ]->id) &&
-			     is_numeric($sites[ $this->_free_plugin_basename ]->user_id)
+			$site_index = '';
+			$site = $this->_find_site($site_index);
+
+			if ( is_object($site) &&
+			     is_numeric($site->id) &&
+			     is_numeric($site->user_id)
 			) {
 				// Load site.
-				$this->_site       = clone $sites[ $this->_free_plugin_basename ];
+				$this->_site       = clone $site;
 				$this->_site->plan = $this->_decrypt_entity( $this->_site->plan );
 
 				// Load relevant user.
@@ -2806,7 +2915,7 @@
 				// Remove plugin from pending activation mode.
 				unset( $this->_storage->is_pending_activation );
 
-				if ( ! $this->is_paying__fs__() ) {
+				if ( ! $this->is_paying() ) {
 					$this->_admin_notices->add_sticky(
 						sprintf( __( '%s activation was successfully completed.', WP_FS__SLUG ), '<b>' . $this->get_plugin_name() . '</b>' ),
 						'activation_complete'
@@ -2814,7 +2923,7 @@
 				}
 			}
 
-			if ( $this->is_paying__fs__() ) {
+			if ( $this->is_paying() ) {
 				$this->_admin_notices->add_sticky(
 					sprintf(
 						__( 'Your account was successfully activated with the %s plan, %sdownload our latest %s version now%s.', WP_FS__SLUG ),
@@ -3214,7 +3323,7 @@
 
 					// Add upgrade/pricing page.
 					$this->add_submenu_item(
-						( $this->is_paying__fs__() ? __( 'Pricing', $this->_slug ) : __( 'Upgrade', $this->_slug ) . '&nbsp;&nbsp;&#x27a4;' ),
+						( $this->is_paying() ? __( 'Pricing', $this->_slug ) : __( 'Upgrade', $this->_slug ) . '&nbsp;&nbsp;&#x27a4;' ),
 						array( &$this, '_pricing_page_render' ),
 						$this->get_plugin_name() . ' &ndash; ' . __( 'Pricing', $this->_slug ),
 						'manage_options',
@@ -3499,8 +3608,11 @@
 			$encrypted_site       = clone $this->_site;
 			$encrypted_site->plan = $this->_encrypt_entity( $this->_site->plan );
 
-			$sites                            = self::get_all_sites();
-			$sites[ $this->_free_plugin_basename ] = $encrypted_site;
+			$site_index = '';
+			$this->_find_site( $site_index );
+
+			$sites                = self::get_all_sites();
+			$sites[ $site_index ] = $encrypted_site;
 			self::$_accounts->set_option( 'sites', $sites, $store );
 		}
 
@@ -4171,8 +4283,8 @@
 							// The license is expired, so ignore upgrade method.
 						} else {
 							// License changed.
-							$this->_site    = $site;
-							$this->_update_site_license($new_license);
+							$this->_site = $site;
+							$this->_update_site_license( $new_license );
 							$this->_store_licenses();
 							$this->_enrich_site_plan( true );
 
@@ -4211,19 +4323,29 @@
 				case 'upgraded':
 					$this->_admin_notices->add_sticky(
 						sprintf(
-							__( 'Your plan was successfully upgraded, %1sdownload our latest %2s version now%3s.', WP_FS__SLUG ), '<a href="' . $this->get_account_url( 'download_latest' ) . '">', $this->_site->plan->title, '</a>' ),
+							__( 'Your plan was successfully upgraded.', WP_FS__SLUG ),
+							'<i>' . $this->get_plugin_name() . '</i>'
+						) . ( $this->is_premium() ? '' : sprintf(
+							'<a href="%s">%s</a>',
+							$this->get_account_url( 'download_latest' ),
+							sprintf(
+								__( 'Download the latest %s version now', WP_FS__SLUG ),
+								$this->_site->plan->title
+							) ) ),
 						'plan_upgraded',
 						__( 'Ye-ha!', WP_FS__SLUG )
 					);
+
 					$this->_admin_notices->remove_sticky( array(
 						'trial_started',
 						'trial_promotion',
 						'trial_expired',
+						'activation_complete',
 					) );
 					break;
 				case 'downgraded':
 					$this->_admin_notices->add_sticky(
-						sprintf( __( 'Your license has expired. You can still continue using all the free plugin version forever.', WP_FS__SLUG ) ),
+						sprintf( __( 'Your license has expired. You can still continue using the free plugin forever.', WP_FS__SLUG ) ),
 						'license_expired',
 						__( 'Hmm...', WP_FS__SLUG )
 					);
@@ -4240,10 +4362,19 @@
 				case 'trial_started':
 					$this->_admin_notices->add_sticky(
 						sprintf(
-							__( 'Your trial has been successfully started, %1sdownload our latest %2s version now%3s.', WP_FS__SLUG ), '<a href="' . $this->get_account_url( 'download_latest' ) . '">', $this->_storage->trial_plan->title, '</a>' ),
+							__( 'Your trial has been successfully started.', WP_FS__SLUG ),
+							'<i>' . $this->get_plugin_name() . '</i>'
+						) . ( $this->is_premium() ? '' : sprintf(
+							'<a href="%s">%s</a>',
+							$this->get_account_url( 'download_latest' ),
+							sprintf(
+								__( 'Download the latest %s version now', WP_FS__SLUG ),
+								$this->_storage->trial_plan->title
+							) ) ),
 						'trial_started',
 						__( 'Ye-ha!', WP_FS__SLUG )
 					);
+
 					$this->_admin_notices->remove_sticky( array(
 						'trial_promotion',
 					) );
@@ -4301,14 +4432,23 @@
 
 			// Updated site plan.
 			$this->_site->plan->id = $premium_license->plan_id;
-			$this->_update_site_license($premium_license);
+			$this->_update_site_license( $premium_license );
 			$this->_enrich_site_plan( false );
 
 			$this->_store_account();
 
 			if ( ! $background ) {
 				$this->_admin_notices->add_sticky(
-					sprintf( __( 'Your license for %s was successfully activated, %sdownload our latest %s version now%s.', WP_FS__SLUG ), '<i>' . $this->get_plugin_name() . '</i>', '<a href="' . $this->get_account_url( 'download_latest' ) . '">', $this->_site->plan->title, '</a>' ),
+					sprintf(
+						__( 'Your license for %s was successfully activated.', WP_FS__SLUG ),
+						'<i>' . $this->get_plugin_name() . '</i>'
+					) . ( $this->is_premium() ? '' : sprintf(
+						'<a href="%s">%s</a>',
+						$this->get_account_url( 'download_latest' ),
+						sprintf(
+							__( 'Download the latest %s version now', WP_FS__SLUG ),
+							$this->_site->plan->title
+						) ) ),
 					'license_activated',
 					__( 'Ye-ha!', WP_FS__SLUG )
 				);
@@ -5173,7 +5313,7 @@
 			}
 
 			// Check if already paying.
-			if ($this->is_paying__fs__()) {
+			if ($this->is_paying()) {
 				return;
 			}
 
@@ -5333,7 +5473,7 @@
 			$this->_logger->entrance();
 
 			if ($this->is_registered()) {
-				if ( ! $this->is_paying__fs__() && $this->has_paid_plan() ) {
+				if ( ! $this->is_paying() && $this->has_paid_plan() ) {
 					$this->add_plugin_action_link(
 						__( 'Upgrade', $this->_slug ),
 						$this->get_upgrade_url(),

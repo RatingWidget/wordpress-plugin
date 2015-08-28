@@ -17,7 +17,7 @@
 	 */
 	$update = $fs->get_update();
 
-	$is_paying = $fs->is_paying__fs__();
+	$is_paying = $fs->is_paying();
 	$user = $fs->get_user();
 	$site = $fs->get_site();
 	$name = $user->get_name();

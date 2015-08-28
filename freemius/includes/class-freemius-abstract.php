@@ -84,11 +84,116 @@
 		/**
 		 * Check if the user has an activated and valid paid license on current plugin's install.
 		 *
-		 * @since 1.0.4
+		 * @since 1.0.9
 		 *
 		 * @return bool
 		 */
-		abstract function is_paying__fs__();
+		abstract function is_paying();
+
+		/**
+		 * Check if the user is paying or in trial.
+		 *
+		 * @since 1.0.9
+		 *
+		 * @return bool
+		 */
+		function is_paying_or_trial(){
+			return ($this->is_paying() || $this->is_trial());
+		}
+
+		#region Premium Only ------------------------------------------------------------------
+
+		/**
+		 * All logic wrapped in methods with "__premium_only()" suffix will be only
+		 * included in the premium code.
+		 *
+		 * Example:
+		 *      if ( freemius()->is__premium_only() ) {
+		 *          ...
+		 *      }
+		 */
+
+		/**
+		 * Returns true when running premium plugin code.
+		 *
+		 * @since 1.0.9
+		 *
+		 * @return bool
+		 */
+		function is__premium_only(){
+			return $this->is_premium();
+		}
+
+		/**
+		 * Check if the user has an activated and valid paid license on current plugin's install.
+		 *
+		 * @since 1.0.9
+		 *
+		 * @return bool
+		 *
+		 */
+		function is_paying__premium_only(){
+			return ($this->is__premium_only() && $this->is_paying());
+		}
+
+		/**
+		 * All code wrapped in this statement will be only included in the premium code.
+		 *
+		 * @since  1.0.9
+		 *
+		 * @param string $plan Plan name
+		 * @param bool   $exact If true, looks for exact plan. If false, also check "higher" plans.
+		 *
+		 * @return bool
+		 */
+		function is_plan__premium_only( $plan, $exact = false ){
+			return ( $this->is_premium() && $this->is_plan( $plan, $exact ) );
+		}
+
+		/**
+		 * Check if plan matches active license' plan or active trial license' plan.
+		 *
+		 * All code wrapped in this statement will be only included in the premium code.
+		 *
+		 * @since  1.0.9
+		 *
+		 * @param string $plan Plan name
+		 * @param bool   $exact If true, looks for exact plan. If false, also check "higher" plans.
+		 *
+		 * @return bool
+		 */
+		function is_plan_or_trial__premium_only( $plan, $exact = false ) {
+			return ( $this->is_premium() && $this->is_plan_or_trial( $plan, $exact ) );
+		}
+
+		/**
+		 * Check if the user is paying or in trial.
+		 *
+		 * All code wrapped in this statement will be only included in the premium code.
+		 *
+		 * @since 1.0.9
+		 *
+		 * @return bool
+		 */
+		function is_paying_or_trial__premium_only(){
+			return $this->is_premium() && $this->is_paying_or_trial();
+		}
+
+		/**
+		 * Check if the user has an activated and valid paid license on current plugin's install.
+		 *
+		 * @since 1.0.4
+		 *
+		 * @return bool
+		 *
+		 * @deprecated Method name is confusing since it's not clear from the name the code will be removed.
+		 * @using Alias to is_paying__premium_only()
+		 */
+		function is_paying__fs__(){
+			return $this->is_paying__premium_only();
+		}
+
+		#endregion Premium Only ------------------------------------------------------------------
 
 		#region Trial ------------------------------------------------------------------
 
@@ -132,6 +237,33 @@
 		 * @return bool
 		 */
 		abstract function is_plan( $plan, $exact = false );
+
+		/**
+		 * Check if plan based on trial. If not in trial mode, should return false.
+		 *
+		 * @since  1.0.9
+		 *
+		 * @param string $plan Plan name
+		 * @param bool   $exact If true, looks for exact plan. If false, also check "higher" plans.
+		 *
+		 * @return bool
+		 */
+		abstract function is_trial_plan( $plan, $exact = false );
+
+		/**
+		 * Check if plan matches active license' plan or active trial license' plan.
+		 *
+		 * @since  1.0.9
+		 *
+		 * @param string $plan Plan name
+		 * @param bool   $exact If true, looks for exact plan. If false, also check "higher" plans.
+		 *
+		 * @return bool
+		 */
+		function is_plan_or_trial( $plan, $exact = false ) {
+			return $this->is_plan( $plan, $exact ) ||
+			       $this->is_trial_plan( $plan, $exact );
+		}
 
 		/**
 		 * Check if plugin has any paid plans.
