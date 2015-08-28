@@ -10,7 +10,7 @@
 
 	/* Localhost.
 	-----------------------------------------------------------------------------------------*/
-	define( 'WP_RW__LOCALHOST', ( $_SERVER['HTTP_HOST'] == 'localhost:8080' ) );
+	define( 'WP_RW__LOCALHOST', ( substr($_SERVER['REMOTE_ADDR'], 0, 4) == '127.' || $_SERVER['REMOTE_ADDR'] == '::1') );
 
 	/* Plugin dir and url
 	-----------------------------------------------------------------------------------------*/
@@ -62,10 +62,10 @@
 
 	/* Uncomment for debug mode.
 	-----------------------------------------------------------------------------------------*/
-	define( 'WP_RW__DEBUG_PARAMS', true || ( ! empty( $_GET['rwdbge'] ) && 'true' === $_GET['rwdbge'] ) );
-	define( 'WP_RW__DEBUG', WP_RW__DEBUG_PARAMS || true || ( ! empty( $_GET['rwdbg'] ) && 'true' === $_GET['rwdbg'] ) );
+	define( 'WP_RW__DEBUG_PARAMS', false || ( ! empty( $_GET['rwdbge'] ) && 'true' === $_GET['rwdbge'] ) );
+	define( 'WP_RW__DEBUG', WP_RW__DEBUG_PARAMS || false || ( ! empty( $_GET['rwdbg'] ) && 'true' === $_GET['rwdbg'] ) );
 	define( 'WP_RW__SHOW_PHP_ERRORS', true );
-	define( 'WP_RW__LOCALHOST_SCRIPTS', WP_RW__DEBUG && true );
+	define( 'WP_RW__LOCALHOST_SCRIPTS', WP_RW__DEBUG && false );
 	define( 'WP_RW__CACHING_ON', ! WP_RW__DEBUG );
 	define( 'WP_RW__STAGING', false );
 	define( 'WP_RW__LOG_DUMP', WP_RW__DEBUG &&  ! empty( $_GET['rwdbge'] ));
