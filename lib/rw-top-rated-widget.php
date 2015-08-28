@@ -66,7 +66,12 @@
 				extract( $args, EXTR_SKIP );
 
 				$bpInstalled = $rwp->IsBuddyPressInstalled();
-				$bbInstalled = $rwp->IsBBPressInstalled();
+
+				if (rw_fs()->is__premium_only()) {
+					$bbInstalled = $rwp->IsBBPressInstalled();
+				}else{
+					$bbInstalled = false;
+				}
 
 				$types = $this->GetTypesInfo();
 

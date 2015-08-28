@@ -111,7 +111,7 @@ var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po
 								<div class="rw-dash">
 									<?php
                                         $upgrade_label_text = __('Upgrade to Professional for Unlimited Criteria', WP_RW__ID);
-									if ($total_criteria >= 3 && !ratingwidget()->IsProfessional()) { ?>
+									if ($total_criteria >= 3 && !rw_fs()->is_plan_or_trial('professional')) { ?>
 									<a class="rw-add-rating upgrade" href="<?php echo $rw_fs->get_upgrade_url(); ?>" data-upgrade-href="<?php echo $rw_fs->get_upgrade_url(); ?>" data-upgrade-text="[+] <?php echo $upgrade_label_text ?>" data-default-text="[+] <?php _e('Add Rating / Criteria', WP_RW__ID); ?>">[+] <?php echo $upgrade_label_text ?></a>
 									<?php
 									} else { ?>
@@ -293,7 +293,7 @@ var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po
             <input type="hidden" id="rw_options_hidden" name="rw_options" value="" />
 
             <input type="submit" name="Submit" class="button-primary" value="<?php esc_attr_e('Save Changes', WP_RW__ID) ?>" />
-            <?php if (!$rw_fs->is_paying__fs__()) : ?>
+            <?php if ($rw_fs->is_not_paying()) : ?>
             <a href="<?php echo $rw_fs->get_upgrade_url() ?>" onclick="_gaq.push(['_trackEvent', 'upgrade', 'wordpress', 'gopro_button', 1, true]); _gaq.push(['_link', this.href]); return false;" class="button-secondary gradient rw-upgrade-button" style="float: right;"><?php _e('Upgrade Now!', WP_RW__ID) ?></a>
             <?php endif; ?>
             <span style="margin: 0 10px; font-size: 1em; float: right; line-height: 30px;"><b style="font-size: 24px;vertical-align: top;color: #999;">&#9829;</b> <?php _e('Like it?', WP_RW__ID) ?>  <a href="http://wordpress.org/support/view/plugin-reviews/rating-widget?rate=5#postform" target="_blank" style="

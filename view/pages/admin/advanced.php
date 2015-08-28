@@ -13,7 +13,7 @@
                                 <div class="rw-ui-img-radio rw-ui-hor<?php if ('laccount' === $settings->identify_by) echo ' rw-selected';?>">
                                     <input type="radio" name="rw_identify_by" value="laccount" <?php if ('laccount' === $settings->identify_by) echo ' checked="checked"';?>> <span><?php _e('Identify visitor by Cookie / Device.', WP_RW__ID) ?></span>
                                 </div>
-                                <div class="rw-ui-img-radio rw-ui-hor<?php if ('ip' === $settings->identify_by) echo ' rw-selected';?>"<?php if (!ratingwidget()->IsProfessional()) : ?> data-alert="<?php _e('Visitor by IP identification is only supported in Professional plan and above.', WP_RW__ID) ?>"<?php endif ?>>
+                                <div class="rw-ui-img-radio rw-ui-hor<?php if ('ip' === $settings->identify_by) echo ' rw-selected';?>"<?php if (!rw_fs()->is_plan_or_trial('professional')) : ?> data-alert="<?php _e('Visitor by IP identification is only supported in Professional plan and above.', WP_RW__ID) ?>"<?php endif ?>>
                                     <input type="radio" name="rw_identify_by" value="ip" <?php if ('ip' === $settings->identify_by) echo ' checked="checked"';?>> <span><?php _e('Identify visitor by IP / Location. <b>Especially for Voting Contests</b> (included in Professional Plan).', WP_RW__ID) ?></span>
                                 </div>
                                 <div class="rw-ui-img-radio rw-ui-hor<?php if ('account' === $settings->identify_by) echo ' rw-selected';?>" data-alert="<?php _e('Social connect is part of our upcoming Roadmap, but it\'s not ready yet. Appreciate your patience.', WP_RW__ID) ?>">
