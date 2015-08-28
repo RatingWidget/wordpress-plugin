@@ -7407,7 +7407,7 @@
 			global $rw_wf;
 
 			if ( ! isset( $rw_wf ) ) {
-				$rw_wf = wf_init( WP_RW__ID, array( 'menu' => array() ) );
+				$rw_wf = wf_init();
 			}
 
 			return $rw_wf;

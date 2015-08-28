@@ -36,7 +36,7 @@
   transform: translate(0, 0);
   top: 20%;
 }
-.rw-wf-modal a.rw-wf-btn-close {
+.rw-wf-modal a.rw-wf-button-close {
   position: absolute;
   top: 2px;
   right: 5px;
@@ -60,7 +60,7 @@
   border-top: #eeeeee solid 1px;
   text-align: right;
 }
-.rw-wf-modal .rw-wf-modal-footer > .rw-wf-btn {
+.rw-wf-modal .rw-wf-modal-footer > .rw-wf-button {
   background-image: none !important;
   display: inline-block;
   padding: 6px 12px;
@@ -82,43 +82,43 @@
   margin: 0 7px;
   text-decoration: none;
 }
-.rw-wf-modal .rw-wf-modal-footer > .rw-wf-btn:last-child {
+.rw-wf-modal .rw-wf-modal-footer > .rw-wf-button:last-child {
   margin: 0;
 }
-.rw-wf-modal .rw-wf-modal-footer > .rw-wf-btn:hover,
-.rw-wf-modal .rw-wf-modal-footer > .rw-wf-btn:focus {
+.rw-wf-modal .rw-wf-modal-footer > .rw-wf-button:hover,
+.rw-wf-modal .rw-wf-modal-footer > .rw-wf-button:focus {
   color: #333;
   text-decoration: none;
   outline: thin dotted;
   outline: 5px auto -webkit-focus-ring-color;
   outline-offset: -2px;
 }
-.rw-wf-modal .rw-wf-modal-footer > .rw-wf-btn:active {
+.rw-wf-modal .rw-wf-modal-footer > .rw-wf-button:active {
   background-image: none;
   outline: 0;
   -webkit-box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
   box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
 }
-.rw-wf-modal .rw-wf-modal-footer > .rw-wf-btn.rw-wf-btn-primary {
+.rw-wf-modal .rw-wf-modal-footer > .rw-wf-button.rw-wf-button-primary {
   color: #fff;
   background-color: #428bca;
   border-color: #357ebd;
 }
-.rw-wf-modal .rw-wf-modal-footer > .rw-wf-btn.rw-wf-btn-primary:active {
+.rw-wf-modal .rw-wf-modal-footer > .rw-wf-button.rw-wf-button-primary:active {
   background-image: none;
   color: #fff;
   background-color: #3071a9;
   border-color: #285e8e;
 }
-.rw-wf-modal .rw-wf-modal-footer > .rw-wf-btn.rw-wf-btn-primary:hover,
-.rw-wf-modal .rw-wf-modal-footer > .rw-wf-btn.rw-wf-btn-primary:focus {
+.rw-wf-modal .rw-wf-modal-footer > .rw-wf-button.rw-wf-button-primary:hover,
+.rw-wf-modal .rw-wf-modal-footer > .rw-wf-button.rw-wf-button-primary:focus {
   color: #fff;
   background-color: #3071a9;
   border-color: #285e8e;
   outline: 5px auto -webkit-focus-ring-color;
   outline-offset: -2px;
 }
-.rw-wf-modal .rw-wf-modal-footer > .rw-wf-btn.rw-wf-btn-primary:active {
+.rw-wf-modal .rw-wf-modal-footer > .rw-wf-button.rw-wf-button-primary:active {
   border-color: #005684;
   -webkit-box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.1);
   box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.1);

@@ -10,10 +10,3 @@
 	define( 'WP_WF__DIR_ASSETS', WP_WF__DIR . '/assets' );
 	define( 'WP_WF__DIR_CSS', WP_WF__DIR_ASSETS . '/css' );
 	define( 'WP_WF__DIR_JS', WP_WF__DIR_ASSETS . '/js' );
-	
-	/**
-	 * Option name
-	 */
-	if ( ! defined( 'WP_WF__OPTION_NAME' ) ) {
-		define( 'WP_WF__OPTION_NAME', 'rw_wf_options' );
-	}

@@ -500,12 +500,6 @@
 				$( '#confirm-delete-workflow' ).addClass( 'active' );
 			});
 
-			$( '#information-message' ).on( 'click', '.rw-wf-btn-close, .btn-close', function( evt ) {
-				evt.preventDefault();
-				
-				$( '#information-message' ).removeClass( 'active' );
-			});
-			
 			$( '#confirm-delete-workflow' ).on( 'click', '.button-primary', function( evt ) {
 				evt.preventDefault();
 				
@@ -663,7 +657,9 @@
 				$( 'a[href="#edit-summary"]' ).tab( 'show' );
 			});
 			
-			$( 'body' ).on( 'click', '.rw-wf-modal .btn-close', function() {
+			$( 'body' ).on( 'click', '.rw-wf-modal .rw-wf-button-close, .rw-wf-modal .button-close', function( evt ) {
+                evt.preventDefault();
+                
 				$( this ).parents( '.rw-wf-modal:first' ).removeClass( 'active' );
 			});
 			

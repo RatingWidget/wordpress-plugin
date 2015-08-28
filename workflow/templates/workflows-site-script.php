@@ -1,7 +1,17 @@
 <?php
-$wf = rw_wf( $VARS['slug'] );
-?>
+    /**
+     * Template file called from RatingWidgetPlugin->rw_attach_rating_js method.
+     * 
+     * @package     RatingWidget
+     * @copyright   Copyright (c) 2015, Rating-Widget, Inc.
+     * @license     http://opensource.org/licenses/gpl-2.0.php GNU Public License
+     * @since       1.0.0
+     */
 
+    if ( ! defined( 'ABSPATH' ) ) {
+        exit;
+    }
+?>
 <script type="text/javascript">
 function Class_WF_Engine( options, $ ) {
 	var _options = $.extend({}, options ),
@@ -44,18 +54,18 @@ function Class_WF_Engine( options, $ ) {
 				+	'	<div class="rw-wf-modal-dialog">'
 				+	'		<div class="rw-wf-modal-header">'
 				+	'			<h2>{{modal.title}}</h2>'
-				+	'			<a href="#close" class="rw-wf-btn-close" aria-hidden="true">×</a>'
+				+	'			<a href="#close" class="rw-wf-button-close" aria-hidden="true">×</a>'
 				+	'		</div>'
 				+	'		<div class="rw-wf-modal-body">'
 				+	'			{{modal.body}}'
 				+	'		</div>'
 				+	'		<div class="rw-wf-modal-footer">'
-				+	'			<input type="button" href="#close" class="rw-wf-btn-close rw-wf-btn" value="<?php _e( 'Cancel', WP_WF__SLUG ); ?>" />'
+				+	'			<input type="button" href="#close" class="rw-wf-button-close rw-wf-button" value="<?php _e( 'Cancel', WP_WF__SLUG ); ?>" />'
 				+	'		</div>'
 				+	'	</div>'
 				+	'</div>',
 				_init = function() {
-					$( 'body' ).on( 'click', '.rw-wf-btn-close', function() {
+					$( 'body' ).on( 'click', '.rw-wf-button-close', function() {
 						$( this ).parents( '.rw-wf-modal:first' ).remove();
 					});
 				};
@@ -93,8 +103,8 @@ function Class_WF_Engine( options, $ ) {
 								button.click( evt, $modal );
 							});
 						}
-						$button.addClass( 'rw-wf-btn rw-wf-btn-primary' );
-						$button.insertBefore( $modal.find( '.rw-wf-modal-footer .rw-wf-btn-close' ) );
+						$button.addClass( 'rw-wf-button rw-wf-button-primary' );
+						$button.insertBefore( $modal.find( '.rw-wf-modal-footer .rw-wf-button-close' ) );
 					}
 					
 					setTimeout(function() {
@@ -286,8 +296,8 @@ function Class_WF_Engine( options, $ ) {
 };
 
 var engineOptions = {
-	workflows: <?php echo json_encode( $wf->get_active_workflows() ); ?>,
-	operandTypes: <?php echo json_encode( $wf->get_variable_types() ); ?>,
+	workflows: <?php echo json_encode( wf()->get_active_workflows() ); ?>,
+	operandTypes: <?php echo json_encode( wf()->get_variable_types() ); ?>,
 	currentPost: <?php echo json_encode( get_post() ); ?>,
 	currentPostCategories: <?php echo json_encode( get_the_category() ); ?>,
 	currentUserId: <?php echo json_encode( get_current_user_id() ); ?>,
@@ -295,7 +305,7 @@ var engineOptions = {
 };
 
 <?php
-$active_actions = $wf->get_active_actions();
+$active_actions = wf()->get_active_actions();
 
 if ( ! empty( $active_actions ) ) {
 	foreach( $active_actions as $action_id ) {

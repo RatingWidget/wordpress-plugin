@@ -1,9 +1,16 @@
 <?php
-/*
- * The template view for the Workflows page.
- */
+    /**
+     * Template file called from RW_Workflows->_workflows_page_render method.
+     * 
+     * @package     RatingWidget
+     * @copyright   Copyright (c) 2015, Rating-Widget, Inc.
+     * @license     http://opensource.org/licenses/gpl-2.0.php GNU Public License
+     * @since       1.0.0
+     */
 
-$wf = wf( $VARS['slug'] );
+    if ( ! defined( 'ABSPATH' ) ) {
+        exit;
+    }
 ?>
 <div class="wrap rw-dir-ltr">
 	<form id="workflows-page" method="post" action="">
@@ -42,7 +49,7 @@ $wf = wf( $VARS['slug'] );
 											<div class="form-group">
 												<div class="col-sm-5">
 													<button type="submit" class="button button-secondary next-step" data-loading-text="Saving..." ><?php _e(' Next Step', WP_WF__SLUG ); ?></button>
-													<button type="submit" class="button btn-secondary save" href="#edit-summary"><?php _e( 'Update Name', WP_WF__SLUG ); ?></button>
+													<button type="submit" class="button button-secondary save" href="#edit-summary"><?php _e( 'Update Name', WP_WF__SLUG ); ?></button>
 													<button type="submit" class="button cancel-save" href="#edit-summary" data-toggle="tab"><?php _e( 'Cancel', WP_WF__SLUG ); ?></button>
 												</div>
 											</div>
@@ -84,11 +91,11 @@ $wf = wf( $VARS['slug'] );
 			<div class="rw-wf-modal-dialog">
 				<div class="rw-wf-modal-header">
 					<p><?php _e( 'Are you sure you would like to delete this workflow?', WP_WF__SLUG ); ?></p>
-					<a href="#close" class="rw-wf-btn-close" aria-hidden="true">&times;</a>
+					<a href="#close" class="rw-wf-button-close" aria-hidden="true">&times;</a>
 				</div>
 				<div class="rw-wf-modal-footer">
 					<button href="#" class="button button-primary"><?php _e( 'Delete', WP_WF__SLUG ); ?></button>
-					<button href="#" class="button btn-close"><?php _e( 'Cancel', WP_WF__SLUG ); ?></button>
+					<button href="#" class="button button-close"><?php _e( 'Cancel', WP_WF__SLUG ); ?></button>
 				</div>
 			</div>
 		</div>
@@ -97,10 +104,10 @@ $wf = wf( $VARS['slug'] );
 			<div class="rw-wf-modal-dialog">
 				<div class="rw-wf-modal-header">
 					<p></p>
-					<a href="#close" class="rw-wf-btn-close" aria-hidden="true">&times;</a>
+					<a href="#close" class="rw-wf-button-close" aria-hidden="true">&times;</a>
 				</div>
 				<div class="rw-wf-modal-footer">
-					<button href="#" class="button btn-close"><?php _e( 'Close', WP_WF__SLUG ); ?></button>
+					<button href="#" class="button button-close"><?php _e( 'Close', WP_WF__SLUG ); ?></button>
 				</div>
 			</div>
 		</div>

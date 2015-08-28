@@ -1,30 +1,32 @@
 <?php
-	if ( ! class_exists( 'Workflows' ) ) {
+	if ( ! class_exists( 'RW_Workflows' ) ) {
 		require_once dirname( __FILE__ ) . '/config.php';
 		require_once WP_WF__DIR_INCLUDES . '/workflows-core-functions.php';
-		require_once WP_WF__DIR_INCLUDES . '/class-workflows-option-manager.php';
 		require_once WP_WF__DIR_INCLUDES . '/class-workflows.php';
 		
 		/**
-		 * Returns an instance of this class.
+		 * Returns an instance of RW_Workflows.
 		 * 
-		 * @return Workflows
+         * @author Leo Fajardo (@leorw)
+         * @since 1.0.0
+         * 
+		 * @return RW_Workflows
 		 */
-		function wf( $slug ) {
-			return Workflows::instance( $slug );
+		function wf() {
+			return RW_Workflows::instance();
 		}
 
 		/**
-		 * Initializes an instance of this class.
+		 * Initializes an instance of RW_Workflows.
 		 * 
-		 * @param string $slug
-		 * @param array $options
-		 *
-		 * @return Workflows
+         * @author Leo Fajardo (@leorw)
+         * @since 1.0.0
+         * 
+		 * @return RW_Workflows
 		 */
-		function wf_init( $slug, $options = array() ) {
-			$wf = wf( $slug );
-			$wf->init( $options );
+		function wf_init() {
+			$wf = wf();
+			$wf->init();
 			return $wf;
 		}
 	}
