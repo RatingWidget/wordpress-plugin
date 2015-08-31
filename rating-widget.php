@@ -88,12 +88,17 @@
 			 */
 			var $_options_manager;
 
+			/**
+			 * @var stdClass
+			 */
+			private $_readonly_list;
+
 			static $VERSION;
 
 			public static $WP_RW__HIDE_RATINGS = false;
 
-			/* Singleton pattern.
---------------------------------------------------------------------------------------------*/
+			#region Singleton Pattern ------------------------------------------------------------------
+
 			private static $INSTANCE;
 			public static function Instance()
 			{
@@ -103,8 +108,10 @@
 				return self::$INSTANCE;
 			}
 
-			/* Plugin setup.
---------------------------------------------------------------------------------------------*/
+			#endregion Singleton Pattern ------------------------------------------------------------------
+
+			#region Plugin Setup ------------------------------------------------------------------
+
 			private function __construct() {
 				$this->account          = rw_account();
 				$this->fs               = rw_fs();
@@ -320,6 +327,54 @@
 				return true;
 			}
 
+			private function setup_dashboard_actions() {
+				RWLogger::LogEnterence( "setup_dashboard_actions" );
+
+				$this->fs->add_plugin_action_link( __( 'Settings', WP_RW__ADMIN_MENU_SLUG ), rw_get_admin_url() );
+				$this->fs->add_plugin_action_link( __( 'Blog', WP_RW__ADMIN_MENU_SLUG ), rw_get_site_url( '/blog/' ), true );
+
+
+
+				// Add activation and de-activation hooks.
+				register_activation_hook( WP_RW__PLUGIN_FILE_FULL, 'rw_activated' );
+
+				if ($this->account->is_registered()) {
+					add_action( 'wp_ajax_rw-toprated-popup-html', array( &$this, 'generate_toprated_popup_html' ) );
+					add_action( 'wp_ajax_rw-affiliate-apply', array( &$this, 'send_affiliate_application' ) );
+					add_action( 'wp_ajax_rw-addon-request', array( &$this, 'send_addon_request' ) );
+					add_action( 'admin_init', array( &$this, 'register_admin_page_hooks' ) );
+					add_action( 'admin_menu', array( &$this, 'AddPostMetaBox' ) ); // Metabox for posts/pages
+					add_action( 'save_post', array( &$this, 'SavePostData' ) );
+
+					if ( $this->is_api_supported() ) {
+						// Since some old users might not having a secret key set,
+						// the API won't be able to work for them - therefore, all API related
+						// hooks must be executed within this scope.
+						add_action( 'trashed_post', array( &$this, 'DeletePostData' ) );
+						add_action('wp_ajax_rw-five-star-wp-rate', array(&$this, 'five_star_wp_rate_action'));
+
+						$min_votes_trigger = $this->GetOption(WP_RW__DB_OPTION_WP_RATE_NOTICE_MIN_VOTES_TRIGGER);
+						if (-1 !== $min_votes_trigger) {
+							add_action('admin_notices', array(&$this, 'five_star_wp_rate_notice'));
+						}
+					}
+				}
+
+				add_action( 'admin_head', array( &$this, "rw_admin_menu_icon_css" ) );
+
+//				add_action( 'admin_menu', array( &$this, "admin_menu" ) );
+				$this->fs->add_action('before_admin_menu_init', array( &$this, 'admin_menu' ) );
+
+				add_action( 'updated_post_meta', array( &$this, 'PurgePostFeaturedImageTransient' ), 10, 4 );
+
+				{
+					// wp_footer call validation.
+					// add_action('init', array(&$this, 'test_footer_init'));
+				}
+			}
+
+			#endregion Plugin Setup ------------------------------------------------------------------
+
 			function _update_account() {
 				if ( strtoupper( $_SERVER['REQUEST_METHOD'] ) !== 'POST' ) {
 					return;
@@ -368,52 +423,6 @@
 				return ( false !== rwapi() );
 			}
 
-			private function setup_dashboard_actions() {
-				RWLogger::LogEnterence( "setup_dashboard_actions" );
-
-				$this->fs->add_plugin_action_link( __( 'Settings', WP_RW__ADMIN_MENU_SLUG ), rw_get_admin_url() );
-				$this->fs->add_plugin_action_link( __( 'Blog', WP_RW__ADMIN_MENU_SLUG ), rw_get_site_url( '/blog/' ), true );
-
-
-
-				// Add activation and de-activation hooks.
-				register_activation_hook( WP_RW__PLUGIN_FILE_FULL, 'rw_activated' );
-
-				if ($this->account->is_registered()) {
-					add_action( 'wp_ajax_rw-toprated-popup-html', array( &$this, 'generate_toprated_popup_html' ) );
-					add_action( 'wp_ajax_rw-affiliate-apply', array( &$this, 'send_affiliate_application' ) );
-					add_action( 'wp_ajax_rw-addon-request', array( &$this, 'send_addon_request' ) );
-					add_action( 'admin_init', array( &$this, 'register_admin_page_hooks' ) );
-					add_action( 'admin_menu', array( &$this, 'AddPostMetaBox' ) ); // Metabox for posts/pages
-					add_action( 'save_post', array( &$this, 'SavePostData' ) );
-
-					if ( $this->is_api_supported() ) {
-						// Since some old users might not having a secret key set,
-						// the API won't be able to work for them - therefore, all API related
-						// hooks must be executed within this scope.
-						add_action( 'trashed_post', array( &$this, 'DeletePostData' ) );
-						add_action('wp_ajax_rw-five-star-wp-rate', array(&$this, 'five_star_wp_rate_action'));
-
-						$min_votes_trigger = $this->GetOption(WP_RW__DB_OPTION_WP_RATE_NOTICE_MIN_VOTES_TRIGGER);
-						if (-1 !== $min_votes_trigger) {
-							add_action('admin_notices', array(&$this, 'five_star_wp_rate_notice'));
-						}
-					}
-				}
-
-				add_action( 'admin_head', array( &$this, "rw_admin_menu_icon_css" ) );
-
-//				add_action( 'admin_menu', array( &$this, "admin_menu" ) );
-				$this->fs->add_action('before_admin_menu_init', array( &$this, 'admin_menu' ) );
-
-				add_action( 'updated_post_meta', array( &$this, 'PurgePostFeaturedImageTransient' ), 10, 4 );
-
-				{
-					// wp_footer call validation.
-					// add_action('init', array(&$this, 'test_footer_init'));
-				}
-			}
-			
 			/**
 			 * Sends an affiliate application to affiliate@rating-widget.com
 			 *
@@ -903,12 +912,352 @@
 				// Register shortcode.
 				add_action('init', array(&$this, 'RegisterShortcodes'));
 
+				// Register hooks for comment review mode.
+				add_action('init', array(&$this, 'register_comment_review_hooks'));
+
 				// wp_footer call validation.
 				// add_action('init', array(&$this, 'test_footer_init'));
 
 				// Rating-Widget main javascript load.
 				add_action('wp_footer', array(&$this, "rw_attach_rating_js"), 5);
 			}
+
+			/**
+			 * Registers the necessary hooks for implementing the comment "Reviews" mode (when the selected mode in the "Comments" options tab is "Review").
+			 *
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.5.9
+			 *
+			 */
+			function register_comment_review_hooks() {
+				if ( !$this->is_comment_review_mode() ) {
+					return;
+				}
+
+				// If comment rating is disabled, do not proceed.
+				if ( false === $this->GetRatingAlignByType( WP_RW__COMMENTS_ALIGN ) ) {
+					return;
+				}
+
+				// If comment rating is hidden (e.g.: hidden for users who are not logged in), do not proceed.
+				if ( $this->IsHiddenRatingByType('comment') ) {
+					return;
+				}
+
+				global $wp_version;
+				if ($wp_version < 3 ) {
+					// Since the comment_form_defaults filter is not available for version 2.9 and below, we use a different way of adding the rating to the form.
+					add_action('comment_form', array(&$this, 'add_rating_after_comment_form_submit_button'));
+				} else {
+					add_filter('comment_form_defaults', array(&$this, 'add_rating_before_comment_form_submit_button'));
+				}
+
+				// Listen to insert comment event so that we can set the vote of the newly inserted comment's rating when the comment rating mode is "Review".
+				add_action('wp_insert_comment', array(&$this, 'create_comment_review_rating'));
+			}
+
+			#region Comment Review Mode ------------------------------------------------------------------
+
+			/**
+			 * Adds a rating before the comment form's submit button when the
+			 * comment's rating mode is set to "Review".
+			 *
+			 * @author Leo Fajardo (@leorw)
+			 * @since  2.5.9
+			 *
+			 * @param array $comment_form_defaults
+			 *
+			 * @return array
+			 */
+			function add_rating_before_comment_form_submit_button($comment_form_defaults) {
+				RWLogger::LogEnterence('add_rating_before_comment_form_submit_button');
+
+				if ( RWLogger::IsOn() ) {
+					RWLogger::Log('comment_form_defaults', json_encode($comment_form_defaults));
+				}
+
+				if ( isset($comment_form_defaults['submit_field']) ) {
+					if ( RWLogger::IsOn() ) {
+						RWLogger::Log('Add rating above the submit field');
+					}
+
+					$comment_form_defaults['submit_field'] = $this->get_comment_form_rating_html() . $comment_form_defaults['submit_field'];
+				} else if ( isset($comment_form_defaults['comment_notes_after']) ) {
+					if ( RWLogger::IsOn() ) {
+						RWLogger::Log('Add rating below the notes');
+					}
+
+					$comment_form_defaults['comment_notes_after'] .= $this->get_comment_form_rating_html();
+				} else {
+					// HTML code for both the submit field and notes are not available. Probably the theme is incompatible.
+					if ( RWLogger::IsOn() ) {
+						RWLogger::Log('Incompatible comment form');
+					}
+				}
+
+				RWLogger::LogDeparture('add_rating_before_comment_form_submit_button');
+				return $comment_form_defaults;
+			}
+
+			/**
+			 * Adds a rating after the comment form's submit button when the comment's rating mode is set to "Review". This is for WordPress version 2.9 and below.
+			 *
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.5.9
+			 */
+			function add_rating_after_comment_form_submit_button() {
+				RWLogger::LogEnterence('add_rating_after_comment_form_submit_button');
+
+				echo $this->get_comment_form_rating_html();
+			}
+
+			/**
+			 * Generates the HTML for the comment form's rating when in review mode.
+			 *
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.5.9
+			 *
+			 */
+			function get_comment_form_rating_html() {
+				$urid = 'dummy-comment-rating';
+
+				// Enqueue the rating data so that the dummy rating will have the correct styles set in the "Comments" options tab.
+				$this->QueueRatingData($urid, '', '', 'comment');
+
+				// Create a dummy rating and disable the report.
+				return $html = '<p>' . $this->GetRatingHtml($urid, 'comment', false, '', '', array('show-report' => 'false', 'is-dummy' => 'true')) . '</p>';
+			}
+
+			/**
+			 * Creates a new rating for the newly inserted comment.
+			 *
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.5.9
+			 *
+			 * @param int $comment_id The newly inserted comment's ID.
+			 */
+			function create_comment_review_rating($comment_id) {
+				if ( !isset($_POST['rw-vote-data']) || empty($_POST['rw-vote-data']) ) {
+					return;
+				}
+
+				// Remove the slashes added by WordPress
+				$vote_data = stripslashes($_POST['rw-vote-data']);
+
+				// Enclose numbers with double quotes to prevent json_decode from converting them into exponential forms.
+				$vote_data = preg_replace('/:(\d+)/', ':"${1}"', $vote_data);
+
+				$request_params = (array) json_decode($vote_data);
+				if ( isset($request_params['url']) ) {
+					$request_params['url'] = urlencode($request_params['url']);
+				}
+
+				if ( isset($request_params['like']) ) {
+					// Convert boolean value to string in order to preserve the value when passed in the HTTP request.
+					$request_params['like'] = $request_params['like'] ? 'true' : 'false';
+				}
+
+				$this->set_comment_review_vote($comment_id, $request_params);
+			}
+
+			/**
+			 * Manually votes for the newly inserted comment.
+			 *
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.5.9
+			 *
+			 * @param int $comment_id The newly inserted comment's ID.
+			 * @param array $request_params The API request parameters.
+			 */
+			function set_comment_review_vote($comment_id, $request_params) {
+				RWLogger::LogEnterence("set_comment_review_vote");
+
+				$comment_urid = $this->_getCommentRatingGuid($comment_id);
+				if ( RWLogger::IsOn() ) {
+					RWLogger::Log('comment_id', $comment_id);
+					RWLogger::Log('comment_urid', $comment_urid);
+				}
+
+				$request_params['urid'] = $comment_urid;
+
+				// The "referer" header is important, otherwise we may get an invalid referer error.
+				$remote_request_param = array(
+					'timeout' => 3,
+					'headers' => array(
+						'referer' => site_url()
+					)
+				);
+
+				$comment_review_mode_settings = $this->get_comment_review_mode_settings();
+				$failed_requests = $comment_review_mode_settings->failed_requests;
+				if ( RWLogger::IsOn() ) {
+					RWLogger::Log('failed_requests', json_encode($failed_requests));
+				}
+
+				$rating_submitted = false;
+
+				if ( isset($failed_requests[$comment_id]) ) {
+					$request = $failed_requests[$comment_id];
+					$rating_submitted = isset($request['api_endpoint']) && (false !== strpos($request['api_endpoint'], 'rate.php'));
+				}
+
+				if ( $rating_submitted ) {
+					$request_errors = array();
+				} else {
+					// Step 1: Submit the rating's ID to the server so that it will be created.
+					$submit_rating_params = array_merge(
+						array(
+							'ids' => "[$comment_urid]"
+						),
+						$request_params
+					);
+
+					// Remove unneeded params
+					unset($submit_rating_params['rate']);
+					unset($submit_rating_params['like']);
+					unset($submit_rating_params['urid']);
+					unset($submit_rating_params['vid']);
+					unset($submit_rating_params['voteID']);
+
+					$rating_endpoint = rw_get_js_url('api/rating/get.php');
+					$rating_endpoint = add_query_arg($submit_rating_params, $rating_endpoint);
+					$submit_rating_response = wp_remote_get($rating_endpoint, $remote_request_param);
+					$request_errors = $this->comment_review_submission_errors(array(
+						'comment_id' => $comment_id,
+						'request_params' => $request_params,
+						'api_endpoint' => $rating_endpoint,
+						'api_response' => $submit_rating_response
+					));
+				}
+
+				$update_db_option = true;
+
+				if ( empty($request_errors) ) {
+					// Step 2: Submit the rating's vote data to the server.
+					$vote_endpoint = rw_get_js_url('api/rating/rate.php');
+					$vote_endpoint = add_query_arg($request_params, $vote_endpoint);
+					$submit_vote_response = wp_remote_get($vote_endpoint, $remote_request_param);
+
+					$request_errors = $this->comment_review_submission_errors(array(
+						'comment_id' => $comment_id,
+						'request_params' => $request_params,
+						'api_endpoint' => $vote_endpoint,
+						'api_response' => $submit_vote_response
+					));
+
+					// If there is no issue with the vote submission, remove the failed request information related to this comment from the database.
+					if ( empty($request_errors) ) {
+						if ( isset($failed_requests[$comment_id]) ) {
+							unset($failed_requests[$comment_id]);
+						} else {
+							$update_db_option = false;
+						}
+					} else {
+						$failed_requests[$comment_id] = $request_errors;
+					}
+				} else {
+					$failed_requests[$comment_id] = $request_errors;
+				}
+
+				if ( $update_db_option ) {
+					$comment_review_mode_settings->failed_requests = $failed_requests;
+					$this->SetOption(WP_RW__DB_OPTION_COMMENT_REVIEW_MODE_SETTINGS, $comment_review_mode_settings);
+					$this->_options_manager->store();
+				}
+
+				RWLogger::LogDeparture("set_comment_review_vote");
+			}
+
+			/**
+			 * Validates the API request's response.
+			 *
+			 * @author Leo Fajardo (leorw)
+			 * @since 2.5.9
+			 *
+			 * @param array $api_request_info The API request parameters.
+			 *
+			 * @return array Failed requests information. Empty if there are no errors.
+			 */
+			function comment_review_submission_errors($api_request_info) {
+				$request_params = $api_request_info['request_params'];
+				$api_endpoint = $api_request_info['api_endpoint'];
+				$api_response = $api_request_info['api_response'];
+
+				$errors = array();
+
+				if ( is_wp_error($api_response) ) {
+					$errors = $api_response->errors;
+				} else if ( 200 !== wp_remote_retrieve_response_code($api_response) ) {
+					// Follow the way the WP_Error object saves the error messages to make the code simpler.
+					$errors['invalid_response_code'] = array(
+						'Invalid response code'
+					);
+				} else {
+					$response_body = wp_remote_retrieve_body($api_response);
+
+					$json_obj = false;
+
+					// Retrieve the JSON string that is passed as a parameter to a callback function, e.g.: RW._rateCallback(JSON_STRING, ...);
+					if ( preg_match("/(?<={)(.*)(?=})/", $response_body, $matches) ) {
+						if ( !empty($matches) ) {
+							$json_str = '{' . $matches[0] . '}';
+							$json_obj = json_decode($json_str);
+						}
+					}
+
+					if ( !is_object($json_obj) ) {
+						$errors['invalid_response_string'] = array(
+							'Invalid response string'
+						);
+					} else if ( !$json_obj->success ) {
+						$errors['api_request_failed'] = array(
+							$json_obj->msg
+						);
+					}
+				}
+
+				if ( empty($errors) ) {
+					return array();
+				}
+
+				return array(
+					'request_params' => $request_params,
+					'api_request_errors' => $errors,
+					'api_endpoint' => $api_endpoint
+				);
+			}
+
+			/**
+			 * Retrieves the current comment review mode settings.
+			 *
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.5.9
+			 *
+			 * @return object
+			 */
+			function get_comment_review_mode_settings() {
+				$comment_review_mode_settings = $this->GetOption(WP_RW__DB_OPTION_COMMENT_REVIEW_MODE_SETTINGS);
+				if (!$comment_review_mode_settings) {
+					$comment_review_mode_settings = new stdClass();
+				}
+
+				return $comment_review_mode_settings;
+			}
+
+			/**
+			 * Checks whether the selected rating mode in the "Comments" options tab is "Review".
+			 *
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.5.9
+			 *
+			 * @return boolean
+			 */
+			function is_comment_review_mode() {
+				$comment_review_mode_settings = $this->get_comment_review_mode_settings();
+				return $comment_review_mode_settings->is_comment_review_mode;
+			}
+
+			#endregion Comment Review Mode ------------------------------------------------------------------
 
 			private function IsHideOnMobile()
 			{
@@ -936,8 +1285,8 @@
 				return $is_mobile;
 			}
 
-			/* Notifications.
-			--------------------------------------------------------------------------------------------*/
+			#region Notifications ------------------------------------------------------------------
+
 			function SecretKeyUpdateConfirmNotice()
 			{
 				$this->Notice('You have successfully updated your Secret Key.', 'update-nag success');
@@ -961,6 +1310,57 @@
 			function StartFreshConfirmNotice() {
 				$this->Notice( 'You are fresh like a mentos! All your ratings has been successfully deleted and your settings are back to factory defaults.', 'update-nag success' );
 			}
+
+			function ConfirmationNotice()
+			{
+				if (!$this->is_admin)
+					return;
+
+				$url = $this->GetEmailConfirmationUrl();
+
+				$this->Notice('New <i>Weekly Rating Reports</i> feature! <a href="' . $url . '" onclick="_rwwp.openConfirm(\'' . $url . '\'); return false;" target="_blank">Please confirm your email address now</a> to receive your upcoming Monday report.');
+			}
+
+			function InvalidEmailConfirmNotice()
+			{
+				$url = $this->GetEmailConfirmationUrl();
+
+				$this->Notice('Email confirmation has failed. One of the confirmation parameters is invalid. <a href="' . $url . '" onclick="_rwwp.openConfirm(\'' . $url . '\'); return false;" target="_blank">Please try to confirm your email again</a>.');
+			}
+
+			function SuccessfulEmailConfirmNotice()
+			{
+				$this->Notice('W00t! You have successfully confirmed your email address.', 'update-nag success');
+			}
+
+			function ApiAccessBlockedNotice()
+			{
+				$this->Notice('Oops... your server (IP ' . WP_RW__SERVER_ADDR . ') is blocking the access to our API, therefore your license can NOT be synced. <br>Please contact your host to enable remote access to: <ul><li><code><a href="' . RW_API__ADDRESS . '" target="_blank">' . RW_API__ADDRESS . '</a></code></li><li><code><a href="' . WP_RW__ADDRESS . '" target="_blank">' . WP_RW__ADDRESS . '</a></code></li><li><code><a href="' . WP_RW__SECURE_ADDRESS . '" target="_blank">' . WP_RW__SECURE_ADDRESS . '</a></code></li></ul>');
+			}
+
+			function ApiUnauthorizedAccessNotice()
+			{
+				$this->Notice('Oops... seems like one of the authentication parameters is wrong. Update your Public Key, Secret Key & User ID, and try again.');
+			}
+
+			function LicenseSyncNotice()
+			{
+				$this->Notice('Ye-ha! Your license has been successfully synced.', 'update-nag success');
+			}
+
+			function LicenseSyncSameNotice()
+			{
+				$this->Notice('Hmm... it looks like your license remained the same. If you did upgrade, it\'s probably an issue on our side (sorry). Please contact us <a href="' . rw_get_site_url('/contact/?' . http_build_query(array('topic' => 'Report an Issue', 'email' => $this->account->user_email, 'site_id' => $this->account->site_id, 'user_id' => $this->account->user_id, 'website' => get_site_url(), 'platform' => 'wordpress', 'message' => 'I\'ve upgraded my account but when I try to Sync the License in my WordPress Dashboard -> Ratings -> Account, the license remains the same.' . "\n" . 'Your Upgraded Plan: [REPLACE WITH PLAN NAME]' . "\n" . 'Your PayPal Email: [REPLACE WITH PAYPAL ADDRESS]'))) . '" target="_blank">here</a>.');
+			}
+
+			function Notice($pNotice, $pType = 'update-nag')
+			{
+				?>
+				<div class="<?php echo $pType ?> rw-notice"><span class="rw-slug"><b>rating</b><i>widget</i></span> <b class="rw-sep">&#9733;</b> <?php echo $pNotice ?></div>
+			<?php
+			}
+
+			#endregion Notifications ------------------------------------------------------------------
 
 			function UpdateSecret($new_secret) {
 				RWLogger::LogEnterence( 'UpdateSecret' );
@@ -1132,8 +1532,6 @@
 							}
 
 							if ( ! empty( $html ) ) {
-								$rating_container_class = '';
-
 								$multirating_options = $this->get_multirating_options_by_class( 'blog-post' );
 								if ( ! $multirating_options->show_summary_rating ) {
 									$rating_container_class = 'rw-class-blog-post-criteria-1';
@@ -1216,9 +1614,10 @@
 			 * @author Leo Fajardo (@leorw)
 			 * @since  2.5.2
 			 *
-			 * @param type $xpath
-			 * @param type $article_wrapper_element
-			 * @param type $property_name
+			 * @param DomXPath $xpath
+			 * @param DOMNode  $article_wrapper_element
+			 * @param string   $property_name
+			 *
 			 * @return boolean
 			 */
 			function rich_snippet_property_exists($xpath, $article_wrapper_element, $property_name) {
@@ -1227,8 +1626,10 @@
 					// Find the ancestors with "itemscope" and "itemtype" attributes of the elements in the specified wrapper element
 					// whose itemprop attribute's value is specified by $property_name.
 					$ancestors = $xpath->query(".//*[@itemprop = '$property_name']/ancestor::*[@itemscope and @itemtype]", $article_wrapper_element);
+
 					if ( $ancestors->length ) {
 						$ancestor = $ancestors->item(0);
+
 						if ( 'http://schema.org/Article' === $ancestor->getAttribute('itemtype') ) {
 							return true;
 						}
@@ -1299,8 +1700,8 @@
 			}
 
 
-			/* IDs transformations.
---------------------------------------------------------------------------------------------*/
+			#region IDs Transformations ------------------------------------------------------------------
+
 			/* Private
     -------------------------------------------------*/
 			private static function Urid2Id($pUrid, $pSubLength = 1, $pSubValue = 1)
@@ -1346,7 +1747,10 @@
 
 			private function _getActivityRatingGuid($id = false)
 			{
-				if (false === $id){ $id = bp_get_activity_id(); }
+				if (false === $id){
+					$id = bp_get_activity_id();
+				}
+
 				$urid = ($id + 1) . "2";
 
 				if (RWLogger::IsOn()){
@@ -1364,7 +1768,10 @@
 
 			private function _getForumPostRatingGuid($id = false, $criteria_id = false)
 			{
-				if (false === $id){ $id = bp_get_the_topic_post_id(); }
+				if (false === $id){
+					$id = bp_get_the_topic_post_id();
+				}
+
 				$urid = ($id + 1) . "3" . (false !== $criteria_id ? '-' . $criteria_id : '');
 
 				if (RWLogger::IsOn()){
@@ -1403,8 +1810,9 @@
 				return self::Urid2Id($pUrid, 3);
 			}
 
-			/* Plugin Options.
---------------------------------------------------------------------------------------------*/
+			#endregion IDs Transformations ------------------------------------------------------------------
+
+			#region Plugin Options ------------------------------------------------------------------
 
 			protected $_OPTIONS_DEFAULTS;
 			protected function LoadDefaultOptions()
@@ -1442,8 +1850,8 @@
 				$bp_like = (object)array(
 					'type' => 'nero',
 					'theme' => 'thumbs_bp1',
-					'advanced' => array(
-						'nero' => array(
+					'advanced' => (object)array(
+						'nero' => (object)array(
 							'showDislike' => false,
 						)
 					)
@@ -1477,11 +1885,19 @@
 						'timestamp' => false,
 						'type_wrapper_available' => false,
 						'properties_availability' => array(
+							'headline' => false,
+							'image' => false,
+							'datePublished' => false,
 							'name' => false,
 							'url' => false,
 							'description' => false
 						)
 					),
+					WP_RW__DB_OPTION_COMMENT_REVIEW_MODE_SETTINGS => (object) array(
+						'is_comment_review_mode' => false,
+						'failed_requests' => array()
+					),
+
 					WP_RW__IS_ACCUMULATED_USER_RATING => true,
 
 					WP_RW__IDENTIFY_BY => 'laccount',
@@ -1586,8 +2002,6 @@
 				RWLogger::LogDeparture("LoadDefaultOptions");
 			}
 
-			private $_OPTIONS_CACHE;
-
 			function MigrateOptions()
 			{
 				RWLogger::LogEnterence("MigrateOptions");
@@ -1625,7 +2039,7 @@
 				RWLogger::LogDeparture("MigrateOptions");
 			}
 
-			function LoadOptions($pFlush = false)
+			function LoadOptions()
 			{
 				RWLogger::LogEnterence("LoadOptions");
 
@@ -1659,8 +2073,10 @@
 				$this->_options_manager->store();
 			}
 
-			/* API.
---------------------------------------------------------------------------------------------*/
+			#endregion Plugin Options ------------------------------------------------------------------
+
+			#region API ------------------------------------------------------------------
+
 			function GenerateToken($pTimestamp, $pServerCall = false)
 			{
 				if (RWLogger::IsOn()){ $params = func_get_args(); RWLogger::LogEnterence("GenerateToken", $params, true); }
@@ -1802,48 +2218,7 @@
 				return self::$ratings[$urid];
 			}
 
-			/* Messages.
---------------------------------------------------------------------------------------------*/
-			private function _printMessages($messages, $class)
-			{
-				if (!$codes = $messages->get_error_codes()){ return; }
-
-				?>
-				<div class="<?php echo $class;?>">
-					<?php
-						foreach ($codes as $code) :
-							foreach ($messages->get_error_messages($code) as $message) :
-								?>
-								<p><?php
-										if ($code === "connect" || strtolower($message) == "couldn't connect to host")
-										{
-											echo "Couldn't connect to host. <b>If you keep getting this message over and over again, a workaround can be found <a href=\"".
-											     WP_RW__ADDRESS . rw_get_blog_url('solution-for-wordpress-plugin-couldnt-connect-to-host') . "\" targe=\"_blank\">here</a>.</b>";
-										}
-										else
-										{
-											echo $messages->get_error_data($code) ? $message : esc_html($message);
-										}
-									?></p>
-							<?php
-							endforeach;
-						endforeach;
-						$messages = new WP_Error();
-					?>
-				</div>
-				<br class="clear" />
-			<?php
-			}
-
-			private function _printErrors()
-			{
-				$this->_printMessages($this->errors, "error");
-			}
-
-			private function _printSuccess()
-			{
-				$this->_printMessages($this->success, "updated");
-			}
+			#endregion API ------------------------------------------------------------------
 
 			/* Public Static
     -------------------------------------------------*/
@@ -1853,8 +2228,8 @@
 				$this->_TOP_RATED_WIDGET_LOADED = true;
 			}
 
-			/* Admin Page Settings
-    ---------------------------------------------------------------------------------------------------------------*/
+			#region Admin Page Settings ------------------------------------------------------------------
+
 			function rw_admin_menu_icon_css()
 			{
 				rw_require_view('/pages/admin/menu-item.php');
@@ -1966,6 +2341,8 @@
 				}
 			}
 
+			#endregion Admin Page Settings ------------------------------------------------------------------
+
 			/**
 			 * Adds the necessary stylesheet
 			 */
@@ -2073,12 +2450,19 @@
 				if (!$rich_snippet_settings) {
 					$rich_snippet_settings = new stdClass();
 				}
-				
+
+				$default_rich_snippet_settings = $this->_OPTIONS_DEFAULTS[WP_RW__DB_OPTION_RICH_SNIPPETS_SETTINGS];
+
 				if ( !isset($rich_snippet_settings->properties_availability) ) {
-					$default_rich_snippet_settings = $this->_OPTIONS_DEFAULTS[WP_RW__DB_OPTION_RICH_SNIPPETS_SETTINGS];
 					$rich_snippet_settings->properties_availability = $default_rich_snippet_settings->properties_availability;
+				} else {
+					foreach ($default_rich_snippet_settings->properties_availability as $name => $value ) {
+						if ( !isset($rich_snippet_settings->properties_availability[$name]) ) {
+							$rich_snippet_settings->properties_availability[$name] = $value;
+						}
+					}
 				}
-				
+
 				return $rich_snippet_settings;
 			}
 
@@ -2129,12 +2513,12 @@
 
 				if ( function_exists( 'add_object_page' ) ) // WP 2.7+
 				{
-					$hook = add_object_page( $title, WP_RW__NAME, 'edit_posts', WP_RW__ADMIN_MENU_SLUG, array(
+					add_object_page( $title, WP_RW__NAME, 'edit_posts', WP_RW__ADMIN_MENU_SLUG, array(
 							&$this,
 							$pageLoaderFunction
 						), WP_RW__PLUGIN_URL . "icon.png" );
 				} else {
-					$hook = add_management_page( $title, WP_RW__NAME, 'edit_posts', WP_RW__ADMIN_MENU_SLUG, array(
+					add_management_page( $title, WP_RW__NAME, 'edit_posts', WP_RW__ADMIN_MENU_SLUG, array(
 							&$this,
 							$pageLoaderFunction
 						) );
@@ -2232,14 +2616,6 @@
 					'slug' => 'addons'
 				);
 
-				/*if ($this->IsProfessional() && !$this->RW_IsTrial())
-					// Boosting.
-					$submenu[] = array(
-						'menu_title' => __('Boost', WP_RW__ID),
-						'function' => 'BoostPageRender',
-						'load_function' => 'BoostPageLoad',
-					);*/
-
 				foreach ($submenu as $item)
 				{
 					$this->fs->add_submenu_item(
@@ -2278,14 +2654,8 @@
 				}
 			}
 
-//			function rw_user_key_page()
-//			{
-//				$this->_printErrors();
-//				rw_require_once_view('userkey_generation.php');
-//			}
+			#region Reports ------------------------------------------------------------------
 
-			/* Reports
-    ---------------------------------------------------------------------------------------------------------------*/
 			private static function _getAddFilterQueryString($pQuery, $pName, $pValue)
 			{
 				$pos = strpos($pQuery, "{$pName}=");
@@ -2325,7 +2695,6 @@
 
 				return substr($pQuery, 0, $pos) . substr($pQuery, $cur);
 			}
-
 
 			function rw_general_report_page()
 			{
@@ -2434,7 +2803,7 @@
 							<script type="text/javascript">
 								jQuery.datepicker.setDefaults({
 									dateFormat: "yy-mm-dd"
-								})
+								});
 
 								jQuery("#rw_date_from").datepicker({
 									maxDate : 0,
@@ -2539,7 +2908,7 @@
 					        frameborder="0"></iframe>
 					<br/><br/>
 					<table class="widefat"><?php
-							$records_num = $showen_records_num = 0;
+							$records_num = $shown_records_num = 0;
 							if ( $empty_result ) {
 								?>
 								<tbody>
@@ -2565,8 +2934,8 @@
 									$alternate = true;
 
 									$records_num        = count( $rw_ret_obj->data );
-									$showen_records_num = min( $records_num, $rw_limit );
-									for ( $i = 0; $i < $showen_records_num; $i ++ ) {
+									$shown_records_num = min( $records_num, $rw_limit );
+									for ( $i = 0; $i < $shown_records_num; $i ++ ) {
 										$rating = $rw_ret_obj->data[ $i ];
 										?>
 										<tr<?php if ( $alternate ) {
@@ -2632,12 +3001,12 @@
 						?>
 					</table>
 					<?php
-						if ( $showen_records_num > 0 ) {
+						if ( $shown_records_num > 0 ) {
 							?>
 							<div class="rw-control-bar">
 								<div style="float: left;">
 									<span style="font-weight: bold; font-size: 12px;"><?php echo( $rw_offset + 1 ); ?>
-										-<?php echo( $rw_offset + $showen_records_num ); ?></span>
+										-<?php echo( $rw_offset + $shown_records_num ); ?></span>
 								</div>
 								<div style="float: right;">
 									<span><?php _e( 'Show rows', WP_RW__ID ) ?>:</span>
@@ -2661,7 +3030,7 @@
 										       $query_string = self::_getAddFilterQueryString( $_SERVER["QUERY_STRING"], "offset", max( 0, $rw_offset - $rw_limit ) );
 										       echo WP_RW__SCRIPT_URL . "?" . $query_string;
 									       ?>';" value="Previous"/>
-									<input type="button"<?php if ( $showen_records_num == $records_num ) {
+									<input type="button"<?php if ( $shown_records_num == $records_num ) {
 										echo ' disabled="disabled"';
 									} ?> class="button button-secondary action" onclick="top.location = '<?php
 										$query_string = self::_getAddFilterQueryString( $_SERVER["QUERY_STRING"], "offset", $rw_offset + $rw_limit );
@@ -2709,7 +3078,6 @@
 
 				return true;
 			}
-
 
 			function rw_report_example_page()
 			{
@@ -3394,13 +3762,32 @@
 				}
 			}
 
+			function ReportsPageRender()
+			{
+				if ($this->fs->is_plan_or_trial__premium_only('professional')) {
+					if ( isset( $_GET["urid"] ) && is_numeric( $_GET["urid"] ) ) {
+						$this->rw_rating_report_page();
+					} else if ( isset( $_GET["ip"] ) || isset( $_GET["vid"] ) || isset( $_GET["pcid"] ) ) {
+						$this->rw_explicit_report_page();
+					} else {
+						$this->rw_general_report_page();
+					}
+				}
+				else
+				{
+					$this->rw_report_example_page();
+				}
+			}
+
+			#endregion Reports ------------------------------------------------------------------
+
 			function AccountPageRender()
 			{
 				rw_require_once_view('pages/admin/account-actions.php');
 			}
 
-			/* Advanced Settings
-    ---------------------------------------------------------------------------------------------------------------*/
+			#region Advanced Settings ------------------------------------------------------------------
+
 			private function RestoreDefaultSettings() {
 				RWLogger::LogEnterence( 'RestoreDefaultSettings' );
 
@@ -3494,6 +3881,8 @@
 					$this->_options_manager->store();
 			}
 
+			#endregion Advanced Settings ------------------------------------------------------------------
+
 			/**
 			 * Generates the content of the Affiliation Program page.
 			 *
@@ -3573,23 +3962,6 @@
 					<br />
 				</div>
 			<?php
-			}
-
-			function ReportsPageRender()
-			{
-				if ($this->fs->is_plan_or_trial__premium_only('professional')) {
-					if ( isset( $_GET["urid"] ) && is_numeric( $_GET["urid"] ) ) {
-						$this->rw_rating_report_page();
-					} else if ( isset( $_GET["ip"] ) || isset( $_GET["vid"] ) || isset( $_GET["pcid"] ) ) {
-						$this->rw_explicit_report_page();
-					} else {
-						$this->rw_general_report_page();
-					}
-				}
-				else
-				{
-					$this->rw_report_example_page();
-				}
 			}
 
 			private function GetMenuSlug($pSlug = '')
@@ -3892,6 +4264,11 @@
 				if ('users' === $selected_key && $this->IsBBPressInstalled())
 					$rw_is_user_accumulated = $this->GetOption(WP_RW__IS_ACCUMULATED_USER_RATING);
 
+				// Comment "Reviews" mode support.
+				if ( 'comments' === $selected_key ) {
+					$rw_is_comment_review_mode = $this->is_comment_review_mode();
+				}
+
 				// Reset categories.
 				$rw_categories = array();
 
@@ -3999,6 +4376,15 @@
 					{
 						$rw_is_user_accumulated = ('true' == (in_array($_POST['rw_accumulated_user_rating'], array('true', 'false')) ? $_POST['rw_accumulated_user_rating'] : 'true'));
 						$this->SetOption(WP_RW__IS_ACCUMULATED_USER_RATING, $rw_is_user_accumulated);
+					}
+
+					// Comment "Reviews" mode support
+					if ( 'comments' === $selected_key && isset($_POST['rw_comment_review_mode']) ) {
+						$rw_is_comment_review_mode = ('true' == (in_array($_POST['rw_comment_review_mode'], array('true', 'false')) ? $_POST['rw_comment_review_mode'] : 'false'));
+
+						$comment_review_mode_settings = $this->get_comment_review_mode_settings();
+						$comment_review_mode_settings->is_comment_review_mode = $rw_is_comment_review_mode;
+						$this->SetOption(WP_RW__DB_OPTION_COMMENT_REVIEW_MODE_SETTINGS, $comment_review_mode_settings);
 					}
 
 					/* Visibility settings
@@ -4148,7 +4534,6 @@
 					}
 				}
 
-				$browser_info = array("browser" => "msie", "version" => "7.0");
 				$rw_languages = $this->languages;
 
 				$this->settings->rating_type = $selected_key;
@@ -4162,8 +4547,11 @@
 				$this->settings->custom_settings_enabled = $rw_custom_settings_enabled;
 				$this->settings->custom_settings = $rw_custom_settings;
 				// Accumulated user ratings support.
-				if ('users' === $selected_key && $this->IsBBPressInstalled())
+				if ( 'users' === $selected_key && $this->IsBBPressInstalled() ) {
 					$this->settings->is_user_accumulated = $rw_is_user_accumulated;
+				} else if ( 'comments' === $selected_key ) { // Comment "Reviews" mode support.
+					$this->settings->is_comment_review_mode = $rw_is_comment_review_mode;
+				}
 
 				?>
 				<div class="wrap rw-dir-ltr rw-wp-container">
@@ -4231,9 +4619,11 @@
 									</div>
 								</div>
 								<?php
-									if ('users' === $selected_key)
+									if ( 'users' === $selected_key ) {
 										rw_require_once_view('user_rating_type_options.php');
-
+									} else if ( 'comments' === $selected_key ) {
+										rw_require_once_view('comment_rating_mode_options.php');
+									}
 									rw_require_once_view('options.php');
 									rw_require_once_view('availability_options.php');
 									rw_require_once_view('visibility_options.php');
@@ -4276,8 +4666,8 @@
 					$this->_options_manager->store();
 			}
 
-			/* Posts/Pages & Comments Support
-    ---------------------------------------------------------------------------------------------------------------*/
+			#region Posts/Pages & Comments Support ------------------------------------------------------------------
+
 			var $post_align = false;
 			var $post_class = "";
 			var $comment_align = false;
@@ -4667,9 +5057,10 @@
 
 			/**
 			 * Add/remove this post's ID from/to the active or readonly list of post IDs.
-			 * @param numeric $post_id The post ID in the _posts table.
-			 * @param array of string $classes A collection of post types. Each post type is a name of a class that holds this post type's read-only-related settings.
-			 * @param bool $is_readonly
+			 *
+			 * @param number   $post_id The post ID in the _posts table.
+			 * @param string[] $classes A collection of post types. Each post type is a name of a class that holds this post type's read-only-related settings.
+			 * @param bool     $is_readonly
 			 */
 			function add_to_readonly($post_id, $classes, $is_readonly = true) {
 				if (RWLogger::IsOn()) {
@@ -4873,15 +5264,15 @@
 			 */
 			function add_post_rating($content, $rclass)
 			{
+				global $post;
+
 				RWLogger::LogEnterence('add_post_rating');
 
 				if ($this->InBuddyPressPage())
 				{
 					RWLogger::LogDeparture('add_post_rating');
-					return;
+					return $content;
 				}
-
-				global $post;
 
 				$ratingHtml = $this->EmbedRatingIfVisibleByPost($post, $rclass, true, $this->post_align->hor, false);
 
@@ -4919,7 +5310,9 @@
 			 * If Rating-Widget enabled for Comments, attach it
 			 * html container to the comment content.
 			 *
-			 * @param {string} $content
+			 * @param string $content
+			 *
+			 * @return string
 			 */
 			function AddCommentRating($content)
 			{
@@ -4936,6 +5329,8 @@
 					$ratingHtml . $content :
 					$content . $ratingHtml;
 			}
+
+			#endregion Posts/Pages & Comments Support ------------------------------------------------------------------
 
 			/**
 			 * Generate rating container HTML.
@@ -4997,30 +5392,42 @@
 							/*$schema_root = 'itemscope itemtype="http://schema.org/Product"';
 							$schema_title_prop = 'itemprop="name"';
 							*/
-							if ( false === strpos( $pElementClass, 'product' ) ) {
-								if ( ! $type_wrapper_available ) {
+							if ( false === strpos($pElementClass, 'product') ) {
+								if ( !$type_wrapper_available ) {
 									$rating_html = '<div itemscope itemtype="http://schema.org/Article">' . $rating_html;
 								}
 
-								if ( ! empty( $pTitle ) ) {
-									if ( ! $properties_availability['name'] ) {
-										$rating_html .= '<meta itemprop="name" content="' . esc_attr( $pTitle ) . '" />';
+								global $post;
+
+								if ( !empty($pTitle) ) {
+									if ( !$properties_availability['name'] ) {
+										$rating_html .= '<meta itemprop="name" content="' . esc_attr($pTitle) . '" />';
 									}
 
-									if ( ! $properties_availability['description'] ) {
-										$post_excerpt = '';
+									if ( !$properties_availability['headline'] ) {
+										$rating_html .= '<meta itemprop="headline" content="' . esc_attr($pTitle) . '" />';
+									}
 
-										$wp_post = get_post( $this->Urid2PostId( $pUrid ) );
-										if ( $wp_post ) {
-											$post_excerpt = $this->GetPostExcerpt( $wp_post );
-										}
+									if ( !$properties_availability['description'] ) {
+										$post_excerpt =	$this->GetPostExcerpt($post);
 
-										$rating_html .= '<meta itemprop="description" content="' . esc_attr( $post_excerpt ) . '" />';
+										$rating_html .= '<meta itemprop="description" content="' . esc_attr($post_excerpt) . '" />';
 									}
 								}
 
-								if ( ! $properties_availability['url'] && ! empty( $pPermalink ) ) {
-									$rating_html .= '<meta itemprop="url" content="' . esc_attr( $pPermalink ) . '" />';
+								if ( !$properties_availability['image'] ) {
+									$image_url = $this->get_rich_snippet_default_image($post->ID);
+									$rating_html .= '<meta itemprop="image" content="' . $image_url . '" />';
+								}
+
+								if ( !$properties_availability['datePublished'] ) {
+									// Use 'c' for ISO 8601 date format.
+									$iso8601_date = mysql2date( 'c', $post->post_date );
+									$rating_html .= '<meta itemprop="datePublished" content="' . $iso8601_date . '" />';
+								}
+
+								if ( !$properties_availability['url'] && !empty($pPermalink) ) {
+									$rating_html .= '<meta itemprop="url" content="' . esc_attr($pPermalink) . '" />';
 								}
 							}
 
@@ -5034,7 +5441,7 @@
     </div>';
 
 							if ( ! $type_wrapper_available ) {
-								$rating_html . '</div>';
+								$rating_html .= '</div>';
 							}
 						}
 					}
@@ -5042,6 +5449,61 @@
 
 				return $rating_html;
 			}
+
+			/**
+			 * Retrieves the post's featured image or an image from the gallery if the featured image is not available. Returns a placeholder image if no image is retrieved.
+			 *
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.5.8
+			 *
+			 * @param int $wp_post_id The ID of a WordPress post.
+			 *
+			 * @return string
+			 */
+			function get_rich_snippet_default_image($wp_post_id) {
+				// Retrieve the post's featured image URL if available.
+				$image_url = $this->GetPostFeaturedImage($wp_post_id);
+
+				// Retrieve an image from the gallery if the post's featured image is not available.
+				if ( empty($image_url) ) {
+					$image_url = $this->get_attachment_image();
+				}
+
+				// Retrieve the URL of the placeholder image if there is no available image from the site.
+				if ( empty($image_url) ) {
+					$image_url = rw_get_plugin_img_path('top-rated/placeholder.png');
+				}
+
+				return $image_url;
+			}
+
+			/**
+			 * Retrieves an image from the gallery and returns its URL.
+			 *
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.5.8
+			 *
+			 * @return string
+			 */
+			function get_attachment_image() {
+				$images = get_posts( array(
+					'post_type' => 'attachment',
+					'posts_per_page' => 1,
+					'post_status' => 'inherit',
+					'post_mime_type' => 'image'
+				) );
+
+				$image_url = '';
+
+				if ( is_array($images) && !empty($images) ) {
+					$image = $images[0];
+					$image_url = $image->guid;
+				}
+
+				return $image_url;
+			}
+
+			#region BuddyPress ------------------------------------------------------------------
 
 			function InBuddyPressPage()
 			{
@@ -5066,45 +5528,11 @@
 				return $this->_inBuddyPress;
 			}
 
-			function InBBPressPage()
-			{
-				if (!$this->IsBBPressInstalled())
-					return false;
-
-				if (!isset($this->_inBBPress))
-				{
-					$this->_inBBPress = false;
-					if (function_exists('bbp_is_forum'))
-					{
-//                $this->_inBBPress = $this->_inBBPress || ('' !== bb_get_location());
-						$this->_inBBPress = $this->_inBBPress || bbp_is_forum(get_the_ID());
-						$this->_inBBPress = $this->_inBBPress || bbp_is_single_user();
-//                bbp_is_user
-//                $this->_inBBPress = $this->_inBBPress || bb_is_feed();
-					}
-
-					if (RWLogger::IsOn())
-						RWLogger::Log("InBBPressPage", ($this->_inBuddyPress ? 'TRUE' : 'FALSE'));
-				}
-
-				return $this->_inBBPress;
-			}
-
-			function IsBBPressInstalled()
-			{
-				if (!defined('WP_RW__BBP_INSTALLED'))
-					define('WP_RW__BBP_INSTALLED', false);
-
-				return WP_RW__BBP_INSTALLED;// && (!function_exists('is_plugin_active') || is_plugin_active(WP_RW__BP_CORE_FILE));
-			}
-
 			function IsBuddyPressInstalled()
 			{
 				return (defined('WP_RW__BP_INSTALLED') && WP_RW__BP_INSTALLED && (!function_exists('is_plugin_active') || is_plugin_active(WP_RW__BP_CORE_FILE)));
 			}
 
-			/* BuddyPress Support Actions
-    ---------------------------------------------------------------------------------------------------------------*/
 			function BuddyPressBeforeActivityLoop($has_activities)
 			{
 				if (RWLogger::IsOn()){ $params = func_get_args(); RWLogger::LogEnterence("BuddyPressBeforeActivityLoop", $params); }
@@ -5425,8 +5853,37 @@
 				echo $ratingHtml;
 			}
 
-			/* BuddyPress && bbPress.
---------------------------------------------------------------------------------------------*/
+			function InitBuddyPress()
+			{
+				if (RWLogger::IsOn())
+					RWLogger::LogEnterence("InitBuddyPress");
+
+				if (!defined('WP_RW__BP_INSTALLED'))
+					define('WP_RW__BP_INSTALLED', true);
+
+				// Add activity-related action if BuddyPress is inserting a new status update or comment
+				$bp_post_request = false;
+				if (isset($_POST['action'])
+				    && isset($_POST['cookie'])
+				    && 0 === strpos($_POST['cookie'], 'bp-activity')) {
+
+					$bp_post_request = true;
+				}
+
+				if (!is_admin() || $bp_post_request) {
+					// Activity page.
+					add_action("bp_has_activities", array(&$this, "BuddyPressBeforeActivityLoop"));
+				}
+
+				if (!is_admin()) {
+					// Forum topic page.
+					add_filter("bp_has_topic_posts", array(&$this, "rw_before_forum_loop"));
+
+					// User profile page.
+					add_action("bp_before_member_header_meta", array(&$this, "rw_display_user_profile_rating"));
+				}
+			}
+
 			function SetupBuddyPress()
 			{
 				if (RWLogger::IsOn())
@@ -5442,6 +5899,42 @@
 					// BuddyPress v.1.5 and latter.
 					add_action("bp_include", array(&$this, "InitBuddyPress"));
 				}
+			}
+
+			#endregion BuddyPress Support Actions ------------------------------------------------------------------
+
+			#region bbPress ------------------------------------------------------------------
+
+			function InBBPressPage()
+			{
+				if (!$this->IsBBPressInstalled())
+					return false;
+
+				if (!isset($this->_inBBPress))
+				{
+					$this->_inBBPress = false;
+					if (function_exists('bbp_is_forum'))
+					{
+//                $this->_inBBPress = $this->_inBBPress || ('' !== bb_get_location());
+						$this->_inBBPress = $this->_inBBPress || bbp_is_forum(get_the_ID());
+						$this->_inBBPress = $this->_inBBPress || bbp_is_single_user();
+//                bbp_is_user
+//                $this->_inBBPress = $this->_inBBPress || bb_is_feed();
+					}
+
+					if (RWLogger::IsOn())
+						RWLogger::Log("InBBPressPage", ($this->_inBuddyPress ? 'TRUE' : 'FALSE'));
+				}
+
+				return $this->_inBBPress;
+			}
+
+			function IsBBPressInstalled()
+			{
+				if (!defined('WP_RW__BBP_INSTALLED'))
+					define('WP_RW__BBP_INSTALLED', false);
+
+				return WP_RW__BBP_INSTALLED;// && (!function_exists('is_plugin_active') || is_plugin_active(WP_RW__BP_CORE_FILE));
 			}
 
 			function SetupBBPress()
@@ -5645,37 +6138,6 @@
 				echo $ratingHtml;
 			}
 
-			function InitBuddyPress()
-			{
-				if (RWLogger::IsOn())
-					RWLogger::LogEnterence("InitBuddyPress");
-
-				if (!defined('WP_RW__BP_INSTALLED'))
-					define('WP_RW__BP_INSTALLED', true);
-				
-				// Add activity-related action if BuddyPress is inserting a new status update or comment
-				$bp_post_request = false;
-				if (isset($_POST['action'])
-					&& isset($_POST['cookie'])
-					&& 0 === strpos($_POST['cookie'], 'bp-activity')) {
-					
-					$bp_post_request = true;
-				}
-				
-				if (!is_admin() || $bp_post_request) {
-					// Activity page.
-					add_action("bp_has_activities", array(&$this, "BuddyPressBeforeActivityLoop"));
-				}
-				
-				if (!is_admin()) {
-					// Forum topic page.
-					add_filter("bp_has_topic_posts", array(&$this, "rw_before_forum_loop"));
-
-					// User profile page.
-					add_action("bp_before_member_header_meta", array(&$this, "rw_display_user_profile_rating"));
-				}
-			}
-
 			var $forum_align = array();
 			function rw_before_forum_loop($has_posts)
 			{
@@ -5770,6 +6232,8 @@
 					$content . $rw;
 			}
 
+			#endregion BuddyPress && bbPress ------------------------------------------------------------------
+
 			/* Final Rating-Widget JS attach (before </body>)
     ---------------------------------------------------------------------------------------------------------------*/
 
@@ -5858,6 +6322,33 @@
 
 							// Get rating front posts settings.
 							$rw_settings[$rclass]["options"] = $this->GetOption($rw_settings[$rclass]["options"]);
+
+							/*
+							 * We don't want to display the number of votes when the comment rating mode is "Review".
+							 * So we're modifying the rating label so that it will be based on the vote. e.g.: 5-star vote = "Excellent".
+							 */
+							if ( $this->is_comment_review_mode() && 'comment' === $rclass ) {
+								$options = $rw_settings[$rclass]["options"];
+
+								if ( !isset($options->label) ) {
+									$options->label = new stdClass();
+								}
+
+								if ( !isset($options->label->text) ) {
+									$options->label->text = new stdClass();
+								}
+
+								if ( !isset($options->label->text->star) ) {
+									$options->label->text->star = new stdClass();
+								}
+
+								if ( !isset($options->label->text->nero) ) {
+									$options->label->text->nero = new stdClass();
+								}
+
+								$options->label->text->star->rated = '{{rating.lastVote}}';
+								$options->label->text->nero->rated = '{{rating.lastVote}}';
+							}
 
 							if (WP_RW__AVAILABILITY_DISABLED === $this->rw_validate_availability($alias))
 							{
@@ -6028,119 +6519,6 @@
 				}
 			}
 
-			/* Boosting page
-    ---------------------------------------------------------------------------------------------------------------*/
-			function BoostPageLoad()
-			{
-				if ('post' != strtolower($_SERVER['REQUEST_METHOD']) ||
-				    $_POST["rw_boost_posted"] != "Y")
-				{
-					return;
-				}
-
-				$element = (isset($_POST["rw_element"]) && in_array($_POST["rw_element"], array("post", "comment", "activity", "forum", "user"))) ?
-					$_POST["rw_element"] :
-					false;
-				if (false === $element){ $this->errors->add('rating_widget_boost', __("Invalid element selection.", WP_RW__ID)); return; }
-
-				$id = (isset($_POST["rw_id"]) && is_numeric($_POST["rw_id"]) && $_POST["rw_id"] >= 0) ?
-					(int)$_POST["rw_id"] :
-					false;
-				if (false === $id){ $this->errors->add('rating_widget_boost', __("Invalid element id.", WP_RW__ID)); return; }
-
-				$votes = (isset($_POST["rw_votes"]) && is_numeric($_POST["rw_votes"])) ?
-					(int)$_POST["rw_votes"] :
-					false;
-				if (false === $votes){ $this->errors->add('rating_widget_boost', __("Invalid votes number.", WP_RW__ID)); return; }
-
-				$rate = (isset($_POST["rw_rate"]) && is_numeric($_POST["rw_rate"])) ?
-					(float)$_POST["rw_rate"] :
-					false;
-				if (false === $rate){ $this->errors->add('rating_widget_boost', __("Invalid votes rate.", WP_RW__ID)); return; }
-
-				$urid = false;
-				switch ($element)
-				{
-					case "post":
-						$urid = $this->_getPostRatingGuid($id);
-						break;
-					case "comment":
-						$urid = $this->_getCommentRatingGuid($id);
-						break;
-					case "activity":
-						$urid = $this->_getActivityRatingGuid($id);
-						break;
-					case "forum":
-						$urid = $this->_getForumPostRatingGuid($id);
-						break;
-					case "user":
-						$urid = $this->_getUserRatingGuid($id);
-						break;
-				}
-
-				$details = array(
-					"uid" => $this->account->site_public_key,
-					"urid" => $urid,
-					"votes" => $votes,
-					"rate" => $rate,
-				);
-
-				$rw_ret_obj = $this->RemoteCall("action/api/boost.php", $details);
-				if (false === $rw_ret_obj){ return; }
-
-				// Decode RW ret object.
-				$rw_ret_obj = json_decode($rw_ret_obj);
-
-				if (false == $rw_ret_obj->success)
-					$this->errors->add('rating_widget_boost', __($rw_ret_obj->msg, WP_RW__ID));
-				else
-					$this->success->add('rating_widget_boost', __($rw_ret_obj->msg, WP_RW__ID));
-			}
-
-			function BoostPageRender()
-			{
-//        $this->rw_boost_page_load();
-
-				$this->_printErrors();
-				$this->_printSuccess();
-				?>
-				<div class="wrap rw-dir-ltr">
-					<h2><?php _e( 'Rating-Widget Boosting', WP_RW__ID ); ?></h2>
-
-					<p>
-						<?php _e('Here you can boost your ratings.', WP_RW__ID) ?><br /><br />
-						<b style="color: red;"><?php _e('Note: This action impact the rating record directly - it\'s on your own responsibility!', WP_RW__ID) ?></b><br /><br />
-						<?php _e('Example:', WP_RW__ID) ?><br />
-						<b><?php _e('Element', WP_RW__ID) ?>:</b> <i><?php _e('Post', WP_RW__ID) ?></i>; <b><?php _e('Id:', WP_RW__ID) ?></b> <i>2</i>; <b><?php _e('Votes', WP_RW__ID) ?>:</b> <i>3</i>; <b><?php _e('Rate:', WP_RW__ID) ?></b> <i>4</i>;<br />
-						<?php _e('This will add 3 votes with the rate of 4 stars to Post with Id=2.', WP_RW__ID) ?>
-					</p>
-
-					<form action="" method="post">
-						<input type="hidden" name="rw_boost_posted" value="Y" />
-						<label for="rw_element"><?php _e('Element', WP_RW__ID) ?>:
-							<select id="rw_element" name="rw_element">
-								<option value="post" selected="selected"><?php _e('Post/Page', WP_RW__ID) ?></option>
-								<option value="comment"><?php _e('Comment', WP_RW__ID) ?></option>
-								<option value="activity"><?php _e('Activity Update', WP_RW__ID) ?></option>
-								<option value="forum"><?php _e('Forum Post', WP_RW__ID) ?></option>
-								<option value="user"><?php _e('User', WP_RW__ID) ?></option>
-							</select>
-						</label>
-						<br /><br />
-						<label for="rw_id"><?php _e('Id:', WP_RW__ID) ?> <input type="text" id="rw_id" name="rw_id" value="" /></label>
-						<br /><br />
-						<label for="rw_votes"><?php _e('Votes', WP_RW__ID) ?>: <input type="text" id="rw_votes" name="rw_votes" value="" /></label>
-						<br /><br />
-						<label for="rw_rate"><?php _e('Rate', WP_RW__ID) ?>: <input type="text" id="rw_rate" name="rw_rate" value="" /></label>
-						<br />
-						<b style="font-size: 10px;"><?php _e('Note: Rate must be a number between -5 to 5.', WP_RW__ID) ?></b>
-						<br /><br />
-						<input type="submit" value="Boost" />
-					</form>
-				</div>
-			<?php
-			}
-
 			/**
 			 * Modifies post for Rich Snippets Compliance.
 			 *
@@ -6217,8 +6595,8 @@
 				     'For more details check out our <a href="' . WP_RW__ADDRESS . '/faq/" target="_blank">FAQ</a>.</p></div>';
 			}
 
-			/* Post/Page Exclude Checkbox
-    ---------------------------------------------------------------------------------------------------------------*/
+			#region Post/Page Metabox ------------------------------------------------------------------
+
 			function get_all_post_types()
 			{
 				$post_types = array('post', 'page');
@@ -6252,52 +6630,6 @@
 				rw_require_view('pages/admin/post-metabox.php');
 			}
 
-			/**
-			 * Registers the dashboard widgets
-			 * 
-			 * @author Leo Fajardo (@leorw)
-			 */
-			function add_dashboard_widgets() {
-				// Initialize statistics
-				$stats = array(
-					'ratings' => 0,
-					'votes' => 0
-				);
-
-				// Retrieve ratings and votes count
-				$response = rwapi()->get("/votes/count.json", false, WP_RW__CACHE_TIMEOUT_DASHBOARD_STATS);
-				if (!isset($response->error)) {
-					$stats['votes'] = $response->count;
-				
-					$response = rwapi()->get("/ratings/count.json", false, WP_RW__CACHE_TIMEOUT_DASHBOARD_STATS);
-					if (!isset($response->error)) {
-						$stats['ratings'] = $response->count;
-					}
-				}
-				
-				// Add the widget if there is at least 1 vote
-				if ($stats['votes'] >= 1) {
-					wp_add_dashboard_widget(
-						'rw-stats-dashboard-widget',			// Widget slug
-						__(' ', WP_RW__ID),						// Title
-						array(&$this, 'stats_widget_callback'),	// Display callback function
-						null,
-						$stats									// Arguments to pass to the callback function
-					);
-				}
-			}
-			
-			/**
-			 * The stats dashboard widget callback function that handles the displaying of the widget content
-			 * 
-			 * @author Leo Fajardo (@leorw)
-			 * @param mixed $object object passed to the callback function
-			 * @param object $callback_args the dashboard widget details, including the arguments passed
-			 */
-			function stats_widget_callback($object, $callback_args) {
-				rw_require_view('pages/admin/dashboard-stats.php', $callback_args['args']);
-			}
-			
 			// Save data from meta box.
 			function SavePostData($post_id)
 			{
@@ -6386,6 +6718,54 @@
 				rwapi()->call( '/ratings/' . $rating_id . '.json?is_external=true', 'DELETE' );
 			}
 
+			#endregion Post/Page Metabox ------------------------------------------------------------------
+
+			/**
+			 * Registers the dashboard widgets
+			 * 
+			 * @author Leo Fajardo (@leorw)
+			 */
+			function add_dashboard_widgets() {
+				// Initialize statistics
+				$stats = array(
+					'ratings' => 0,
+					'votes' => 0
+				);
+
+				// Retrieve ratings and votes count
+				$response = rwapi()->get("/votes/count.json", false, WP_RW__CACHE_TIMEOUT_DASHBOARD_STATS);
+				if (!isset($response->error)) {
+					$stats['votes'] = $response->count;
+				
+					$response = rwapi()->get("/ratings/count.json", false, WP_RW__CACHE_TIMEOUT_DASHBOARD_STATS);
+					if (!isset($response->error)) {
+						$stats['ratings'] = $response->count;
+					}
+				}
+				
+				// Add the widget if there is at least 1 vote
+				if ($stats['votes'] >= 1) {
+					wp_add_dashboard_widget(
+						'rw-stats-dashboard-widget',			// Widget slug
+						__(' ', WP_RW__ID),						// Title
+						array(&$this, 'stats_widget_callback'),	// Display callback function
+						null,
+						$stats									// Arguments to pass to the callback function
+					);
+				}
+			}
+			
+			/**
+			 * The stats dashboard widget callback function that handles the displaying of the widget content
+			 * 
+			 * @author Leo Fajardo (@leorw)
+			 * @param mixed $object object passed to the callback function
+			 * @param object $callback_args the dashboard widget details, including the arguments passed
+			 */
+			function stats_widget_callback($object, $callback_args) {
+				rw_require_view('pages/admin/dashboard-stats.php', $callback_args['args']);
+			}
+			
 			function PurgePostFeaturedImageTransient($meta_id = 0, $post_id = 0, $meta_key = '', $_meta_value = '')
 			{
 				if ('_thumbnail_id' === $meta_key)
@@ -6623,6 +7003,8 @@
 				return $urid;
 			}
 
+			#region Embed Ratings ------------------------------------------------------------------
+
 			/**
 			 * Queue rating data for footer JS hook and return rating's html.
 			 *
@@ -6692,8 +7074,10 @@
 				if ($is_rating_readonly) {
 					$pOptions['read-only'] = 'true';
 				}
-				
-				if (!$this->has_multirating_options($pElementClass)) {
+
+				if ( !$this->has_multirating_options($pElementClass) ||
+				     ($this->is_comment_review_mode() && 'comment' === $pElementClass)
+				) {
 					RWLogger::Log('EmbedRating', 'Not multi-criteria rating');
 
 					return $this->EmbedRawRating($urid, $pTitle, $pPermalink, $pElementClass, $pAddSchema, $pHorAlign, $pCustomStyle, $pOptions);
@@ -6856,6 +7240,23 @@
 					$pOptions['uarid'] = $this->_getUserRatingGuid( $pComment->user_id );
 				}
 
+				$comment_review_mode_settings = $this->get_comment_review_mode_settings();
+				if ( RWLogger::IsOn() ) {
+					RWLogger::Log('comment_review_mode_options', json_encode($comment_review_mode_settings));
+				}
+
+				$failed_requests = $comment_review_mode_settings->failed_requests;
+
+				if ( isset($failed_requests[$pComment->comment_ID]) ) {
+					$request = $failed_requests[$pComment->comment_ID];
+					$this->set_comment_review_vote($pComment->comment_ID, $request['request_params']);
+				}
+
+				// If "Reviews" mode, set the rating to read-only so that no other people can vote for the comment.
+				if ( $comment_review_mode_settings->is_comment_review_mode ) {
+					$pOptions['read-only'] = 'true';
+				}
+
 				return $this->EmbedRating(
 					$pComment->comment_ID,
 					(int) $pComment->user_id,
@@ -6867,6 +7268,8 @@
 					$pCustomStyle,
 					$pOptions );
 			}
+
+			#endregion Embed Ratings ------------------------------------------------------------------
 
 			function IsUserAccumulatedRating()
 			{
@@ -6921,59 +7324,6 @@
 				}
 			}
 
-			function GetUpgradeUrl($pImmediate = false, $pPeriod = 'annually', $pPlan = 'professional')
-			{
-				if (!$this->account->has_secret_key() || !$this->account->has_site_id())
-				{
-					// Backwards compatibility //////////////////////////////////////
-					$params = array(
-						'uid' => $this->account->site_public_key
-					);
-
-					if (!$pImmediate)
-						$relative = '/get-the-word-press-plugin/?' . http_build_query($params);
-					else
-					{
-						$params['program'] = 'premium';
-						$params['frequency'] = ('annually' === $pPeriod) ? 12 : 1;
-						$relative = '/get-the-word-press-plugin/subscribe.php?' . http_build_query($params);
-					}
-				}
-				else
-				{
-					// New pricing page ////////////////////////////////////////////
-					$timestamp = time();
-					$params = array(
-						'context_site' => $this->account->site_id,
-						's_ctx_ts' => $timestamp,
-						's_ctx_secure' => md5(
-							$timestamp .
-							$this->account->site_id .
-							$this->account->site_secret_key .
-							$this->account->site_public_key .
-							'upgrade'),
-					);
-
-					if (!$pImmediate)
-						$relative = '/pricing/wordpress/?' . http_build_query($params);
-					else
-					{
-						$params['plan'] = $pPlan;
-						$params['period'] = $pPeriod;
-						$relative = '/pricing/express-checkout.php?' . http_build_query($params);
-					}
-				}
-
-				return rw_get_site_url($relative);
-			}
-
-			function Notice($pNotice, $pType = 'update-nag')
-			{
-				?>
-				<div class="<?php echo $pType ?> rw-notice"><span class="rw-slug"><b>rating</b><i>widget</i></span> <b class="rw-sep">&#9733;</b> <?php echo $pNotice ?></div>
-			<?php
-			}
-
 			/* Email Confirmation Handlers
     --------------------------------------------------------------------------------------------------------------------*/
 
@@ -6996,48 +7346,6 @@
 				$query = http_build_query($params);
 
 				return rw_get_site_url('/signup/wordpress/confirm/') . '?' . $query;
-			}
-
-			function ConfirmationNotice()
-			{
-				if (!$this->is_admin)
-					return;
-
-				$url = $this->GetEmailConfirmationUrl();
-
-				$this->Notice('New <i>Weekly Rating Reports</i> feature! <a href="' . $url . '" onclick="_rwwp.openConfirm(\'' . $url . '\'); return false;" target="_blank">Please confirm your email address now</a> to receive your upcoming Monday report.');
-			}
-
-			function InvalidEmailConfirmNotice()
-			{
-				$url = $this->GetEmailConfirmationUrl();
-
-				$this->Notice('Email confirmation has failed. One of the confirmation parameters is invalid. <a href="' . $url . '" onclick="_rwwp.openConfirm(\'' . $url . '\'); return false;" target="_blank">Please try to confirm your email again</a>.');
-			}
-
-			function SuccessfulEmailConfirmNotice()
-			{
-				$this->Notice('W00t! You have successfully confirmed your email address.', 'update-nag success');
-			}
-
-			function ApiAccessBlockedNotice()
-			{
-				$this->Notice('Oops... your server (IP ' . WP_RW__SERVER_ADDR . ') is blocking the access to our API, therefore your license can NOT be synced. <br>Please contact your host to enable remote access to: <ul><li><code><a href="' . RW_API__ADDRESS . '" target="_blank">' . RW_API__ADDRESS . '</a></code></li><li><code><a href="' . WP_RW__ADDRESS . '" target="_blank">' . WP_RW__ADDRESS . '</a></code></li><li><code><a href="' . WP_RW__SECURE_ADDRESS . '" target="_blank">' . WP_RW__SECURE_ADDRESS . '</a></code></li></ul>');
-			}
-
-			function ApiUnauthorizedAccessNotice()
-			{
-				$this->Notice('Oops... seems like one of the authentication parameters is wrong. Update your Public Key, Secret Key & User ID, and try again.');
-			}
-
-			function LicenseSyncNotice()
-			{
-				$this->Notice('Ye-ha! Your license has been successfully synced.', 'update-nag success');
-			}
-
-			function LicenseSyncSameNotice()
-			{
-				$this->Notice('Hmm... it looks like your license remained the same. If you did upgrade, it\'s probably an issue on our side (sorry). Please contact us <a href="' . rw_get_site_url('/contact/?' . http_build_query(array('topic' => 'Report an Issue', 'email' => $this->account->user_email, 'site_id' => $this->account->site_id, 'user_id' => $this->account->user_id, 'website' => get_site_url(), 'platform' => 'wordpress', 'message' => 'I\'ve upgraded my account but when I try to Sync the License in my WordPress Dashboard -> Ratings -> Account, the license remains the same.' . "\n" . 'Your Upgraded Plan: [REPLACE WITH PLAN NAME]' . "\n" . 'Your PayPal Email: [REPLACE WITH PAYPAL ADDRESS]'))) . '" target="_blank">here</a>.');
 			}
 
 			private function TryToConfirmEmail() {
@@ -7159,7 +7467,7 @@
 			return $rwp;
 		}
 
-		#region Freemius Helpers
+		#region Freemius Helpers ------------------------------------------------------------------
 
 		// Create a helper function for easy SDK access.
 		/**
@@ -7176,17 +7484,21 @@
 
 				$rw_fs = fs_dynamic_init( array(
 					'id'                => '56',
+					'public_key'        => 'pk_74be465babd9d3d6d5ff578d56745',
+					// Set the SDK to work in a sandbox mode (for development & testing).
+					// IMPORTANT: MAKE SURE TO REMOVE SECRET KEY BEFORE DEPLOYMENT.
+					'secret_key'        => 'sk_ErC9)z[}T{)n_QbB>6B!lVfxVoK?a',
 					'slug'              => 'rating-widget',
 					'menu_slug'         => 'rating-widget',
-					'public_key'        => 'pk_74be465babd9d3d6d5ff578d56745',
 					'is_live'           => true,
 					'is_premium'        => true,
 					'has_addons'        => false,
 					'has_paid_plans'    => true,
 					'enable_anonymous'  => false,
-					// Set the SDK to work in a sandbox mode (for development & testing).
-					// IMPORTANT: MAKE SURE TO REMOVE SECRET KEY BEFORE DEPLOYMENT.
-					'secret_key'  => 'sk_ErC9)z[}T{)n_QbB>6B!lVfxVoK?a',
+					// Localhost FS environment params.
+//					'secret_key'        => 'sk_j2nR2@g<Ts3jl]));Oi.k<wO]kKSH',
+//					'id'                => '30',
+//					'public_key'        => 'pk_d859cee50e9d63917b6d3f324cbaf',
 				) );
 			}
 
@@ -7225,9 +7537,9 @@
 			return true;
 		}
 
-		#endregion
+		#endregion Freemius Helpers ------------------------------------------------------------------
 
-		#region Plugin Initialization
+		#region Plugin Initialization ------------------------------------------------------------------
 
 		// Init Freemius.
 		$fs = rw_fs();
@@ -7274,5 +7586,5 @@
 			$GLOBALS['rw'] = ratingwidget();
 		}
 
-		#endregion
+		#endregion Plugin Initialization ------------------------------------------------------------------
 	endif;

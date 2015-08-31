@@ -10,11 +10,17 @@
 	$multi_criterion = false;
 
 	if ($has_multi_rating) {
-		$multirating_options = ratingwidget()->get_multirating_options_by_class($rclass);
-		
+		$multirating_options = ratingwidget()->get_multirating_options_by_class( $rclass );
+
 		// Check if there are more than one criteria so that we can hide or show additional options
-		$total_criteria = count($multirating_options->criteria);
-		$multi_criterion = ($total_criteria > 1);
+		$total_criteria  = count( $multirating_options->criteria );
+		$multi_criterion = ( $total_criteria > 1 );
+
+		if ( ! rw_fs()->is_plan_or_trial__premium_only( 'professional' ) ) {
+			if ( $total_criteria > 3 ) {
+				$multirating_options->criteria = array_splice( $multirating_options->criteria, 0, 3 );
+			}
+		}
 	}
 	
     $options = rw_options();
