@@ -798,6 +798,11 @@
 					'trial_started',
 					'plan_upgraded',
 				));
+
+				$this->_admin_notices->add(
+					__( 'Premium plugin version was successfully activated.', WP_FS__SLUG ),
+					__( 'W00t!', WP_FS__SLUG )
+				);
 			} else {
 				// Activated free code (after had the premium before).
 				$this->do_action( 'after_free_version_reactivation' );
@@ -4247,7 +4252,6 @@
 			} else {
 				// Sync licenses.
 				$this->_sync_licenses();
-
 				// Check if plan / license changed.
 				if ( ! FS_Entity::equals( $site->plan, $this->_site->plan ) ||
 				     // Check if trial started.
@@ -4288,7 +4292,11 @@
 							$this->_store_licenses();
 							$this->_enrich_site_plan( true );
 
-							$plan_change = $is_free ? 'upgraded' : 'downgraded';
+							$plan_change = $is_free ?
+								'upgraded' :
+								is_object($new_license) ?
+									'changed' :
+									'downgraded';
 						}
 					}
 
@@ -4303,6 +4311,9 @@
 							$plan_change = 'expired';
 						}
 					}
+
+					if (is_numeric($site->license_id) && is_object($this->_license))
+						$this->_sync_site_subscription($this->_license);
 				}
 			}
 
@@ -4334,6 +4345,22 @@
 							) ) ),
 						'plan_upgraded',
 						__( 'Ye-ha!', WP_FS__SLUG )
+					);
+
+					$this->_admin_notices->remove_sticky( array(
+						'trial_started',
+						'trial_promotion',
+						'trial_expired',
+						'activation_complete',
+					) );
+					break;
+				case 'changed':
+					$this->_admin_notices->add_sticky(
+						sprintf(
+							__( 'Your plan was successfully changed to %s.', WP_FS__SLUG ),
+							$this->_site->plan->title
+						),
+						'plan_changed'
 					);
 
 					$this->_admin_notices->remove_sticky( array(
