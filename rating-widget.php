@@ -86,7 +86,7 @@
 			/**
 			 * @var \FS_Option_Manager
 			 */
-			var $_options_manager;
+			var $_options;
 
 			/**
 			 * @var stdClass
@@ -115,7 +115,7 @@
 			private function __construct() {
 				$this->account          = rw_account();
 				$this->fs               = rw_fs();
-				$this->_options_manager = rw_fs_options();
+				$this->_options = rw_fs_options();
 
 				if ( WP_RW__DEBUG ) {
 					$this->InitLogger();
@@ -710,7 +710,7 @@
 				}
 				
 				$this->SetOption(WP_RW__DB_OPTION_WP_RATE_NOTICE_MIN_VOTES_TRIGGER, $min_votes_trigger);
-				$this->_options_manager->store();
+				$this->_options->store();
 				
 				echo 1;
 				exit;
@@ -1162,7 +1162,7 @@
 				if ( $update_db_option ) {
 					$comment_review_mode_settings->failed_requests = $failed_requests;
 					$this->SetOption(WP_RW__DB_OPTION_COMMENT_REVIEW_MODE_SETTINGS, $comment_review_mode_settings);
-					$this->_options_manager->store();
+					$this->_options->store();
 				}
 
 				RWLogger::LogDeparture("set_comment_review_vote");
@@ -1366,7 +1366,7 @@
 				RWLogger::LogEnterence( 'UpdateSecret' );
 
 				$this->SetOption( WP_RW__DB_OPTION_SITE_SECRET_KEY, $new_secret );
-				$this->_options_manager->store();
+				$this->_options->store();
 
 				RWLogger::LogDeparture( 'UpdateSecret' );
 			}
@@ -1381,7 +1381,7 @@
 
 					$this->fs->delete_account_event();
 
-					$this->_options_manager->clear(true);
+					$this->_options->clear(true);
 
 					$this->ClearTransients();
 
@@ -1601,7 +1601,7 @@
 					}
 
 					$this->SetOption( WP_RW__DB_OPTION_RICH_SNIPPETS_SETTINGS, $rich_snippet_settings );
-					$this->_options_manager->store();
+					$this->_options->store();
 
 					RWLogger::LogDeparture( 'update_rich_snippet_settings' );
 				}
@@ -2006,7 +2006,7 @@
 			{
 				RWLogger::LogEnterence("MigrateOptions");
 
-				$this->_options_manager->clear();
+				$this->_options->clear();
 
 				$site_public_key = get_option(WP_RW__DB_OPTION_SITE_PUBLIC_KEY);
 
@@ -2023,18 +2023,18 @@
 					if (false !== $v)
 					{
 						if (0 === strpos($v, '{'))
-							$this->_options_manager->set_option($o, json_decode($v));
+							$this->_options->set_option($o, json_decode($v));
 						else if ('true' == $v)
-							$this->_options_manager->set_option($o, true);
+							$this->_options->set_option($o, true);
 						else if ('false' == $v)
-							$this->_options_manager->set_option($o, false);
+							$this->_options->set_option($o, false);
 						else
-							$this->_options_manager->set_option($o, $v);
+							$this->_options->set_option($o, $v);
 					}
 				}
 
 				// Save to new unified options record.
-				$this->_options_manager->store();
+				$this->_options->store();
 
 				RWLogger::LogDeparture("MigrateOptions");
 			}
@@ -2043,7 +2043,7 @@
 			{
 				RWLogger::LogEnterence("LoadOptions");
 
-				if ($this->_options_manager->is_empty()) {
+				if ($this->_options->is_empty()) {
 					$this->MigrateOptions();
 				}
 
@@ -2055,22 +2055,22 @@
 				if (null === $pDefault)
 					$pDefault = isset($this->_OPTIONS_DEFAULTS[$pOption]) ? $this->_OPTIONS_DEFAULTS[$pOption] : false;
 
-				return $this->_options_manager->get_option($pOption, $pDefault);
+				return $this->_options->get_option($pOption, $pDefault);
 			}
 
 			function UnsetOption($pOption)
 			{
-				$this->_options_manager->unset_option($pOption);
+				$this->_options->unset_option($pOption);
 			}
 
 			function SetOption($pOption, $pValue)
 			{
-				$this->_options_manager->set_option($pOption, $pValue);
+				$this->_options->set_option($pOption, $pValue);
 			}
 
 			function store_options()
 			{
-				$this->_options_manager->store();
+				$this->_options->store();
 			}
 
 			#endregion Plugin Options ------------------------------------------------------------------
@@ -2647,7 +2647,7 @@
 
 					$this->SetOption(WP_RW__DB_OPTION_TRACKING, (isset($_POST['tracking']) && '1' == $_POST['tracking']));
 
-					$this->_options_manager->store();
+					$this->_options->store();
 
 					// Reload the page with the keys.
 					rw_admin_redirect();
@@ -3208,7 +3208,7 @@
 							<script type="text/javascript">
 								jQuery.datepicker.setDefaults({
 									dateFormat: "yy-mm-dd"
-								})
+								});
 
 								jQuery("#rw_date_from").datepicker({
 									maxDate : 0,
@@ -3494,7 +3494,7 @@
 
 					$rw_ret_obj = $this->RemoteCall( "action/report/rating.php", $details, WP_RW__CACHE_TIMEOUT_REPORT );
 					if ( false === $rw_ret_obj ) {
-						return;
+						return false;
 					}
 
 					// Decode RW ret object.
@@ -3760,6 +3760,8 @@
 					</div>
 				<?php
 				}
+
+				return true;
 			}
 
 			function ReportsPageRender()
@@ -3792,21 +3794,16 @@
 				RWLogger::LogEnterence( 'RestoreDefaultSettings' );
 
 				// Restore to defaults - clear all settings.
-				$this->_options_manager->clear();
-
-				// Re-Load all advanced settings.
-				$tracking = $this->GetOption( WP_RW__DB_OPTION_TRACKING );
-
-				$this->SetOption( WP_RW__DB_OPTION_TRACKING, $tracking );
+				$this->_options->clear();
 
 				// Restore account details.
-				$this->SetOption( WP_RW__DB_OPTION_SITE_PUBLIC_KEY, $this->account->site_public_key );
-				$this->SetOption( WP_RW__DB_OPTION_SITE_ID, $this->account->site_id );
-				$this->SetOption( WP_RW__DB_OPTION_SITE_SECRET_KEY, $this->account->site_secret_key );
-				$this->SetOption( WP_RW__DB_OPTION_OWNER_ID, $this->account->user_id );
-				$this->SetOption( WP_RW__DB_OPTION_OWNER_EMAIL, $this->account->user_email );
+				$this->_options->set_option( WP_RW__DB_OPTION_SITE_PUBLIC_KEY, $this->account->site_public_key );
+				$this->_options->set_option( WP_RW__DB_OPTION_SITE_ID, $this->account->site_id );
+				$this->_options->set_option( WP_RW__DB_OPTION_SITE_SECRET_KEY, $this->account->site_secret_key );
+				$this->_options->set_option( WP_RW__DB_OPTION_OWNER_ID, $this->account->user_id );
+				$this->_options->set_option( WP_RW__DB_OPTION_OWNER_EMAIL, $this->account->user_email );
 
-				$this->_options_manager->store();
+				$this->_options->store();
 
 				RWLogger::LogDeparture( 'RestoreDefaultSettings' );
 			}
@@ -3818,7 +3815,7 @@
 				$this->UnsetOption( WP_RW__DB_OPTION_SITE_PUBLIC_KEY );
 				$this->UnsetOption( WP_RW__DB_OPTION_SITE_ID );
 				$this->UnsetOption( WP_RW__DB_OPTION_SITE_SECRET_KEY );
-				$this->_options_manager->store();
+				$this->_options->store();
 
 				RWLogger::LogDeparture( 'DeleteAndCreateNewAccount' );
 			}
@@ -3878,7 +3875,7 @@
 
 				// Store options if in save mode.
 				if ($this->settings->IsSaveMode())
-					$this->_options_manager->store();
+					$this->_options->store();
 			}
 
 			#endregion Advanced Settings ------------------------------------------------------------------
@@ -4663,7 +4660,7 @@
 
 				// Store options if in save mode.
 				if ($this->settings->IsSaveMode())
-					$this->_options_manager->store();
+					$this->_options->store();
 			}
 
 			#region Posts/Pages & Comments Support ------------------------------------------------------------------
@@ -5942,7 +5939,7 @@
 				if (RWLogger::IsOn())
 					RWLogger::LogEnterence("SetupBBPress");
 
-				if ($this->fs->is_plan__premium_only('professional'))
+				if ($this->fs->is_plan_or_trial__premium_only('professional'))
 				{
 					define('WP_RW__BBP_CONFIG_LOCATION', get_site_option('bb-config-location', ''));
 
@@ -6064,8 +6061,10 @@
 			 * Add bbPress bottom ratings.
 			 * Invoked on bbp_get_reply_content
 			 *
-			 * @param mixed $content
-			 * @param mixed $reply_id
+			 * @param string $content
+			 * @param int    $reply_id
+			 *
+			 * @return string
 			 */
 			function AddBBPressBottomRating($content, $reply_id = 0)
 			{
@@ -6180,6 +6179,8 @@
 			 * Add bbPress forum post ratings. This method is for old versions of bbPress & BuddyPress bundle.
 			 *
 			 * @param mixed $content
+			 *
+			 * @return string
 			 */
 			function rw_display_forum_post_rating($content)
 			{
@@ -6697,7 +6698,7 @@
 					$this->SetOption(WP_RW__READONLY_SETTINGS, $this->_readonly_list);
 				}
 
-				$this->_options_manager->store();
+				$this->_options->store();
 
 				if (RWLogger::IsOn()) {
 					RWLogger::LogDeparture("SavePostData");
@@ -7389,7 +7390,7 @@
 				$this->SetOption( WP_RW__DB_OPTION_OWNER_EMAIL, $email );
 				$this->SetOption( WP_RW__DB_OPTION_SITE_ID, $site_id );
 
-				$this->_options_manager->store();
+				$this->_options->store();
 
 //				$this->fs->update_account($user_id, $email, $site_id);
 
@@ -7436,7 +7437,7 @@
 
 			function delete_account_and_settings()
 			{
-				$this->_options_manager->delete();
+				$this->_options->delete();
 			}
 		}
 
@@ -7516,8 +7517,9 @@
 
 		function rw_migration_to_freemius()
 		{
-			if (rw_fs()->is_registered())
-				// Already registered correctly.
+			global $rw_fs;
+
+			if ($rw_fs->is_registered())
 				return true;
 
 			if (false === rwapi())
@@ -7538,7 +7540,7 @@
 				return false;
 			}
 
-			rw_fs()->setup_account(
+			$rw_fs->setup_account(
 				new FS_User($result->user),
 				new FS_Site($result->install)
 			);
@@ -7564,21 +7566,16 @@
 
 		global $rw_fs;
 
-		if ($account->is_registered())
-		{
-			// RW account info is available.
-			if ($rw_fs->is_sdk_upgrade_mode() && '1.0.9' === $rw_fs->version)
+		// RW account info is available.
+		if (!$rw_fs->is_registered() &&
+		    $rw_fs->is_plugin_upgrade_mode() &&
+		    '2.6.0' === $rw_fs->get_plugin_version()
+		) {
+			// Migration to new Freemius account management.
+			if (rw_migration_to_freemius())
 			{
-				// Migration to new Freemius account management.
-				if (rw_migration_to_freemius())
-				{
-					$rw_fs->set_sdk_upgrade_complete();
-				}
+				$rw_fs->set_plugin_upgrade_complete();
 			}
-		}
-		else
-		{
-			// New install.
 		}
 
 		/**
@@ -7591,7 +7588,7 @@
 //define('WP_RW___LATE_LOAD', 20);
 		if (defined('WP_RW___LATE_LOAD')) {
 			add_action( 'plugins_loaded', 'ratingwidget', (int) WP_RW___LATE_LOAD );
-		}else {
+		} else {
 			$GLOBALS['rw'] = ratingwidget();
 		}
 
