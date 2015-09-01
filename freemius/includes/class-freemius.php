@@ -166,7 +166,7 @@
 				$this->_storage->sdk_last_version = $this->_storage->sdk_version;
 				$this->_storage->sdk_version = $this->version;
 
-				if ( !is_null($this->_storage->sdk_last_version) &&
+				if ( empty($this->_storage->sdk_last_version) ||
 				     version_compare( $this->_storage->sdk_last_version, $this->version, '<' ) ) {
 					$this->_storage->sdk_upgrade_mode = true;
 					$this->_storage->sdk_downgrade_mode = false;
@@ -185,7 +185,7 @@
 				$this->_storage->plugin_last_version = $this->_storage->plugin_version;
 				$this->_storage->plugin_version = $plugin_version;
 
-				if ( !is_null($this->_storage->plugin_last_version) &&
+				if ( empty($this->_storage->plugin_last_version) ||
 				     version_compare( $this->_storage->plugin_last_version, $plugin_version, '<' ) ) {
 					$this->_storage->plugin_upgrade_mode = true;
 					$this->_storage->plugin_downgrade_mode = false;
@@ -207,8 +207,6 @@
 			$this->_register_hooks();
 
 			$this->_load_account();
-
-			$this->_register_account_hooks();
 		}
 
 		/**
@@ -2337,6 +2335,11 @@
 			if (!$this->is_trial())
 				return false;
 
+			if (!isset($this->_storage->trial_plan)) {
+				// Store trial plan information.
+				$this->_enrich_site_trial_plan( true );
+			}
+
 			if ($this->_storage->trial_plan->name === $plan)
 				// Exact plan.
 				return true;
@@ -2817,6 +2820,8 @@
 		private function _load_account() {
 			$this->_logger->entrance();
 
+			$this->do_action('before_account_load');
+
 			$sites    = self::get_all_sites();
 			$users    = self::get_all_users();
 			$plans    = self::get_all_plans();
@@ -2834,7 +2839,8 @@
 
 			if ( is_object($site) &&
 			     is_numeric($site->id) &&
-			     is_numeric($site->user_id)
+			     is_numeric($site->user_id) &&
+			     is_object($site->plan)
 			) {
 				// Load site.
 				$this->_site       = clone $site;
@@ -2873,21 +2879,9 @@
 					$this->_update_plugin_version_event();
 				}
 
-			} else {
-				self::$_static_logger->info( 'Trying to load account from external source with ' . 'fs_load_account_' . $this->_slug );
-
-				$account = apply_filters( 'fs_load_account_' . $this->_slug, false );
-
-				if ( false === $account ) {
-					self::$_static_logger->info( 'Plugin is not registered on that site.' );
-				} else {
-					if ( is_object( $account['site'] ) ) {
-						self::$_static_logger->info( 'Account loaded: user_id = ' . $this->_user->id . '; site_id = ' . $this->_site->id . ';' );
-
-						$this->_set_account( $account['user'], $account['site'] );
-					}
-				}
 			}
+
+			$this->_register_account_hooks();
 		}
 
 		/**
@@ -2930,6 +2924,11 @@
 
 			$this->_set_account( $user, $site );
 			$this->_sync_plans();
+
+			if ($this->is_trial()) {
+				// Store trial plan information.
+				$this->_enrich_site_trial_plan( true );
+			}
 
 			$this->do_action( 'after_account_connection', $user, $site );
 
@@ -4865,6 +4864,8 @@
 		 * @author Vova Feldman (@svovaf)
 		 * @since 1.0.3
 		 * @uses FS_Api
+		 *
+		 * @return object
 		 */
 		private function _update_email() {
 			$this->_logger->entrance();
@@ -4887,6 +4888,38 @@
 				// handle different error cases.
 
 			}
+
+			return $user;
+		}
+
+		/**
+		 * Handle user name update.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.0.9
+		 * @uses   FS_Api
+		 *
+		 * @return object
+		 */
+		private function _update_user_name() {
+			$this->_logger->entrance();
+			$name = fs_request_get( 'fs_user_name_' . $this->_slug, '' );
+
+			$api  = $this->get_api_user_scope();
+			$user = $api->call( "?plugin_id={$this->_plugin->id}&fields=id,first,last", 'put', array(
+				'name' => $name,
+			) );
+
+			if ( ! isset( $user->error ) ) {
+				$this->_user->first = $user->first;
+				$this->_user->last  = $user->last;
+				$this->_store_user();
+			} else {
+				// handle different error cases.
+
+			}
+
+			return $user;
 		}
 
 		/**
@@ -5034,9 +5067,40 @@
 			if ( fs_request_is_action( 'update_email' ) ) {
 				check_admin_referer( 'update_email' );
 
-				$this->_update_email();
+				$result = $this->_update_email();
 
-				$this->_admin_notices->add(__('Your email was successfully updated. You should receive an email with confirmation instructions in few moments.', WP_FS__SLUG));
+				if ( isset( $result->error ) ) {
+					switch ($result->error->code) {
+						case 'user_exist':
+							$this->_admin_notices->add(
+								__( 'Sorry, we could not complete the email update. Another user with the same email is already registered.', WP_FS__SLUG ),
+								__( 'Oops...', WP_FS__SLUG ),
+								'error'
+							);
+							break;
+					}
+				} else {
+					$this->_admin_notices->add( __( 'Your email was successfully updated. You should receive an email with confirmation instructions in few moments.', WP_FS__SLUG ) );
+				}
+
+				return;
+			}
+
+			if ( fs_request_is_action( 'update_user_name' ) ) {
+				check_admin_referer( 'update_user_name' );
+
+				$result = $this->_update_user_name();
+
+				if (isset($result->error)) {
+					$this->_admin_notices->add(
+						__( 'Please provide your full name.', WP_FS__SLUG ),
+						__( 'Oops...', WP_FS__SLUG ),
+						'error'
+					);
+				}
+				else {
+					$this->_admin_notices->add( __( 'Your name was successfully updated.', WP_FS__SLUG ) );
+				}
 
 				return;
 			}
@@ -5711,8 +5775,8 @@
 		 */
 		function is_plugin_upgrade_mode()
 		{
-			return isset($this->_storage->sdk_upgrade_mode) ?
-				$this->_storage->sdk_upgrade_mode :
+			return isset($this->_storage->plugin_upgrade_mode) ?
+				$this->_storage->plugin_upgrade_mode :
 				false;
 		}
 
@@ -5726,7 +5790,7 @@
 		 */
 		function set_plugin_upgrade_complete()
 		{
-			$this->_storage->sdk_upgrade_mode = false;
+			$this->_storage->plugin_upgrade_mode = false;
 		}
 
 		#endregion ------------------------------------------------------------------
