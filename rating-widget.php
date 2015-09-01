@@ -7482,12 +7482,20 @@
 				// Include Freemius SDK.
 				require_once dirname(__FILE__) . '/freemius/start.php';
 
+				if (WP_FS__IS_PRODUCTION_MODE)
+				{
+					$id = 56;
+					$public_key = 'pk_74be465babd9d3d6d5ff578d56745';
+				}
+				else
+				{
+					$id = 30;
+					$public_key = 'pk_d859cee50e9d63917b6d3f324cbaf';
+				}
+
 				$rw_fs = fs_dynamic_init( array(
-					'id'                => '56',
-					'public_key'        => 'pk_74be465babd9d3d6d5ff578d56745',
-					// Set the SDK to work in a sandbox mode (for development & testing).
-					// IMPORTANT: MAKE SURE TO REMOVE SECRET KEY BEFORE DEPLOYMENT.
-					'secret_key'        => 'sk_ErC9)z[}T{)n_QbB>6B!lVfxVoK?a',
+					'id'                => $id,
+					'public_key'        => $public_key,
 					'slug'              => 'rating-widget',
 					'menu_slug'         => 'rating-widget',
 					'is_live'           => true,
@@ -7495,10 +7503,11 @@
 					'has_addons'        => false,
 					'has_paid_plans'    => true,
 					'enable_anonymous'  => false,
+					// Set the SDK to work in a sandbox mode (for development & testing).
 					// Localhost FS environment params.
-//					'secret_key'        => 'sk_j2nR2@g<Ts3jl]));Oi.k<wO]kKSH',
-//					'id'                => '30',
-//					'public_key'        => 'pk_d859cee50e9d63917b6d3f324cbaf',
+					'secret_key'        => (WP_FS__IS_PRODUCTION_MODE ?
+						'sk_ErC9)z[}T{)n_QbB>6B!lVfxVoK?a' :
+						'sk_j2nR2@g<Ts3jl]));Oi.k<wO]kKSH'),
 				) );
 			}
 

@@ -181,6 +181,7 @@ If you didn't find a solution to your problem yet, check out our [WordPress Know
 The RatingWidget Team
 
 == Change Log ==
+
 = 2.6.0 - 2015-09-01 =
 * Update: Code modernization + added regions for better folding during editing.
 * Optimization: Removed old unused code.
