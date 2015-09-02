@@ -27,6 +27,8 @@
 
 			public $is_user_accumulated;
 			public $is_comment_review_mode;
+            
+			public $comment_ratings_mode;
 
 			private $_saveMode = false;
 

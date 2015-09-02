@@ -315,7 +315,9 @@
 					add_action( 'wp_ajax_rw-addon-request', array( &$this, 'send_addon_request' ) );
 					add_action( 'admin_init', array( &$this, 'register_admin_page_hooks' ) );
 					add_action( 'admin_menu', array( &$this, 'AddPostMetaBox' ) ); // Metabox for posts/pages
+                    add_action( 'admin_menu', array( &$this, 'add_comment_rating_metabox' ) ); // Metabox for comment edit page.
 					add_action( 'save_post', array( &$this, 'SavePostData' ) );
+					add_action( 'edit_comment', array( &$this, 'save_comment_data' ) );
 
 					if ( $this->is_api_supported() ) {
 						// Since some old users might not having a secret key set,
@@ -1866,6 +1868,9 @@
 						'is_comment_review_mode' => false,
 						'failed_requests' => array()
 					),
+					WP_RW__DB_OPTION_COMMENT_RATINGS_MODE_SETTINGS => (object) array(
+						'comment_ratings_mode' => 'false' // "false" = comment ratings, "true" = reviews ratings, "admin_ratings" = admin-only ratings
+					),
 					WP_RW__IS_ACCUMULATED_USER_RATING => true,
 
 					WP_RW__IDENTIFY_BY => 'laccount',
@@ -2563,14 +2568,48 @@
 			 * @return object
 			 */
 			function get_comment_review_mode_settings() {
-				$comment_review_mode_settings = $this->GetOption(WP_RW__DB_OPTION_COMMENT_REVIEW_MODE_SETTINGS);
-				if (!$comment_review_mode_settings) {
-					$comment_review_mode_settings = new stdClass();
+				$comment_review_mode_settings = $this->GetOption( WP_RW__DB_OPTION_COMMENT_REVIEW_MODE_SETTINGS );
+				if ( ! is_object( $comment_review_mode_settings ) ) {
+					$comment_review_mode_settings = $this->_OPTIONS_DEFAULTS[ WP_RW__DB_OPTION_COMMENT_REVIEW_MODE_SETTINGS ];
 				}
 				
 				return $comment_review_mode_settings;
 			}
 
+            /**
+             * Retrieves the current comment ratings mode settings. If the mode is not set, set to comment reviews.
+             * 
+             * @author Leo Fajardo (@leorw)
+             * @since 2.6.0
+             * 
+             * @return object
+             */
+            function get_comment_ratings_mode_settings() {
+                $comment_ratings_mode_settings = $this->GetOption( WP_RW__DB_OPTION_COMMENT_RATINGS_MODE_SETTINGS );
+				if ( ! is_object( $comment_ratings_mode_settings ) ) {
+					$comment_ratings_mode_settings = $this->_OPTIONS_DEFAULTS[ WP_RW__DB_OPTION_COMMENT_RATINGS_MODE_SETTINGS ];
+                    
+                    $comment_review_mode_settings = get_comment_review_mode_settings();
+                    $comment_ratings_mode_settings->comment_ratings_mode = $comment_review_mode_settings->is_comment_review_mode ? 'true' : 'false';
+ 				}
+                
+				return $comment_ratings_mode_settings;
+            }
+            
+            /**
+             * Retrieves the current comment ratings mode.
+             * 
+             * @author Leo Fajardo (@leorw)
+             * @since 2.6.0
+             * 
+             * @return string
+             */
+            function get_comment_ratings_mode() {
+                $comment_ratings_mode_settings = $this->get_comment_ratings_mode_settings();
+                
+                return $comment_ratings_mode_settings->comment_ratings_mode;
+            }
+            
 			/**
 			 * Checks if this option type supports multi-rating
 			 * @param type $class
@@ -4355,7 +4394,8 @@
 
 				// Comment "Reviews" mode support.
 				if ( 'comments' === $selected_key ) {
-					$rw_is_comment_review_mode = $this->is_comment_review_mode();
+					$comment_ratings_mode_settings = $this->get_comment_ratings_mode_settings();
+                    $comment_ratings_mode = $comment_ratings_mode_settings->comment_ratings_mode;
 				}
 				
 				// Reset categories.
@@ -4465,13 +4505,15 @@
 						$this->SetOption(WP_RW__IS_ACCUMULATED_USER_RATING, $rw_is_user_accumulated);
 					}
 
-					// Comment "Reviews" mode support
-					if ( 'comments' === $selected_key && isset($_POST['rw_comment_review_mode']) ) {
-						$rw_is_comment_review_mode = ('true' == (in_array($_POST['rw_comment_review_mode'], array('true', 'false')) ? $_POST['rw_comment_review_mode'] : 'false'));
-						
-						$comment_review_mode_settings = $this->get_comment_review_mode_settings();
-						$comment_review_mode_settings->is_comment_review_mode = $rw_is_comment_review_mode;
-						$this->SetOption(WP_RW__DB_OPTION_COMMENT_REVIEW_MODE_SETTINGS, $comment_review_mode_settings);
+					// Comment ratings mode
+					if ( 'comments' === $selected_key && isset( $_POST['rw_comment_review_mode'] ) ) {
+                        $comment_ratings_mode = $_POST['rw_comment_review_mode'];
+                        
+                        // Save the new comment ratings mode.
+                        $comment_ratings_mode_settings = $this->get_comment_ratings_mode_settings();
+                        $comment_ratings_mode_settings->comment_ratings_mode = $comment_ratings_mode;
+                        
+                        $this->SetOption(WP_RW__DB_OPTION_COMMENT_RATINGS_MODE_SETTINGS, $comment_ratings_mode_settings);
 					}
 
 					/* Visibility settings
@@ -4637,8 +4679,8 @@
 				// Accumulated user ratings support.
 				if ( 'users' === $selected_key && $this->IsBBPressInstalled() ) {
 					$this->settings->is_user_accumulated = $rw_is_user_accumulated;
-				} else if ( 'comments' === $selected_key ) { // Comment "Reviews" mode support.
-					$this->settings->is_comment_review_mode = $rw_is_comment_review_mode;
+				} else if ( 'comments' === $selected_key ) { // Comment ratings mode support
+					$this->settings->comment_ratings_mode = $comment_ratings_mode;
 				}
 				?>
 				<div class="wrap rw-dir-ltr rw-wp-container">
@@ -4988,7 +5030,7 @@
 				}
 
 				// Avoid further checking, return immediately if the post type is not supported.
-				if (!in_array($class, array('post', 'page', 'product', 'topic', 'reply'))) {
+				if (!in_array($class, array('comment', 'post', 'page', 'product', 'topic', 'reply'))) {
 					return false;
 				}
 
@@ -6407,10 +6449,13 @@
 							$rw_settings[$rclass]["options"] = $this->GetOption($rw_settings[$rclass]["options"]);
 							
 							/*
-							 * We don't want to display the number of votes when the comment rating mode is "Review".
+							 * We don't want to display the number of votes when the comment rating mode is "Review" or "Admin-only ratings".
 							 * So we're modifying the rating label so that it will be based on the vote. e.g.: 5-star vote = "Excellent".
 							 */
-							if ( $this->is_comment_review_mode() && 'comment' === $rclass ) {
+                            $comment_ratings_mode = $this->get_comment_ratings_mode();
+                            
+                            // If the rating type is "comment" and the comment ratings mode is either "Review" or "Admin-only", modify the labels.
+							if ( 'comment' === $rclass && ( $this->is_comment_review_mode() || $this->is_comment_admin_ratings_mode() ) ) {
 								$options = $rw_settings[$rclass]["options"];
 								
 								if ( !isset($options->label) ) {
@@ -6428,9 +6473,15 @@
 								if ( !isset($options->label->text->nero) ) {
 									$options->label->text->nero = new stdClass();
 								}
-
+                                
+								$options->label->text->star->normal  = '{{rating.lastVote}}';
 								$options->label->text->star->rated = '{{rating.lastVote}}';
+                                
 								$options->label->text->nero->rated = '{{rating.lastVote}}';
+                                $options->label->text->nero->normal = '{{text.rateThis}}';
+                                
+                                $options->showToolip = false;
+                                $options->showReport = false;
 							}
 					
 							if (WP_RW__AVAILABILITY_DISABLED === $this->rw_validate_availability($alias))
@@ -6490,16 +6541,23 @@
                         // User id (huid).
                         if (defined('WP_RW__SITE_ID') && is_numeric(WP_RW__SITE_ID))
                             echo ', huid: "' . WP_RW__SITE_ID . '"';
-
-                        $user = wp_get_current_user();
-                        if ($user->ID !== 0)
-                        {
-                            // User logged-in.
-                            $vid = $user->ID;
-                            // Set voter id to logged user id.
-                            echo ", vid: {$vid}";
-                        }
-                    ?>,
+                            
+                            global $pagenow;
+                            
+                            $vid = 0;
+                            if ( 'comment.php' === $pagenow ) {
+                                $vid = 1;
+                            } else {
+                                // User logged-in.
+                                $user = wp_get_current_user();
+                                $vid = $user->ID;
+                            }
+                            
+                            if ( $vid !== 0) {
+                                // Set voter id to logged user id.
+                                echo ", vid: {$vid}";
+                            }
+                            ?>,
 									source: "wordpress",
 									options: {
 									<?php if (/*<--{obfuscate-inline}*/$this->IsProfessional() && defined('ICL_LANGUAGE_CODE') && isset($this->languages[ICL_LANGUAGE_CODE])/*{obfuscate-inline}-->*/) : ?>
@@ -6549,7 +6607,7 @@
 				?>
 							RW.render(function() {
 								(function($) {
-									$('.rw-rating-table:not(.rw-no-labels)').each(function() {
+									$('.rw-rating-table:not(.rw-no-labels):not(.rw-comment-admin-rating)').each(function() {
 										var ratingTable = $(this);
 
 										// Find the current width before floating left or right to
@@ -6816,6 +6874,19 @@
 				foreach ($post_types as $t)
 					add_meta_box('rw-post-meta-box', WP_RW__NAME, array(&$this, 'ShowPostMetaBox'), $t, 'side', 'high');
 			}
+            
+            /**
+             * Adds a rating metabox on the comment edit page.
+             * 
+             * @author Leo Fajardo (@leorw)
+             * @since 2.6.0
+             */
+            function add_comment_rating_metabox() {
+                // Check if the current user has admnin privileges.
+                if ( current_user_can( 'manage_options' ) && $this->is_comment_admin_ratings_mode() ) {
+                    add_meta_box( 'rw-comment-meta-box', WP_RW__NAME, array( &$this, 'show_comment_rating_metabox' ), 'comment', 'normal' );
+                }
+            }
 
 			// Callback function to show fields in meta box.
 			function ShowPostMetaBox()
@@ -6823,6 +6894,16 @@
 				rw_require_view('pages/admin/post-metabox.php');
 			}
 
+            /**
+             * Loads the content of the comment rating metabox.
+             * 
+             * @author Leo Fajardo (@leorw)
+             * @since 2.6.0
+             */
+            function show_comment_rating_metabox() {
+				rw_require_view('pages/admin/comment-metabox.php');
+            }
+            
 			/**
 			 * Registers the dashboard widgets
 			 * 
@@ -6940,6 +7021,45 @@
 
 				if (RWLogger::IsOn()) {
 					RWLogger::LogDeparture("SavePostData");
+				}
+			}
+            
+            /**
+             * Saves the comment rating's read-only and active states.
+             * 
+             * @author Leo Fajardo (@leorw)
+             * @since 2.6.0
+             * 
+             * @param int $comment_id
+             */
+			function save_comment_data( $comment_id ) {
+				if ( RWLogger::IsOn() ) {
+                    $params = func_get_args();
+                    RWLogger::LogEnterence( 'save_comment_data', $params, true );
+                }
+
+				// Verify nonce.
+				if ( ! isset( $_POST['rw_comment_meta_box_nonce'] ) || ! wp_verify_nonce( $_POST['rw_comment_meta_box_nonce'], basename( WP_RW__PLUGIN_FILE_FULL ) ) ) {
+                    return;
+                }
+
+				// Check whether this comment's rating is to be included.
+				$include_rating = ( isset( $_POST['rw_include_comment_rating'] ) && '1' == $_POST['rw_include_comment_rating'] );
+
+				// Checks whether this comment's rating is to be set to read-only.
+				$readonly_rating = ( ! isset( $_POST['rw_readonly_comment_rating'] ) || '1' !== $_POST['rw_readonly_comment_rating'] );
+
+				$this->add_to_visibility_list( $comment_id, array( 'comment' ), $include_rating );
+				$this->SetOption( WP_RW__VISIBILITY_SETTINGS, $this->_visibilityList );
+
+                // Add to or remove from the read-only list of comment IDs based on the state of the read-only checkbox.
+                $this->add_to_readonly( $comment_id, array( 'comment' ), $readonly_rating );
+                $this->SetOption(WP_RW__READONLY_SETTINGS, $this->_readonly_list);
+
+				$this->_options_manager->store();
+
+				if ( RWLogger::IsOn() ) {
+					RWLogger::LogDeparture( 'save_comment_data' );
 				}
 			}
 
@@ -7350,9 +7470,14 @@
 					return '';
 
 				$urid = $this->get_rating_id_by_element($pElementID, $pElementClass);
-
-				// Get the read-only state of the exact post type, e.g.: post or product
-				$is_rating_readonly = $this->is_rating_readonly($pElementID, get_post_type($pElementID));
+                
+                if ( 'comment' === $pElementClass ) {
+                    // Get the read-only state of the comment rating
+                    $is_rating_readonly = $this->is_rating_readonly( $pElementID, 'comment' );
+                } else {
+                    // Get the read-only state of the exact post type, e.g.: post or product
+                    $is_rating_readonly = $this->is_rating_readonly($pElementID, get_post_type($pElementID));
+                }
 
 				if (!$is_rating_readonly) {
 					if (function_exists('is_buddypress') && is_buddypress()) {
@@ -7376,7 +7501,7 @@
 					$pOptions['read-only'] = 'true';
 				}
 				
-				if ( !$this->has_multirating_options($pElementClass) || ($this->is_comment_review_mode() && 'comment' === $pElementClass) ) {
+				if ( ! $this->has_multirating_options( $pElementClass ) || ( ( $this->is_comment_review_mode() || $this->is_comment_admin_ratings_mode() ) && 'comment' === $pElementClass ) ) {
 					RWLogger::Log('EmbedRating', 'Not multi-criteria rating');
 
 					return $this->EmbedRawRating($urid, $pTitle, $pPermalink, $pElementClass, $pAddSchema, $pHorAlign, $pCustomStyle, $pOptions);
@@ -7538,24 +7663,35 @@
 				if ( $this->IsUserAccumulatedRating() && (int) $pComment->user_id > 0 ) {
 					$pOptions['uarid'] = $this->_getUserRatingGuid( $pComment->user_id );
 				}
-
-				$comment_review_mode_settings = $this->get_comment_review_mode_settings();
+                
+                $comment_ratings_mode = $this->get_comment_ratings_mode();
 				if ( RWLogger::IsOn() ) {
-					RWLogger::Log('comment_review_mode_options', json_encode($comment_review_mode_settings));
+					RWLogger::Log( 'comment_ratings_mode', $comment_ratings_mode );
 				}
+                
+                /**
+                 * If reviews mode, check if the previous submission of rating's value and vote has failed.
+                 * If the submission has failed, submit again.
+                 */
+                if ( $this->is_comment_review_mode() ) {
+                    $comment_review_mode_settings = $this->get_comment_review_mode_settings();
+                    if ( RWLogger::IsOn() ) {
+                        RWLogger::Log( 'comment_review_mode_options', json_encode( $comment_review_mode_settings ) );
+                    }
+
+                    $failed_requests = $comment_review_mode_settings->failed_requests;
+
+                    if ( isset($failed_requests[$pComment->comment_ID]) ) {
+                        $request = $failed_requests[$pComment->comment_ID];
+                        $this->set_comment_review_vote($pComment->comment_ID, $request['request_params']);
+                    }
+                }
 				
-				$failed_requests = $comment_review_mode_settings->failed_requests;
-				
-				if ( isset($failed_requests[$pComment->comment_ID]) ) {
-					$request = $failed_requests[$pComment->comment_ID];
-					$this->set_comment_review_vote($pComment->comment_ID, $request['request_params']);
-				}
-				
-				// If "Reviews" mode, set the rating to read-only so that no other people can vote for the comment.
-				if ( $comment_review_mode_settings->is_comment_review_mode ) {
-					$pOptions['read-only'] = 'true';
-				}
-				
+                if ( $this->is_comment_review_mode() || $this->is_comment_admin_ratings_mode() ) {
+                    // Set the rating to read-only so that no other people can vote for the comment.
+                    $pOptions['read-only'] = 'true';
+                }
+                
 				return $this->EmbedRating(
 					$pComment->comment_ID,
 					(int) $pComment->user_id,
@@ -7585,8 +7721,23 @@
 			 * @return boolean
 			 */
 			function is_comment_review_mode() {
-				$comment_review_mode_settings = $this->get_comment_review_mode_settings();
-				return $comment_review_mode_settings->is_comment_review_mode;
+                $comment_ratings_mode_settings = $this->get_comment_ratings_mode_settings();
+                
+				return ( 'true' === $comment_ratings_mode_settings->comment_ratings_mode );
+			}
+
+			/**
+			 * Checks whether the selected rating mode in the "Comments" options tab is "Admin ratings only".
+			 * 
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.6.0
+			 * 
+			 * @return boolean
+			 */
+			function is_comment_admin_ratings_mode() {
+                $comment_ratings_mode_settings = $this->get_comment_ratings_mode_settings();
+                
+				return ( 'admin_ratings' === $comment_ratings_mode_settings->comment_ratings_mode );
 			}
 
 			function GetRatingDataByRatingID($pRatingID, $pAccuracy = false)
