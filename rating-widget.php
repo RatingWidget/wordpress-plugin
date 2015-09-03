@@ -6454,7 +6454,7 @@
 							 */
                             $comment_ratings_mode = $this->get_comment_ratings_mode();
                             
-                            // If the rating type is "comment" and the comment ratings mode is either "Review" or "Admin-only", modify the labels.
+                            // If the rating type is "comment" and the comment ratings mode is either "Reviews Rating" or "Admin ratings only", modify the labels.
 							if ( 'comment' === $rclass && ( $this->is_comment_review_mode() || $this->is_comment_admin_ratings_mode() ) ) {
 								$options = $rw_settings[$rclass]["options"];
 								
@@ -6474,6 +6474,11 @@
 									$options->label->text->nero = new stdClass();
 								}
                                 
+                                /**
+                                 * The following will show the same label when the rating is not empty whether the viewer has already voted or has not voted yet.
+                                 * 
+                                 * e.g.: Instead of showing "Rate this (2 Votes)" or "5 Votes", the label will be "Excellent", "Good", or "Awful", depending on the label settings.
+                                 */
 								$options->label->text->star->normal  = '{{rating.lastVote}}';
 								$options->label->text->star->rated = '{{rating.lastVote}}';
                                 
@@ -6545,7 +6550,9 @@
                             global $pagenow;
                             
                             $vid = 0;
-                            if ( 'comment.php' === $pagenow ) {
+                            
+                            // Only set the vid to 1 if the comment ratings mode is set to "Admin ratings only".
+                            if ( 'comment.php' === $pagenow && $this->is_comment_admin_ratings_mode() ) {
                                 $vid = 1;
                             } else {
                                 // User logged-in.
@@ -6882,8 +6889,11 @@
              * @since 2.6.0
              */
             function add_comment_rating_metabox() {
-                // Check if the current user has admnin privileges.
-                if ( current_user_can( 'manage_options' ) && $this->is_comment_admin_ratings_mode() ) {
+                /**
+                 * Check if the current user has admin privileges.
+                 * Also check if the comment ratings mode is not "Reviews Ratings" which means that it is either "Comment Ratings" or "Admin ratings only".
+                 */
+                if ( current_user_can( 'manage_options' ) && ( ! $this->is_comment_review_mode() ) ) {
                     add_meta_box( 'rw-comment-meta-box', WP_RW__NAME, array( &$this, 'show_comment_rating_metabox' ), 'comment', 'normal' );
                 }
             }
