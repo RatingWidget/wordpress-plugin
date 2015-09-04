@@ -1468,7 +1468,7 @@
 					// Only update the rich snippet settings if the query string
 					// doesn't contain the 'schema_test' parameter.
 					if ( ! isset( $_REQUEST['schema_test'] ) ) {
-						$this->update_rich_snippet_settings();
+						$this->update_rich_snippet_settings__premium_only();
 					}
 				}
 			}
@@ -1479,132 +1479,134 @@
 			 * @author Leo Fajardo (@leorw)
 			 * @since 2.5.2
 			 */
-			function update_rich_snippet_settings() {
-				if ($this->fs->is_plan_or_trial__premium_only('professional')) {
-					RWLogger::LogEnterence( 'update_rich_snippet_settings' );
+			function update_rich_snippet_settings__premium_only() {
+				if ( ! $this->fs->is_plan_or_trial( 'professional' ) ) {
+					return;
+				}
 
-					$update_rich_snippet_settings = false;
+				RWLogger::LogEnterence( 'update_rich_snippet_settings__premium_only' );
 
-					$rich_snippet_settings = $this->get_rich_snippet_settings();
-					if ( ! $rich_snippet_settings->timestamp ) {
+				$update_rich_snippet_settings = false;
+
+				$rich_snippet_settings = $this->get_rich_snippet_settings();
+				if ( ! $rich_snippet_settings->timestamp ) {
+					$update_rich_snippet_settings = true;
+				} else {
+					// Update the rich snippet settings if one week has already passed since the last update.
+					if ( time() - $rich_snippet_settings->timestamp > WP_RW__TIME_WEEK_IN_SEC ) {
 						$update_rich_snippet_settings = true;
-					} else {
-						// Update the rich snippet settings if one week has already passed since the last update.
-						if ( time() - $rich_snippet_settings->timestamp > WP_RW__TIME_WEEK_IN_SEC ) {
-							$update_rich_snippet_settings = true;
-						}
 					}
+				}
 
-					if ( ! $update_rich_snippet_settings ) {
-						RWLogger::LogDeparture( 'update_rich_snippet_settings' );
+				if ( ! $update_rich_snippet_settings ) {
+					RWLogger::LogDeparture( 'update_rich_snippet_settings__premium_only' );
 
-						return;
+					return;
+				}
+
+				$reset_settings = true;
+
+				if ( ! class_exists( 'DOMDocument' ) ) {
+					if ( RWLogger::IsOn() ) {
+						RWLogger::Log( 'DOMDocument', 'The DOM extension is not loaded.' );
 					}
+				} else {
+					$recent_posts = wp_get_recent_posts( array( 'numberposts' => 1, 'post_type' => 'post' ) );
+					if ( is_array( $recent_posts ) && 0 < count( $recent_posts ) ) {
+						$recent_post = $recent_posts[0];
 
-					$reset_settings = true;
+						$post_id = $recent_post['ID'];
 
-					if ( ! class_exists( 'DOMDocument' ) ) {
+						$permalink = get_permalink( $post_id );
+						$permalink = esc_url( add_query_arg( array( 'schema_test' => true ), $permalink ) );
+
 						if ( RWLogger::IsOn() ) {
-							RWLogger::Log( 'DOMDocument', 'The DOM extension is not loaded.' );
+							RWLogger::Log( 'permalink', $permalink );
 						}
-					} else {
-						$recent_posts = wp_get_recent_posts( array( 'numberposts' => 1, 'post_type' => 'post' ) );
-						if ( is_array( $recent_posts ) && 0 < count( $recent_posts ) ) {
-							$recent_post = $recent_posts[0];
 
-							$post_id = $recent_post['ID'];
+						$response = wp_remote_get( $permalink, array( 'timeout' => 5 ) );
+						if ( RWLogger::IsOn() ) {
+							RWLogger::Log( "wp_remote_get", 'Response: ' . var_export( $response, true ) );
+						}
 
-							$permalink = get_permalink( $post_id );
-							$permalink = esc_url( add_query_arg( array( 'schema_test' => true ), $permalink ) );
+						$html = wp_remote_retrieve_body( $response );
+						if ( RWLogger::IsOn() ) {
+							RWLogger::Log( 'wp_remote_retrieve_body', 'HTML content length: ' . strlen( $html ) );
+						}
 
-							if ( RWLogger::IsOn() ) {
-								RWLogger::Log( 'permalink', $permalink );
+						if ( ! empty( $html ) ) {
+							$multirating_options = $this->get_multirating_options_by_class( 'blog-post' );
+							if ( ! $multirating_options->show_summary_rating ) {
+								$rating_container_class = 'rw-class-blog-post-criteria-1';
+							} else {
+								$urid                   = $this->get_rating_id_by_element( $post_id, 'blog-post', false );
+								$rating_container_class = 'rw-urid-' . $urid;
 							}
 
-							$response = wp_remote_get( $permalink, array( 'timeout' => 5 ) );
-							if ( RWLogger::IsOn() ) {
-								RWLogger::Log( "wp_remote_get", 'Response: ' . var_export( $response, true ) );
-							}
+							try {
+								$dom = new DOMDocument();
+								@$dom->loadHTML( $html );
 
-							$html = wp_remote_retrieve_body( $response );
-							if ( RWLogger::IsOn() ) {
-								RWLogger::Log( 'wp_remote_retrieve_body', 'HTML content length: ' . strlen( $html ) );
-							}
+								$xpath = new DomXPath( $dom );
 
-							if ( ! empty( $html ) ) {
-								$multirating_options = $this->get_multirating_options_by_class( 'blog-post' );
-								if ( ! $multirating_options->show_summary_rating ) {
-									$rating_container_class = 'rw-class-blog-post-criteria-1';
-								} else {
-									$urid                   = $this->get_rating_id_by_element( $post_id, 'blog-post', false );
-									$rating_container_class = 'rw-urid-' . $urid;
+								// Find elements with "itemscope" attribute and whose "itemtype" attribute's value is "http://schema.org/Article"
+								// and have div descendants that have $rating_container_class class.
+								$xpath_query = "//div[contains(concat(' ', normalize-space(@class), ' '), ' {$rating_container_class} ')]/ancestor::*[@itemscope and @itemtype = 'http://schema.org/Article']";
+
+								$article_wrapper_elements = $xpath->query( $xpath_query );
+								if ( RWLogger::IsOn() ) {
+									RWLogger::Log( 'total_article_elements: ' . $article_wrapper_elements->length );
 								}
 
-								try {
-									$dom = new DOMDocument();
-									@$dom->loadHTML( $html );
+								if ( $article_wrapper_elements->length ) {
+									$rich_snippet_settings->type_wrapper_available = true;
 
-									$xpath = new DomXPath( $dom );
-
-									// Find elements with "itemscope" attribute and whose "itemtype" attribute's value is "http://schema.org/Article"
-									// and have div descendants that have $rating_container_class class.
-									$xpath_query = "//div[contains(concat(' ', normalize-space(@class), ' '), ' {$rating_container_class} ')]/ancestor::*[@itemscope and @itemtype = 'http://schema.org/Article']";
-
-									$article_wrapper_elements = $xpath->query( $xpath_query );
-									if ( RWLogger::IsOn() ) {
-										RWLogger::Log( 'total_article_elements: ' . $article_wrapper_elements->length );
-									}
-
-									if ( $article_wrapper_elements->length ) {
-										$rich_snippet_settings->type_wrapper_available = true;
-
-										$property_names = array_keys( $rich_snippet_settings->properties_availability );
-										foreach ( $article_wrapper_elements as $article_wrapper_element ) {
-											// Stop if all properties are already marked as available.
-											if ( empty( $property_names ) ) {
-												break;
-											}
-
-											foreach ( $property_names as $property_idx => $property_name ) {
-												// Check if a rich snippet property exists within the current article wrapper element.
-												$available                                                        = $this->rich_snippet_property_exists( $xpath, $article_wrapper_element, $property_name );
-												$rich_snippet_settings->properties_availability[ $property_name ] = $available;
-
-												if ( $available ) {
-													unset( $property_names[ $property_idx ] );
-												}
-											}
+									$property_names = array_keys( $rich_snippet_settings->properties_availability );
+									foreach ( $article_wrapper_elements as $article_wrapper_element ) {
+										// Stop if all properties are already marked as available.
+										if ( empty( $property_names ) ) {
+											break;
 										}
 
-										$reset_settings = false;
+										foreach ( $property_names as $property_idx => $property_name ) {
+											// Check if a rich snippet property exists within the current article wrapper element.
+											$available                                                        = $this->rich_snippet_property_exists( $xpath, $article_wrapper_element, $property_name );
+											$rich_snippet_settings->properties_availability[ $property_name ] = $available;
+
+											if ( $available ) {
+												unset( $property_names[ $property_idx ] );
+											}
+										}
 									}
-								} catch ( Exception $e ) {
-									if ( RWLogger::IsOn() ) {
-										RWLogger::Log( 'parse_html', 'Error: ' . $e->getMessage() );
-									}
+
+									$reset_settings = false;
+								}
+							} catch ( Exception $e ) {
+								if ( RWLogger::IsOn() ) {
+									RWLogger::Log( 'parse_html', 'Error: ' . $e->getMessage() );
 								}
 							}
 						}
 					}
-
-					if ( $reset_settings ) {
-						$rich_snippet_settings->type_wrapper_available = false;
-						foreach ( $rich_snippet_settings->properties_availability as $property_idx => $property_name ) {
-							$rich_snippet_settings->properties_availability[ $property_idx ] = false;
-						}
-					}
-
-					$rich_snippet_settings->timestamp = time();
-
-					if ( RWLogger::IsOn() ) {
-						RWLogger::Log( 'rich_snippet_settings', json_encode( $rich_snippet_settings ) );
-					}
-
-					$this->SetOption( WP_RW__DB_OPTION_RICH_SNIPPETS_SETTINGS, $rich_snippet_settings );
-					$this->_options->store();
-
-					RWLogger::LogDeparture( 'update_rich_snippet_settings' );
 				}
+
+				if ( $reset_settings ) {
+					$rich_snippet_settings->type_wrapper_available = false;
+					foreach ( $rich_snippet_settings->properties_availability as $property_idx => $property_name ) {
+						$rich_snippet_settings->properties_availability[ $property_idx ] = false;
+					}
+				}
+
+				$rich_snippet_settings->timestamp = time();
+
+				if ( RWLogger::IsOn() ) {
+					RWLogger::Log( 'rich_snippet_settings', json_encode( $rich_snippet_settings ) );
+				}
+
+				$this->SetOption( WP_RW__DB_OPTION_RICH_SNIPPETS_SETTINGS, $rich_snippet_settings );
+				$this->_options->store();
+
+				RWLogger::LogDeparture( 'update_rich_snippet_settings__premium_only' );
 			}
 			
 			/**
@@ -2696,355 +2698,355 @@
 				return substr($pQuery, 0, $pos) . substr($pQuery, $cur);
 			}
 
-			function rw_general_report_page()
-			{
-				if ($this->fs->is__premium_only()) {
-					if ( RWLogger::IsOn() ) {
-						$params = func_get_args();
-						RWLogger::LogEnterence( "rw_general_report_page", $params );
-					}
+			function rw_general_report_page__premium_only() {
+				if ( ! $this->fs->is_plan_or_trial( 'professional' ) ) {
+					return;
+				}
+				if ( RWLogger::IsOn() ) {
+					$params = func_get_args();
+					RWLogger::LogEnterence( "rw_general_report_page__premium_only", $params );
+				}
 
-					$elements  = isset( $_REQUEST["elements"] ) ? $_REQUEST["elements"] : "posts";
-					$orderby   = isset( $_REQUEST["orderby"] ) ? $_REQUEST["orderby"] : "created";
-					$order     = isset( $_REQUEST["order"] ) ? $_REQUEST["order"] : "DESC";
-					$date_from = isset( $_REQUEST["from"] ) ? $_REQUEST["from"] : date( WP_RW__DEFAULT_DATE_FORMAT, time() - WP_RW__PERIOD_MONTH );
-					$date_to   = isset( $_REQUEST["to"] ) ? $_REQUEST["to"] : date( WP_RW__DEFAULT_DATE_FORMAT );
-					$rw_limit  = isset( $_REQUEST["limit"] ) ? max( WP_RW__REPORT_RECORDS_MIN, min( WP_RW__REPORT_RECORDS_MAX, $_REQUEST["limit"] ) ) : WP_RW__REPORT_RECORDS_MIN;
-					$rw_offset = isset( $_REQUEST["offset"] ) ? max( 0, (int) $_REQUEST["offset"] ) : 0;
+				$elements  = isset( $_REQUEST["elements"] ) ? $_REQUEST["elements"] : "posts";
+				$orderby   = isset( $_REQUEST["orderby"] ) ? $_REQUEST["orderby"] : "created";
+				$order     = isset( $_REQUEST["order"] ) ? $_REQUEST["order"] : "DESC";
+				$date_from = isset( $_REQUEST["from"] ) ? $_REQUEST["from"] : date( WP_RW__DEFAULT_DATE_FORMAT, time() - WP_RW__PERIOD_MONTH );
+				$date_to   = isset( $_REQUEST["to"] ) ? $_REQUEST["to"] : date( WP_RW__DEFAULT_DATE_FORMAT );
+				$rw_limit  = isset( $_REQUEST["limit"] ) ? max( WP_RW__REPORT_RECORDS_MIN, min( WP_RW__REPORT_RECORDS_MAX, $_REQUEST["limit"] ) ) : WP_RW__REPORT_RECORDS_MIN;
+				$rw_offset = isset( $_REQUEST["offset"] ) ? max( 0, (int) $_REQUEST["offset"] ) : 0;
 
-					switch ( $elements ) {
-						case "activity-updates":
-							$rating_options = WP_RW__ACTIVITY_UPDATES_OPTIONS;
-							$rclass         = "activity-update";
-							break;
-						case "activity-comments":
-							$rating_options = WP_RW__ACTIVITY_COMMENTS_OPTIONS;
-							$rclass         = "activity-comment";
-							break;
-						case "forum-posts":
-							$rating_options = WP_RW__FORUM_POSTS_OPTIONS;
-							$rclass         = "forum-post,new-forum-post";
-							break;
-						case "forum-replies":
-							$rating_options = WP_RW__FORUM_POSTS_OPTIONS;
-							$rclass         = "forum-reply";
-							break;
-						case "users":
-							$rating_options = WP_RW__USERS_OPTIONS;
-							$rclass         = "user";
-							break;
-						case "comments":
-							$rating_options = WP_RW__COMMENTS_OPTIONS;
-							$rclass         = "comment,new-blog-comment";
-							break;
-						case "pages":
-							$rating_options = WP_RW__PAGES_OPTIONS;
-							$rclass         = "page";
-							break;
-						case "posts":
-						default:
-							$rating_options = WP_RW__BLOG_POSTS_OPTIONS;
-							$rclass         = "front-post,blog-post,new-blog-post";
-							break;
-					}
+				switch ( $elements ) {
+					case "activity-updates":
+						$rating_options = WP_RW__ACTIVITY_UPDATES_OPTIONS;
+						$rclass         = "activity-update";
+						break;
+					case "activity-comments":
+						$rating_options = WP_RW__ACTIVITY_COMMENTS_OPTIONS;
+						$rclass         = "activity-comment";
+						break;
+					case "forum-posts":
+						$rating_options = WP_RW__FORUM_POSTS_OPTIONS;
+						$rclass         = "forum-post,new-forum-post";
+						break;
+					case "forum-replies":
+						$rating_options = WP_RW__FORUM_POSTS_OPTIONS;
+						$rclass         = "forum-reply";
+						break;
+					case "users":
+						$rating_options = WP_RW__USERS_OPTIONS;
+						$rclass         = "user";
+						break;
+					case "comments":
+						$rating_options = WP_RW__COMMENTS_OPTIONS;
+						$rclass         = "comment,new-blog-comment";
+						break;
+					case "pages":
+						$rating_options = WP_RW__PAGES_OPTIONS;
+						$rclass         = "page";
+						break;
+					case "posts":
+					default:
+						$rating_options = WP_RW__BLOG_POSTS_OPTIONS;
+						$rclass         = "front-post,blog-post,new-blog-post";
+						break;
+				}
 
-					$rating_options = $this->GetOption( $rating_options );
-					$rating_type    = isset( $rating_options->type ) ? $rating_options->type : 'star';
-					$rating_stars   = ( $rating_type === "star" ) ?
-						( ( isset( $rating_options->advanced ) && isset( $rating_options->advanced->star ) && isset( $rating_options->advanced->star->stars ) ) ? $rating_options->advanced->star->stars : WP_RW__DEF_STARS ) :
-						false;
+				$rating_options = $this->GetOption( $rating_options );
+				$rating_type    = isset( $rating_options->type ) ? $rating_options->type : 'star';
+				$rating_stars   = ( $rating_type === "star" ) ?
+					( ( isset( $rating_options->advanced ) && isset( $rating_options->advanced->star ) && isset( $rating_options->advanced->star->stars ) ) ? $rating_options->advanced->star->stars : WP_RW__DEF_STARS ) :
+					false;
 
-					$details = array(
-						"uid"           => $this->account->site_public_key,
-						"rclasses"      => $rclass,
-						"orderby"       => $orderby,
-						"order"         => $order,
-						"since_updated" => "{$date_from} 00:00:00",
-						"due_updated"   => "{$date_to} 23:59:59",
-						"limit"         => $rw_limit + 1,
-						"offset"        => $rw_offset,
-					);
+				$details = array(
+					"uid"           => $this->account->site_public_key,
+					"rclasses"      => $rclass,
+					"orderby"       => $orderby,
+					"order"         => $order,
+					"since_updated" => "{$date_from} 00:00:00",
+					"due_updated"   => "{$date_to} 23:59:59",
+					"limit"         => $rw_limit + 1,
+					"offset"        => $rw_offset,
+				);
 
-					$rw_ret_obj = $this->RemoteCall( "action/report/general.php", $details, WP_RW__CACHE_TIMEOUT_REPORT );
+				$rw_ret_obj = $this->RemoteCall( "action/report/general.php", $details, WP_RW__CACHE_TIMEOUT_REPORT );
 
-					if ( false === $rw_ret_obj ) {
-						return false;
-					}
+				if ( false === $rw_ret_obj ) {
+					return false;
+				}
 
-					// Decode RW ret object.
-					$rw_ret_obj = json_decode( $rw_ret_obj );
+				// Decode RW ret object.
+				$rw_ret_obj = json_decode( $rw_ret_obj );
 
-					if ( RWLogger::IsOn() ) {
-						RWLogger::Log( "ret_object", var_export( $rw_ret_obj, true ) );
-					}
+				if ( RWLogger::IsOn() ) {
+					RWLogger::Log( "ret_object", var_export( $rw_ret_obj, true ) );
+				}
 
-					if ( false == $rw_ret_obj->success ) {
-						$this->rw_report_example_page();
+				if ( false == $rw_ret_obj->success ) {
+					$this->rw_report_example_page();
 
-						return false;
-					}
+					return false;
+				}
 
-					// Override token to client's call token for iframes.
-					$this->AddToken( $details, false );
+				// Override token to client's call token for iframes.
+				$this->AddToken( $details, false );
 
-					$empty_result = ( ! isset( $rw_ret_obj->data ) || ! is_array( $rw_ret_obj->data ) || 0 == count( $rw_ret_obj->data ) );
-					?>
-					<div class="wrap rw-dir-ltr rw-report">
-					<?php $this->Notice( '<strong style="color: red;">Note: data may be delayed 30 minutes.</strong>' ); ?>
-					<form method="post" action="">
-					<div class="tablenav">
-						<div>
-							<span><?php _e( 'Date Range', WP_RW__ID ) ?>:</span>
-							<input type="text" value="<?php echo $date_from; ?>" id="rw_date_from" name="rw_date_from"
-							       style="width: 90px; text-align: center;"/>
-							-
-							<input type="text" value="<?php echo $date_to; ?>" id="rw_date_to" name="rw_date_to"
-							       style="width: 90px; text-align: center;"/>
-							<script type="text/javascript">
-								jQuery.datepicker.setDefaults({
-									dateFormat: "yy-mm-dd"
-								});
+				$empty_result = ( ! isset( $rw_ret_obj->data ) || ! is_array( $rw_ret_obj->data ) || 0 == count( $rw_ret_obj->data ) );
+				?>
+				<div class="wrap rw-dir-ltr rw-report">
+				<?php $this->Notice( '<strong style="color: red;">Note: data may be delayed 30 minutes.</strong>' ); ?>
+				<form method="post" action="">
+				<div class="tablenav">
+					<div>
+						<span><?php _e( 'Date Range', WP_RW__ID ) ?>:</span>
+						<input type="text" value="<?php echo $date_from; ?>" id="rw_date_from" name="rw_date_from"
+						       style="width: 90px; text-align: center;"/>
+						-
+						<input type="text" value="<?php echo $date_to; ?>" id="rw_date_to" name="rw_date_to"
+						       style="width: 90px; text-align: center;"/>
+						<script type="text/javascript">
+							jQuery.datepicker.setDefaults({
+								dateFormat: "yy-mm-dd"
+							});
 
-								jQuery("#rw_date_from").datepicker({
-									maxDate : 0,
-									onSelect: function (dateText, inst) {
-										jQuery("#rw_date_to").datepicker("option", "minDate", dateText);
-									}
-								});
-								jQuery("#rw_date_from").datepicker("setDate", "<?php echo $date_from;?>");
+							jQuery("#rw_date_from").datepicker({
+								maxDate : 0,
+								onSelect: function (dateText, inst) {
+									jQuery("#rw_date_to").datepicker("option", "minDate", dateText);
+								}
+							});
+							jQuery("#rw_date_from").datepicker("setDate", "<?php echo $date_from;?>");
 
-								jQuery("#rw_date_to").datepicker({
-									minDate : "<?php echo $date_from;?>",
-									maxDate : 0,
-									onSelect: function (dateText, inst) {
-										jQuery("#rw_date_from").datepicker("option", "maxDate", dateText);
-									}
-								});
-								jQuery("#rw_date_to").datepicker("setDate", "<?php echo $date_to;?>");
-							</script>
-							<span><?php _e( 'Element', WP_RW__ID ) ?>:</span>
-							<select id="rw_elements">
-								<?php
-									$select = array(
-										__( 'Posts', WP_RW__ID )    => "posts",
-										__( 'Pages', WP_RW__ID )    => "pages",
-										__( 'Comments', WP_RW__ID ) => "comments"
-									);
-
-									if ( $this->IsBuddyPressInstalled() ) {
-										$select[ __( 'Activity-Updates', WP_RW__ID ) ]  = "activity-updates";
-										$select[ __( 'Activity-Comments', WP_RW__ID ) ] = "activity-comments";
-										$select[ __( 'Users-Profiles', WP_RW__ID ) ]    = "users";
-
-										if ( $this->IsBBPressInstalled() ) {
-											$select[ __( 'Forum-Posts', WP_RW__ID ) ] = "forum-posts";
-										}
-									}
-
-									foreach ( $select as $option => $value ) {
-										$selected = '';
-										if ( $value === $elements ) {
-											$selected = ' selected="selected"';
-										}
-										?>
-										<option
-											value="<?php echo $value; ?>"<?php echo $selected; ?>><?php echo $option; ?></option>
-									<?php
-									}
-								?>
-							</select>
-							<span><?php _e( 'Order By', WP_RW__ID ) ?>:</span>
-							<select id="rw_orderby">
-								<?php
-									$select = array(
-										"title"   => __( 'Title', WP_RW__ID ),
-										"urid"    => __( 'Id', WP_RW__ID ),
-										"created" => __( 'Start Date', WP_RW__ID ),
-										"updated" => __( 'Last Update', WP_RW__ID ),
-										"votes"   => __( 'Votes', WP_RW__ID ),
-										"avgrate" => __( 'Average Rate', WP_RW__ID ),
-									);
-									foreach ( $select as $value => $option ) {
-										$selected = '';
-										if ( $value == $orderby ) {
-											$selected = ' selected="selected"';
-										}
-										?>
-										<option
-											value="<?php echo $value; ?>" <?php echo $selected; ?>><?php echo $option; ?></option>
-									<?php
-									}
-								?>
-							</select>
-							<input class="button-secondary action" type="button"
-							       value="<?php _e( "Show", WP_RW__ID ); ?>"
-							       onclick="top.location = RWM.enrichQueryString(top.location.href, ['from', 'to', 'orderby', 'elements'], [jQuery('#rw_date_from').val(), jQuery('#rw_date_to').val(), jQuery('#rw_orderby').val(), jQuery('#rw_elements').val()]);"/>
-						</div>
-					</div>
-					<br/>
-					<table class="widefat rw-chart-title">
-						<thead>
-						<tr>
-							<th scope="col" class="manage-column"><?php _e( 'Votes Timeline', WP_RW__ID ) ?></th>
-						</tr>
-						</thead>
-					</table>
-					<iframe class="rw-chart" src="<?php
-						$details["since"] = $details["since_updated"];
-						$details["due"]   = $details["due_updated"];
-						$details["date"]  = "updated";
-						unset( $details["since_updated"], $details["due_updated"] );
-
-						$details["width"]  = 950;
-						$details["height"] = 200;
-
-						$query = "";
-						foreach ( $details as $key => $value ) {
-							$query .= ( $query == "" ) ? "?" : "&";
-							$query .= "{$key}=" . urlencode( $value );
-						}
-						echo WP_RW__ADDRESS . "/action/chart/column.php{$query}";
-					?>" width="<?php echo $details["width"]; ?>" height="<?php echo( $details["height"] + 4 ); ?>"
-					        frameborder="0"></iframe>
-					<br/><br/>
-					<table class="widefat"><?php
-							$records_num = $shown_records_num = 0;
-							if ( $empty_result ) {
-								?>
-								<tbody>
-							<tr>
-								<td colspan="6"><?php printf( __( 'No ratings here.', WP_RW__ID ), $elements ); ?></td>
-							</tr>
-								</tbody><?php
-							} else {
-								?>
-								<thead>
-								<tr>
-									<th scope="col" class="manage-column"></th>
-									<th scope="col" class="manage-column"><?php _e( 'Title', WP_RW__ID ) ?></th>
-									<th scope="col" class="manage-column"><?php _e( 'Id', WP_RW__ID ) ?></th>
-									<th scope="col" class="manage-column"><?php _e( 'Start Date', WP_RW__ID ) ?></th>
-									<th scope="col" class="manage-column"><?php _e( 'Last Update', WP_RW__ID ) ?></th>
-									<th scope="col" class="manage-column"><?php _e( 'Votes', WP_RW__ID ) ?></th>
-									<th scope="col" class="manage-column"><?php _e( 'Average Rate', WP_RW__ID ) ?></th>
-								</tr>
-								</thead>
-								<tbody>
-								<?php
-									$alternate = true;
-
-									$records_num        = count( $rw_ret_obj->data );
-									$shown_records_num = min( $records_num, $rw_limit );
-									for ( $i = 0; $i < $shown_records_num; $i ++ ) {
-										$rating = $rw_ret_obj->data[ $i ];
-										?>
-										<tr<?php if ( $alternate ) {
-											echo ' class="alternate"';
-										} ?>>
-											<td>
-												<a href="<?php
-													//                            $query_string = self::_getAddFilterQueryString($_SERVER["QUERY_STRING"], "report", WP_RW__REPORT_RATING);
-													$query_string = self::_getAddFilterQueryString( $_SERVER["QUERY_STRING"], "urid", $rating->urid );
-													$query_string = self::_getAddFilterQueryString( $query_string, "type", $rating_type );
-													if ( "star" === $rating_type ) {
-														$query_string = self::_getAddFilterQueryString( $query_string, "stars", $rating_stars );
-													}
-
-													echo WP_RW__SCRIPT_URL . "?" . $query_string;
-												?>"><img src="<?php echo WP_RW__ADDRESS_IMG; ?>rw.pie.icon.png" alt=""
-												         title="<?php _e( 'Rating Report', WP_RW__ID ) ?>"></a>
-											</td>
-											<td><strong><a href="<?php echo $rating->url; ?>" target="_blank"><?php
-															echo ( mb_strlen( $rating->title ) > 40 ) ?
-																trim( mb_substr( $rating->title, 0, 40 ) ) . "..." :
-																$rating->title;
-														?></a></strong></td>
-											<td><?php echo $rating->urid; ?></td>
-											<td><?php echo $rating->created; ?></td>
-											<td><?php echo $rating->updated; ?></td>
-											<td><?php echo $rating->votes; ?></td>
-											<td>
-												<?php
-													$vars = array(
-														"votes" => $rating->votes,
-														"rate"  => $rating->rate * ( $rating_stars / WP_RW__DEF_STARS ),
-														"dir"   => "ltr",
-														"type"  => $rating_type,
-														"stars" => $rating_stars,
-													);
-
-													if ( $rating_type == "star" ) {
-														$vars["style"] = "yellow";
-														rw_require_view( 'rating.php', $vars );
-													} else {
-														$likes    = floor( $rating->rate / WP_RW__DEF_STARS );
-														$dislikes = max( 0, $rating->votes - $likes );
-
-														$vars["style"] = "thumbs";
-														$vars["rate"]  = 1;
-														rw_require_view( 'rating.php', $vars );
-														echo '<span style="line-height: 16px; color: darkGreen; padding-right: 5px;">' . $likes . '</span>';
-														$vars["rate"] = - 1;
-														rw_require_view( 'rating.php', $vars );
-														echo '<span style="line-height: 16px; color: darkRed; padding-right: 5px;">' . $dislikes . '</span>';
-													}
-												?>
-											</td>
-										</tr>
-										<?php
-										$alternate = ! $alternate;
-									}
-								?>
-								</tbody>
+							jQuery("#rw_date_to").datepicker({
+								minDate : "<?php echo $date_from;?>",
+								maxDate : 0,
+								onSelect: function (dateText, inst) {
+									jQuery("#rw_date_from").datepicker("option", "maxDate", dateText);
+								}
+							});
+							jQuery("#rw_date_to").datepicker("setDate", "<?php echo $date_to;?>");
+						</script>
+						<span><?php _e( 'Element', WP_RW__ID ) ?>:</span>
+						<select id="rw_elements">
 							<?php
-							}
-						?>
-					</table>
-					<?php
-						if ( $shown_records_num > 0 ) {
+								$select = array(
+									__( 'Posts', WP_RW__ID )    => "posts",
+									__( 'Pages', WP_RW__ID )    => "pages",
+									__( 'Comments', WP_RW__ID ) => "comments"
+								);
+
+								if ( $this->IsBuddyPressInstalled() ) {
+									$select[ __( 'Activity-Updates', WP_RW__ID ) ]  = "activity-updates";
+									$select[ __( 'Activity-Comments', WP_RW__ID ) ] = "activity-comments";
+									$select[ __( 'Users-Profiles', WP_RW__ID ) ]    = "users";
+
+									if ( $this->IsBBPressInstalled() ) {
+										$select[ __( 'Forum-Posts', WP_RW__ID ) ] = "forum-posts";
+									}
+								}
+
+								foreach ( $select as $option => $value ) {
+									$selected = '';
+									if ( $value === $elements ) {
+										$selected = ' selected="selected"';
+									}
+									?>
+									<option
+										value="<?php echo $value; ?>"<?php echo $selected; ?>><?php echo $option; ?></option>
+								<?php
+								}
 							?>
-							<div class="rw-control-bar">
-								<div style="float: left;">
-									<span style="font-weight: bold; font-size: 12px;"><?php echo( $rw_offset + 1 ); ?>
-										-<?php echo( $rw_offset + $shown_records_num ); ?></span>
-								</div>
-								<div style="float: right;">
-									<span><?php _e( 'Show rows', WP_RW__ID ) ?>:</span>
-									<select name="rw_limit"
-									        onchange="top.location = RWM.enrichQueryString(top.location.href, ['offset', 'limit'], [0, this.value]);">
-										<?php
-											$limits = array( WP_RW__REPORT_RECORDS_MIN, 25, WP_RW__REPORT_RECORDS_MAX );
-											foreach ( $limits as $limit ) {
-												?>
-												<option value="<?php echo $limit; ?>"<?php if ( $rw_limit == $limit ) {
-													echo ' selected="selected"';
-												} ?>><?php echo $limit; ?></option>
+						</select>
+						<span><?php _e( 'Order By', WP_RW__ID ) ?>:</span>
+						<select id="rw_orderby">
+							<?php
+								$select = array(
+									"title"   => __( 'Title', WP_RW__ID ),
+									"urid"    => __( 'Id', WP_RW__ID ),
+									"created" => __( 'Start Date', WP_RW__ID ),
+									"updated" => __( 'Last Update', WP_RW__ID ),
+									"votes"   => __( 'Votes', WP_RW__ID ),
+									"avgrate" => __( 'Average Rate', WP_RW__ID ),
+								);
+								foreach ( $select as $value => $option ) {
+									$selected = '';
+									if ( $value == $orderby ) {
+										$selected = ' selected="selected"';
+									}
+									?>
+									<option
+										value="<?php echo $value; ?>" <?php echo $selected; ?>><?php echo $option; ?></option>
+								<?php
+								}
+							?>
+						</select>
+						<input class="button-secondary action" type="button"
+						       value="<?php _e( "Show", WP_RW__ID ); ?>"
+						       onclick="top.location = RWM.enrichQueryString(top.location.href, ['from', 'to', 'orderby', 'elements'], [jQuery('#rw_date_from').val(), jQuery('#rw_date_to').val(), jQuery('#rw_orderby').val(), jQuery('#rw_elements').val()]);"/>
+					</div>
+				</div>
+				<br/>
+				<table class="widefat rw-chart-title">
+					<thead>
+					<tr>
+						<th scope="col" class="manage-column"><?php _e( 'Votes Timeline', WP_RW__ID ) ?></th>
+					</tr>
+					</thead>
+				</table>
+				<iframe class="rw-chart" src="<?php
+					$details["since"] = $details["since_updated"];
+					$details["due"]   = $details["due_updated"];
+					$details["date"]  = "updated";
+					unset( $details["since_updated"], $details["due_updated"] );
+
+					$details["width"]  = 950;
+					$details["height"] = 200;
+
+					$query = "";
+					foreach ( $details as $key => $value ) {
+						$query .= ( $query == "" ) ? "?" : "&";
+						$query .= "{$key}=" . urlencode( $value );
+					}
+					echo WP_RW__ADDRESS . "/action/chart/column.php{$query}";
+				?>" width="<?php echo $details["width"]; ?>" height="<?php echo( $details["height"] + 4 ); ?>"
+				        frameborder="0"></iframe>
+				<br/><br/>
+				<table class="widefat"><?php
+						$records_num = $shown_records_num = 0;
+						if ( $empty_result ) {
+							?>
+							<tbody>
+						<tr>
+							<td colspan="6"><?php printf( __( 'No ratings here.', WP_RW__ID ), $elements ); ?></td>
+						</tr>
+							</tbody><?php
+						} else {
+							?>
+							<thead>
+							<tr>
+								<th scope="col" class="manage-column"></th>
+								<th scope="col" class="manage-column"><?php _e( 'Title', WP_RW__ID ) ?></th>
+								<th scope="col" class="manage-column"><?php _e( 'Id', WP_RW__ID ) ?></th>
+								<th scope="col" class="manage-column"><?php _e( 'Start Date', WP_RW__ID ) ?></th>
+								<th scope="col" class="manage-column"><?php _e( 'Last Update', WP_RW__ID ) ?></th>
+								<th scope="col" class="manage-column"><?php _e( 'Votes', WP_RW__ID ) ?></th>
+								<th scope="col" class="manage-column"><?php _e( 'Average Rate', WP_RW__ID ) ?></th>
+							</tr>
+							</thead>
+							<tbody>
+							<?php
+								$alternate = true;
+
+								$records_num       = count( $rw_ret_obj->data );
+								$shown_records_num = min( $records_num, $rw_limit );
+								for ( $i = 0; $i < $shown_records_num; $i ++ ) {
+									$rating = $rw_ret_obj->data[ $i ];
+									?>
+									<tr<?php if ( $alternate ) {
+										echo ' class="alternate"';
+									} ?>>
+										<td>
+											<a href="<?php
+												//                            $query_string = self::_getAddFilterQueryString($_SERVER["QUERY_STRING"], "report", WP_RW__REPORT_RATING);
+												$query_string = self::_getAddFilterQueryString( $_SERVER["QUERY_STRING"], "urid", $rating->urid );
+												$query_string = self::_getAddFilterQueryString( $query_string, "type", $rating_type );
+												if ( "star" === $rating_type ) {
+													$query_string = self::_getAddFilterQueryString( $query_string, "stars", $rating_stars );
+												}
+
+												echo WP_RW__SCRIPT_URL . "?" . $query_string;
+											?>"><img src="<?php echo WP_RW__ADDRESS_IMG; ?>rw.pie.icon.png" alt=""
+											         title="<?php _e( 'Rating Report', WP_RW__ID ) ?>"></a>
+										</td>
+										<td><strong><a href="<?php echo $rating->url; ?>" target="_blank"><?php
+														echo ( mb_strlen( $rating->title ) > 40 ) ?
+															trim( mb_substr( $rating->title, 0, 40 ) ) . "..." :
+															$rating->title;
+													?></a></strong></td>
+										<td><?php echo $rating->urid; ?></td>
+										<td><?php echo $rating->created; ?></td>
+										<td><?php echo $rating->updated; ?></td>
+										<td><?php echo $rating->votes; ?></td>
+										<td>
 											<?php
-											}
-										?>
-									</select>
-									<input type="button"<?php if ( $rw_offset == 0 ) {
-										echo ' disabled="disabled"';
-									} ?> class="button button-secondary action" style="margin-left: 20px;"
-									       onclick="top.location = '<?php
-										       $query_string = self::_getAddFilterQueryString( $_SERVER["QUERY_STRING"], "offset", max( 0, $rw_offset - $rw_limit ) );
-										       echo WP_RW__SCRIPT_URL . "?" . $query_string;
-									       ?>';" value="Previous"/>
-									<input type="button"<?php if ( $shown_records_num == $records_num ) {
-										echo ' disabled="disabled"';
-									} ?> class="button button-secondary action" onclick="top.location = '<?php
-										$query_string = self::_getAddFilterQueryString( $_SERVER["QUERY_STRING"], "offset", $rw_offset + $rw_limit );
-										echo WP_RW__SCRIPT_URL . "?" . $query_string;
-									?>';" value="Next"/>
-								</div>
-							</div>
+												$vars = array(
+													"votes" => $rating->votes,
+													"rate"  => $rating->rate * ( $rating_stars / WP_RW__DEF_STARS ),
+													"dir"   => "ltr",
+													"type"  => $rating_type,
+													"stars" => $rating_stars,
+												);
+
+												if ( $rating_type == "star" ) {
+													$vars["style"] = "yellow";
+													rw_require_view( 'rating.php', $vars );
+												} else {
+													$likes    = floor( $rating->rate / WP_RW__DEF_STARS );
+													$dislikes = max( 0, $rating->votes - $likes );
+
+													$vars["style"] = "thumbs";
+													$vars["rate"]  = 1;
+													rw_require_view( 'rating.php', $vars );
+													echo '<span style="line-height: 16px; color: darkGreen; padding-right: 5px;">' . $likes . '</span>';
+													$vars["rate"] = - 1;
+													rw_require_view( 'rating.php', $vars );
+													echo '<span style="line-height: 16px; color: darkRed; padding-right: 5px;">' . $dislikes . '</span>';
+												}
+											?>
+										</td>
+									</tr>
+									<?php
+									$alternate = ! $alternate;
+								}
+							?>
+							</tbody>
 						<?php
 						}
 					?>
-					</form>
-					</div>
+				</table>
 				<?php
-				}
+					if ( $shown_records_num > 0 ) {
+						?>
+						<div class="rw-control-bar">
+							<div style="float: left;">
+									<span style="font-weight: bold; font-size: 12px;"><?php echo( $rw_offset + 1 ); ?>
+										-<?php echo( $rw_offset + $shown_records_num ); ?></span>
+							</div>
+							<div style="float: right;">
+								<span><?php _e( 'Show rows', WP_RW__ID ) ?>:</span>
+								<select name="rw_limit"
+								        onchange="top.location = RWM.enrichQueryString(top.location.href, ['offset', 'limit'], [0, this.value]);">
+									<?php
+										$limits = array( WP_RW__REPORT_RECORDS_MIN, 25, WP_RW__REPORT_RECORDS_MAX );
+										foreach ( $limits as $limit ) {
+											?>
+											<option value="<?php echo $limit; ?>"<?php if ( $rw_limit == $limit ) {
+												echo ' selected="selected"';
+											} ?>><?php echo $limit; ?></option>
+										<?php
+										}
+									?>
+								</select>
+								<input type="button"<?php if ( $rw_offset == 0 ) {
+									echo ' disabled="disabled"';
+								} ?> class="button button-secondary action" style="margin-left: 20px;"
+								       onclick="top.location = '<?php
+									       $query_string = self::_getAddFilterQueryString( $_SERVER["QUERY_STRING"], "offset", max( 0, $rw_offset - $rw_limit ) );
+									       echo WP_RW__SCRIPT_URL . "?" . $query_string;
+								       ?>';" value="Previous"/>
+								<input type="button"<?php if ( $shown_records_num == $records_num ) {
+									echo ' disabled="disabled"';
+								} ?> class="button button-secondary action" onclick="top.location = '<?php
+									$query_string = self::_getAddFilterQueryString( $_SERVER["QUERY_STRING"], "offset", $rw_offset + $rw_limit );
+									echo WP_RW__SCRIPT_URL . "?" . $query_string;
+								?>';" value="Next"/>
+							</div>
+						</div>
+					<?php
+					}
+				?>
+				</form>
+				</div>
+			<?php
 			}
 
 			public static function _isValidPCId($pDeviceID)
@@ -3084,682 +3086,684 @@
 				rw_require_view('pages/admin/report-dummy.php');
 			}
 
-			function rw_explicit_report_page()
-			{
-				if ($this->fs->is__premium_only()) {
-					$filters = array(
-						"vid"  => array(
-							"label"      => "User Id",
-							"validation" => create_function( '$val', 'return (is_numeric($val) && $val >= 0);' ),
-						),
-						"pcid" => array(
-							"label"      => "PC Id",
-							"validation" => create_function( '$val', 'return (RatingWidgetPlugin::_isValidPCId($val));' ),
-						),
-						"ip"   => array(
-							"label"      => "IP",
-							"validation" => create_function( '$val', 'return (1 === preg_match("/^([1-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(\.([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){3}$/", $val));' ),
-						),
-					);
+			function rw_explicit_report_page__premium_only() {
+				if ( ! $this->fs->is_plan_or_trial( 'professional' ) ) {
+					return;
+				}
 
-					$elements  = isset( $_REQUEST["elements"] ) ? $_REQUEST["elements"] : "posts";
-					$orderby   = isset( $_REQUEST["orderby"] ) ? $_REQUEST["orderby"] : "created";
-					$order     = isset( $_REQUEST["order"] ) ? $_REQUEST["order"] : "DESC";
-					$date_from = isset( $_REQUEST["from"] ) ? $_REQUEST["from"] : date( WP_RW__DEFAULT_DATE_FORMAT, time() - WP_RW__PERIOD_MONTH );
-					$date_to   = isset( $_REQUEST["to"] ) ? $_REQUEST["to"] : date( WP_RW__DEFAULT_DATE_FORMAT );
-					$rw_limit  = isset( $_REQUEST["limit"] ) ? max( WP_RW__REPORT_RECORDS_MIN, min( WP_RW__REPORT_RECORDS_MAX, $_REQUEST["limit"] ) ) : WP_RW__REPORT_RECORDS_MIN;
-					$rw_offset = isset( $_REQUEST["offset"] ) ? max( 0, (int) $_REQUEST["offset"] ) : 0;
+				$filters = array(
+					"vid"  => array(
+						"label"      => "User Id",
+						"validation" => create_function( '$val', 'return (is_numeric($val) && $val >= 0);' ),
+					),
+					"pcid" => array(
+						"label"      => "PC Id",
+						"validation" => create_function( '$val', 'return (RatingWidgetPlugin::_isValidPCId($val));' ),
+					),
+					"ip"   => array(
+						"label"      => "IP",
+						"validation" => create_function( '$val', 'return (1 === preg_match("/^([1-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(\.([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){3}$/", $val));' ),
+					),
+				);
 
-					switch ( $elements ) {
-						case "activity-updates":
-							$rating_options = WP_RW__ACTIVITY_UPDATES_OPTIONS;
-							$rclass         = "activity-update";
-							break;
-						case "activity-comments":
-							$rating_options = WP_RW__ACTIVITY_COMMENTS_OPTIONS;
-							$rclass         = "activity-comment";
-							break;
-						case "forum-posts":
-							$rating_options = WP_RW__FORUM_POSTS_OPTIONS;
-							$rclass         = "forum-post,new-forum-post";
-							break;
-						case "forum-replies":
-							$rating_options = WP_RW__FORUM_POSTS_OPTIONS;
-							$rclass         = "forum-reply";
-							break;
-						case "users":
-							$rating_options = WP_RW__USERS_OPTIONS;
-							$rclass         = "user";
-							break;
-						case "comments":
-							$rating_options = WP_RW__COMMENTS_OPTIONS;
-							$rclass         = "comment,new-blog-comment";
-							break;
-						case "pages":
-							$rating_options = WP_RW__PAGES_OPTIONS;
-							$rclass         = "page";
-							break;
-						case "posts":
-						default:
-							$rating_options = WP_RW__BLOG_POSTS_OPTIONS;
-							$rclass         = "front-post,blog-post,new-blog-post";
-							break;
+				$elements  = isset( $_REQUEST["elements"] ) ? $_REQUEST["elements"] : "posts";
+				$orderby   = isset( $_REQUEST["orderby"] ) ? $_REQUEST["orderby"] : "created";
+				$order     = isset( $_REQUEST["order"] ) ? $_REQUEST["order"] : "DESC";
+				$date_from = isset( $_REQUEST["from"] ) ? $_REQUEST["from"] : date( WP_RW__DEFAULT_DATE_FORMAT, time() - WP_RW__PERIOD_MONTH );
+				$date_to   = isset( $_REQUEST["to"] ) ? $_REQUEST["to"] : date( WP_RW__DEFAULT_DATE_FORMAT );
+				$rw_limit  = isset( $_REQUEST["limit"] ) ? max( WP_RW__REPORT_RECORDS_MIN, min( WP_RW__REPORT_RECORDS_MAX, $_REQUEST["limit"] ) ) : WP_RW__REPORT_RECORDS_MIN;
+				$rw_offset = isset( $_REQUEST["offset"] ) ? max( 0, (int) $_REQUEST["offset"] ) : 0;
+
+				switch ( $elements ) {
+					case "activity-updates":
+						$rating_options = WP_RW__ACTIVITY_UPDATES_OPTIONS;
+						$rclass         = "activity-update";
+						break;
+					case "activity-comments":
+						$rating_options = WP_RW__ACTIVITY_COMMENTS_OPTIONS;
+						$rclass         = "activity-comment";
+						break;
+					case "forum-posts":
+						$rating_options = WP_RW__FORUM_POSTS_OPTIONS;
+						$rclass         = "forum-post,new-forum-post";
+						break;
+					case "forum-replies":
+						$rating_options = WP_RW__FORUM_POSTS_OPTIONS;
+						$rclass         = "forum-reply";
+						break;
+					case "users":
+						$rating_options = WP_RW__USERS_OPTIONS;
+						$rclass         = "user";
+						break;
+					case "comments":
+						$rating_options = WP_RW__COMMENTS_OPTIONS;
+						$rclass         = "comment,new-blog-comment";
+						break;
+					case "pages":
+						$rating_options = WP_RW__PAGES_OPTIONS;
+						$rclass         = "page";
+						break;
+					case "posts":
+					default:
+						$rating_options = WP_RW__BLOG_POSTS_OPTIONS;
+						$rclass         = "front-post,blog-post,new-blog-post";
+						break;
+				}
+
+				$rating_options = $this->GetOption( $rating_options );
+				$rating_type    = isset( $rating_options->type ) ? $rating_options->type : 'star';
+				$rating_stars   = ( $rating_type === "star" ) ?
+					( ( isset( $rating_options->advanced ) && isset( $rating_options->advanced->star ) && isset( $rating_options->advanced->star->stars ) ) ? $rating_options->advanced->star->stars : WP_RW__DEF_STARS ) :
+					false;
+
+				$details = array(
+					"uid"           => $this->account->site_public_key,
+					"rclasses"      => $rclass,
+					"orderby"       => $orderby,
+					"order"         => $order,
+					"since_updated" => "{$date_from} 00:00:00",
+					"due_updated"   => "{$date_to} 23:59:59",
+					"limit"         => $rw_limit + 1,
+					"offset"        => $rw_offset,
+				);
+
+				// Attach filters data.
+				foreach ( $filters as $filter => $filter_data ) {
+					if ( isset( $_REQUEST[ $filter ] ) && true === $filter_data["validation"]( $_REQUEST[ $filter ] ) ) {
+						$details[ $filter ] = $_REQUEST[ $filter ];
 					}
+				}
 
-					$rating_options = $this->GetOption( $rating_options );
-					$rating_type    = isset( $rating_options->type ) ? $rating_options->type : 'star';
-					$rating_stars   = ( $rating_type === "star" ) ?
-						( ( isset( $rating_options->advanced ) && isset( $rating_options->advanced->star ) && isset( $rating_options->advanced->star->stars ) ) ? $rating_options->advanced->star->stars : WP_RW__DEF_STARS ) :
-						false;
+				$rw_ret_obj = $this->RemoteCall( "action/report/explicit.php", $details, WP_RW__CACHE_TIMEOUT_REPORT );
 
-					$details = array(
-						"uid"           => $this->account->site_public_key,
-						"rclasses"      => $rclass,
-						"orderby"       => $orderby,
-						"order"         => $order,
-						"since_updated" => "{$date_from} 00:00:00",
-						"due_updated"   => "{$date_to} 23:59:59",
-						"limit"         => $rw_limit + 1,
-						"offset"        => $rw_offset,
-					);
+				if ( false === $rw_ret_obj ) {
+					return false;
+				}
 
-					// Attach filters data.
-					foreach ( $filters as $filter => $filter_data ) {
-						if ( isset( $_REQUEST[ $filter ] ) && true === $filter_data["validation"]( $_REQUEST[ $filter ] ) ) {
-							$details[ $filter ] = $_REQUEST[ $filter ];
-						}
-					}
+				// Decode RW ret object.
+				$rw_ret_obj = json_decode( $rw_ret_obj );
 
-					$rw_ret_obj = $this->RemoteCall( "action/report/explicit.php", $details, WP_RW__CACHE_TIMEOUT_REPORT );
+				if ( RWLogger::IsOn() ) {
+					RWLogger::Log( "ret_object", var_export( $rw_ret_obj, true ) );
+				}
 
-					if ( false === $rw_ret_obj ) {
-						return false;
-					}
+				if ( false == $rw_ret_obj->success ) {
+					$this->rw_report_example_page();
 
-					// Decode RW ret object.
-					$rw_ret_obj = json_decode( $rw_ret_obj );
+					return false;
+				}
 
-					if ( RWLogger::IsOn() ) {
-						RWLogger::Log( "ret_object", var_export( $rw_ret_obj, true ) );
-					}
+				// Override token to client's call token for iframes.
+				$details["token"] = self::GenerateToken( $details["timestamp"], false );
 
-					if ( false == $rw_ret_obj->success ) {
-						$this->rw_report_example_page();
+				$empty_result = ( ! is_array( $rw_ret_obj->data ) || 0 == count( $rw_ret_obj->data ) );
+				?>
+				<div class="wrap rw-dir-ltr rw-report">
+				<?php $this->Notice( '<strong style="color: red;">Note: data may be delayed 30 minutes.</strong>' ); ?>
+				<form method="post" action="">
+				<div class="tablenav">
+					<div>
+						<span><?php _e( 'Date Range', WP_RW__ID ) ?>:</span>
+						<input type="text" value="<?php echo $date_from; ?>" id="rw_date_from" name="rw_date_from"
+						       style="width: 90px; text-align: center;"/>
+						-
+						<input type="text" value="<?php echo $date_to; ?>" id="rw_date_to" name="rw_date_to"
+						       style="width: 90px; text-align: center;"/>
+						<script type="text/javascript">
+							jQuery.datepicker.setDefaults({
+								dateFormat: "yy-mm-dd"
+							});
 
-						return false;
-					}
+							jQuery("#rw_date_from").datepicker({
+								maxDate : 0,
+								onSelect: function (dateText, inst) {
+									jQuery("#rw_date_to").datepicker("option", "minDate", dateText);
+								}
+							});
+							jQuery("#rw_date_from").datepicker("setDate", "<?php echo $date_from;?>");
 
-					// Override token to client's call token for iframes.
-					$details["token"] = self::GenerateToken( $details["timestamp"], false );
-
-					$empty_result = ( ! is_array( $rw_ret_obj->data ) || 0 == count( $rw_ret_obj->data ) );
-					?>
-					<div class="wrap rw-dir-ltr rw-report">
-					<?php $this->Notice( '<strong style="color: red;">Note: data may be delayed 30 minutes.</strong>' ); ?>
-					<form method="post" action="">
-					<div class="tablenav">
-						<div>
-							<span><?php _e( 'Date Range', WP_RW__ID ) ?>:</span>
-							<input type="text" value="<?php echo $date_from; ?>" id="rw_date_from" name="rw_date_from"
-							       style="width: 90px; text-align: center;"/>
-							-
-							<input type="text" value="<?php echo $date_to; ?>" id="rw_date_to" name="rw_date_to"
-							       style="width: 90px; text-align: center;"/>
-							<script type="text/javascript">
-								jQuery.datepicker.setDefaults({
-									dateFormat: "yy-mm-dd"
-								});
-
-								jQuery("#rw_date_from").datepicker({
-									maxDate : 0,
-									onSelect: function (dateText, inst) {
-										jQuery("#rw_date_to").datepicker("option", "minDate", dateText);
+							jQuery("#rw_date_to").datepicker({
+								minDate : "<?php echo $date_from;?>",
+								maxDate : 0,
+								onSelect: function (dateText, inst) {
+									jQuery("#rw_date_from").datepicker("option", "maxDate", dateText);
+								}
+							});
+							jQuery("#rw_date_to").datepicker("setDate", "<?php echo $date_to;?>");
+						</script>
+						<span><?php _e( 'Order By', WP_RW__ID ) ?>:</span>
+						<select id="rw_orderby">
+							<?php
+								$select = array(
+									"rid"     => __( 'Rating Id', WP_RW__ID ),
+									"created" => __( 'Start Date', WP_RW__ID ),
+									"updated" => __( 'Last Update', WP_RW__ID ),
+									"rate"    => __( 'Rate', WP_RW__ID ),
+									"vid"     => __( 'User Id', WP_RW__ID ),
+									"pcid"    => __( 'PC Id', WP_RW__ID ),
+									"ip"      => __( 'IP', WP_RW__ID ),
+								);
+								foreach ( $select as $value => $option ) {
+									$selected = '';
+									if ( $value == $orderby ) {
+										$selected = ' selected="selected"';
 									}
-								});
-								jQuery("#rw_date_from").datepicker("setDate", "<?php echo $date_from;?>");
-
-								jQuery("#rw_date_to").datepicker({
-									minDate : "<?php echo $date_from;?>",
-									maxDate : 0,
-									onSelect: function (dateText, inst) {
-										jQuery("#rw_date_from").datepicker("option", "maxDate", dateText);
-									}
-								});
-								jQuery("#rw_date_to").datepicker("setDate", "<?php echo $date_to;?>");
-							</script>
-							<span><?php _e( 'Order By', WP_RW__ID ) ?>:</span>
-							<select id="rw_orderby">
-								<?php
-									$select = array(
-										"rid"     => __( 'Rating Id', WP_RW__ID ),
-										"created" => __( 'Start Date', WP_RW__ID ),
-										"updated" => __( 'Last Update', WP_RW__ID ),
-										"rate"    => __( 'Rate', WP_RW__ID ),
-										"vid"     => __( 'User Id', WP_RW__ID ),
-										"pcid"    => __( 'PC Id', WP_RW__ID ),
-										"ip"      => __( 'IP', WP_RW__ID ),
-									);
-									foreach ( $select as $value => $option ) {
-										$selected = '';
-										if ( $value == $orderby ) {
-											$selected = ' selected="selected"';
-										}
-										?>
-										<option
-											value="<?php echo $value; ?>" <?php echo $selected; ?>><?php echo $option; ?></option>
-									<?php
-									}
-								?>
-							</select>
-							<input class="button-secondary action" type="button"
-							       value="<?php _e( "Show", WP_RW__ID ); ?>"
-							       onclick="top.location = RWM.enrichQueryString(top.location.href, ['from', 'to', 'orderby'], [jQuery('#rw_date_from').val(), jQuery('#rw_date_to').val(), jQuery('#rw_orderby').val()]);"/>
-						</div>
-					</div>
-					<br/>
-
-					<div class="rw-filters">
-						<?php
-							foreach ( $filters as $filter => $filter_data ) {
-								if ( isset( $_REQUEST[ $filter ] ) && true === $filter_data["validation"]( $_REQUEST[ $filter ] ) ) {
 									?>
-									<div class="rw-ui-report-filter">
-										<a class="rw-ui-close" href="<?php
-											$query_string = self::_getRemoveFilterFromQueryString( $_SERVER["QUERY_STRING"], $filter );
-											$query_string = self::_getRemoveFilterFromQueryString( $query_string, "offset" );
-											echo WP_RW__SCRIPT_URL . "?" . $query_string;
-										?>">x</a> |
-										<span class="rw-ui-defenition"><?php echo $filter_data["label"]; ?>:</span>
-										<span class="rw-ui-value"><?php echo $_REQUEST[ $filter ]; ?></span>
-									</div>
+									<option
+										value="<?php echo $value; ?>" <?php echo $selected; ?>><?php echo $option; ?></option>
 								<?php
 								}
-							}
-						?>
+							?>
+						</select>
+						<input class="button-secondary action" type="button"
+						       value="<?php _e( "Show", WP_RW__ID ); ?>"
+						       onclick="top.location = RWM.enrichQueryString(top.location.href, ['from', 'to', 'orderby'], [jQuery('#rw_date_from').val(), jQuery('#rw_date_to').val(), jQuery('#rw_orderby').val()]);"/>
 					</div>
-					<br/>
-					<br/>
-					<iframe class="rw-chart" src="<?php
-						$details["since"] = $details["since_updated"];
-						$details["due"]   = $details["due_updated"];
-						$details["date"]  = "updated";
-						unset( $details["since_updated"], $details["due_updated"] );
+				</div>
+				<br/>
 
-						$details["width"]  = 750;
-						$details["height"] = 200;
-
-						$query = "";
-						foreach ( $details as $key => $value ) {
-							$query .= ( $query == "" ) ? "?" : "&";
-							$query .= "{$key}=" . urlencode( $value );
-						}
-						echo WP_RW__ADDRESS . "/action/chart/column.php{$query}";
-					?>" width="750" height="204" frameborder="0"></iframe>
-					<br/><br/>
-					<table class="widefat"><?php
-							$records_num = $showen_records_num = 0;
-							if ( ! is_array( $rw_ret_obj->data ) || count( $rw_ret_obj->data ) === 0 ) {
+				<div class="rw-filters">
+					<?php
+						foreach ( $filters as $filter => $filter_data ) {
+							if ( isset( $_REQUEST[ $filter ] ) && true === $filter_data["validation"]( $_REQUEST[ $filter ] ) ) {
 								?>
-								<tbody>
-							<tr>
-								<td colspan="6"><?php printf( __( 'No votes here.', WP_RW__ID ) ); ?></td>
-							</tr>
-								</tbody><?php
-							} else {
-								?>
-								<thead>
-								<tr>
-									<th scope="col" class="manage-column"><?php _e( 'Rating Id', WP_RW__ID ) ?></th>
-									<th scope="col" class="manage-column"><?php _e( 'User Id', WP_RW__ID ) ?></th>
-									<th scope="col" class="manage-column"><?php _e( 'PC Id', WP_RW__ID ) ?></th>
-									<th scope="col" class="manage-column"><?php _e( 'IP', WP_RW__ID ) ?></th>
-									<th scope="col" class="manage-column"><?php _e( 'Date', WP_RW__ID ) ?></th>
-									<th scope="col" class="manage-column"><?php _e( 'Rate', WP_RW__ID ) ?></th>
-								</tr>
-								</thead>
-								<tbody>
-								<?php
-									$alternate          = true;
-									$records_num        = count( $rw_ret_obj->data );
-									$showen_records_num = min( $records_num, $rw_limit );
-									for ( $i = 0; $i < $showen_records_num; $i ++ ) {
-										$vote = $rw_ret_obj->data[ $i ];
-										if ( $vote->vid != "0" ) {
-											$user = get_userdata( $vote->vid );
-										} else {
-											$user             = new stdClass();
-											$user->user_login = "Anonymous";
-										}
-										?>
-										<tr<?php if ( $alternate ) {
-											echo ' class="alternate"';
-										} ?>>
-											<td>
-												<a href="<?php
-													$query_string = self::_getAddFilterQueryString( $_SERVER["QUERY_STRING"], "urid", $vote->urid );
-													echo WP_RW__SCRIPT_URL . "?" . $query_string;
-												?>"><?php echo $vote->urid; ?></a>
-											</td>
-											<td>
-												<a href="<?php
-													$query_string = self::_getAddFilterQueryString( $_SERVER["QUERY_STRING"], "vid", $vote->vid );
-													echo WP_RW__SCRIPT_URL . "?" . $query_string;
-												?>"><?php echo $user->user_login; ?></a>
-											</td>
-											<td>
-												<a href="<?php
-													$query_string = self::_getAddFilterQueryString( $_SERVER["QUERY_STRING"], "pcid", $vote->pcid );
-													echo WP_RW__SCRIPT_URL . "?" . $query_string;
-												?>"><?php echo ( $vote->pcid != "00000000-0000-0000-0000-000000000000" ) ? $vote->pcid : "Anonymous"; ?></a>
-											</td>
-											<td>
-												<a href="<?php
-													$query_string = self::_getAddFilterQueryString( $_SERVER["QUERY_STRING"], "ip", $vote->ip );
-													echo WP_RW__SCRIPT_URL . "?" . $query_string;
-												?>"><?php echo $vote->ip; ?></a>
-											</td>
-											<td><?php echo $vote->updated; ?></td>
-											<td>
-												<?php
-													$vars = array(
-														"votes" => 1,
-														"rate"  => $vote->rate * ( $rating_stars / WP_RW__DEF_STARS ),
-														"dir"   => "ltr",
-														"type"  => "star",
-														"stars" => $rating_stars,
-													);
-
-													if ( $rating_type == "star" ) {
-														$vars["style"] = "yellow";
-														rw_require_view( 'rating.php', $vars );
-													} else {
-														$vars["type"]  = "nero";
-														$vars["style"] = "thumbs";
-														$vars["rate"]  = ( $vars["rate"] > 0 ) ? 1 : - 1;
-														rw_require_view( 'rating.php', $vars );
-													}
-												?>
-											</td>
-										</tr>
-										<?php
-										$alternate = ! $alternate;
-									}
-								?>
-								</tbody>
+								<div class="rw-ui-report-filter">
+									<a class="rw-ui-close" href="<?php
+										$query_string = self::_getRemoveFilterFromQueryString( $_SERVER["QUERY_STRING"], $filter );
+										$query_string = self::_getRemoveFilterFromQueryString( $query_string, "offset" );
+										echo WP_RW__SCRIPT_URL . "?" . $query_string;
+									?>">x</a> |
+									<span class="rw-ui-defenition"><?php echo $filter_data["label"]; ?>:</span>
+									<span class="rw-ui-value"><?php echo $_REQUEST[ $filter ]; ?></span>
+								</div>
 							<?php
 							}
-						?>
-					</table>
-					<?php
-						if ( $showen_records_num > 0 ) {
+						}
+					?>
+				</div>
+				<br/>
+				<br/>
+				<iframe class="rw-chart" src="<?php
+					$details["since"] = $details["since_updated"];
+					$details["due"]   = $details["due_updated"];
+					$details["date"]  = "updated";
+					unset( $details["since_updated"], $details["due_updated"] );
+
+					$details["width"]  = 750;
+					$details["height"] = 200;
+
+					$query = "";
+					foreach ( $details as $key => $value ) {
+						$query .= ( $query == "" ) ? "?" : "&";
+						$query .= "{$key}=" . urlencode( $value );
+					}
+					echo WP_RW__ADDRESS . "/action/chart/column.php{$query}";
+				?>" width="750" height="204" frameborder="0"></iframe>
+				<br/><br/>
+				<table class="widefat"><?php
+						$records_num = $showen_records_num = 0;
+						if ( ! is_array( $rw_ret_obj->data ) || count( $rw_ret_obj->data ) === 0 ) {
 							?>
-							<div class="rw-control-bar">
-								<div style="float: left;">
-									<span style="font-weight: bold; font-size: 12px;"><?php echo( $rw_offset + 1 ); ?>
-										-<?php echo( $rw_offset + $showen_records_num ); ?></span>
-								</div>
-								<div style="float: right;">
-									<span><?php _e( 'Show rows', WP_RW__ID ) ?>:</span>
-									<select name="rw_limit"
-									        onchange="top.location = RWM.enrichQueryString(top.location.href, ['offset', 'limit'], [0, this.value]);">
-										<?php
-											$limits = array( WP_RW__REPORT_RECORDS_MIN, 25, WP_RW__REPORT_RECORDS_MAX );
-											foreach ( $limits as $limit ) {
-												?>
-												<option value="<?php echo $limit; ?>"<?php if ( $rw_limit == $limit ) {
-													echo ' selected="selected"';
-												} ?>><?php echo $limit; ?></option>
+							<tbody>
+						<tr>
+							<td colspan="6"><?php printf( __( 'No votes here.', WP_RW__ID ) ); ?></td>
+						</tr>
+							</tbody><?php
+						} else {
+							?>
+							<thead>
+							<tr>
+								<th scope="col" class="manage-column"><?php _e( 'Rating Id', WP_RW__ID ) ?></th>
+								<th scope="col" class="manage-column"><?php _e( 'User Id', WP_RW__ID ) ?></th>
+								<th scope="col" class="manage-column"><?php _e( 'PC Id', WP_RW__ID ) ?></th>
+								<th scope="col" class="manage-column"><?php _e( 'IP', WP_RW__ID ) ?></th>
+								<th scope="col" class="manage-column"><?php _e( 'Date', WP_RW__ID ) ?></th>
+								<th scope="col" class="manage-column"><?php _e( 'Rate', WP_RW__ID ) ?></th>
+							</tr>
+							</thead>
+							<tbody>
+							<?php
+								$alternate          = true;
+								$records_num        = count( $rw_ret_obj->data );
+								$showen_records_num = min( $records_num, $rw_limit );
+								for ( $i = 0; $i < $showen_records_num; $i ++ ) {
+									$vote = $rw_ret_obj->data[ $i ];
+									if ( $vote->vid != "0" ) {
+										$user = get_userdata( $vote->vid );
+									} else {
+										$user             = new stdClass();
+										$user->user_login = "Anonymous";
+									}
+									?>
+									<tr<?php if ( $alternate ) {
+										echo ' class="alternate"';
+									} ?>>
+										<td>
+											<a href="<?php
+												$query_string = self::_getAddFilterQueryString( $_SERVER["QUERY_STRING"], "urid", $vote->urid );
+												echo WP_RW__SCRIPT_URL . "?" . $query_string;
+											?>"><?php echo $vote->urid; ?></a>
+										</td>
+										<td>
+											<a href="<?php
+												$query_string = self::_getAddFilterQueryString( $_SERVER["QUERY_STRING"], "vid", $vote->vid );
+												echo WP_RW__SCRIPT_URL . "?" . $query_string;
+											?>"><?php echo $user->user_login; ?></a>
+										</td>
+										<td>
+											<a href="<?php
+												$query_string = self::_getAddFilterQueryString( $_SERVER["QUERY_STRING"], "pcid", $vote->pcid );
+												echo WP_RW__SCRIPT_URL . "?" . $query_string;
+											?>"><?php echo ( $vote->pcid != "00000000-0000-0000-0000-000000000000" ) ? $vote->pcid : "Anonymous"; ?></a>
+										</td>
+										<td>
+											<a href="<?php
+												$query_string = self::_getAddFilterQueryString( $_SERVER["QUERY_STRING"], "ip", $vote->ip );
+												echo WP_RW__SCRIPT_URL . "?" . $query_string;
+											?>"><?php echo $vote->ip; ?></a>
+										</td>
+										<td><?php echo $vote->updated; ?></td>
+										<td>
 											<?php
-											}
-										?>
-									</select>
-									<input type="button"<?php if ( $rw_offset == 0 ) {
-										echo ' disabled="disabled"';
-									} ?> class="button button-secondary action" style="margin-left: 20px;"
-									       onclick="top.location = '<?php
-										       $query_string = self::_getAddFilterQueryString( $_SERVER["QUERY_STRING"], "offset", max( 0, $rw_offset - $rw_limit ) );
-										       echo WP_RW__SCRIPT_URL . "?" . $query_string;
-									       ?>';" value="<?php _e( 'Previous', WP_RW__ID ) ?>"/>
-									<input type="button"<?php if ( $showen_records_num == $records_num ) {
-										echo ' disabled="disabled"';
-									} ?> class="button button-secondary action" onclick="top.location = '<?php
-										$query_string = self::_getAddFilterQueryString( $_SERVER["QUERY_STRING"], "offset", $rw_offset + $rw_limit );
-										echo WP_RW__SCRIPT_URL . "?" . $query_string;
-									?>';" value="<?php _e( 'Next', WP_RW__ID ) ?>"/>
-								</div>
-							</div>
+												$vars = array(
+													"votes" => 1,
+													"rate"  => $vote->rate * ( $rating_stars / WP_RW__DEF_STARS ),
+													"dir"   => "ltr",
+													"type"  => "star",
+													"stars" => $rating_stars,
+												);
+
+												if ( $rating_type == "star" ) {
+													$vars["style"] = "yellow";
+													rw_require_view( 'rating.php', $vars );
+												} else {
+													$vars["type"]  = "nero";
+													$vars["style"] = "thumbs";
+													$vars["rate"]  = ( $vars["rate"] > 0 ) ? 1 : - 1;
+													rw_require_view( 'rating.php', $vars );
+												}
+											?>
+										</td>
+									</tr>
+									<?php
+									$alternate = ! $alternate;
+								}
+							?>
+							</tbody>
 						<?php
 						}
 					?>
-					</form>
-					</div>
+				</table>
 				<?php
-				}
+					if ( $showen_records_num > 0 ) {
+						?>
+						<div class="rw-control-bar">
+							<div style="float: left;">
+									<span style="font-weight: bold; font-size: 12px;"><?php echo( $rw_offset + 1 ); ?>
+										-<?php echo( $rw_offset + $showen_records_num ); ?></span>
+							</div>
+							<div style="float: right;">
+								<span><?php _e( 'Show rows', WP_RW__ID ) ?>:</span>
+								<select name="rw_limit"
+								        onchange="top.location = RWM.enrichQueryString(top.location.href, ['offset', 'limit'], [0, this.value]);">
+									<?php
+										$limits = array( WP_RW__REPORT_RECORDS_MIN, 25, WP_RW__REPORT_RECORDS_MAX );
+										foreach ( $limits as $limit ) {
+											?>
+											<option value="<?php echo $limit; ?>"<?php if ( $rw_limit == $limit ) {
+												echo ' selected="selected"';
+											} ?>><?php echo $limit; ?></option>
+										<?php
+										}
+									?>
+								</select>
+								<input type="button"<?php if ( $rw_offset == 0 ) {
+									echo ' disabled="disabled"';
+								} ?> class="button button-secondary action" style="margin-left: 20px;"
+								       onclick="top.location = '<?php
+									       $query_string = self::_getAddFilterQueryString( $_SERVER["QUERY_STRING"], "offset", max( 0, $rw_offset - $rw_limit ) );
+									       echo WP_RW__SCRIPT_URL . "?" . $query_string;
+								       ?>';" value="<?php _e( 'Previous', WP_RW__ID ) ?>"/>
+								<input type="button"<?php if ( $showen_records_num == $records_num ) {
+									echo ' disabled="disabled"';
+								} ?> class="button button-secondary action" onclick="top.location = '<?php
+									$query_string = self::_getAddFilterQueryString( $_SERVER["QUERY_STRING"], "offset", $rw_offset + $rw_limit );
+									echo WP_RW__SCRIPT_URL . "?" . $query_string;
+								?>';" value="<?php _e( 'Next', WP_RW__ID ) ?>"/>
+							</div>
+						</div>
+					<?php
+					}
+				?>
+				</form>
+				</div>
+			<?php
 			}
 
-			function rw_rating_report_page()
-			{
-				if ($this->fs->is__premium_only()) {
-					$filters = array(
-						"urid" => array(
-							"label"      => "Rating Id",
-							"validation" => create_function( '$val', 'return (is_numeric($val) && $val >= 0);' ),
-						),
-						"vid"  => array(
-							"label"      => "User Id",
-							"validation" => create_function( '$val', 'return (is_numeric($val) && $val >= 0);' ),
-						),
-						"pcid" => array(
-							"label"      => "PC Id",
-							"validation" => create_function( '$val', 'return (RatingWidgetPlugin::_isValidPCId($val));' ),
-						),
-						"ip"   => array(
-							"label"      => "IP",
-							"validation" => create_function( '$val', 'return (1 === preg_match("/^([1-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(\.([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){3}$/", $val));' ),
-						),
-					);
+			function rw_rating_report_page__premium_only() {
+				if ( ! $this->fs->is_plan_or_trial( 'professional' ) ) {
+					return false;
+				}
 
-					$orderby      = isset( $_REQUEST["orderby"] ) ? $_REQUEST["orderby"] : "created";
-					$order        = isset( $_REQUEST["order"] ) ? $_REQUEST["order"] : "DESC";
-					$date_from    = isset( $_REQUEST["from"] ) ? $_REQUEST["from"] : date( WP_RW__DEFAULT_DATE_FORMAT, time() - WP_RW__PERIOD_MONTH );
-					$date_to      = isset( $_REQUEST["to"] ) ? $_REQUEST["to"] : date( WP_RW__DEFAULT_DATE_FORMAT );
-					$rating_type  = ( isset( $_REQUEST["type"] ) && in_array( $_REQUEST["type"], array(
-								"star",
-								"nero"
-							) ) ) ? $_REQUEST["type"] : "star";
-					$rating_stars = isset( $_REQUEST["stars"] ) ? max( WP_RW__MIN_STARS, min( WP_RW__MAX_STARS, (int) $_REQUEST["stars"] ) ) : WP_RW__DEF_STARS;
+				$filters = array(
+					"urid" => array(
+						"label"      => "Rating Id",
+						"validation" => create_function( '$val', 'return (is_numeric($val) && $val >= 0);' ),
+					),
+					"vid"  => array(
+						"label"      => "User Id",
+						"validation" => create_function( '$val', 'return (is_numeric($val) && $val >= 0);' ),
+					),
+					"pcid" => array(
+						"label"      => "PC Id",
+						"validation" => create_function( '$val', 'return (RatingWidgetPlugin::_isValidPCId($val));' ),
+					),
+					"ip"   => array(
+						"label"      => "IP",
+						"validation" => create_function( '$val', 'return (1 === preg_match("/^([1-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(\.([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){3}$/", $val));' ),
+					),
+				);
 
-					$rw_limit  = isset( $_REQUEST["limit"] ) ? max( WP_RW__REPORT_RECORDS_MIN, min( WP_RW__REPORT_RECORDS_MAX, $_REQUEST["limit"] ) ) : WP_RW__REPORT_RECORDS_MIN;
-					$rw_offset = isset( $_REQUEST["offset"] ) ? max( 0, (int) $_REQUEST["offset"] ) : 0;
+				$orderby      = isset( $_REQUEST["orderby"] ) ? $_REQUEST["orderby"] : "created";
+				$order        = isset( $_REQUEST["order"] ) ? $_REQUEST["order"] : "DESC";
+				$date_from    = isset( $_REQUEST["from"] ) ? $_REQUEST["from"] : date( WP_RW__DEFAULT_DATE_FORMAT, time() - WP_RW__PERIOD_MONTH );
+				$date_to      = isset( $_REQUEST["to"] ) ? $_REQUEST["to"] : date( WP_RW__DEFAULT_DATE_FORMAT );
+				$rating_type  = ( isset( $_REQUEST["type"] ) && in_array( $_REQUEST["type"], array(
+						"star",
+						"nero"
+					) ) ) ? $_REQUEST["type"] : "star";
+				$rating_stars = isset( $_REQUEST["stars"] ) ? max( WP_RW__MIN_STARS, min( WP_RW__MAX_STARS, (int) $_REQUEST["stars"] ) ) : WP_RW__DEF_STARS;
 
-					$details = array(
-						"uid"     => $this->account->site_public_key,
-						"orderby" => $orderby,
-						"order"   => $order,
-						"since"   => "{$date_from} 00:00:00",
-						"due"     => "{$date_to} 23:59:59",
-						"date"    => "updated",
-						"limit"   => $rw_limit + 1,
-						"offset"  => $rw_offset,
-						"stars"   => $rating_stars,
-						"type"    => $rating_type,
-					);
+				$rw_limit  = isset( $_REQUEST["limit"] ) ? max( WP_RW__REPORT_RECORDS_MIN, min( WP_RW__REPORT_RECORDS_MAX, $_REQUEST["limit"] ) ) : WP_RW__REPORT_RECORDS_MIN;
+				$rw_offset = isset( $_REQUEST["offset"] ) ? max( 0, (int) $_REQUEST["offset"] ) : 0;
 
-					// Attach filters data.
-					foreach ( $filters as $filter => $filter_data ) {
-						if ( isset( $_REQUEST[ $filter ] ) && true === $filter_data["validation"]( $_REQUEST[ $filter ] ) ) {
-							$details[ $filter ] = $_REQUEST[ $filter ];
-						}
+				$details = array(
+					"uid"     => $this->account->site_public_key,
+					"orderby" => $orderby,
+					"order"   => $order,
+					"since"   => "{$date_from} 00:00:00",
+					"due"     => "{$date_to} 23:59:59",
+					"date"    => "updated",
+					"limit"   => $rw_limit + 1,
+					"offset"  => $rw_offset,
+					"stars"   => $rating_stars,
+					"type"    => $rating_type,
+				);
+
+				// Attach filters data.
+				foreach ( $filters as $filter => $filter_data ) {
+					if ( isset( $_REQUEST[ $filter ] ) && true === $filter_data["validation"]( $_REQUEST[ $filter ] ) ) {
+						$details[ $filter ] = $_REQUEST[ $filter ];
 					}
+				}
 
-					$rw_ret_obj = $this->RemoteCall( "action/report/rating.php", $details, WP_RW__CACHE_TIMEOUT_REPORT );
-					if ( false === $rw_ret_obj ) {
-						return false;
-					}
+				$rw_ret_obj = $this->RemoteCall( "action/report/rating.php", $details, WP_RW__CACHE_TIMEOUT_REPORT );
+				if ( false === $rw_ret_obj ) {
+					return false;
+				}
 
-					// Decode RW ret object.
-					$rw_ret_obj = json_decode( $rw_ret_obj );
+				// Decode RW ret object.
+				$rw_ret_obj = json_decode( $rw_ret_obj );
 
-					if ( false == $rw_ret_obj->success ) {
-						$this->rw_report_example_page();
+				if ( false == $rw_ret_obj->success ) {
+					$this->rw_report_example_page();
 
-						return false;
-					}
+					return false;
+				}
 
-					$empty_result = ( ! is_array( $rw_ret_obj->data ) || 0 == count( $rw_ret_obj->data ) );
+				$empty_result = ( ! is_array( $rw_ret_obj->data ) || 0 == count( $rw_ret_obj->data ) );
 
-					// Override token to client's call token for iframes.
-					$details["timestamp"] = time();
-					$details["token"]     = self::GenerateToken( $details["timestamp"], false );
-					?>
-					<div class="wrap rw-dir-ltr rw-report">
-					<?php $this->Notice( '<strong style="color: red;">Note: data may be delayed 30 minutes.</strong>' ); ?>
-					<form method="post" action="">
-					<div class="tablenav">
-						<div>
-							<span><?php _e( 'Date Range', WP_RW__ID ) ?>:</span>
-							<input type="text" value="<?php echo $date_from; ?>" id="rw_date_from" name="rw_date_from"
-							       style="width: 90px; text-align: center;"/>
-							-
-							<input type="text" value="<?php echo $date_to; ?>" id="rw_date_to" name="rw_date_to"
-							       style="width: 90px; text-align: center;"/>
-							<script type="text/javascript">
-								jQuery.datepicker.setDefaults({
-									dateFormat: "yy-mm-dd"
-								})
+				// Override token to client's call token for iframes.
+				$details["timestamp"] = time();
+				$details["token"]     = self::GenerateToken( $details["timestamp"], false );
+				?>
+				<div class="wrap rw-dir-ltr rw-report">
+				<?php $this->Notice( '<strong style="color: red;">Note: data may be delayed 30 minutes.</strong>' ); ?>
+				<form method="post" action="">
+				<div class="tablenav">
+					<div>
+						<span><?php _e( 'Date Range', WP_RW__ID ) ?>:</span>
+						<input type="text" value="<?php echo $date_from; ?>" id="rw_date_from" name="rw_date_from"
+						       style="width: 90px; text-align: center;"/>
+						-
+						<input type="text" value="<?php echo $date_to; ?>" id="rw_date_to" name="rw_date_to"
+						       style="width: 90px; text-align: center;"/>
+						<script type="text/javascript">
+							jQuery.datepicker.setDefaults({
+								dateFormat: "yy-mm-dd"
+							})
 
-								jQuery("#rw_date_from").datepicker({
-									maxDate : 0,
-									onSelect: function (dateText, inst) {
-										jQuery("#rw_date_to").datepicker("option", "minDate", dateText);
+							jQuery("#rw_date_from").datepicker({
+								maxDate : 0,
+								onSelect: function (dateText, inst) {
+									jQuery("#rw_date_to").datepicker("option", "minDate", dateText);
+								}
+							});
+							jQuery("#rw_date_from").datepicker("setDate", "<?php echo $date_from;?>");
+
+							jQuery("#rw_date_to").datepicker({
+								minDate : "<?php echo $date_from;?>",
+								maxDate : 0,
+								onSelect: function (dateText, inst) {
+									jQuery("#rw_date_from").datepicker("option", "maxDate", dateText);
+								}
+							});
+							jQuery("#rw_date_to").datepicker("setDate", "<?php echo $date_to;?>");
+						</script>
+						<span><?php _e( 'Order By', WP_RW__ID ) ?>:</span>
+						<select id="rw_orderby">
+							<?php
+								$select = array(
+									"rid"     => __( 'Id', WP_RW__ID ),
+									"created" => __( 'Start Date', WP_RW__ID ),
+									"updated" => __( 'Last Update', WP_RW__ID ),
+									"rate"    => __( 'Rate', WP_RW__ID ),
+									"vid"     => __( 'User Id', WP_RW__ID ),
+									"pcid"    => __( 'PC Id', WP_RW__ID ),
+									"ip"      => __( 'IP', WP_RW__ID ),
+								);
+								foreach ( $select as $value => $option ) {
+									$selected = '';
+									if ( $value == $orderby ) {
+										$selected = ' selected="selected"';
 									}
-								});
-								jQuery("#rw_date_from").datepicker("setDate", "<?php echo $date_from;?>");
-
-								jQuery("#rw_date_to").datepicker({
-									minDate : "<?php echo $date_from;?>",
-									maxDate : 0,
-									onSelect: function (dateText, inst) {
-										jQuery("#rw_date_from").datepicker("option", "maxDate", dateText);
-									}
-								});
-								jQuery("#rw_date_to").datepicker("setDate", "<?php echo $date_to;?>");
-							</script>
-							<span><?php _e( 'Order By', WP_RW__ID ) ?>:</span>
-							<select id="rw_orderby">
-								<?php
-									$select = array(
-										"rid"     => __( 'Id', WP_RW__ID ),
-										"created" => __( 'Start Date', WP_RW__ID ),
-										"updated" => __( 'Last Update', WP_RW__ID ),
-										"rate"    => __( 'Rate', WP_RW__ID ),
-										"vid"     => __( 'User Id', WP_RW__ID ),
-										"pcid"    => __( 'PC Id', WP_RW__ID ),
-										"ip"      => __( 'IP', WP_RW__ID ),
-									);
-									foreach ( $select as $value => $option ) {
-										$selected = '';
-										if ( $value == $orderby ) {
-											$selected = ' selected="selected"';
-										}
-										?>
-										<option
-											value="<?php echo $value; ?>" <?php echo $selected; ?>><?php echo $option; ?></option>
-									<?php
-									}
-								?>
-							</select>
-							<input class="button-secondary action" type="button"
-							       value="<?php _e( "Show", WP_RW__ID ); ?>"
-							       onclick="top.location = RWM.enrichQueryString(top.location.href, ['from', 'to', 'orderby'], [jQuery('#rw_date_from').val(), jQuery('#rw_date_to').val(), jQuery('#rw_orderby').val()]);"/>
-						</div>
-					</div>
-					<br/>
-
-					<div class="rw-filters">
-						<?php
-							foreach ( $filters as $filter => $filter_data ) {
-								if ( isset( $_REQUEST[ $filter ] ) && true === $filter_data["validation"]( $_REQUEST[ $filter ] ) ) {
 									?>
-									<div class="rw-ui-report-filter">
-										<a class="rw-ui-close" href="<?php
-											$query_string = self::_getRemoveFilterFromQueryString( $_SERVER["QUERY_STRING"], $filter );
-											$query_string = self::_getRemoveFilterFromQueryString( $query_string, "offset" );
-											echo WP_RW__SCRIPT_URL . "?" . $query_string;
-										?>">x</a> |
-										<span class="rw-ui-defenition"><?php echo $filter_data["label"]; ?>:</span>
-										<span class="rw-ui-value"><?php echo $_REQUEST[ $filter ]; ?></span>
-									</div>
+									<option
+										value="<?php echo $value; ?>" <?php echo $selected; ?>><?php echo $option; ?></option>
 								<?php
 								}
-							}
-						?>
-					</div>
-					<br/>
-					<br/>
-					<iframe class="rw-chart" src="<?php
-						$details["width"]  = ( ! $empty_result ) ? 647 : 950;
-						$details["height"] = 200;
-
-						$query = "";
-						foreach ( $details as $key => $value ) {
-							$query .= ( $query == "" ) ? "?" : "&";
-							$query .= "{$key}=" . urlencode( $value );
-						}
-						echo WP_RW__ADDRESS . "/action/chart/column.php{$query}";
-					?>" width="<?php echo $details["width"]; ?>" height="<?php echo( $details["height"] + 4 ); ?>"
-					        frameborder="0"></iframe>
-					<?php
-						if ( ! $empty_result ) {
 							?>
-							<iframe class="rw-chart" src="<?php
-								$details["width"]  = 300;
-								$details["height"] = 200;
+						</select>
+						<input class="button-secondary action" type="button"
+						       value="<?php _e( "Show", WP_RW__ID ); ?>"
+						       onclick="top.location = RWM.enrichQueryString(top.location.href, ['from', 'to', 'orderby'], [jQuery('#rw_date_from').val(), jQuery('#rw_date_to').val(), jQuery('#rw_orderby').val()]);"/>
+					</div>
+				</div>
+				<br/>
 
-								$query = "";
-								foreach ( $details as $key => $value ) {
-									$query .= ( $query == "" ) ? "?" : "&";
-									$query .= "{$key}=" . urlencode( $value );
-								}
-								$query .= "&stars={$rating_stars}";
-								echo WP_RW__ADDRESS . "/action/chart/pie.php{$query}";
-							?>" width="<?php echo $details["width"]; ?>"
-							        height="<?php echo( $details["height"] + 4 ); ?>" frameborder="0"></iframe>
-						<?php
-						}
-					?>
-					<br/><br/>
-					<table class="widefat"><?php
-							$records_num = $showen_records_num = 0;
-							if ( ! is_array( $rw_ret_obj->data ) || count( $rw_ret_obj->data ) === 0 ) {
+				<div class="rw-filters">
+					<?php
+						foreach ( $filters as $filter => $filter_data ) {
+							if ( isset( $_REQUEST[ $filter ] ) && true === $filter_data["validation"]( $_REQUEST[ $filter ] ) ) {
 								?>
-								<tbody>
-							<tr>
-								<td colspan="6"><?php printf( __( 'No votes here.', WP_RW__ID ) ); ?></td>
-							</tr>
-								</tbody><?php
-							} else {
-								?>
-								<thead>
-								<tr>
-									<th scope="col" class="manage-column"><?php _e( 'User Id', WP_RW__ID ) ?></th>
-									<th scope="col" class="manage-column"><?php _e( 'PC Id', WP_RW__ID ) ?></th>
-									<th scope="col" class="manage-column"><?php _e( 'IP', WP_RW__ID ) ?></th>
-									<th scope="col" class="manage-column"><?php _e( 'Date', WP_RW__ID ) ?></th>
-									<th scope="col" class="manage-column"><?php _e( 'Rate', WP_RW__ID ) ?></th>
-								</tr>
-								</thead>
-								<tbody>
-								<?php
-									$alternate          = true;
-									$records_num        = count( $rw_ret_obj->data );
-									$showen_records_num = min( $records_num, $rw_limit );
-									for ( $i = 0; $i < $showen_records_num; $i ++ ) {
-										$vote = $rw_ret_obj->data[ $i ];
-										if ( $vote->vid != "0" ) {
-											$user = get_userdata( $vote->vid );
-										} else {
-											$user             = new stdClass();
-											$user->user_login = "Anonymous";
-										}
-										?>
-										<tr<?php if ( $alternate ) {
-											echo ' class="alternate"';
-										} ?>>
-											<td>
-												<a href="<?php
-													$query_string = self::_getAddFilterQueryString( $_SERVER["QUERY_STRING"], "vid", $vote->vid );
-													echo WP_RW__SCRIPT_URL . "?" . $query_string;
-												?>"><?php echo $user->user_login; ?></a>
-											</td>
-											<td>
-												<a href="<?php
-													$query_string = self::_getAddFilterQueryString( $_SERVER["QUERY_STRING"], "pcid", $vote->pcid );
-													echo WP_RW__SCRIPT_URL . "?" . $query_string;
-												?>"><?php echo ( $vote->pcid != "00000000-0000-0000-0000-000000000000" ) ? $vote->pcid : "Anonymous"; ?></a>
-											</td>
-											<td>
-												<a href="<?php
-													$query_string = self::_getAddFilterQueryString( $_SERVER["QUERY_STRING"], "ip", $vote->ip );
-													echo WP_RW__SCRIPT_URL . "?" . $query_string;
-												?>"><?php echo $vote->ip; ?></a>
-											<td><?php echo $vote->updated; ?></td>
-											<td>
-												<?php
-													$vars = array(
-														"votes" => 1,
-														"rate"  => $vote->rate * ( $rating_stars / WP_RW__DEF_STARS ),
-														"dir"   => "ltr",
-														"type"  => "star",
-														"stars" => $rating_stars,
-													);
-
-													if ( $rating_type == "star" ) {
-														$vars["style"] = "yellow";
-														rw_require_view( 'rating.php', $vars );
-													} else {
-														$vars["type"]  = "nero";
-														$vars["style"] = "thumbs";
-														$vars["rate"]  = ( $vars["rate"] > 0 ) ? 1 : - 1;
-														rw_require_view( 'rating.php', $vars );
-													}
-												?>
-											</td>
-										</tr>
-										<?php
-										$alternate = ! $alternate;
-									}
-								?>
-								</tbody>
+								<div class="rw-ui-report-filter">
+									<a class="rw-ui-close" href="<?php
+										$query_string = self::_getRemoveFilterFromQueryString( $_SERVER["QUERY_STRING"], $filter );
+										$query_string = self::_getRemoveFilterFromQueryString( $query_string, "offset" );
+										echo WP_RW__SCRIPT_URL . "?" . $query_string;
+									?>">x</a> |
+									<span class="rw-ui-defenition"><?php echo $filter_data["label"]; ?>:</span>
+									<span class="rw-ui-value"><?php echo $_REQUEST[ $filter ]; ?></span>
+								</div>
 							<?php
 							}
+						}
+					?>
+				</div>
+				<br/>
+				<br/>
+				<iframe class="rw-chart" src="<?php
+					$details["width"]  = ( ! $empty_result ) ? 647 : 950;
+					$details["height"] = 200;
+
+					$query = "";
+					foreach ( $details as $key => $value ) {
+						$query .= ( $query == "" ) ? "?" : "&";
+						$query .= "{$key}=" . urlencode( $value );
+					}
+					echo WP_RW__ADDRESS . "/action/chart/column.php{$query}";
+				?>" width="<?php echo $details["width"]; ?>" height="<?php echo( $details["height"] + 4 ); ?>"
+				        frameborder="0"></iframe>
+				<?php
+					if ( ! $empty_result ) {
 						?>
-					</table>
+						<iframe class="rw-chart" src="<?php
+							$details["width"]  = 300;
+							$details["height"] = 200;
+
+							$query = "";
+							foreach ( $details as $key => $value ) {
+								$query .= ( $query == "" ) ? "?" : "&";
+								$query .= "{$key}=" . urlencode( $value );
+							}
+							$query .= "&stars={$rating_stars}";
+							echo WP_RW__ADDRESS . "/action/chart/pie.php{$query}";
+						?>" width="<?php echo $details["width"]; ?>"
+						        height="<?php echo( $details["height"] + 4 ); ?>" frameborder="0"></iframe>
 					<?php
-						if ( $showen_records_num > 0 ) {
+					}
+				?>
+				<br/><br/>
+				<table class="widefat"><?php
+						$records_num = $showen_records_num = 0;
+						if ( ! is_array( $rw_ret_obj->data ) || count( $rw_ret_obj->data ) === 0 ) {
 							?>
-							<div class="rw-control-bar">
-								<div style="float: left;">
-									<span style="font-weight: bold; font-size: 12px;"><?php echo( $rw_offset + 1 ); ?>
-										-<?php echo( $rw_offset + $showen_records_num ); ?></span>
-								</div>
-								<div style="float: right;">
-									<span><?php _e( 'Show rows', WP_RW__ID ) ?>:</span>
-									<select name="rw_limit"
-									        onchange="top.location = RWM.enrichQueryString(top.location.href, ['offset', 'limit'], [0, this.value]);">
-										<?php
-											$limits = array( WP_RW__REPORT_RECORDS_MIN, 25, WP_RW__REPORT_RECORDS_MAX );
-											foreach ( $limits as $limit ) {
-												?>
-												<option value="<?php echo $limit; ?>"<?php if ( $rw_limit == $limit ) {
-													echo ' selected="selected"';
-												} ?>><?php echo $limit; ?></option>
+							<tbody>
+						<tr>
+							<td colspan="6"><?php printf( __( 'No votes here.', WP_RW__ID ) ); ?></td>
+						</tr>
+							</tbody><?php
+						} else {
+							?>
+							<thead>
+							<tr>
+								<th scope="col" class="manage-column"><?php _e( 'User Id', WP_RW__ID ) ?></th>
+								<th scope="col" class="manage-column"><?php _e( 'PC Id', WP_RW__ID ) ?></th>
+								<th scope="col" class="manage-column"><?php _e( 'IP', WP_RW__ID ) ?></th>
+								<th scope="col" class="manage-column"><?php _e( 'Date', WP_RW__ID ) ?></th>
+								<th scope="col" class="manage-column"><?php _e( 'Rate', WP_RW__ID ) ?></th>
+							</tr>
+							</thead>
+							<tbody>
+							<?php
+								$alternate          = true;
+								$records_num        = count( $rw_ret_obj->data );
+								$showen_records_num = min( $records_num, $rw_limit );
+								for ( $i = 0; $i < $showen_records_num; $i ++ ) {
+									$vote = $rw_ret_obj->data[ $i ];
+									if ( $vote->vid != "0" ) {
+										$user = get_userdata( $vote->vid );
+									} else {
+										$user             = new stdClass();
+										$user->user_login = "Anonymous";
+									}
+									?>
+									<tr<?php if ( $alternate ) {
+										echo ' class="alternate"';
+									} ?>>
+										<td>
+											<a href="<?php
+												$query_string = self::_getAddFilterQueryString( $_SERVER["QUERY_STRING"], "vid", $vote->vid );
+												echo WP_RW__SCRIPT_URL . "?" . $query_string;
+											?>"><?php echo $user->user_login; ?></a>
+										</td>
+										<td>
+											<a href="<?php
+												$query_string = self::_getAddFilterQueryString( $_SERVER["QUERY_STRING"], "pcid", $vote->pcid );
+												echo WP_RW__SCRIPT_URL . "?" . $query_string;
+											?>"><?php echo ( $vote->pcid != "00000000-0000-0000-0000-000000000000" ) ? $vote->pcid : "Anonymous"; ?></a>
+										</td>
+										<td>
+											<a href="<?php
+												$query_string = self::_getAddFilterQueryString( $_SERVER["QUERY_STRING"], "ip", $vote->ip );
+												echo WP_RW__SCRIPT_URL . "?" . $query_string;
+											?>"><?php echo $vote->ip; ?></a>
+										<td><?php echo $vote->updated; ?></td>
+										<td>
 											<?php
-											}
-										?>
-									</select>
-									<input type="button"<?php if ( $rw_offset == 0 ) {
-										echo ' disabled="disabled"';
-									} ?> class="button button-secondary action" style="margin-left: 20px;"
-									       onclick="top.location = '<?php
-										       $query_string = self::_getAddFilterQueryString( $_SERVER["QUERY_STRING"], "offset", max( 0, $rw_offset - $rw_limit ) );
-										       echo WP_RW__SCRIPT_URL . "?" . $query_string;
-									       ?>';" value="<?php _e( 'Previous', WP_RW__ID ) ?>"/>
-									<input type="button"<?php if ( $showen_records_num == $records_num ) {
-										echo ' disabled="disabled"';
-									} ?> class="button button-secondary action" onclick="top.location = '<?php
-										$query_string = self::_getAddFilterQueryString( $_SERVER["QUERY_STRING"], "offset", $rw_offset + $rw_limit );
-										echo WP_RW__SCRIPT_URL . "?" . $query_string;
-									?>';" value="<?php _e( 'Next', WP_RW__ID ) ?>"/>
-								</div>
-							</div>
+												$vars = array(
+													"votes" => 1,
+													"rate"  => $vote->rate * ( $rating_stars / WP_RW__DEF_STARS ),
+													"dir"   => "ltr",
+													"type"  => "star",
+													"stars" => $rating_stars,
+												);
+
+												if ( $rating_type == "star" ) {
+													$vars["style"] = "yellow";
+													rw_require_view( 'rating.php', $vars );
+												} else {
+													$vars["type"]  = "nero";
+													$vars["style"] = "thumbs";
+													$vars["rate"]  = ( $vars["rate"] > 0 ) ? 1 : - 1;
+													rw_require_view( 'rating.php', $vars );
+												}
+											?>
+										</td>
+									</tr>
+									<?php
+									$alternate = ! $alternate;
+								}
+							?>
+							</tbody>
 						<?php
 						}
 					?>
-					</form>
-					</div>
+				</table>
 				<?php
-				}
+					if ( $showen_records_num > 0 ) {
+						?>
+						<div class="rw-control-bar">
+							<div style="float: left;">
+									<span style="font-weight: bold; font-size: 12px;"><?php echo( $rw_offset + 1 ); ?>
+										-<?php echo( $rw_offset + $showen_records_num ); ?></span>
+							</div>
+							<div style="float: right;">
+								<span><?php _e( 'Show rows', WP_RW__ID ) ?>:</span>
+								<select name="rw_limit"
+								        onchange="top.location = RWM.enrichQueryString(top.location.href, ['offset', 'limit'], [0, this.value]);">
+									<?php
+										$limits = array( WP_RW__REPORT_RECORDS_MIN, 25, WP_RW__REPORT_RECORDS_MAX );
+										foreach ( $limits as $limit ) {
+											?>
+											<option value="<?php echo $limit; ?>"<?php if ( $rw_limit == $limit ) {
+												echo ' selected="selected"';
+											} ?>><?php echo $limit; ?></option>
+										<?php
+										}
+									?>
+								</select>
+								<input type="button"<?php if ( $rw_offset == 0 ) {
+									echo ' disabled="disabled"';
+								} ?> class="button button-secondary action" style="margin-left: 20px;"
+								       onclick="top.location = '<?php
+									       $query_string = self::_getAddFilterQueryString( $_SERVER["QUERY_STRING"], "offset", max( 0, $rw_offset - $rw_limit ) );
+									       echo WP_RW__SCRIPT_URL . "?" . $query_string;
+								       ?>';" value="<?php _e( 'Previous', WP_RW__ID ) ?>"/>
+								<input type="button"<?php if ( $showen_records_num == $records_num ) {
+									echo ' disabled="disabled"';
+								} ?> class="button button-secondary action" onclick="top.location = '<?php
+									$query_string = self::_getAddFilterQueryString( $_SERVER["QUERY_STRING"], "offset", $rw_offset + $rw_limit );
+									echo WP_RW__SCRIPT_URL . "?" . $query_string;
+								?>';" value="<?php _e( 'Next', WP_RW__ID ) ?>"/>
+							</div>
+						</div>
+					<?php
+					}
+				?>
+				</form>
+				</div>
+				<?php
 
 				return true;
 			}
@@ -3768,11 +3772,11 @@
 			{
 				if ($this->fs->is_plan_or_trial__premium_only('professional')) {
 					if ( isset( $_GET["urid"] ) && is_numeric( $_GET["urid"] ) ) {
-						$this->rw_rating_report_page();
+						$this->rw_rating_report_page__premium_only();
 					} else if ( isset( $_GET["ip"] ) || isset( $_GET["vid"] ) || isset( $_GET["pcid"] ) ) {
-						$this->rw_explicit_report_page();
+						$this->rw_explicit_report_page__premium_only();
 					} else {
-						$this->rw_general_report_page();
+						$this->rw_general_report_page__premium_only();
 					}
 				}
 				else
@@ -7572,8 +7576,7 @@
 		    '2.6.0' === $rw_fs->get_plugin_version()
 		) {
 			// Migration to new Freemius account management.
-			if (rw_migration_to_freemius())
-			{
+			if ( rw_migration_to_freemius() ) {
 				$rw_fs->set_plugin_upgrade_complete();
 			}
 		}
