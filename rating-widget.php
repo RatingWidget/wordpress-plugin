@@ -1,17 +1,17 @@
 <?php
-	/*
-	Plugin Name: Rating-Widget: Star Review System
-	Plugin URI: http://rating-widget.com/wordpress-plugin/
-	Description: Create and manage Rating-Widget ratings in WordPress.
-	Version: 2.6.0
-	Author: Rating-Widget
-	Author URI: http://rating-widget.com/wordpress-plugin/
-	License: GPLv2
-	Text Domain: ratingwidget
-	Domain Path: /langs
-	*/
-
 	/**
+	 * Plugin Name: Rating-Widget: Star Review System
+	 * Plugin URI:  http://rating-widget.com/wordpress-plugin/
+	 * Description: Create and manage Rating-Widget ratings in WordPress.
+	 * Version:     2.6.0
+	 * Author:      Rating-Widget
+	 * Author URI:  http://rating-widget.com/wordpress-plugin/
+	 * License:     GPLv2
+	 * Text Domain: ratingwidget
+	 * Domain Path: /langs
+	 *
+	 * @fs_premium_only: view/, /vendors/, icon.png, lib/rw-top-rated-widget.php
+	 *
 	 * @package     RatingWidget
 	 * @copyright   Copyright (c) 2015, Rating-Widget, Inc.
 	 * @license     http://opensource.org/licenses/gpl-2.0.php GNU Public License
@@ -28,8 +28,6 @@
 		require_once( dirname( __FILE__ ) . "/lib/rw-core-functions.php" );
 		require_once( dirname( __FILE__ ) . "/lib/config.common.php" );
 		require_once( WP_RW__PLUGIN_LIB_DIR . "rw-core-rw-functions.php" );
-		require_once( WP_RW__PLUGIN_LIB_DIR . "rw-core-actions.php" );
-		require_once( WP_RW__PLUGIN_LIB_DIR . "rw-core-admin.php" );
 		require_once( WP_RW__PLUGIN_LIB_DIR . "rw-options.php" );
 		require_once( WP_RW__PLUGIN_LIB_DIR . "rw-account-manager.php" );
 		require_once( WP_RW__PLUGIN_LIB_DIR . "rw-api.php" );
@@ -332,11 +330,6 @@
 
 				$this->fs->add_plugin_action_link( __( 'Settings', WP_RW__ADMIN_MENU_SLUG ), rw_get_admin_url() );
 				$this->fs->add_plugin_action_link( __( 'Blog', WP_RW__ADMIN_MENU_SLUG ), rw_get_site_url( '/blog/' ), true );
-
-
-
-				// Add activation and de-activation hooks.
-				register_activation_hook( WP_RW__PLUGIN_FILE_FULL, 'rw_activated' );
 
 				if ($this->account->is_registered()) {
 					add_action( 'wp_ajax_rw-toprated-popup-html', array( &$this, 'generate_toprated_popup_html' ) );
@@ -1262,6 +1255,8 @@
 
 			#endregion Comment Review Mode ------------------------------------------------------------------
 
+			#region Admin-Only Comment Ratings Mode ------------------------------------------------------------------
+
             /**
              * Retrieves the current comment ratings mode settings. If the mode is not set, set to comment reviews.
              * 
@@ -1271,9 +1266,9 @@
              * @return object
              */
             function get_comment_ratings_mode_settings() {
-                $comment_ratings_mode_settings = $this->GetOption( WP_RW__DB_OPTION_COMMENT_RATINGS_MODE_SETTINGS );
+                $comment_ratings_mode_settings = $this->GetOption( WP_RW__DB_OPTION_IS_ADMIN_COMMENT_RATINGS_SETTINGS );
 				if ( ! is_object( $comment_ratings_mode_settings ) ) {
-					$comment_ratings_mode_settings = $this->_OPTIONS_DEFAULTS[ WP_RW__DB_OPTION_COMMENT_RATINGS_MODE_SETTINGS ];
+					$comment_ratings_mode_settings = $this->_OPTIONS_DEFAULTS[ WP_RW__DB_OPTION_IS_ADMIN_COMMENT_RATINGS_SETTINGS ];
                     
                     $comment_review_mode_settings = get_comment_review_mode_settings();
                     $comment_ratings_mode_settings->comment_ratings_mode = $comment_review_mode_settings->is_comment_review_mode ? 'true' : 'false';
@@ -1309,7 +1304,78 @@
                 
 				return ( 'admin_ratings' === $comment_ratings_mode_settings->comment_ratings_mode );
 			}
-            
+
+			#region Comments Editor Metabox
+
+			/**
+			 * Adds a rating metabox on the comment edit page.
+			 *
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.6.0
+			 */
+			function add_comment_rating_metabox() {
+				/**
+				 * Check if the current user has admin privileges.
+				 * Also check if the comment ratings mode is not "Reviews Ratings" which means that it is either "Comment Ratings" or "Admin ratings only".
+				 */
+				if ( current_user_can( 'manage_options' ) && ( ! $this->is_comment_review_mode() ) ) {
+					add_meta_box( 'rw-comment-meta-box', WP_RW__NAME, array( &$this, 'show_comment_rating_metabox' ), 'comment', 'normal' );
+				}
+			}
+
+			/**
+			 * Loads the content of the comment rating metabox.
+			 *
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.6.0
+			 */
+			function show_comment_rating_metabox() {
+				rw_require_view('pages/admin/comment-metabox.php');
+			}
+
+			/**
+			 * Saves the comment rating's read-only and active states.
+			 *
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.6.0
+			 *
+			 * @param int $comment_id
+			 */
+			function save_comment_data( $comment_id ) {
+				if ( RWLogger::IsOn() ) {
+					$params = func_get_args();
+					RWLogger::LogEnterence( 'save_comment_data', $params, true );
+				}
+
+				// Verify nonce.
+				if ( ! isset( $_POST['rw_comment_meta_box_nonce'] ) || ! wp_verify_nonce( $_POST['rw_comment_meta_box_nonce'], basename( WP_RW__PLUGIN_FILE_FULL ) ) ) {
+					return;
+				}
+
+				// Check whether this comment's rating is to be included.
+				$include_rating = ( isset( $_POST['rw_include_comment_rating'] ) && '1' == $_POST['rw_include_comment_rating'] );
+
+				// Checks whether this comment's rating is to be set to read-only.
+				$readonly_rating = ( ! isset( $_POST['rw_readonly_comment_rating'] ) || '1' !== $_POST['rw_readonly_comment_rating'] );
+
+				$this->add_to_visibility_list( $comment_id, array( 'comment' ), $include_rating );
+				$this->SetOption( WP_RW__VISIBILITY_SETTINGS, $this->_visibilityList );
+
+				// Add to or remove from the read-only list of comment IDs based on the state of the read-only checkbox.
+				$this->add_to_readonly( $comment_id, array( 'comment' ), $readonly_rating );
+				$this->SetOption(WP_RW__READONLY_SETTINGS, $this->_readonly_list);
+
+				$this->_options->store();
+
+				if ( RWLogger::IsOn() ) {
+					RWLogger::LogDeparture( 'save_comment_data' );
+				}
+			}
+
+			#endregion Comments Editor Metabox
+
+			#endregion Admin-Only Comment Ratings Mode ------------------------------------------------------------------
+
 			private function IsHideOnMobile()
 			{
 				RWLogger::LogEnterence("IsHideOnMobile");
@@ -1950,7 +2016,7 @@
 						'is_comment_review_mode' => false,
 						'failed_requests' => array()
 					),
-					WP_RW__DB_OPTION_COMMENT_RATINGS_MODE_SETTINGS => (object) array(
+					WP_RW__DB_OPTION_IS_ADMIN_COMMENT_RATINGS_SETTINGS => (object) array(
 						'comment_ratings_mode' => 'false' // "false" = comment ratings, "true" = reviews ratings, "admin_ratings" = admin-only ratings
 					),
 					WP_RW__IS_ACCUMULATED_USER_RATING => true,
@@ -4441,7 +4507,7 @@
                         $comment_ratings_mode_settings = $this->get_comment_ratings_mode_settings();
                         $comment_ratings_mode_settings->comment_ratings_mode = $comment_ratings_mode;
                         
-                        $this->SetOption(WP_RW__DB_OPTION_COMMENT_RATINGS_MODE_SETTINGS, $comment_ratings_mode_settings);
+                        $this->SetOption(WP_RW__DB_OPTION_IS_ADMIN_COMMENT_RATINGS_SETTINGS, $comment_ratings_mode_settings);
 					}
 
 					/* Visibility settings
@@ -6708,37 +6774,11 @@
 					add_meta_box('rw-post-meta-box', WP_RW__NAME, array(&$this, 'ShowPostMetaBox'), $t, 'side', 'high');
 			}
 
-            /**
-             * Adds a rating metabox on the comment edit page.
-             * 
-             * @author Leo Fajardo (@leorw)
-             * @since 2.6.0
-             */
-            function add_comment_rating_metabox() {
-                /**
-                 * Check if the current user has admin privileges.
-                 * Also check if the comment ratings mode is not "Reviews Ratings" which means that it is either "Comment Ratings" or "Admin ratings only".
-                 */
-                if ( current_user_can( 'manage_options' ) && ( ! $this->is_comment_review_mode() ) ) {
-                    add_meta_box( 'rw-comment-meta-box', WP_RW__NAME, array( &$this, 'show_comment_rating_metabox' ), 'comment', 'normal' );
-                }
-            }
-
 			// Callback function to show fields in meta box.
 			function ShowPostMetaBox()
 			{
 				rw_require_view('pages/admin/post-metabox.php');
 			}
-
-            /**
-             * Loads the content of the comment rating metabox.
-             * 
-             * @author Leo Fajardo (@leorw)
-             * @since 2.6.0
-             */
-            function show_comment_rating_metabox() {
-				rw_require_view('pages/admin/comment-metabox.php');
-            }
 
 			// Save data from meta box.
 			function SavePostData($post_id)
@@ -6816,45 +6856,6 @@
 				return $post_id;
 			}
             
-            /**
-             * Saves the comment rating's read-only and active states.
-             * 
-             * @author Leo Fajardo (@leorw)
-             * @since 2.6.0
-             * 
-             * @param int $comment_id
-             */
-			function save_comment_data( $comment_id ) {
-				if ( RWLogger::IsOn() ) {
-                    $params = func_get_args();
-                    RWLogger::LogEnterence( 'save_comment_data', $params, true );
-                }
-
-				// Verify nonce.
-				if ( ! isset( $_POST['rw_comment_meta_box_nonce'] ) || ! wp_verify_nonce( $_POST['rw_comment_meta_box_nonce'], basename( WP_RW__PLUGIN_FILE_FULL ) ) ) {
-                    return;
-                }
-
-				// Check whether this comment's rating is to be included.
-				$include_rating = ( isset( $_POST['rw_include_comment_rating'] ) && '1' == $_POST['rw_include_comment_rating'] );
-
-				// Checks whether this comment's rating is to be set to read-only.
-				$readonly_rating = ( ! isset( $_POST['rw_readonly_comment_rating'] ) || '1' !== $_POST['rw_readonly_comment_rating'] );
-
-				$this->add_to_visibility_list( $comment_id, array( 'comment' ), $include_rating );
-				$this->SetOption( WP_RW__VISIBILITY_SETTINGS, $this->_visibilityList );
-
-                // Add to or remove from the read-only list of comment IDs based on the state of the read-only checkbox.
-                $this->add_to_readonly( $comment_id, array( 'comment' ), $readonly_rating );
-                $this->SetOption(WP_RW__READONLY_SETTINGS, $this->_readonly_list);
-
-				$this->_options->store();
-
-				if ( RWLogger::IsOn() ) {
-					RWLogger::LogDeparture( 'save_comment_data' );
-				}
-			}
-
 			function DeletePostData($post_id) {
 				RWLogger::LogEnterence('DeletePostData');
 
@@ -7662,7 +7663,7 @@
 					'slug'              => 'rating-widget',
 					'menu_slug'         => 'rating-widget',
 					'is_live'           => true,
-					'is_premium'        => true,
+					'is_premium'        => false,
 					'has_addons'        => false,
 					'has_paid_plans'    => true,
 					'enable_anonymous'  => false,
