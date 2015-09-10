@@ -1,17 +1,25 @@
 <?php
+	/**
+	 * @var Freemius           $rw_fs
+	 * @var RatingWidgetPlugin $rwp
+	 */
+	global $rw_fs, $rwp;
+
 	$rclass = rtrim(rw_settings_rating_type(), 's');
 	$has_multi_rating = ratingwidget()->has_multirating_options($rclass);
 	$multi_criterion = false;
 
 	if ($has_multi_rating) {
-		$multirating_options = ratingwidget()->get_multirating_options_by_class($rclass);
-		
+		$multirating_options = ratingwidget()->get_multirating_options_by_class( $rclass );
+
 		// Check if there are more than one criteria so that we can hide or show additional options
-		$total_criteria = count($multirating_options->criteria);
-		$multi_criterion = ($total_criteria > 1);
-		
-		if ( $multi_criterion && ( ! ratingwidget()->IsProfessional() ) && $total_criteria > 3 ) {
-			$multirating_options->criteria = array_splice( $multirating_options->criteria, 0, 3 );
+		$total_criteria  = count( $multirating_options->criteria );
+		$multi_criterion = ( $total_criteria > 1 );
+
+		if ( ! rw_fs()->is_plan_or_trial__premium_only( 'professional' ) ) {
+			if ( $total_criteria > 3 ) {
+				$multirating_options->criteria = array_splice( $multirating_options->criteria, 0, 3 );
+			}
 		}
 	}
 	
@@ -109,11 +117,11 @@ var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po
 								<div class="rw-dash">
 									<?php
                                         $upgrade_label_text = __('Upgrade to Professional for Unlimited Criteria', WP_RW__ID);
-									if ($total_criteria >= 3 && !ratingwidget()->IsProfessional()) { ?>
-									<a class="rw-add-rating upgrade" href="<?php echo rw_fs()->get_upgrade_url(); ?>" data-upgrade-href="<?php echo rw_fs()->get_upgrade_url(); ?>" data-upgrade-text="[+] <?php echo $upgrade_label_text ?>" data-default-text="[+] <?php _e('Add Rating / Criteria', WP_RW__ID); ?>">[+] <?php echo $upgrade_label_text ?></a>
+									if ($total_criteria >= 3 && !rw_fs()->is_plan_or_trial('professional')) { ?>
+									<a class="rw-add-rating upgrade" href="<?php echo $rw_fs->get_upgrade_url(); ?>" data-upgrade-href="<?php echo $rw_fs->get_upgrade_url(); ?>" data-upgrade-text="[+] <?php echo $upgrade_label_text ?>" data-default-text="[+] <?php _e('Add Rating / Criteria', WP_RW__ID); ?>">[+] <?php echo $upgrade_label_text ?></a>
 									<?php
 									} else { ?>
-									<a class="rw-add-rating" href="#" data-upgrade-href="<?php echo rw_fs()->get_upgrade_url(); ?>" data-upgrade-text="[+] <?php echo $upgrade_label_text ?>" data-default-text="[+] <?php _e('Add Rating / Criteria', WP_RW__ID); ?>">[+] <?php _e('Add Rating / Criteria', WP_RW__ID); ?></a>
+									<a class="rw-add-rating" href="#" data-upgrade-href="<?php echo $rw_fs->get_upgrade_url(); ?>" data-upgrade-text="[+] <?php echo $upgrade_label_text ?>" data-default-text="[+] <?php _e('Add Rating / Criteria', WP_RW__ID); ?>">[+] <?php _e('Add Rating / Criteria', WP_RW__ID); ?></a>
 									<?php
 									}
 									?>
@@ -198,7 +206,7 @@ var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po
 				
                 // Initialize ratings.
                 function RW_Async_Init() {
-                    RW.init('<?php echo rw_fs()->get_site()->public_key ?>');
+                    RW.init('<?php echo rw_account()->site_public_key ?>');
                     <?php
                         $b_type = $options->type;
                         $b_theme = $options->theme;
@@ -291,8 +299,8 @@ var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po
             <input type="hidden" id="rw_options_hidden" name="rw_options" value="" />
 
             <input type="submit" name="Submit" class="button-primary" value="<?php esc_attr_e('Save Changes', WP_RW__ID) ?>" />
-            <?php if (!rw_fs()->is_paying()) : ?>
-            <a href="<?php echo rw_fs()->get_upgrade_url() ?>" onclick="_gaq.push(['_trackEvent', 'upgrade', 'wordpress', 'gopro_button', 1, true]); _gaq.push(['_link', this.href]); return false;" class="button-secondary gradient rw-upgrade-button" style="float: right;"><?php _e('Upgrade Now!', WP_RW__ID) ?></a>
+            <?php if ($rw_fs->is_not_paying()) : ?>
+            <a href="<?php echo $rw_fs->get_upgrade_url() ?>" onclick="_gaq.push(['_trackEvent', 'upgrade', 'wordpress', 'gopro_button', 1, true]); _gaq.push(['_link', this.href]); return false;" class="button-secondary gradient rw-upgrade-button" style="float: right;"><?php _e('Upgrade Now!', WP_RW__ID) ?></a>
             <?php endif; ?>
             <span style="margin: 0 10px; font-size: 1em; float: right; line-height: 30px;"><b style="font-size: 24px;vertical-align: top;color: #999;">&#9829;</b> <?php _e('Like it?', WP_RW__ID) ?>  <a href="http://wordpress.org/support/view/plugin-reviews/rating-widget?rate=5#postform" target="_blank" style="
     font-weight: bold;

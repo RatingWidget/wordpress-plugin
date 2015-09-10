@@ -17,11 +17,13 @@
                     <tr id="rw_star_size" class="rw-<?php echo (($odd = !$odd) ? "odd" : "even");?>">
                         <?php rw_include_once_view("settings/size.php"); ?>
                     </tr>
+	                <?php if (rw_fs()->is__premium_only()) { ?>
                     <?php if (ratingwidget()->IsBuddyPressInstalled() || ratingwidget()->IsBBPressInstalled()) : ?>
                     <tr id="rw_rate_background" class="rw-<?php echo (($odd = !$odd) ? "odd" : "even");?>">
                         <?php rw_include_once_view("settings/background.php"); ?>
                     </tr>
-                    <?php endif; ?>
+                    <?php endif ?>
+	                <?php } ?>
                     <tr id="rw_rate_readonly" class="rw-<?php echo (($odd = !$odd) ? "odd" : "even");?>">
                         <?php rw_include_once_view("settings/read_only.php"); ?>
                     </tr>

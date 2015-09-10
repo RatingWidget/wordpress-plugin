@@ -19,7 +19,7 @@
                     <i class="rw-ui-sprite"></i> <input type="radio" name="rw_comment_review_mode" value="true" <?php checked( 'true', $comment_ratings_mode ); ?>> <span><?php _e( 'Reviews Ratings - Users can submit a rating with their comments.', WP_RW__ID ); ?></span>
                 </div>
                 <div class="rw-ui-img-radio rw-ui-img-radio-review-mode rw-ui-hor<?php if ( 'admin_ratings' === $comment_ratings_mode ) echo ' rw-selected';?>">
-                    <i class="rw-ui-sprite"></i> <input type="radio" name="rw_comment_review_mode" value="admin_ratings" <?php checked( 'admin_ratings', $comment_ratings_mode ); ?>> <span><?php _e( 'Admin ratings only', WP_RW__ID ); ?></span>
+                    <i class="rw-ui-sprite"></i> <input type="radio" name="rw_comment_review_mode" value="admin_ratings" <?php checked( 'admin_ratings', $comment_ratings_mode ); ?>> <span><?php _e( 'Moderator Ratings - Only admin users can rate the comments [via the comment editor].', WP_RW__ID ); ?></span>
                 </div>
             </div>
         </div>
