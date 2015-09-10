@@ -72,7 +72,7 @@
 		}
 
 		/**
-		 * @param \FS_Entity $entity
+		 * @param FS_Entity $entity
 		 * @param bool       $store
 		 */
 		function set(FS_Entity $entity, $store = false)
