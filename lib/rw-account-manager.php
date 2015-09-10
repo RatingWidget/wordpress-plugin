@@ -32,6 +32,10 @@
 		 * @var string
 		 */
 		public $user_email;
+		/**
+		 * @var RW_Options
+		 */
+		private $_options;
 
 		/**
 		 * @var RW_Account_Manager
@@ -48,11 +52,92 @@
 			return self::$INSTANCE;
 		}
 
-		#endregion ---------------------------------------------
+		#endregion Singleton ---------------------------------------------
 
 		private function __construct() {
+			$this->_options = rw_fs_options();
+
+			$this->optional_migration();
+
 			$this->load_account();
 		}
+
+		#region Data Migration ------------------------------------------------------------------
+
+		/**
+		 * Optional data migration based on the database stored options.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  2.6.3
+		 */
+		private function optional_migration() {
+			$site_id = $this->_options->get_option( WP_RW__DB_OPTION_SITE_ID );
+
+			if ( empty( $site_id ) ) {
+				$fs_options = rw_fs()->get_options_manager( WP_FS__ACCOUNTS_OPTION_NAME, true, false );
+				if ( false === $fs_options ) {
+					// No FS options are stored, probably new plugin install.
+				} else {
+					// Check if RW account stored in FS accounts object (was set in one of the first FS semi-integrated versions.
+					$sites = $fs_options->get_option( 'sites' );
+
+					if ( ! empty( $sites ) && is_array( $sites ) && 0 < count( $sites ) ) {
+						foreach ( $sites as $basename => $site ) {
+							if ( '/rating-widget.php' !== substr( $basename, - strlen( '/rating-widget.php' ) ) ) {
+								continue;
+							}
+
+							if ( is_object( $site ) &&
+							     ! empty( $site->secret_key ) &&
+							     'sk_' !== substr( $site->secret_key, 0, 3 ) &&
+							     ! empty( $site->public_key ) &&
+							     'pk_' !== substr( $site->public_key, 0, 3 )
+							) {
+								$this->migrate_from_fs_options( $fs_options, $basename );
+							}
+						}
+					}
+				}
+			}
+		}
+
+		/**
+		 * Migration from account options stored in FS accounts object back to RW options object.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  2.6.3
+		 *
+		 * @param FS_Option_Manager $fs_options
+		 * @param string            $basename
+		 */
+		private function migrate_from_fs_options($fs_options, $basename){
+			// Load site information.
+			$sites = $fs_options->get_option('sites');
+			$site = $sites[$basename];
+
+			// Load user information.
+			$users = $fs_options->get_option('users');
+			$user = $users[$site->user_id];
+
+			// Update account information.
+			$this->set(
+				$site->id,
+				$site->public_key,
+				$site->secret_key,
+				$user->id,
+				$user->email
+			);
+
+			// Remove RW account from FS object.
+			unset($sites[$basename]);
+			unset($users[$site->user_id]);
+
+			$fs_options->set_option('sites', $sites);
+			$fs_options->set_option('users', $users);
+			$fs_options->store();
+		}
+
+		#endregion Data Migration ------------------------------------------------------------------
 
 		/**
 		 * Load RatingWidget account information.
@@ -66,19 +151,17 @@
 		 */
 		private function load_account() {
 
-			$fs_options = rw_fs_options();
-
-			$site_id    = $fs_options->get_option( WP_RW__DB_OPTION_SITE_ID );
-			$public_key = $fs_options->get_option( WP_RW__DB_OPTION_SITE_PUBLIC_KEY );
-			$secret_key = $fs_options->get_option( WP_RW__DB_OPTION_SITE_SECRET_KEY );
-			$user_id    = $fs_options->get_option( WP_RW__DB_OPTION_OWNER_ID );
-			$user_email = $fs_options->get_option( WP_RW__DB_OPTION_OWNER_EMAIL );
+			$site_id    = $this->_options->get_option( WP_RW__DB_OPTION_SITE_ID );
+			$public_key = $this->_options->get_option( WP_RW__DB_OPTION_SITE_PUBLIC_KEY );
+			$secret_key = $this->_options->get_option( WP_RW__DB_OPTION_SITE_SECRET_KEY );
+			$user_id    = $this->_options->get_option( WP_RW__DB_OPTION_OWNER_ID );
+			$user_email = $this->_options->get_option( WP_RW__DB_OPTION_OWNER_EMAIL );
 
 			$account_updated = false;
 
 			if ( empty( $site_id ) && defined( 'WP_RW__SITE_ID' ) ) {
 				$this->site_id = WP_RW__SITE_ID;
-				$fs_options->set_option( WP_RW__DB_OPTION_SITE_ID, $this->site_id );
+				$this->_options->set_option( WP_RW__DB_OPTION_SITE_ID, $this->site_id );
 				$account_updated = true;
 			} else if ( ! empty( $site_id ) ) {
 				define( 'WP_RW__SITE_ID', $site_id );
@@ -87,7 +170,7 @@
 
 			if ( empty( $public_key ) && defined( 'WP_RW__SITE_PUBLIC_KEY' ) ) {
 				$this->site_public_key = WP_RW__SITE_PUBLIC_KEY;
-				$fs_options->set_option( WP_RW__DB_OPTION_SITE_PUBLIC_KEY, $this->site_public_key );
+				$this->_options->set_option( WP_RW__DB_OPTION_SITE_PUBLIC_KEY, $this->site_public_key );
 				$account_updated = true;
 			} else if ( ! empty( $public_key ) ) {
 				define( 'WP_RW__SITE_PUBLIC_KEY', $public_key );
@@ -96,7 +179,7 @@
 
 			if ( empty( $secret_key ) && defined( 'WP_RW__SITE_SECRET_KEY' ) ) {
 				$this->site_secret_key = WP_RW__SITE_SECRET_KEY;
-				$fs_options->set_option( WP_RW__DB_OPTION_SITE_SECRET_KEY, $this->site_secret_key );
+				$this->_options->set_option( WP_RW__DB_OPTION_SITE_SECRET_KEY, $this->site_secret_key );
 				$account_updated = true;
 			} else if ( ! empty( $secret_key ) ) {
 				define( 'WP_RW__SITE_SECRET_KEY', $secret_key );
@@ -114,7 +197,7 @@
 			}
 
 			if ( $account_updated ) {
-				$fs_options->store();
+				$this->_options->store();
 			}
 		}
 
@@ -130,18 +213,17 @@
 			$this->update_site_id($site_id, false);
 			$this->update_site_public_key($site_public_key, false);
 			$this->update_site_secret_key($site_secret_key, false);
-			rw_fs_options()->store();
+			$this->_options->store();
 		}
 
 		function clear()
 		{
-			$options = rw_fs_options();
-			$options->unset_option( WP_RW__DB_OPTION_OWNER_ID );
-			$options->unset_option( WP_RW__DB_OPTION_OWNER_EMAIL );
-			$options->unset_option( WP_RW__DB_OPTION_SITE_PUBLIC_KEY );
-			$options->unset_option( WP_RW__DB_OPTION_SITE_ID );
-			$options->unset_option( WP_RW__DB_OPTION_SITE_SECRET_KEY );
-			$options->store();
+			$this->_options->unset_option( WP_RW__DB_OPTION_OWNER_ID );
+			$this->_options->unset_option( WP_RW__DB_OPTION_OWNER_EMAIL );
+			$this->_options->unset_option( WP_RW__DB_OPTION_SITE_PUBLIC_KEY );
+			$this->_options->unset_option( WP_RW__DB_OPTION_SITE_ID );
+			$this->_options->unset_option( WP_RW__DB_OPTION_SITE_SECRET_KEY );
+			$this->_options->store();
 		}
 
 		function is_registered()
@@ -166,31 +248,31 @@
 
 		function update_site_id($id, $flush = true)
 		{
-			rw_fs_options()->set_option( WP_RW__DB_OPTION_SITE_ID, $id, $flush );
+			$this->_options->set_option( WP_RW__DB_OPTION_SITE_ID, $id, $flush );
 			$this->site_id = $id;
 		}
 
 		function update_site_public_key($public_key, $flush = true)
 		{
-			rw_fs_options()->set_option( WP_RW__DB_OPTION_SITE_PUBLIC_KEY, $public_key, $flush );
+			$this->_options->set_option( WP_RW__DB_OPTION_SITE_PUBLIC_KEY, $public_key, $flush );
 			$this->site_public_key = $public_key;
 		}
 
 		function update_site_secret_key($secret_key, $flush = true)
 		{
-			rw_fs_options()->set_option( WP_RW__DB_OPTION_SITE_SECRET_KEY, $secret_key, $flush );
+			$this->_options->set_option( WP_RW__DB_OPTION_SITE_SECRET_KEY, $secret_key, $flush );
 			$this->site_secret_key = $secret_key;
 		}
 
 		function update_user_id($id, $flush = true)
 		{
-			rw_fs_options()->set_option( WP_RW__DB_OPTION_OWNER_ID, $id, $flush );
+			$this->_options->set_option( WP_RW__DB_OPTION_OWNER_ID, $id, $flush );
 			$this->user_id = $id;
 		}
 
 		function update_user_email($email, $flush = true)
 		{
-			rw_fs_options()->set_option( WP_RW__DB_OPTION_OWNER_EMAIL, $email, $flush );
+			$this->_options->set_option( WP_RW__DB_OPTION_OWNER_EMAIL, $email, $flush );
 			$this->user_email = $email;
 		}
 	}
