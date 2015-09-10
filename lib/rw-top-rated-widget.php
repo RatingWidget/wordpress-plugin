@@ -45,12 +45,17 @@
 			}
 
 			function widget( $args, $instance ) {
+				/**
+				 * @var RatingWidgetPlugin $rwp
+				 */
+				global $rwp;
+
 				if ( RWLogger::IsOn() ) {
 					$params = func_get_args();
 					RWLogger::LogEnterence( "RatingWidgetPlugin_TopRatedWidget.widget", $params, true );
 				}
 
-				if ( ! defined( "WP_RW__SITE_PUBLIC_KEY" ) || false === WP_RW__SITE_PUBLIC_KEY ) {
+				if ( ! rw_account()->is_registered() ) {
 					return;
 				}
 
@@ -60,8 +65,13 @@
 
 				extract( $args, EXTR_SKIP );
 
-				$bpInstalled = ratingwidget()->IsBuddyPressInstalled();
-				$bbInstalled = ratingwidget()->IsBBPressInstalled();
+				$bpInstalled = $rwp->IsBuddyPressInstalled();
+
+				if (rw_fs()->is__premium_only()) {
+					$bbInstalled = $rwp->IsBBPressInstalled();
+				}else{
+					$bbInstalled = false;
+				}
 
 				$types = $this->GetTypesInfo();
 
@@ -84,7 +94,7 @@
 				}
 
 				$details = array(
-					"uid" => WP_RW__SITE_PUBLIC_KEY,
+					"uid" => rw_account()->site_public_key,
 				);
 
 				$queries = array();
@@ -158,7 +168,7 @@
 					),
 				);
 				$toprated_data->site       = array(
-					'id'     => WP_RW__SITE_ID,
+					'id'     => rw_account()->site_id,
 					'domain' => $_SERVER['HTTP_HOST'],
 					'type'   => 'WordPress',
 				);
@@ -428,7 +438,7 @@
 
 								$item = array(
 									'site'   => array(
-										'id'     => WP_RW__SITE_ID,
+										'id'     => rw_account()->site_id,
 										'domain' => $_SERVER['HTTP_HOST'],
 									),
 									'page'   => array(

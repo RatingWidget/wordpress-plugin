@@ -59,11 +59,11 @@
 		}
 		?>
 	</table>
-    <label for="rw_include_comment_rating"><input type="checkbox" name="rw_include_comment_rating" id="rw_include_comment_rating" value="1"<?php checked( true, $rwp->rw_validate_visibility( $comment->comment_ID, 'comment' ) ); ?> /><?php _e( 'Show Rating (Uncheck to Hide)', WP_RW__ID ); ?></label>
+	<label for="rw_include_comment_rating"><input type="checkbox" name="rw_include_comment_rating" id="rw_include_comment_rating" value="1"<?php checked( true, $rwp->rw_validate_visibility( $comment->comment_ID, 'comment' ) ); ?> /><?php _e( 'Show Rating (Uncheck to Hide)', WP_RW__ID ); ?></label>
     <?php
     // Do not show this option when the comment ratings mode is "Admin ratings only" since in that mode the ratings should be read-only.
     if ( ! $rwp->is_comment_admin_ratings_mode() ) { ?>
     <br />
-	<label for="rw_readonly_comment_rating"><input type="checkbox" name="rw_readonly_comment_rating" id="rw_readonly_comment_rating" value="1"<?php checked( true, ! $rwp->is_rating_readonly( $comment->comment_ID, 'comment' ) ); ?> /><?php _e( 'Active (Uncheck to ReadOnly)', WP_RW__ID ); ?></label>
+    <label for="rw_readonly_comment_rating"><input type="checkbox" name="rw_readonly_comment_rating" id="rw_readonly_comment_rating" value="1"<?php checked( true, ! $rwp->is_rating_readonly( $comment->comment_ID, 'comment' ) ); ?> /><?php _e( 'Active (Uncheck to ReadOnly)', WP_RW__ID ); ?></label>
     <?php } ?>
 </p>

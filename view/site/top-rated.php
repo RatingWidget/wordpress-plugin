@@ -36,9 +36,9 @@ if ('ltr' !== $direction && 'rtl' !== $direction) {
 	$direction = 'ltr';
 }
 
-// Ensure that the maximum number of items is 10 if the account is not professional
-if ($max_items > 10 && !ratingwidget()->IsProfessional()) {
-	$max_items = 10;
+if (!rw_fs()->is_plan_or_trial__premium_only('professional')){
+	// Ensure that the maximum number of items is 10 for the free version.
+	$max_items = min($max_items, 10);
 }
 
 $rw_ret_obj = ratingwidget()->GetTopRatedData(array($type), $max_items, 0,

@@ -156,6 +156,13 @@
 		require( rw_get_view_path( $path ) );
 	}
 
+	function rw_get_view( $path, &$params = null ) {
+		$VARS = &$params;
+		ob_start();
+		require( rw_get_view_path( $path ) );
+		return ob_get_clean();
+	}
+
 	function rw_require_once_view( $path, &$params = null ) {
 		$VARS = &$params;
 		require_once( rw_get_view_path( $path ) );

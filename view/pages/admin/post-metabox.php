@@ -33,13 +33,13 @@
 	$multirating_options = ratingwidget()->get_multirating_options_by_class($rclass);
 	$multi_criteria = count($multirating_options->criteria) > 1;
 	
-	$options = ratingwidget()->get_options_by_class($rclass);
+	$options = $rwp->get_options_by_class($rclass);
 
     $default_hide_recommendations = isset($options->hideRecommendations) ? $options->hideRecommendations : false;
 ?>
 <p>
 	<input type="hidden" name="rw_post_meta_box_nonce" value="<?php echo wp_create_nonce(basename(WP_RW__PLUGIN_FILE_FULL)) ?>" />
-	<table class="rw-rating-table rw-<?php echo $options->advanced->layout->dir;?>">
+	<table class="rw-rating-table rw-<?php echo (isset($options->advanced) && isset($options->advanced->layout) && !empty($options->advanced->layout->dir)) ? $options->advanced->layout->dir : 'ltr' ?>">
 		<?php
 		$urid_summary = $rwp->get_rating_id_by_element($post->ID, $rclass, false);
 		

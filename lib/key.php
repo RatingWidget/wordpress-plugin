@@ -1,6 +1,8 @@
 <?php
     // Exit if accessed directly.
-    if (!defined('ABSPATH')) exit;
+    if (!defined('ABSPATH')) {
+	    exit;
+    }
     
     /* Unique-User-Key & API Secret
     -----------------------------------------------------------------------------------------*/
@@ -11,5 +13,4 @@
     //define('WP_RW__USER_KEY', 'abcdefghijklmnopqrstuvwzyz123456');
 
     // You can hardcode your Rating-Widget secret here (only for Pro version - contact vova@rating-widget.com)
-    //define('WP_RW__USER_SECRET', 'abcdefghijklmnopqrstuvwzyz123456');  
-?>
+    //define('WP_RW__USER_SECRET', 'abcdefghijklmnopqrstuvwzyz123456');
