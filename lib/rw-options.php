@@ -204,7 +204,7 @@
 			}
 		}
 
-		#endregion
+		#endregion Data Migration ------------------------------------------------------------------
 
 		function is_loaded() {
 			return $this->_options->is_loaded();
@@ -244,6 +244,9 @@
 		}
 	}
 
+	/**
+	 * @return RW_Options
+	 */
 	function rw_fs_options()
 	{
 		return RW_Options::instance();

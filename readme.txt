@@ -4,7 +4,7 @@ Donate link: http://rating-widget.com/pricing/wordpress/
 Tags: rate, rating, ratings, vote, votes, voting, star, stars, like, dislike, thumbs, widget, widgets, star rating, thumb rating, rating platform, rating system, seo, post rating, comment rating, 5 star, five star, sidebar, comment, comments, post, posts, page, pages, google, admin, administrator, review, reviews, rich-snippets, plugin, plugins, ajax, buddypress, bbpress, social, javascript, js, wordpress, meta, woocommerce, jquery, contest, competition, voting contest, rtmedia
 Requires at least: 2.9
 Tested up to: 4.3
-Stable tag: 2.6.1
+Stable tag: 2.6.3
 License: GPLv2 or later
 
 The most popular Five Star Review System on the web. User-friendly ratings for: posts, pages, comments, WooCommerce, BuddyPress and bbPress forums.
@@ -181,6 +181,14 @@ If you didn't find a solution to your problem yet, check out our [WordPress Know
 The RatingWidget Team
 
 == Change Log ==
+
+= 2.6.3 - 2015-09-10 =
+* Fix: Fixed account details migration (versions that account stored only in FS object).
+* Fix: Added API fallback to HTTP since seems like some cURL versions don't play well with CloudFlare.
+
+= 2.6.2 - 2015-09-09 =
+* Fix: func_get_args() can't be used as a function parameter on old PHP versions.
+* Fix: Removed "\" from classes since namespaces aren't supported in PHP < 5.3.
 
 = 2.6.1 - 2015-09-09 =
 * Fix: Mistakenly left PHP errors flag on which caused showing all site's PHP warnings and notices. Sorry :(
