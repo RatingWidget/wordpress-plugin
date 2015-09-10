@@ -64,7 +64,7 @@
 	-----------------------------------------------------------------------------------------*/
 	define( 'WP_RW__DEBUG_PARAMS', false || ( ! empty( $_GET['rwdbge'] ) && 'true' === $_GET['rwdbge'] ) );
 	define( 'WP_RW__DEBUG', WP_RW__DEBUG_PARAMS || false || ( ! empty( $_GET['rwdbg'] ) && 'true' === $_GET['rwdbg'] ) );
-	define( 'WP_RW__SHOW_PHP_ERRORS', true );
+	define( 'WP_RW__SHOW_PHP_ERRORS', WP_RW__DEBUG );
 	define( 'WP_RW__LOCALHOST_SCRIPTS', WP_RW__DEBUG && false );
 	define( 'WP_RW__CACHING_ON', ! WP_RW__DEBUG );
 	define( 'WP_RW__STAGING', false );

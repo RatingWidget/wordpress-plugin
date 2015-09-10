@@ -3,8 +3,8 @@ Contributors: ratingwidget, svovaf, leorw, freemius
 Donate link: http://rating-widget.com/pricing/wordpress/
 Tags: rate, rating, ratings, vote, votes, voting, star, stars, like, dislike, thumbs, widget, widgets, star rating, thumb rating, rating platform, rating system, seo, post rating, comment rating, 5 star, five star, sidebar, comment, comments, post, posts, page, pages, google, admin, administrator, review, reviews, rich-snippets, plugin, plugins, ajax, buddypress, bbpress, social, javascript, js, wordpress, meta, woocommerce, jquery, contest, competition, voting contest, rtmedia
 Requires at least: 2.9
-Tested up to: 4.2
-Stable tag: 2.6.0
+Tested up to: 4.3
+Stable tag: 2.6.1
 License: GPLv2 or later
 
 The most popular Five Star Review System on the web. User-friendly ratings for: posts, pages, comments, WooCommerce, BuddyPress and bbPress forums.
@@ -182,14 +182,19 @@ The RatingWidget Team
 
 == Change Log ==
 
-= 2.6.0 - 2015-09-01 =
-* Update: Code modernization + added regions for better folding during editing.
-* Optimization: Removed old unused code.
+= 2.6.1 - 2015-09-09 =
+* Fix: Mistakenly left PHP errors flag on which caused showing all site's PHP warnings and notices. Sorry :(
+* Fix: Removed duplicated handler from live preview JS.
+
+= 2.6.0 - 2015-09-09 =
+* New: Added comments “Moderator Only” mode. To enable admin only voting on comment ratings.
 * Update: Modified Power-User settings custom image example images URLs to the default yellow medium ratings.
+* Optimization: Removed old unused code.
+* Update: Code modernization + added regions for better folding during editing.
 * Optimization: Removed all reports' API calls and rendering, since it's not relevant for the free version.
 * Fix: Fixed the remove criterion button in the live preview by adding display: block. Without display: block, the button doesn't work work well in Chrome.
+* Update: Finally officially removed all ratings boosting functionality.
 * Update: Fully integrated Freemius.
-* Update: Officially removed all ratings boosting functionality.
 
 = 2.5.9 - 2015-07-28 =
 * New: Added “review mode” for comment ratings so users can submit a rating with their comments.
