@@ -4,7 +4,7 @@ Donate link: http://rating-widget.com/pricing/wordpress/
 Tags: rate, rating, ratings, vote, votes, voting, star, stars, like, dislike, thumbs, widget, widgets, star rating, thumb rating, rating platform, rating system, seo, post rating, comment rating, 5 star, five star, sidebar, comment, comments, post, posts, page, pages, google, admin, administrator, review, reviews, rich-snippets, plugin, plugins, ajax, buddypress, bbpress, social, javascript, js, wordpress, meta, woocommerce, jquery, contest, competition, voting contest, rtmedia
 Requires at least: 2.9
 Tested up to: 4.3
-Stable tag: 2.6.3
+Stable tag: 2.6.4
 License: GPLv2 or later
 
 The most popular Five Star Review System on the web. User-friendly ratings for: posts, pages, comments, WooCommerce, BuddyPress and bbPress forums.
@@ -181,6 +181,13 @@ If you didn't find a solution to your problem yet, check out our [WordPress Know
 The RatingWidget Team
 
 == Change Log ==
+
+= 2.6.4 - 2015-09-11 =
+* Optimization: Resized and compressed all screenshot images to significantly reduce plugin Zip size.
+* New: Added special flow to recover previous lost account.
+* Fix: Fixed API fallback to HTTP. Seems like the fallback param wasn't stored correctly in the DB.
+* Fix: Added API fallback to RW SDK.
+* Update: Added RTL support for sticky admin notices.
 
 = 2.6.3 - 2015-09-10 =
 * Fix: Fixed account details migration (versions that account stored only in FS object).
