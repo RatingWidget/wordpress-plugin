@@ -3,7 +3,7 @@
 	 * Plugin Name: Rating-Widget: Star Review System
 	 * Plugin URI:  http://rating-widget.com/wordpress-plugin/
 	 * Description: Create and manage Rating-Widget ratings in WordPress.
-	 * Version:     2.6.3
+	 * Version:     2.6.4
 	 * Author:      Rating-Widget
 	 * Author URI:  http://rating-widget.com/wordpress-plugin/
 	 * License:     GPLv2
@@ -60,7 +60,7 @@
 			private $errors;
 			private $success;
 			/**
-		     * @var \Freemius
+			 * @var Freemius
 			 */
 			public $fs;
 			static $ratings = array();
@@ -80,7 +80,7 @@
 			var $_inBuddyPress;
 			var $_inBBPress;
 			/**
-			 * @var \FS_Option_Manager
+			 * @var FS_Option_Manager
 			 */
 			var $_options;
 
@@ -125,7 +125,7 @@
 				if ( ! RWLogger::IsOn() && $this->GetOption( WP_RW__LOGGER ) ) {
 					$this->InitLogger();
 				}
-				
+
 				// If not in admin dashboard and account don't exist, don't continue with plugin init.
 				if ( ! $this->fs->is_registered() && ! is_admin() ) {
 					return;
@@ -133,7 +133,7 @@
 
 				// Load config after keys are loaded.
 				require_once( WP_RW__PLUGIN_DIR . "/lib/config.php" );
-				
+
 				// Load top-rated
 				require_once(WP_RW__PLUGIN_LIB_DIR . "rw-top-rated-widget.php");
 			}
@@ -198,7 +198,7 @@
 
 				// Enqueue site's styles
 				add_action('wp_enqueue_scripts', array(&$this, 'init_site_styles'));
-				
+
 				require_once( WP_RW__PLUGIN_DIR . "/languages/dir.php" );
 				$this->languages       = $rw_languages;
 				$this->languages_short = array_keys( $this->languages );
@@ -335,7 +335,7 @@
 					add_action( 'wp_ajax_rw-addon-request', array( &$this, 'send_addon_request' ) );
 					add_action( 'admin_init', array( &$this, 'register_admin_page_hooks' ) );
 					add_action( 'admin_menu', array( &$this, 'AddPostMetaBox' ) ); // Metabox for posts/pages
-                    add_action( 'admin_menu', array( &$this, 'add_comment_rating_metabox' ) ); // Metabox for comment edit page.
+					add_action( 'admin_menu', array( &$this, 'add_comment_rating_metabox' ) ); // Metabox for comment edit page.
 					add_action( 'save_post', array( &$this, 'SavePostData' ) );
 					add_action( 'edit_comment', array( &$this, 'save_comment_data' ) );
 
@@ -463,11 +463,11 @@
 				echo 1;
 				exit;
 			}
-			
+
 			/**
 			 * Sends an email to addons@rating-widget.com containing
 			 * information about the add-on with which the user is interacting.
-			 * 
+			 *
 			 * @author Leo Fajardo (@leorw)
 			 * @since 2.5.1
 			 *
@@ -481,7 +481,7 @@
 				$pricing = $addon['pricing'][0];
 				$price = $pricing['annual_price'];
 				$is_free = (NULL === $price);
-				
+
 				$addon_title = '';
 				$total_addons = count($addons);
 				for ( $i = 0; $i < $total_addons; $i++ ) {
@@ -492,10 +492,10 @@
 							$addon_title .= '<br />';
 						}
 					}
-					
+
 					$addon_title .= $addons[$i]['title'];
 				}
-				
+
 				$site_address = site_url();
 
 				$email_details = array(
@@ -505,13 +505,13 @@
 					'addon_action' => $_REQUEST['addon_action'],
 					'addon_order' => $addon_title
 				);
-				
+
 				if ( isset($_REQUEST['add_user']) ) {
 					$user_email = get_option('admin_email');
-					
+
 					$email_details['addon_user_email'] = $user_email;
 				}
-				
+
 				// Retrieve the HTML email content
 				ob_start();
 				rw_require_view('emails/addon_email.php', $email_details);
@@ -521,14 +521,14 @@
 				$subject = "Add-on Request: {$addon['title']} / " . ($is_free ? 'Free' : $price);
 				$header = 'Content-type: text/html';
 				wp_mail('addons@rating-widget.com', $subject, $message, $header);
-				
+
 				echo 1;
 				exit;
 			}
-			
+
 			/**
 			 * Returns an array of available add-ons.
-			 * 
+			 *
 			 * @author Leo Fajardo (@leorw)
 			 * @since 2.5.1
 			 *
@@ -657,12 +657,12 @@
 						'licenses' => ''
 					)
 				);
-				
+
 				// Reorder the add-ons using the Fisher-Yates algorithm.
 				// Generate a seed value based on the site URL.
 				$seed = crc32(site_url());
 				mt_srand($seed);
-				
+
 				// Fisher-Yates shuffle algorithm
 				$total = count($addons);
 				for ( $i = $total - 1; $i > 0; $i-- ) {
@@ -671,26 +671,26 @@
 					$addons[$i] = $addons[$j];
 					$addons[$j] = $tmp;
 				}
-				
+
 				return $addons;
 			}
-			
+
 			/**
 			 * This function updates the minimum votes required in order to
 			 * display the admin notice at the top of the current page.
-			 * 
+			 *
 			 * @author Leo Fajardo (@leorw)
 			 * @since 2.4.9
 			 */
 			function five_star_wp_rate_action() {
 				// Continue only if the nonce is correct
 				check_admin_referer('rw_five_star_wp_rate_action_nonce', '_n');
-				
+
 				$min_votes_trigger = $this->GetOption(WP_RW__DB_OPTION_WP_RATE_NOTICE_MIN_VOTES_TRIGGER);
 				if (-1 === $min_votes_trigger) {
 					exit;
 				}
-				
+
 				$rate_action = $_POST['rate_action'];
 				if ('do-rate' === $rate_action) {
 					$min_votes_trigger = -1;
@@ -701,14 +701,14 @@
 				} else {
 					$min_votes_trigger = -1;
 				}
-				
+
 				$this->SetOption(WP_RW__DB_OPTION_WP_RATE_NOTICE_MIN_VOTES_TRIGGER, $min_votes_trigger);
 				$this->_options->store();
-				
+
 				echo 1;
 				exit;
 			}
-			
+
 			/**
 			 * Determines if rich editing is available
 			 *
@@ -755,7 +755,7 @@
 					add_filter('mce_external_plugins', array(&$this, 'register_tinymce_plugin'));
 					add_filter('mce_buttons', array(&$this, 'add_tinymce_button'));
 				}
-				
+
 				// If API is supported and the current user is an administrator, add the statistics dashboard widget.
 				if ( $this->is_api_supported() && current_user_can('administrator') ) {
 					add_action( 'wp_dashboard_setup', array(&$this, 'add_dashboard_widgets') );
@@ -1233,21 +1233,21 @@
 				if ( ! is_object( $comment_review_mode_settings ) ) {
 					$comment_review_mode_settings = $this->_OPTIONS_DEFAULTS[ WP_RW__DB_OPTION_COMMENT_REVIEW_MODE_SETTINGS ];
 				}
-				
+
 				return $comment_review_mode_settings;
 			}
 
 			/**
 			 * Checks whether the selected rating mode in the "Comments" options tab is "Review".
-			 * 
+			 *
 			 * @author Leo Fajardo (@leorw)
 			 * @since 2.5.9
-			 * 
+			 *
 			 * @return boolean
 			 */
 			function is_comment_review_mode() {
-                $comment_ratings_mode_settings = $this->get_comment_ratings_mode_settings();
-                
+				$comment_ratings_mode_settings = $this->get_comment_ratings_mode_settings();
+
 				return ( 'true' === $comment_ratings_mode_settings->comment_ratings_mode );
 			}
 
@@ -1255,51 +1255,51 @@
 
 			#region Admin-Only Comment Ratings Mode ------------------------------------------------------------------
 
-            /**
-             * Retrieves the current comment ratings mode settings. If the mode is not set, set to comment reviews.
-             * 
-             * @author Leo Fajardo (@leorw)
-             * @since 2.6.0
-             * 
-             * @return object
-             */
-            function get_comment_ratings_mode_settings() {
-                $comment_ratings_mode_settings = $this->GetOption( WP_RW__DB_OPTION_IS_ADMIN_COMMENT_RATINGS_SETTINGS );
+			/**
+			 * Retrieves the current comment ratings mode settings. If the mode is not set, set to comment reviews.
+			 *
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.6.0
+			 *
+			 * @return object
+			 */
+			function get_comment_ratings_mode_settings() {
+				$comment_ratings_mode_settings = $this->GetOption( WP_RW__DB_OPTION_IS_ADMIN_COMMENT_RATINGS_SETTINGS );
 				if ( ! is_object( $comment_ratings_mode_settings ) ) {
 					$comment_ratings_mode_settings = $this->_OPTIONS_DEFAULTS[ WP_RW__DB_OPTION_IS_ADMIN_COMMENT_RATINGS_SETTINGS ];
-                    
-                    $comment_review_mode_settings = get_comment_review_mode_settings();
-                    $comment_ratings_mode_settings->comment_ratings_mode = $comment_review_mode_settings->is_comment_review_mode ? 'true' : 'false';
- 				}
-                
+
+					$comment_review_mode_settings = get_comment_review_mode_settings();
+					$comment_ratings_mode_settings->comment_ratings_mode = $comment_review_mode_settings->is_comment_review_mode ? 'true' : 'false';
+				}
+
 				return $comment_ratings_mode_settings;
-            }
-            
-            /**
-             * Retrieves the current comment ratings mode.
-             * 
-             * @author Leo Fajardo (@leorw)
-             * @since 2.6.0
-             * 
-             * @return string
-             */
-            function get_comment_ratings_mode() {
-                $comment_ratings_mode_settings = $this->get_comment_ratings_mode_settings();
-                
-                return $comment_ratings_mode_settings->comment_ratings_mode;
-            }
+			}
+
+			/**
+			 * Retrieves the current comment ratings mode.
+			 *
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.6.0
+			 *
+			 * @return string
+			 */
+			function get_comment_ratings_mode() {
+				$comment_ratings_mode_settings = $this->get_comment_ratings_mode_settings();
+
+				return $comment_ratings_mode_settings->comment_ratings_mode;
+			}
 
 			/**
 			 * Checks whether the selected rating mode in the "Comments" options tab is "Admin ratings only".
-			 * 
+			 *
 			 * @author Leo Fajardo (@leorw)
 			 * @since 2.6.0
-			 * 
+			 *
 			 * @return boolean
 			 */
 			function is_comment_admin_ratings_mode() {
-                $comment_ratings_mode_settings = $this->get_comment_ratings_mode_settings();
-                
+				$comment_ratings_mode_settings = $this->get_comment_ratings_mode_settings();
+
 				return ( 'admin_ratings' === $comment_ratings_mode_settings->comment_ratings_mode );
 			}
 
@@ -1590,7 +1590,7 @@
 
 			/**
 			 * Retrieves the latest post's HTML content and checks the availability of the rich snippet properties.
-			 * 
+			 *
 			 * @author Leo Fajardo (@leorw)
 			 * @since 2.5.2
 			 */
@@ -1723,11 +1723,11 @@
 
 				RWLogger::LogDeparture( 'update_rich_snippet_settings__premium_only' );
 			}
-			
+
 			/**
 			 * Checks if the rich snippet property element whose name is specified
 			 * by $prop_name exists within the wrapper article element.
-			 * 
+			 *
 			 * @author Leo Fajardo (@leorw)
 			 * @since  2.5.2
 			 *
@@ -1756,7 +1756,7 @@
 						RWLogger::Log('rich_snippet_property_exists', 'Error: ' . $e->getMessage());
 					}
 				}
-				
+
 				RWLogger::LogDeparture('rich_snippet_property_exists');
 				return false;
 			}
@@ -1764,7 +1764,7 @@
 			/**
 			 * This function displays a message at the top of the current page
 			 * when the site has reached 10, 100, or 1000 votes.
-			 * 
+			 *
 			 * @author Leo Fajardo (@leorw)
 			 * @since 2.4.9
 			 */
@@ -1774,13 +1774,13 @@
 				if ( empty($response) ) {
 					return;
 				}
-				
+
 				if (!isset($response->error)) {
 					$votes = $response->count;
 					if ($votes >= $min_votes_trigger) {
 						global $wp_version;
 						$classes = 'rw-five-star-wp-rate-action update-nag';
-						
+
 						// Use additional class for the different versions of WordPress
 						// in order to have the correct message styles.
 						if ($wp_version < 3 ) {
@@ -1791,18 +1791,18 @@
 
 						// Retrieve the admin notice content
 						$params = array('min_votes_trigger' => $min_votes_trigger);
-						
+
 						ob_start();
 						rw_require_view('pages/admin/five-star-wp-rate-notice.php', $params);
 						$message = ob_get_contents();
 						ob_end_clean();
-						
+
 						// Display the message
 						ratingwidget()->Notice($message, $classes);
 					}
 				}
 			}
-			
+
 			public function ClearTransients()
 			{
 				global $wpdb;
@@ -2357,11 +2357,11 @@
 			function InitScriptsAndStyles()
 			{
 				global $pagenow;
-				
+
 				// wp_enqueue_script( 'rw-test', "/wp-admin/js/rw-test.js", array( 'jquery-ui-sortable', 'jquery-ui-draggable', 'jquery-ui-droppable' ), false, 1 );
 				rw_enqueue_style('rw_wp_admin', 'wordpress/admin.css');
 				rw_enqueue_script('rw_wp_admin', 'wordpress/admin.js');
-				
+
 				// Enqueue the stylesheets for the metabox rating
 				if ($this->admin_page_has_rating_metabox()) {
 					rw_enqueue_style('rw-admin-rating', WP_RW__PLUGIN_URL . 'resources/css/admin-rating.css');
@@ -2372,11 +2372,11 @@
 					if ($this->admin_page_has_editor()) {
 						rw_enqueue_style('rw-toprated-shortcode-style', WP_RW__PLUGIN_URL . 'resources/css/toprated-shortcode.css');
 					}
-					
+
 					if ('index.php' === $pagenow) {
 						rw_enqueue_style('rw-dashboard-stats', WP_RW__PLUGIN_URL . 'resources/css/dashboard-stats.css');
 					}
-					
+
 					$min_votes_trigger = $this->GetOption(WP_RW__DB_OPTION_WP_RATE_NOTICE_MIN_VOTES_TRIGGER);
 					if (-1 !== $min_votes_trigger) {
 						// Enqueue the script that handles the updating of the minimum votes required for
@@ -2416,7 +2416,7 @@
 					if ('rating-widget-addons' === $_GET['page']) {
 						rw_enqueue_script('jquery-ui-dialog');
 						rw_enqueue_style('wp-jquery-ui-dialog');
-						
+
 						// Enqueue the add-ons page CSS
 						rw_enqueue_style('rw-addons-style', WP_RW__PLUGIN_URL . 'resources/css/addons.css');
 					} else if ('rating-widget-affiliation' === $_GET['page']) {
@@ -2456,7 +2456,7 @@
 							rw_enqueue_script('rw-js-live-preview', WP_RW__PLUGIN_URL . '/resources/js/live-preview.js');
 							rw_enqueue_style('rw-live-preview', WP_RW__PLUGIN_URL . 'resources/css/live-preview.css');
 						}
-					}							
+					}
 				}
 			}
 
@@ -2528,10 +2528,10 @@
 
 				return $options;
 			}
-			
+
 			/**
 			 * Retrieves the multi-rating options of this type
-			 * 
+			 *
 			 * @author Leo Fajardo (@leorw)
 			 * @param string $rclass option type
 			 * @return object
@@ -2540,9 +2540,9 @@
 				if ('forum-reply' === $rclass) {
 					$rclass = 'forum-post';
 				}
-				
+
 				$multirating_settings_list = $this->GetOption(WP_RW__MULTIRATING_SETTINGS);
-				
+
 				// If this class has no options set,
 				// load the default options to avoid issues in the
 				// site, live preview, and post edit meta boxes.
@@ -2552,16 +2552,16 @@
 						$multirating_settings_list->{$rclass} = $default_multirating_settings->{$rclass};
 					}
 				}
-				
+
 				return $multirating_settings_list->{$rclass};
 			}
-			
+
 			/**
 			 * Retrieves the current rich snippet settings
-			 * 
+			 *
 			 * @author Leo Fajardo (@leorw)
 			 * @since 2.5.2
-			 * 
+			 *
 			 * @return object
 			 */
 			function get_rich_snippet_settings() {
@@ -2626,21 +2626,21 @@
 				$title = WP_RW__NAME . ' ' . __( 'Settings', WP_RW__ID );
 
 				add_options_page( $title, WP_RW__NAME, 'edit_posts', WP_RW__ADMIN_MENU_SLUG, array(
-						&$this,
-						$pageLoaderFunction
-					) );
+					&$this,
+					$pageLoaderFunction
+				) );
 
 				if ( function_exists( 'add_object_page' ) ) // WP 2.7+
 				{
 					add_object_page( $title, WP_RW__NAME, 'edit_posts', WP_RW__ADMIN_MENU_SLUG, array(
-							&$this,
-							$pageLoaderFunction
-						), WP_RW__PLUGIN_URL . "icon.png" );
+						&$this,
+						$pageLoaderFunction
+					), WP_RW__PLUGIN_URL . "icon.png" );
 				} else {
 					add_management_page( $title, WP_RW__NAME, 'edit_posts', WP_RW__ADMIN_MENU_SLUG, array(
-							&$this,
-							$pageLoaderFunction
-						) );
+						&$this,
+						$pageLoaderFunction
+					) );
 				}
 
 				$this->SetupMenuItems();
@@ -4357,7 +4357,7 @@
 
 				// Some alias.
 				$rw_class = $rw_current_settings["class"];
-				
+
 				$is_blog_post = ('blog-post' === $rw_current_settings['class']);
 				$item_with_category = in_array($rw_current_settings['class'], array('blog-post', 'front-post', 'comment'));
 
@@ -4377,7 +4377,7 @@
 				$this->custom_settings_list = $this->GetOption(WP_RW__CUSTOM_SETTINGS);
 
 				$this->multirating_settings_list = $this->GetOption(WP_RW__MULTIRATING_SETTINGS);
-				
+
 				// Accumulated user ratings support.
 				if ('users' === $selected_key && $this->IsBBPressInstalled())
 					$rw_is_user_accumulated = $this->GetOption(WP_RW__IS_ACCUMULATED_USER_RATING);
@@ -4385,7 +4385,7 @@
 				// Comment "Reviews" mode support.
 				if ( 'comments' === $selected_key ) {
 					$comment_ratings_mode_settings = $this->get_comment_ratings_mode_settings();
-                    $comment_ratings_mode = $comment_ratings_mode_settings->comment_ratings_mode;
+					$comment_ratings_mode = $comment_ratings_mode_settings->comment_ratings_mode;
 				}
 
 				// Reset categories.
@@ -4499,13 +4499,13 @@
 
 					// Comment ratings mode
 					if ( 'comments' === $selected_key && isset( $_POST['rw_comment_review_mode'] ) ) {
-                        $comment_ratings_mode = $_POST['rw_comment_review_mode'];
-                        
-                        // Save the new comment ratings mode.
-                        $comment_ratings_mode_settings = $this->get_comment_ratings_mode_settings();
-                        $comment_ratings_mode_settings->comment_ratings_mode = $comment_ratings_mode;
-                        
-                        $this->SetOption(WP_RW__DB_OPTION_IS_ADMIN_COMMENT_RATINGS_SETTINGS, $comment_ratings_mode_settings);
+						$comment_ratings_mode = $_POST['rw_comment_review_mode'];
+
+						// Save the new comment ratings mode.
+						$comment_ratings_mode_settings = $this->get_comment_ratings_mode_settings();
+						$comment_ratings_mode_settings->comment_ratings_mode = $comment_ratings_mode;
+
+						$this->SetOption(WP_RW__DB_OPTION_IS_ADMIN_COMMENT_RATINGS_SETTINGS, $comment_ratings_mode_settings);
 					}
 
 					/* Visibility settings
@@ -5723,7 +5723,7 @@
 					// Hook activity TOP rating.
 					add_filter("bp_get_activity_action", array(&$this, "rw_display_activity_rating_top"));
 				}
-				
+
 				if ( $ver_bottom ) {
 					// Hook activity BOTTOM rating.
 					if ( is_user_logged_in() ) {
@@ -5879,27 +5879,27 @@
 			function rw_display_activity_comment_rating($comment_content)
 			{
 				if (RWLogger::IsOn()){ $params = func_get_args(); RWLogger::LogEnterence("rw_display_activity_comment_rating", $params); }
-				
+
 				// If this is a newly inserted comment, assign it to $this->current_comment
 				if (isset($_POST['action']) && 'new_activity_comment' == $_POST['action']) {
 					global $activities_template;
 
 					$current_comment = $activities_template->activity->current_comment;
 					$parent_comment = $activities_template->activity_parents[$current_comment->item_id];
-					
+
 					$current_comment->parent = $parent_comment;
-					
+
 					$this->current_comment = $parent_comment;
 					$this->current_comment->children = array($current_comment->id => $current_comment);
 				}
-				
+
 				if (!isset($this->current_comment) || null === $this->current_comment)
 				{
 					if (RWLogger::IsOn()){ RWLogger::Log("rw_display_activity_comment_rating", "Current comment is not set."); }
 
 					return $comment_content;
 				}
-				
+
 				// Find current comment.
 				while (!$this->current_comment->children || false === current($this->current_comment->children))
 				{
@@ -6419,7 +6419,7 @@
 
 						if ( RWLogger::IsOn() )
 							RWLogger::Log( 'rw_attach_rating_js', 'Urid = ' . $urid . '; Class = ' . $rclass . ';' );
-						
+
 						$suffix_pos = strpos($rclass, $criteria_suffix_part);
 						if (false !== $suffix_pos) {
 							/* Use dummy value for the criteria options but
@@ -6427,7 +6427,7 @@
 							 * calling RW.initClass below
 							 */
 							$rw_settings[$rclass] = 'DUMMY';
-							
+
 							/*
 							 * Make sure that the following code (the if block) will have the main option class, e.g. blog-post,
 							 * and not the criterion class, e.g. blog-post-criteria-1. This is because the following
@@ -6437,7 +6437,7 @@
 							 */
 							$rclass = substr($rclass, 0, $suffix_pos);
 						}
-						
+
 						if (isset($rw_settings[$rclass]) && is_array($rw_settings[$rclass]) && !isset($rw_settings[$rclass]["enabled"]))
 						{
 							if ( RWLogger::IsOn() )
@@ -6474,19 +6474,19 @@
 									$options->label->text->nero = new stdClass();
 								}
 
-                                /**
-                                 * The following will show the same label when the rating is not empty whether the viewer has already voted or has not voted yet.
-                                 * 
-                                 * e.g.: Instead of showing "Rate this (2 Votes)" or "5 Votes", the label will be "Excellent", "Good", or "Awful", depending on the label settings.
-                                 */
+								/**
+								 * The following will show the same label when the rating is not empty whether the viewer has already voted or has not voted yet.
+								 *
+								 * e.g.: Instead of showing "Rate this (2 Votes)" or "5 Votes", the label will be "Excellent", "Good", or "Awful", depending on the label settings.
+								 */
 								$options->label->text->star->normal  = '{{rating.lastVote}}';
 								$options->label->text->star->rated = '{{rating.lastVote}}';
-                                
+
 								$options->label->text->nero->rated = '{{rating.lastVote}}';
-                                $options->label->text->nero->normal = '{{text.rateThis}}';
-                                
-                                $options->showToolip = false;
-                                $options->showReport = false;
+								$options->label->text->nero->normal = '{{text.rateThis}}';
+
+								$options->showToolip = false;
+								$options->showReport = false;
 							}
 
 							if (WP_RW__AVAILABILITY_DISABLED === $this->rw_validate_availability($alias))
@@ -6499,15 +6499,15 @@
 						}
 					}
 				}
-				
+
 				$is_bp_activity_component = function_exists('bp_is_activity_component') && bp_is_activity_component();
-				
+
 				if (!$attach_js) {
 					// Necessary for rendering newly inserted activity ratings
 					// when the are no status updates or comments yet
 					if ($is_bp_activity_component) {
 						$bp_rclasses = array('activity-update', 'activity-comment');
-						
+
 						foreach ($bp_rclasses as $rclass) {
 							if (isset($rw_settings[$rclass]) && !isset($rw_settings[$rclass]["enabled"])) {
 								if ( RWLogger::IsOn() )
@@ -6529,7 +6529,7 @@
 						}
 					}
 				}
-				
+
 				if ($attach_js || $this->_TOP_RATED_WIDGET_LOADED)
 				{
 					?>
@@ -6567,9 +6567,9 @@
                     ?>,
 									source: "wordpress",
 									options: {
-					<?php if ($this->fs->is_plan_or_trial__premium_only('professional')) :
-									if (defined('ICL_LANGUAGE_CODE') &&
-									isset($this->languages[ICL_LANGUAGE_CODE])) : ?>
+									<?php if ($this->fs->is_plan_or_trial__premium_only('professional')) :
+													if (defined('ICL_LANGUAGE_CODE') &&
+													isset($this->languages[ICL_LANGUAGE_CODE])) : ?>
 									lng: "<?php echo ICL_LANGUAGE_CODE; ?>"
 									<?php endif ?>
 									<?php endif ?>
@@ -6853,7 +6853,7 @@
 
 				return $post_id;
 			}
-            
+
 			function DeletePostData($post_id) {
 				RWLogger::LogEnterence('DeletePostData');
 
@@ -6870,7 +6870,7 @@
 
 			/**
 			 * Registers the dashboard widgets
-			 * 
+			 *
 			 * @author Leo Fajardo (@leorw)
 			 */
 			function add_dashboard_widgets() {
@@ -6884,13 +6884,13 @@
 				$response = rwapi()->get("/votes/count.json", false, WP_RW__CACHE_TIMEOUT_DASHBOARD_STATS);
 				if (!isset($response->error)) {
 					$stats['votes'] = $response->count;
-				
+
 					$response = rwapi()->get("/ratings/count.json", false, WP_RW__CACHE_TIMEOUT_DASHBOARD_STATS);
 					if (!isset($response->error)) {
 						$stats['ratings'] = $response->count;
 					}
 				}
-				
+
 				// Add the widget if there is at least 1 vote
 				if ($stats['votes'] >= 1) {
 					wp_add_dashboard_widget(
@@ -6902,10 +6902,10 @@
 					);
 				}
 			}
-			
+
 			/**
 			 * The stats dashboard widget callback function that handles the displaying of the widget content
-			 * 
+			 *
 			 * @author Leo Fajardo (@leorw)
 			 * @param mixed $object object passed to the callback function
 			 * @param object $callback_args the dashboard widget details, including the arguments passed
@@ -6913,7 +6913,7 @@
 			function stats_widget_callback($object, $callback_args) {
 				rw_require_view('pages/admin/dashboard-stats.php', $callback_args['args']);
 			}
-			
+
 			function PurgePostFeaturedImageTransient($meta_id = 0, $post_id = 0, $meta_key = '', $_meta_value = '')
 			{
 				if ('_thumbnail_id' === $meta_key)
@@ -7197,14 +7197,14 @@
 					return '';
 
 				$urid = $this->get_rating_id_by_element($pElementID, $pElementClass);
-                
-                if ( 'comment' === $pElementClass ) {
-                    // Get the read-only state of the comment rating
-                    $is_rating_readonly = $this->is_rating_readonly( $pElementID, 'comment' );
-                } else {
-                    // Get the read-only state of the exact post type, e.g.: post or product
-                    $is_rating_readonly = $this->is_rating_readonly($pElementID, get_post_type($pElementID));
-                }
+
+				if ( 'comment' === $pElementClass ) {
+					// Get the read-only state of the comment rating
+					$is_rating_readonly = $this->is_rating_readonly( $pElementID, 'comment' );
+				} else {
+					// Get the read-only state of the exact post type, e.g.: post or product
+					$is_rating_readonly = $this->is_rating_readonly($pElementID, get_post_type($pElementID));
+				}
 
 				if (!$is_rating_readonly) {
 					if (function_exists('is_buddypress') && is_buddypress()) {
@@ -7390,35 +7390,35 @@
 				if ( $this->IsUserAccumulatedRating() && (int) $pComment->user_id > 0 ) {
 					$pOptions['uarid'] = $this->_getUserRatingGuid( $pComment->user_id );
 				}
-                
-                $comment_ratings_mode = $this->get_comment_ratings_mode();
+
+				$comment_ratings_mode = $this->get_comment_ratings_mode();
 				if ( RWLogger::IsOn() ) {
 					RWLogger::Log( 'comment_ratings_mode', $comment_ratings_mode );
 				}
-                
-                /**
-                 * If reviews mode, check if the previous submission of rating's value and vote has failed.
-                 * If the submission has failed, submit again.
-                 */
-                if ( $this->is_comment_review_mode() ) {
-                    $comment_review_mode_settings = $this->get_comment_review_mode_settings();
-                    if ( RWLogger::IsOn() ) {
-                        RWLogger::Log( 'comment_review_mode_options', json_encode( $comment_review_mode_settings ) );
-                    }
 
-                    $failed_requests = $comment_review_mode_settings->failed_requests;
+				/**
+				 * If reviews mode, check if the previous submission of rating's value and vote has failed.
+				 * If the submission has failed, submit again.
+				 */
+				if ( $this->is_comment_review_mode() ) {
+					$comment_review_mode_settings = $this->get_comment_review_mode_settings();
+					if ( RWLogger::IsOn() ) {
+						RWLogger::Log( 'comment_review_mode_options', json_encode( $comment_review_mode_settings ) );
+					}
 
-                    if ( isset($failed_requests[$pComment->comment_ID]) ) {
-                        $request = $failed_requests[$pComment->comment_ID];
-                        $this->set_comment_review_vote($pComment->comment_ID, $request['request_params']);
-                    }
-                }
-				
-                if ( $this->is_comment_review_mode() || $this->is_comment_admin_ratings_mode() ) {
-                    // Set the rating to read-only so that no other people can vote for the comment.
-                    $pOptions['read-only'] = 'true';
-                }
-                
+					$failed_requests = $comment_review_mode_settings->failed_requests;
+
+					if ( isset($failed_requests[$pComment->comment_ID]) ) {
+						$request = $failed_requests[$pComment->comment_ID];
+						$this->set_comment_review_vote($pComment->comment_ID, $request['request_params']);
+					}
+				}
+
+				if ( $this->is_comment_review_mode() || $this->is_comment_admin_ratings_mode() ) {
+					// Set the rating to read-only so that no other people can vote for the comment.
+					$pOptions['read-only'] = 'true';
+				}
+
 				return $this->EmbedRating(
 					$pComment->comment_ID,
 					(int) $pComment->user_id,
@@ -7633,7 +7633,7 @@
 
 		// Create a helper function for easy SDK access.
 		/**
-		 * @return \Freemius
+		 * @return Freemius
 		 */
 		function rw_fs() {
 			/**
@@ -7678,11 +7678,6 @@
 
 		function rw_migration_to_freemius()
 		{
-			global $rw_fs;
-
-			if ($rw_fs->is_registered())
-				return true;
-
 			if (false === rwapi())
 				// RW identity is not complete, cannot make API calls.
 				return true;
@@ -7701,10 +7696,84 @@
 				return false;
 			}
 
-			$rw_fs->setup_account(
+			rw_fs()->setup_account(
 				new FS_User($result->user),
 				new FS_Site($result->install)
 			);
+
+			return true;
+		}
+
+		function rw_reset_account() {
+			global $rw_fs;
+
+			$rw_account = rw_account();
+			$rw_api     = rwapi();
+
+			// Before making any changes, make sure site credentials are good.
+
+			// Preserve previous credentials.
+			$prev_site_id         = $rw_account->site_id;
+			$prev_site_public_key = $rw_account->site_public_key;
+			$prev_site_secret_key = $rw_account->site_secret_key;
+
+			// Get install information from request.
+			$site_id         = rw_request_get( 'site_id' );
+			$site_public_key = rw_request_get( 'site_public_key' );
+			$site_secret_key = rw_request_get( 'site_secret_key' );
+
+			$admin_notices = FS_Admin_Notice_Manager::instance( WP_RW__ID, 'Rating-Widget' );
+
+			if ( ! is_numeric( $site_id ) ) {
+				$admin_notices->add( 'Invalid site ID. Please contact our support for more details.' );
+
+				return false;
+			}
+			if ( 32 !== strlen( $site_public_key ) ) {
+				$admin_notices->add( 'Invalid public key. Please contact our support for more details.' );
+
+				return false;
+			}
+			if ( 20 > strlen( $site_secret_key ) ) {
+				$admin_notices->add( 'Invalid secret key. Please contact our support for more details.' );
+
+				return false;
+			}
+
+			// Override site details.
+			$rw_account->set_site( $site_id, $site_public_key, $site_secret_key, false );
+
+			// Reload API with new account details.
+			$rw_api->reload();
+
+			if ( ! $rw_api->test() ) {
+				// Fallback to previous account.
+				$rw_account->set_site( $prev_site_id, $prev_site_public_key, $prev_site_secret_key, false );
+
+				// Reload API with new account details.
+				$rw_api->reload();
+
+				$admin_notices->add( 'Invalid site credentials. Failed pining RatingWidget\'s API. Please contact our support for more details.' );
+
+				return false;
+			}
+
+			// Save new RW credentials.
+			$rw_account->save();
+
+			// Send uninstall event.
+			$rw_fs->_uninstall_plugin_event( false );
+
+			if ( 'true' === rw_request_get( 'delete_account' ) ) // Delete account.
+			{
+				$rw_fs->delete_account_event( false );
+			}
+
+			if ( rw_migration_to_freemius() ) {
+				fs_redirect( $rw_fs->_get_admin_page_url( 'account' ) );
+
+				exit;
+			}
 
 			return true;
 		}
@@ -7727,10 +7796,15 @@
 
 		global $rw_fs;
 
-		// RW account info is available.
-		if (!$rw_fs->is_registered() &&
-		    ($rw_fs->is_plugin_upgrade_mode() ||
-		     rw_request_is_action('rw_migrate_to_freemius'))
+		if ($rw_fs->is_registered() && !$rw_fs->is_ajax())
+		{
+			if (rw_request_is_action('rw_reset_account'))
+			{
+				rw_reset_account();
+			}
+		}
+		else if ($rw_fs->is_plugin_upgrade_mode() ||
+		         rw_request_is_action('rw_migrate_to_freemius')
 		) {
 			// Migration to new Freemius account management.
 			if ( rw_migration_to_freemius() ) {
