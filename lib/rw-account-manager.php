@@ -210,10 +210,19 @@
 		{
 			$this->update_user_id($user_id, false);
 			$this->update_user_email($user_email, false);
-			$this->update_site_id($site_id, false);
-			$this->update_site_public_key($site_public_key, false);
-			$this->update_site_secret_key($site_secret_key, false);
+			$this->set_site($site_id, $site_public_key, $site_secret_key, false);
+
 			$this->_options->store();
+		}
+
+		function set_site($site_id, $site_public_key, $site_secret_key, $flush = true) {
+			$this->update_site_id( $site_id, false );
+			$this->update_site_public_key( $site_public_key, false );
+			$this->update_site_secret_key( $site_secret_key, false );
+
+			if ( $flush ) {
+				$this->_options->store();
+			}
 		}
 
 		function clear()
@@ -274,6 +283,11 @@
 		{
 			$this->_options->set_option( WP_RW__DB_OPTION_OWNER_EMAIL, $email, $flush );
 			$this->user_email = $email;
+		}
+
+		function save()
+		{
+			$this->_options->store();
 		}
 	}
 
