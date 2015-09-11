@@ -111,7 +111,7 @@ if ($rw_ret_obj && count($rw_ret_obj->data)) {
 					<li class="rw-wp-ui-top-rated-list-item">
 						<div>
 							<b class="rw-wp-ui-top-rated-list-count">$count</b>
-							<img class="rw-wp-ui-top-rated-list-item-thumbnail" src="$thumbnail" alt="" />
+							<a href="$permalink"><img class="rw-wp-ui-top-rated-list-item-thumbnail" src="$thumbnail" alt="" /></a>
 							<div class="rw-wp-ui-top-rated-list-item-data">
 								<div>
 									<a class="rw-wp-ui-top-rated-list-item-title" href="$permalink" title="$title">$short</a>
