@@ -69,9 +69,20 @@
 			self::$_clock_diff = self::$_options->get_option( 'api_clock_diff', 0 );
 
 			RatingWidget::SetClockDiff( self::$_clock_diff );
+
+			if ( self::$_options->get_option( 'api_force_http', false ) ) {
+				RatingWidget::SetHttp();
+			}
 		}
 
 		private function __construct()
+		{
+			$this->reload();
+
+			$this->_logger = FS_Logger::get_logger(WP_RW__ID . '_api', WP_FS__DEBUG_SDK, WP_FS__ECHO_DEBUG_SDK);
+		}
+
+		function reload()
 		{
 			$rw_account = rw_account();
 
@@ -81,8 +92,6 @@
 				$rw_account->site_public_key,
 				$rw_account->site_secret_key
 			);
-
-			$this->_logger = FS_Logger::get_logger(WP_RW__ID . '_api', WP_FS__DEBUG_SDK, WP_FS__ECHO_DEBUG_SDK);
 		}
 
 		/**
@@ -229,7 +238,18 @@
 		{
 			$this->_logger->entrance();
 
-			return $this->_api->Test();
+			$test = $this->_api->Test();
+
+			if ( false === $test && $this->_api->IsHttps() ) {
+				// Fallback to HTTP, since HTTPS fails.
+				$this->_api->SetHttp();
+
+				self::$_options->set_option( 'api_force_http', true, true );
+
+				$test = $this->_api->Test();
+			}
+
+			return $test;
 		}
 
 		function get_url($path = '')

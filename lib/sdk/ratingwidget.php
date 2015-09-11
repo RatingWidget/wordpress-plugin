@@ -27,7 +27,7 @@
 	define('RW_API__PROTOCOL', version_compare($curl_version['version'], '7.37', '>=') ? 'https' : 'http');
 
 	if (!defined('RW_API__ADDRESS'))
-		define('RW_API__ADDRESS', RW_API__PROTOCOL . '://api.rating-widget.com');
+		define('RW_API__ADDRESS', '://api.rating-widget.com');
 
     class RatingWidget extends RatingWidgetBase
     {
@@ -55,9 +55,14 @@
             parent::__construct($pScope, $pID, $pPublic, $pSecret);
         }
 
-	    function GetUrl($pCanonizedPath)
+	    public function GetUrl($pCanonizedPath = '')
 	    {
-		    return RW_API__ADDRESS . $pCanonizedPath;
+		    $address = RW_API__ADDRESS;
+
+		    if (':' === $address[0])
+			    $address = self::$_protocol . $address;
+
+		    return $address . $pCanonizedPath;
 	    }
 
 	    /**
@@ -74,6 +79,30 @@
 	    public static function SetClockDiff($pSeconds)
 	    {
 		    self::$_clock_diff = $pSeconds;
+	    }
+
+	    /**
+	     * @var string http or https
+	     */
+	    private static $_protocol = RW_API__PROTOCOL;
+
+	    /**
+	     * Set API connection protocol.
+	     *
+	     * @since 1.0.4
+	     */
+	    public static function SetHttp() {
+		    self::$_protocol = 'http';
+	    }
+
+	    /**
+	     * @since 1.0.4
+	     *
+	     * @return bool
+	     */
+	    public static function IsHttps()
+	    {
+		    return ('https' === self::$_protocol);
 	    }
 
 	    /**
