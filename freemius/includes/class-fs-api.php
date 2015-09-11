@@ -223,13 +223,19 @@
 				$result = $this->call( $path );
 
 				if ( ! is_object( $result ) || isset( $result->error ) ) {
-					// If there was an error during a newer data fetch,
-					// fallback to older data version.
 					if ( is_object( $cache_entry ) &&
 					     isset( $cache_entry->result ) &&
 					     ! isset( $cache_entry->result->error )
 					) {
+						// If there was an error during a newer data fetch,
+						// fallback to older data version.
 						$result = $cache_entry->result;
+					}
+					else
+					{
+						// If no older data version, return result without
+						// caching the error.
+						return $result;
 					}
 				}
 
@@ -264,7 +270,7 @@
 				// Fallback to HTTP, since HTTPS fails.
 				$this->_api->SetHttp();
 
-				self::$_options->set_option( 'api_force_http', true );
+				self::$_options->set_option( 'api_force_http', true, true );
 
 				$test = $this->_api->Test();
 			}
@@ -274,5 +280,17 @@
 
 		function get_url( $path = '' ) {
 			return $this->_api->GetUrl( $path );
+		}
+
+		/**
+		 * Clear API cache.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.0.9
+		 */
+		static function clear_cache()
+		{
+			self::$_cache   = FS_Option_Manager::get_manager( WP_FS__API_CACHE_OPTION_NAME, true );
+			self::$_cache->clear( true );
 		}
 	}
