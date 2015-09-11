@@ -26,11 +26,9 @@
 }
 
 .rw-five-star-wp-rate-action {
-	background-image: url('http://img.rating-widget.com/wordpress/profile/vova.jpg');
-	background-repeat: no-repeat;
-	background-size: 95px;
-	background-position: 10px 10px;
-	padding-left: 120px;
+    background: #F6FFF7 url('//img.rating-widget.com/wordpress/profile/vova.jpg') no-repeat right 15px top 15px;
+    padding-right: 120px;
+    background-size: 95px;
 }
 
 .rw-five-star-wp-rate-action.success ul {
