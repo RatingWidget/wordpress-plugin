@@ -187,6 +187,10 @@
 				is_object( $this->_plugin ) ? $this->_plugin->title : ''
 			);
 
+			if ( 'true' === fs_request_get( 'fs_clear_api_cache' ) ) {
+				FS_Api::clear_cache();
+			}
+
 			$this->_register_hooks();
 
 			$this->_load_account();
@@ -855,7 +859,8 @@
 					$current_user->user_lastname,
 					$active_plugin_string
 				),
-				'Content-type: text/html'
+				"Content-type: text/html\r\n" .
+		        "Reply-To: $admin_email <$admin_email>"
 			);
 
 			$this->_admin_notices->add_sticky(
@@ -1615,10 +1620,7 @@
 		 * @return bool
 		 */
 		function _is_plugin_page() {
-			return ( is_admin() && $_REQUEST['page'] === $this->_menu_slug );
-		}
-
-		private function _init_admin() {
+			return fs_is_plugin_page( $this->_menu_slug );
 		}
 
 		/* Events
@@ -1696,6 +1698,9 @@
 				return;
 			}
 
+			// Clear API cache on activation.
+			FS_Api::clear_cache();
+
 			if ( $this->is_registered() ) {
 				// Send re-activation event.
 				$this->get_api_site_scope()->call( '/', 'put', array(
@@ -1732,11 +1737,13 @@
 		 *
 		 * @author Vova Feldman (@svovaf)
 		 * @since  1.0.3
+		 *
+		 * @param bool $check_user Enforce checking if user have plugins activation privileges.
 		 */
-		function delete_account_event() {
+		function delete_account_event($check_user = true) {
 			$this->_logger->entrance( 'slug = ' . $this->_slug );
 
-			if ( ! current_user_can( 'activate_plugins' ) ) {
+			if ( $check_user && ! current_user_can( 'activate_plugins' ) ) {
 				return;
 			}
 
@@ -1794,6 +1801,9 @@
 					'version'   => $this->get_plugin_version(),
 				) );
 			}
+
+			// Clear API cache on deactivation.
+			FS_Api::clear_cache();
 		}
 
 		/**
@@ -1836,11 +1846,13 @@
 		 *
 		 * @author Vova Feldman (@svovaf)
 		 * @since  1.0.1
+		 *
+		 * @param bool $check_user Enforce checking if user have plugins activation privileges.
 		 */
-		function _uninstall_plugin_event() {
+		function _uninstall_plugin_event($check_user = true) {
 			$this->_logger->entrance( 'slug = ' . $this->_slug );
 
-			if ( ! current_user_can( 'activate_plugins' ) ) {
+			if ($check_user && ! current_user_can( 'activate_plugins' ) ) {
 				return;
 			}
 
