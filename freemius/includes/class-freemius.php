@@ -655,8 +655,8 @@
 			if (WP_FS__SIMULATE_NO_API_CONNECTIVITY &&
 			    isset( $this->_storage->connectivity_test ) &&
 			    true === $this->_storage->connectivity_test['is_connected']
-			){
-				unset($this->_storage->connectivity_test);
+			) {
+				unset( $this->_storage->connectivity_test );
 			}
 
 			if ( isset( $this->_storage->connectivity_test ) ) {
@@ -708,12 +708,23 @@
 //			$admin_email = get_option( 'admin_email' );
 			$admin_email = $current_user->user_email;
 
-			// API connectivity issue.
+			$ping = $this->get_api_plugin_scope()->ping();
+
+			if ( is_object( $ping ) &&
+			     isset( $ping->error ) &&
+			     'cloudflare_ddos_protection' === $ping->error->code
+			) {
+				$message = __( 'From unknown reason, CloudFlare, the firewall we use, blocks the connection.', WP_FS__SLUG );
+			} else {
+				$message = __( 'From unknown reason, the API connectivity test fails.', WP_FS__SLUG );
+			}
+
 			$this->_admin_notices->add_sticky(
 				sprintf(
-					__( '%s requires an access to our API. From unknown reason, CloudFlare, the firewall we use, identified this server as a potential threat, and blocks the connection.', WP_FS__SLUG ) .
-					' ' .
-					__( 'We are sure it\'s a mistake on our side and more than happy to resolve it for you ASAP if you give us a chance. %s', WP_FS__SLUG ),
+					__( '%s requires an access to our API.', WP_FS__SLUG ) . ' ' .
+					$message . ' ' .
+					__( 'We are sure it\'s an issue on our side and more than happy to resolve it for you ASAP if you give us a chance.', WP_FS__SLUG ) .
+					' %s',
 					'<b>' . $this->get_plugin_name() . '</b>',
 					sprintf(
 						'<ol id="fs_firewall_issue_options"><li>%s</li><li>%s</li><li>%s</li></ol>',
@@ -804,6 +815,8 @@
 //			$admin_email = get_option( 'admin_email' );
 			$admin_email = $current_user->user_email;
 
+			$ping = $this->get_api_plugin_scope()->ping();
+
 			// Send email with technical details to resolve CloudFlare's firewall unnecessary protection.
 			wp_mail(
 				'api@freemius.com',
@@ -845,6 +858,12 @@
 	<tbody>
 		<tr><td style="vertical-align: top"><b>Active Plugins:</b></td><td>%s</td></tr>
 	</tbody>
+	<thead>
+		<tr><th colspan="2" style="text-align: left; background: #333; color: #fff; padding: 5px;">API Error</th></tr>
+	</thead>
+	<tbody>
+		<tr><td colspan="2">%s</td></tr>
+	</tbody>
 </table>',
 					$this->version,
 					$curl_version['version'],
@@ -857,7 +876,8 @@
 					$admin_email,
 					$current_user->user_firstname,
 					$current_user->user_lastname,
-					$active_plugin_string
+					$active_plugin_string,
+					(is_string($ping) ? $ping : json_encode($ping))
 				),
 				"Content-type: text/html\r\n" .
 		        "Reply-To: $admin_email <$admin_email>"
@@ -984,26 +1004,28 @@
 			$this->_is_org_compliant = $this->_get_bool_option( $plugin_info, 'is_org_compliant', true );
 			$this->_enable_anonymous = $this->_get_bool_option( $plugin_info, 'enable_anonymous', true );
 
-			if (!$this->has_api_connectivity()){
-				if (is_admin() && $this->_admin_notices->has_sticky('failed_connect_api')) {
-					add_action( 'admin_footer', array( 'Freemius', '_add_firewall_issues_javascript' ) );
+			if (!$this->is_registered()) {
+				if ( ! $this->has_api_connectivity() ) {
+					if ( is_admin() && $this->_admin_notices->has_sticky( 'failed_connect_api' ) ) {
+						add_action( 'admin_footer', array( 'Freemius', '_add_firewall_issues_javascript' ) );
 
-					add_action( "wp_ajax_{$this->_slug}_resolve_firewall_issues", array(
-						&$this,
-						'_email_about_firewall_issue'
-					) );
+						add_action( "wp_ajax_{$this->_slug}_resolve_firewall_issues", array(
+							&$this,
+							'_email_about_firewall_issue'
+						) );
+					}
+
+					// Turn Freemius off.
+					$this->_is_on = false;
+
+					return;
 				}
 
-				// Turn Freemius off.
-				$this->_is_on = false;
-
-				return;
-			}
-
-			// Check if Freemius is on for the current plugin.
-			// This MUST be executed after all the plugin variables has been loaded.
-			if ( ! $this->is_on() ) {
-				return;
+				// Check if Freemius is on for the current plugin.
+				// This MUST be executed after all the plugin variables has been loaded.
+				if ( ! $this->is_on() ) {
+					return;
+				}
 			}
 
 			if ( false === $this->_background_sync() ) {
@@ -1766,7 +1788,10 @@
 			self::$_accounts->store();
 
 			// Clear all storage data.
-			$this->_storage->delete();
+			$this->_storage->clear_all(true, array(
+				'connectivity_test',
+				'is_on',
+			));
 
 			// Send delete event.
 			$this->get_api_site_scope()->call( '/', 'delete' );
@@ -1789,8 +1814,10 @@
 
 			$this->_admin_notices->clear_all_sticky();
 
-			// Reset connectivity test cache.
-			unset( $this->_storage->connectivity_test );
+			if (!$this->has_api_connectivity()) {
+				// Reset connectivity test cache.
+				unset( $this->_storage->connectivity_test );
+			}
 
 			if ( $this->is_registered() ) {
 				// Send deactivation event.
@@ -3132,7 +3159,7 @@
 			$this->_clean_admin_content_section();
 
 			if ( fs_request_is_action( 'activate' ) && fs_request_is_post() ) {
-				check_admin_referer( 'activate_' . $this->_plugin->public_key );
+//				check_admin_referer( 'activate_' . $this->_plugin->public_key );
 
 				// Verify matching plugin details.
 				if ( $this->_plugin->id != fs_request_get( 'plugin_id' ) || $this->_slug != fs_request_get( 'plugin_slug' ) ) {
@@ -3384,7 +3411,7 @@
 			}
 
 			if ( fs_request_is_action( $this->_slug . '_activate_new' ) ) {
-				check_admin_referer( $this->_slug . '_activate_new' );
+//				check_admin_referer( $this->_slug . '_activate_new' );
 
 				if ( fs_request_has( 'user_secret_key' ) ) {
 					$user             = new FS_User();
@@ -3456,7 +3483,7 @@
 			}
 
 			if ( fs_request_is_action( $this->_slug . '_activate_existing' ) && fs_request_is_post() ) {
-				check_admin_referer( 'activate_existing_' . $this->_plugin->public_key );
+//				check_admin_referer( 'activate_existing_' . $this->_plugin->public_key );
 				// Get current logged WP user.
 				$current_user = wp_get_current_user();
 
@@ -4934,6 +4961,11 @@
 					__( 'Ye-ha!', WP_FS__SLUG )
 				);
 			}
+
+			$this->_admin_notices->remove_sticky(array(
+				'trial_promotion',
+				'license_expired',
+			));
 		}
 
 		/**
