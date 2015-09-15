@@ -46,13 +46,8 @@
 		 */
 		static function instance( ) {
 			if ( ! isset( self::$_instance ) ) {
-				$rw_account = rw_account();
-				if ( $rw_account->is_registered() && $rw_account->has_secret_key() ) {
 					self::_init();
 					self::$_instance = new RW_Api();
-				} else {
-					self::$_instance = false;
-				}
 			}
 
 			return self::$_instance;
@@ -77,6 +72,15 @@
 
 		private function __construct()
 		{
+			$rw_account = rw_account();
+
+			if ($rw_account->has_public_key() &&
+			    !$rw_account->has_secret_key())
+			{
+				// Try to claim for a secret key.
+				$this->claim_secret_key();
+			}
+
 			$this->reload();
 
 			$this->_logger = FS_Logger::get_logger(WP_RW__ID . '_api', WP_FS__DEBUG_SDK, WP_FS__ECHO_DEBUG_SDK);
@@ -84,6 +88,9 @@
 
 		function reload()
 		{
+			if (!$this->is_supported())
+				return;
+
 			$rw_account = rw_account();
 
 			$this->_api = new RatingWidget(
@@ -92,6 +99,46 @@
 				$rw_account->site_public_key,
 				$rw_account->site_secret_key
 			);
+		}
+
+		/**
+		 * Claim secret key from RW server to enable API calls.
+		 *
+		 * This is a workaround for very old accounts who does not have secret key generated.
+		 *
+		 * @author Vova Feldman (svovaf)
+		 * @since 2.6.6
+		 */
+		function claim_secret_key() {
+			$rw_account = rw_account();
+
+			$response_body = get_transient( 'rw_claim_secret_key' );
+
+			if ( false !== $response_body ) {
+				// Try to claim secret key.
+				$response = wp_remote_post( WP_RW__ADDRESS . '/action/api/site/claim-secret-key/', array(
+					'body' => array(
+						'site_public_key' => $rw_account->site_public_key
+					)
+				) );
+
+				if ( ! is_wp_error( $response ) ) {
+					$response_body = wp_remote_retrieve_body( $response );
+				} else {
+					$response_body = '';
+				}
+
+				set_transient( 'rw_claim_secret_key', $response_body, WP_RW__TIME_5_MIN_IN_SEC );
+			}
+
+			$result = json_decode( $response_body );
+
+			if ( is_object( $result ) &&
+			     is_object( $result->data ) &&
+			     isset( $result->data->id )
+			) {
+				$rw_account->set_site( $result->data->id, $result->data->public_key, $result->data->secret_key, true );
+			}
 		}
 
 		/**
@@ -255,6 +302,12 @@
 		function get_url($path = '')
 		{
 			return $this->_api->GetUrl($path);
+		}
+
+		function is_supported()
+		{
+			$rw_account = rw_account();
+			return ($rw_account->is_registered() && $rw_account->has_secret_key());
 		}
 	}
 

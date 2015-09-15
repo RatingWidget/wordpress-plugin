@@ -245,6 +245,11 @@
 			return !empty($this->site_secret_key) && is_string($this->site_secret_key);
 		}
 
+		function has_public_key()
+		{
+			return !empty($this->site_public_key) && is_string($this->site_public_key);
+		}
+
 		function has_site_id()
 		{
 			return !empty($this->site_id) && is_numeric($this->site_id);

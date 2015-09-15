@@ -414,7 +414,7 @@
 			 */
 			private function is_api_supported()
 			{
-				return ( false !== rwapi() );
+				return rwapi()->is_supported();
 			}
 
 			/**
@@ -7447,7 +7447,7 @@
 				if (RWLogger::IsOn()){ $params = func_get_args(); RWLogger::LogEnterence('GetRatingDataByRatingID', $params); }
 
 				// API only supported in the Professional plan, so no reason to make calls that will return errors.
-				if (!$this->fs->is_plan_or_trial('professional') || false === rwapi())
+				if (!$this->fs->is_plan_or_trial('professional') || !$this->is_api_supported())
 					return false;
 
 				$rating = rwapi()->get(
@@ -7679,7 +7679,7 @@
 
 		function rw_migration_to_freemius()
 		{
-			if (false === rwapi())
+			if (!rwapi()->is_supported())
 				// RW identity is not complete, cannot make API calls.
 				return true;
 
@@ -7762,12 +7762,14 @@
 			// Save new RW credentials.
 			$rw_account->save();
 
-			// Send uninstall event.
-			$rw_fs->_uninstall_plugin_event( false );
+			if ($rw_fs->is_registered()) {
+				// Send uninstall event.
+				$rw_fs->_uninstall_plugin_event( false );
 
-			if ( 'true' === rw_request_get( 'delete_account' ) ) // Delete account.
-			{
-				$rw_fs->delete_account_event( false );
+				if ( 'true' === rw_request_get( 'delete_account' ) ) // Delete account.
+				{
+					$rw_fs->delete_account_event( false );
+				}
 			}
 
 			if ( rw_migration_to_freemius() ) {
@@ -7795,21 +7797,17 @@
 		// Init RW API (must be called after account is loaded).
 		rwapi();
 
-		global $rw_fs;
-
-		if ($rw_fs->is_registered() && !$rw_fs->is_ajax())
+		if (rw_request_is_action('rw_reset_account') && !$rw_fs->is_ajax())
 		{
-			if (rw_request_is_action('rw_reset_account'))
-			{
-				rw_reset_account();
-			}
+			rw_reset_account();
 		}
-		else if ($rw_fs->is_plugin_upgrade_mode() ||
-		         rw_request_is_action('rw_migrate_to_freemius')
+		else if (!$fs->is_registered() &&
+		         ($fs->is_plugin_upgrade_mode() ||
+		         rw_request_is_action('rw_migrate_to_freemius'))
 		) {
 			// Migration to new Freemius account management.
 			if ( rw_migration_to_freemius() ) {
-				$rw_fs->set_plugin_upgrade_complete();
+				$fs->set_plugin_upgrade_complete();
 			}
 		}
 
