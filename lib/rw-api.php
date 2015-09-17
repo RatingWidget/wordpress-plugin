@@ -114,7 +114,7 @@
 
 			$response_body = get_transient( 'rw_claim_secret_key' );
 
-			if ( false !== $response_body ) {
+			if ( false === $response_body ) {
 				// Try to claim secret key.
 				$response = wp_remote_post( WP_RW__ADDRESS . '/action/api/site/claim-secret-key/', array(
 					'body' => array(
@@ -134,10 +134,16 @@
 			$result = json_decode( $response_body );
 
 			if ( is_object( $result ) &&
-			     is_object( $result->data ) &&
-			     isset( $result->data->id )
+			     is_object( $result->data->site ) &&
+			     isset( $result->data->site->id )
 			) {
-				$rw_account->set_site( $result->data->id, $result->data->public_key, $result->data->secret_key, true );
+				$site = $result->data->site;
+				$rw_account->set_site( $site->id, $site->public_key, $site->secret_key );
+
+				if ( isset( $result->data->user ) ) {
+					$user = $result->data->user;
+					$rw_account->set_user( $user->id, $user->email );
+				}
 			}
 		}
 

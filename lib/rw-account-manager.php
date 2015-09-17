@@ -206,11 +206,9 @@
 			$this->load_account();
 		}
 
-		function set($site_id, $site_public_key, $site_secret_key, $user_id, $user_email)
-		{
-			$this->update_user_id($user_id, false);
-			$this->update_user_email($user_email, false);
-			$this->set_site($site_id, $site_public_key, $site_secret_key, false);
+		function set($site_id, $site_public_key, $site_secret_key, $user_id, $user_email) {
+			$this->set_site( $site_id, $site_public_key, $site_secret_key, false );
+			$this->set_user( $user_id, $user_email );
 
 			$this->_options->store();
 		}
@@ -219,6 +217,16 @@
 			$this->update_site_id( $site_id, false );
 			$this->update_site_public_key( $site_public_key, false );
 			$this->update_site_secret_key( $site_secret_key, false );
+
+			if ( $flush ) {
+				$this->_options->store();
+			}
+		}
+
+		function set_user($user_id, $user_email, $flush = true)
+		{
+			$this->update_user_id($user_id, false);
+			$this->update_user_email($user_email, false);
 
 			if ( $flush ) {
 				$this->_options->store();
