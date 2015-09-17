@@ -184,6 +184,7 @@ The RatingWidget Team
 
 = 2.6.6 - 2015
 * Fix: Resolved the upgrade issues users without an API secret-key were having on upgrade to the new version.
+* Fix: The [ratingwidget] shortcode can now retrieve the current post's ID if the post_id attribute is not set.
 * New: Added an option to force account reset with external details.
 
 = 2.6.5 - 2015-09-16 =
