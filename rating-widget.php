@@ -2730,13 +2730,15 @@
 					'menu_title' => __('Affiliation', WP_RW__ID),
 					'function' => 'affiliation_settings_page_render',
 				);
-
+				
+				/*
 				// Add Ons page
 				$submenu[] = array(
 					'menu_title' => __('Add Ons', WP_RW__ID),
 					'function' => 'addons_settings_page_render',
 					'slug' => 'addons'
 				);
+				*/
 
 				$submenu = apply_filters( 'ratingwidget_dashboard_submenus', $submenu );
 				
