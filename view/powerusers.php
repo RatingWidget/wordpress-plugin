@@ -44,13 +44,14 @@ options.showLoader = false;
 options.showInfo = false;
 
 // Example: Set custom rating file.
+// NOTE: This feature is only supported in the Professional and Business plans.
 //
 // More information:
 //      http://rating-widget.com/support/how-can-i-customize-the-ratings-image-theme-in-wordpress/
 options.style = RW.CUSTOM;
 options.imgUrl = {
-	ltr: "http://imageaddress.com/img.ltr.png", // Left to Right rating
-	rtl: "http://imageaddress.com/img.rtl.png"  // Right to Left rating
+	ltr: "http://i.rw.gs/s/flat_yellow.m.png", // Left to Right rating
+	rtl: "http://i.rw.gs/s/flat_yellow.m.png"  // Right to Left rating
 };
 
 // Example: Disable mobile optimized UI (the fixed star button).

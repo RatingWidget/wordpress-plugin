@@ -2,7 +2,7 @@
 	color: green;
 	border-left-color: #e6db55;
 	font-weight: 700;
-	padding: 11px 15px 0 15px;
+	padding: 11px 15px 0 120px;
 	text-align: left;
 	font-family: "Open Sans", sans-serif;
 }
@@ -23,6 +23,12 @@
 	list-style-type: disc;
 	margin: 14px;
 	padding-left: 35px;
+}
+
+.rw-five-star-wp-rate-action {
+    background: #F6FFF7 url('//img.rating-widget.com/wordpress/profile/vova.jpg') no-repeat right 15px top 15px;
+    padding-right: 120px;
+    background-size: 95px;
 }
 
 .rw-five-star-wp-rate-action.success ul {

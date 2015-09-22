@@ -14,17 +14,23 @@
      * License for the specific language governing permissions and limitations
      * under the License.
      */
-    if (!function_exists('curl_init'))
+
+	if (!function_exists('curl_init'))
         throw new Exception('RatingWidget needs the CURL PHP extension.');
 
     require_once(dirname(__FILE__) . '/RatingWidgetBase.php');
 
     define('RW_SDK__USER_AGENT', 'rw-php-' . RatingWidgetBase::VERSION);
 
+	$curl_version = curl_version();
+
+	define('RW_API__PROTOCOL', version_compare($curl_version['version'], '7.37', '>=') ? 'https' : 'http');
+
+	if (!defined('RW_API__ADDRESS'))
+		define('RW_API__ADDRESS', '://api.rating-widget.com');
+
     class RatingWidget extends RatingWidgetBase
     {
-	    const VERSION = '1.0.3';
-
         /**
         * Default options for curl.
         */
@@ -49,44 +55,20 @@
             parent::__construct($pScope, $pID, $pPublic, $pSecret);
         }
 
-	    private function _Api($pPath, $pMethod = 'GET', $pParams = array())
+	    public function GetUrl($pCanonizedPath = '')
 	    {
-		    $pMethod = strtoupper($pMethod);
+		    $address = RW_API__ADDRESS;
 
-		    try
-		    {
-			    $result = $this->MakeRequest($pPath, $pMethod, $pParams);
-		    }
-		    catch (Exception $e)
-		    {
-			    // Map to error object.
-			    $result = json_encode(array(
-				    'error' => array(
-					    'type' => 'Unknown',
-					    'message' => $e->getMessage() . ' (' . $e->getFile() . ': ' . $e->getLine() . ')',
-					    'code' => 'unknown',
-					    'http' => 402
-				    )
-			    ));
-		    }
+		    if (':' === $address[0])
+			    $address = self::$_protocol . $address;
 
-		    return json_decode($result);
+		    return $address . $pCanonizedPath;
 	    }
 
 	    /**
-	     * Find clock diff between current server to API server.
-	     *
-	     * @since 1.0.3
-	     * @return int Clodk diff in seconds.
+	     * @var int Clock diff in seconds between current server to API server.
 	     */
-	    public function FindClockDiff()
-	    {
-		    $time = time();
-		    $pong = $this->_Api('/v' . RW_API__VERSION . '/ping.json');
-		    return ($time - strtotime($pong->timestamp));
-	    }
-
-	    private $_clock_diff = 0;
+	    private static $_clock_diff = 0;
 
 	    /**
 	     * Set clock diff for all API calls.
@@ -94,9 +76,33 @@
 	     * @since 1.0.3
 	     * @param $pSeconds
 	     */
-	    public function SetClockDiff($pSeconds)
+	    public static function SetClockDiff($pSeconds)
 	    {
-		    $this->_clock_diff = $pSeconds;
+		    self::$_clock_diff = $pSeconds;
+	    }
+
+	    /**
+	     * @var string http or https
+	     */
+	    private static $_protocol = RW_API__PROTOCOL;
+
+	    /**
+	     * Set API connection protocol.
+	     *
+	     * @since 1.0.4
+	     */
+	    public static function SetHttp() {
+		    self::$_protocol = 'http';
+	    }
+
+	    /**
+	     * @since 1.0.4
+	     *
+	     * @return bool
+	     */
+	    public static function IsHttps()
+	    {
+		    return ('https' === self::$_protocol);
 	    }
 
 	    /**
@@ -117,7 +123,7 @@
         {
             $eol = "\n";
             $content_md5 = '';
-            $now = (time() - $this->_clock_diff);
+            $now = (time() - self::$_clock_diff);
             $date = date('r', $now);
 
             if (isset($opts[CURLOPT_POST]) && 0 < $opts[CURLOPT_POST])
@@ -145,15 +151,15 @@
 	     * developers want to do fancier things or use something other than curl to
 	     * make the request.
 	     *
-	     * @param $pCanonizedPath The URL to make the request to
-	     * @param string $pMethod HTTP method
-	     * @param array $params The parameters to use for the POST body
-	     * @param null $ch Initialized curl handle
+	     * @param string        $pCanonizedPath The URL to make the request to
+	     * @param string        $pMethod HTTP method
+	     * @param array         $params The parameters to use for the POST body
+	     * @param resource|null $ch Initialized curl handle
 	     *
 	     * @return mixed
 	     * @throws RW_Exception
 	     */
-        protected function MakeRequest($pCanonizedPath, $pMethod = 'GET', $params = array(), $ch = null)
+        function MakeRequest($pCanonizedPath, $pMethod = 'GET', $params = array(), $ch = null)
         {
             if (!$ch)
                 $ch = curl_init();
@@ -211,7 +217,7 @@
                 {
                     if (strlen(@inet_pton($matches[1])) === 16)
                     {
-                        self::errorLog('Invalid IPv6 configuration on server, Please disable or get native IPv6 on your server.');
+//                        self::errorLog('Invalid IPv6 configuration on server, Please disable or get native IPv6 on your server.');
                         self::$CURL_OPTS[CURLOPT_IPRESOLVE] = CURL_IPRESOLVE_V4;
                         curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
                         $result = curl_exec($ch);
@@ -238,47 +244,18 @@
             return $result;
         }
 
-        /**
-        * Base64 encoding that doesn't need to be urlencode()ed.
-        * Exactly the same as base64_encode except it uses
-        *   - instead of +
-        *   _ instead of /
-        *   No padded =
-        *
-        * @param string $input base64UrlEncoded string
-        * @return string
-        */
-        protected static function Base64UrlDecode($input)
-        {
-            return base64_decode(strtr($input, '-_', '+/'));
-        }
-
-        /**
-        * Base64 encoding that doesn't need to be urlencode()ed.
-        * Exactly the same as base64_encode except it uses
-        *   - instead of +
-        *   _ instead of /
-        *
-        * @param string $input string
-        * @return string base64Url encoded string
-        */
-        protected static function Base64UrlEncode($input)
-        {
-            $str = strtr(base64_encode($input), '+/', '-_');
-            $str = str_replace('=', '', $str);
-            return $str;
-        }
-
-        /**
-        * Get specified rating Rich-Snippets data.
-        *
-        * Note:
-        *   Rich-Snippets data is daily cached (24 hour cache) on local disk
-        *   because Google crawling frequency is lower than that for 99% of the
-        *   sites.
-        *
-        * @param mixed $pRatingExternalID
-        */
+	    /**
+	     * Get specified rating Rich-Snippets data.
+	     *
+	     * Note:
+	     *   Rich-Snippets data is daily cached (24 hour cache) on local disk
+	     *   because Google crawling frequency is lower than that for 99% of the
+	     *   sites.
+	     *
+	     * @param mixed $pRatingExternalID
+	     *
+	     * @return array
+	     */
         public function GetRichSnippetData($pRatingExternalID)
         {
             $cached_file_path = dirname(__FILE__) . '/ratings.json';
@@ -319,7 +296,10 @@
                 }
             }
 
-            return array('votes' => $votes, 'avg_rate' => $avg_rate);
+            return array(
+	            'votes' => $votes,
+	            'avg_rate' => $avg_rate
+            );
         }
 
         public function EchoAggregateRating($pRatingExternalID, $pMinVotes = 1, $pMinAvgRate = 0)

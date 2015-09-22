@@ -3,8 +3,8 @@ Contributors: ratingwidget, svovaf, leorw, freemius
 Donate link: http://rating-widget.com/pricing/wordpress/
 Tags: rate, rating, ratings, vote, votes, voting, star, stars, like, dislike, thumbs, widget, widgets, star rating, thumb rating, rating platform, rating system, seo, post rating, comment rating, 5 star, five star, sidebar, comment, comments, post, posts, page, pages, google, admin, administrator, review, reviews, rich-snippets, plugin, plugins, ajax, buddypress, bbpress, social, javascript, js, wordpress, meta, woocommerce, jquery, contest, competition, voting contest, rtmedia
 Requires at least: 2.9
-Tested up to: 4.2
-Stable tag: 2.5.7
+Tested up to: 4.3
+Stable tag: 2.6.6
 License: GPLv2 or later
 
 The most popular Five Star Review System on the web. User-friendly ratings for: posts, pages, comments, WooCommerce, BuddyPress and bbPress forums.
@@ -15,9 +15,9 @@ The most popular Five Star Review System on the web. User-friendly ratings for: 
 * Posts
 * Pages
 * Comments
-* [WooCommerce Products](https://rating-widget.com/blog/woocommerce-product-ratings/)
+* [WooCommerce Products](https://rating-widget.com/blog/woocommerce-product-ratings/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org)
 * BuddyPress Users and Activities
-* [bbPress Forum Topics](https://rating-widget.com/blog/bbpress-buddypress-star-rating-plugin/), Replies and Users ([PROFESSIONAL plan](http://rating-widget.com/pricing/wordpress/))
+* [bbPress Forum Topics](https://rating-widget.com/blog/bbpress-buddypress-star-rating-plugin/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org), Replies and Users ([PROFESSIONAL plan](http://rating-widget.com/pricing/wordpress/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org))
 * Custom Post Types
 * Author Review
 
@@ -27,7 +27,7 @@ The [Rating-Widget](http://rating-widget.com/wordpress-plugin/) **Star Ratings W
 
 [youtube https://www.youtube.com/watch?v=xbo-dlXvB98]
 
-The plugin has [PRO VERSIONS](http://rating-widget.com/pricing/wordpress/) with [extra features](http://rating-widget.com/wordpress-plugin/).
+The plugin has [PRO VERSIONS](http://rating-widget.com/pricing/wordpress/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org) with [extra features](http://rating-widget.com/wordpress-plugin/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org).
 
 > #### FREE:
 > * Unlimited ratings
@@ -42,7 +42,7 @@ The plugin has [PRO VERSIONS](http://rating-widget.com/pricing/wordpress/) with 
 > * 50k PageViews / month
 > * 1,000 ratings
 > * Unlimited votes
-> * Email Support & [Help Center](http://rating-widget.com/support/)
+> * Email Support & [Help Center](http://rating-widget.com/support/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org)
 
 > #### PROFESSIONAL - SEO, DASHBOARD & ADVANCED ANALYTICS:
 > * All Starter Features
@@ -96,12 +96,12 @@ Check our full features list: http://rating-widget.com/wordpress-plugin/
 ---
  
 > #### Follow Us
-> [Blog](http://rating-widget.com/blog/) | [Twitter](http://twitter.com/ratingwidget) | [Facebook](http://www.facebook.com/rating.widget) | [Google+](https://plus.google.com/103776958800403053498/) | [LinkedIn](http://www.linkedin.com/company/1856639) | [YouTube](https://www.youtube.com/ratingwidget)
+> [Blog](http://rating-widget.com/blog/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org) | [Twitter](http://twitter.com/ratingwidget) | [Facebook](http://www.facebook.com/rating.widget) | [Google+](https://plus.google.com/103776958800403053498/) | [LinkedIn](http://www.linkedin.com/company/1856639) | [YouTube](https://www.youtube.com/ratingwidget)
 
 ---
  
 > #### Rating-Widget Support Forum
-> Please visit [RatingWidget WordPress FAQ](http://rating-widget.com/support/wordpress/faq/) and [RatingWidget WordPress Support Forum](http://wordpress.org/support/plugin/rating-widget) for additional help with using this plugin. You may also post feature requests, ideas and bug reports there.
+> Please visit [RatingWidget WordPress FAQ](http://rating-widget.com/support/wordpress/faq/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org) and [RatingWidget WordPress Support Forum](https://wordpress.org/support/plugin/rating-widget/) for additional help with using this plugin. You may also post feature requests, ideas and bug reports there.
 
 == Installation ==
 
@@ -135,8 +135,8 @@ If you are here that means you've installed the [RatingWidget for WordPress Plug
 
 We know that your time is valuable, therefore we've created this sticky topic to help you find a solution as quickly as possible.
 
-1. If you have a [feature suggestion/request](http://rating-widget.com/contact/?platform=wordpress&topic=feature%20request) please follow [this link](http://rating-widget.com/contact/?platform=wordpress&topic=feature%20request).
-2. If you need some [special customization of the plugin](http://rating-widget.com/contact/?platform=wordpress&subject=customization) for your Blog, please follow [this link](http://rating-widget.com/contact/?platform=wordpress&subject=customization).
+1. If you have a [feature suggestion/request](http://rating-widget.com/contact/?platform=wordpress&topic=feature%20request&utm_medium=link&utm_campaign=free&utm_source=wordpress.org) please follow [this link](http://rating-widget.com/contact/?platform=wordpress&topic=feature%20request&utm_medium=link&utm_campaign=free&utm_source=wordpress.org).
+2. If you need some [special customization of the plugin](http://rating-widget.com/contact/?platform=wordpress&subject=customization&utm_medium=link&utm_campaign=free&utm_source=wordpress.org) for your Blog, please follow [this link](http://rating-widget.com/contact/?platform=wordpress&subject=customization&utm_medium=link&utm_campaign=free&utm_source=wordpress.org).
 3. If you face a technical problem/issue, please keep reading.
 
 Before you rush into adding another topic to the support forum, please read the following most **Frequently Asked Questions** and solutions:
@@ -157,18 +157,18 @@ Before you rush into adding another topic to the support forum, please read the 
 
 > **Problem: The RatingWidget WordPress plugin don’t show ratings on my comments, what’s wrong?**
 >
-> **Solution:** First, make sure you’ve enabled the ratings for comments in your admin’s dashboard. Once you sure it’s enabled, but still doesn’t work, a common cause can be that your theme isn’t using `comment_text()` to display the comments text. A common mistake by theme developers is the use of `get_comment_text()` instead of `comment_text()`. Try to switch between those and it should fix the issue. If you are awesome, contact the theme developer and let him know about the issue so he can fix it for everyone else.
+> **Solution:** First, make sure you’ve enabled the ratings for comments in your admin’s dashboard. Once you sure it’s enabled, but still doesn't work, a common cause can be that your theme isn’t using `comment_text()` to display the comments text. A common mistake by theme developers is the use of `get_comment_text()` instead of `comment_text()`. Try to switch between those and it should fix the issue. If you are awesome, contact the theme developer and let him know about the issue so he can fix it for everyone else.
 
 ---
 
 > ####Additional common questions and solutions (follow the links):
 >
-> * [Can I add a rating inside my WordPress post’s content?](http://rating-widget.com/support/wordpress/can-i-add-a-rating-inside-my-wordpress-posts-content/)
-> * [Is there any PHP shortcodes I can use for my custom posts templates?](http://rating-widget.com/support/wordpress/is-there-any-php-shortcodes-i-can-use-for-my-custom-posts-templates/)
-> * [Do you have a refresh code for Ajax loaded content?](http://rating-widget.com/support/wordpress/do-you-have-a-refresh-code-for-ajax-loaded-content/)
+> * [Can I add a rating inside my WordPress post’s content?](http://rating-widget.com/support/wordpress/can-i-add-a-rating-inside-my-wordpress-posts-content/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org)
+> * [Is there any PHP shortcodes I can use for my custom posts templates?](http://rating-widget.com/support/wordpress/is-there-any-php-shortcodes-i-can-use-for-my-custom-posts-templates/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org)
+> * [Do you have a refresh code for Ajax loaded content?](http://rating-widget.com/support/wordpress/do-you-have-a-refresh-code-for-ajax-loaded-content/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org)
 
-If you didn't find a solution to your problem yet, check out our [WordPress Knowledge Base](http://rating-widget.com/support/wordpress/):
-[http://rating-widget.com/support/wordpress/](http://rating-widget.com/support/wordpress/)
+If you didn't find a solution to your problem yet, check out our [WordPress Knowledge Base](http://rating-widget.com/support/wordpress/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org):
+[http://rating-widget.com/support/wordpress/](http://rating-widget.com/support/wordpress/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org)
 
 **If you reading this section it means you still didn't find a solution to your problem. Try to [search our WordPress support forum](http://wordpress.org/support/plugin/rating-widget) - maybe someone else already asked it. If you can't find it, it's time  create a new topic in the forum.** To make it super-efficient, please follow this guidelines:
 
@@ -177,10 +177,54 @@ If you didn't find a solution to your problem yet, check out our [WordPress Know
 * If you are running your WordPress from LOCALHOST, please add a screenshot or a video of the problem you are facing.
 * Otherwise, provide a link to the page that has the ratings code and the problem you are facing.
 
-**Thanks for using our [WordPress plugin](http://rating-widget.com/wordpress-plugin/)**,
+**Thanks for using our [WordPress plugin](http://rating-widget.com/wordpress-plugin/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org)**,
 The RatingWidget Team
 
 == Change Log ==
+
+= 2.6.6 - 2015
+* Fix: Resolved the upgrade issues users without an API secret-key were having on upgrade to the new version.
+* Fix: The [ratingwidget] shortcode can now retrieve the current post's ID if the post_id attribute is not set.
+* New: Added an option to force account reset with external details.
+
+= 2.6.5 - 2015-09-16 =
+* Fix: Improved API connectivity messaging + added the error from the API call when user submit a request to fix.
+
+= 2.6.4 - 2015-09-11 =
+* Optimization: Resized and compressed all screenshot images to significantly reduce plugin Zip size.
+* New: Added special flow to recover previous lost account.
+* Fix: Fixed API fallback to HTTP. Seems like the fallback param wasn't stored correctly in the DB.
+* Fix: Added API fallback to RW SDK.
+* Update: Added RTL support for sticky admin notices.
+
+= 2.6.3 - 2015-09-10 =
+* Fix: Fixed account details migration (versions that account stored only in FS object).
+* Fix: Added API fallback to HTTP since seems like some cURL versions don't play well with CloudFlare.
+
+= 2.6.2 - 2015-09-09 =
+* Fix: func_get_args() can't be used as a function parameter on old PHP versions.
+* Fix: Removed "\" from classes since namespaces aren't supported in PHP < 5.3.
+
+= 2.6.1 - 2015-09-09 =
+* Fix: Mistakenly left PHP errors flag on which caused showing all site's PHP warnings and notices. Sorry :(
+* Fix: Removed duplicated handler from live preview JS.
+
+= 2.6.0 - 2015-09-09 =
+* New: Added comments “Moderator Only” mode. To enable admin only voting on comment ratings.
+* Update: Modified Power-User settings custom image example images URLs to the default yellow medium ratings.
+* Optimization: Removed old unused code.
+* Update: Code modernization + added regions for better folding during editing.
+* Optimization: Removed all reports' API calls and rendering, since it's not relevant for the free version.
+* Fix: Fixed the remove criterion button in the live preview by adding display: block. Without display: block, the button doesn't work work well in Chrome.
+* Update: Finally officially removed all ratings boosting functionality.
+* Update: Fully integrated Freemius.
+
+= 2.5.9 - 2015-07-28 =
+* New: Added “review mode” for comment ratings so users can submit a rating with their comments.
+
+= 2.5.8 - 2015-07-21 =
+* Update: Updated the rich snippet markup properties (headline, image, and datePublished) based on Google's latest requirement.
+
 = 2.5.7 - 2015-07-06 =
 * Fix: Fixed the HTML code for the Rich-Snippets.
 * Fix: Fixed a bug that shows warnings on the Activity Updates and Activity Comments tabs.

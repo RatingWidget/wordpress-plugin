@@ -11,7 +11,13 @@
 	$multi_criteria = $criteria_count > 1;
 
 	if ($multi_criteria) {
-	    $mr_embed_options['uarid'] = $mr_summary_urid;
+		if ( ! rw_fs()->is_plan_or_trial__premium_only( 'professional' ) ) {
+			if ( $criteria_count > 3 ) {
+				$mr_multi_options->criteria = array_splice( $mr_multi_options->criteria, 0, 3 );
+			}
+		}
+
+		$mr_embed_options['uarid']                = $mr_summary_urid;
 		$mr_embed_options['hide-recommendations'] = 'true';
 	}
 	

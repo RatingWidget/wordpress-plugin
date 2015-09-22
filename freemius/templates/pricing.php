@@ -1,72 +1,95 @@
 <?php
+	/**
+	 * @package     Freemius
+	 * @copyright   Copyright (c) 2015, Freemius, Inc.
+	 * @license     http://opensource.org/licenses/gpl-2.0.php GNU Public License
+	 * @since       1.0.3
+	 */
+
+	wp_enqueue_script('jquery');
+	wp_enqueue_script('json2');
+	fs_enqueue_local_script('postmessage', 'nojquery.ba-postmessage.min.js');
+	fs_enqueue_local_script('fs-postmessage', 'postmessage.js');
+
 	$slug = $VARS['slug'];
 	$fs = fs($slug);
-
-	fs_enqueue_local_script('jquery-postmessage', 'jquery.ba-postmessage.min.js');
-
 	$timestamp = time();
-	$site = $fs->get_site();
-	$params = array(
-		'context_site' => $site->id,
-		's_ctx_ts' => $timestamp,
-		's_ctx_secure' => md5($timestamp . $site->id . $site->secret_key . $site->public_key . 'upgrade'),
-		'next' => fs_get_admin_plugin_url('account') . '&action=sync_license',
+
+	$context_params = array(
+		'plugin_id'         => $fs->get_id(),
+		'plugin_public_key' => $fs->get_public_key(),
+		'plugin_version'    => $fs->get_plugin_version(),
 	);
+
+	// Get site context secure params.
+	if ($fs->is_registered()) {
+		$context_params = array_merge( $context_params, FS_Security::instance()->get_context_params(
+			$fs->get_site(),
+			$timestamp,
+			'upgrade'
+		) );
+	}
+
+	if ($fs->is_payments_sandbox())
+		// Append plugin secure token for sandbox mode authentication.)
+		$context_params['sandbox'] = FS_Security::instance()->get_secure_token(
+			$fs->get_plugin(),
+			$timestamp,
+			'checkout'
+		);
+
+	$query_params = array_merge($context_params, array(
+		'next' => $fs->_get_admin_page_url('account', array('fs_action' => $slug . '_sync_license')),
+		'plugin_version' => $fs->get_plugin_version(),
+		// Billing cycle.
+		'billing_cycle' => fs_request_get('billing_cycle', WP_FS__PERIOD_ANNUALLY),
+	));
 ?>
-<div>
-	<div id="iframe"></div>
-	<form action="" method="POST">
-		<input type="hidden" name="user_id" />
-		<input type="hidden" name="user_email" />
-		<input type="hidden" name="site_id" />
-		<input type="hidden" name="public_key" />
-		<input type="hidden" name="secret_key" />
-		<input type="hidden" name="action" value="account" />
-	</form>
 
-	<script type="text/javascript">
-		(function($) {
-			$(function () {
+	<div id="fs_pricing" class="wrap" style="margin: 0 0 -65px -20px;">
+		<div id="iframe"></div>
+		<form action="" method="POST">
+			<input type="hidden" name="user_id" />
+			<input type="hidden" name="user_email" />
+			<input type="hidden" name="site_id" />
+			<input type="hidden" name="public_key" />
+			<input type="hidden" name="secret_key" />
+			<input type="hidden" name="action" value="account" />
+		</form>
 
-				var
-				// Keep track of the iframe height.
-					iframe_height = 800,
-					domain = '<?php echo WP_RW__LOCALHOST_SCRIPTS ? WP_RW__ADDRESS : WP_RW__SECURE_ADDRESS ?>',
-//					domain = 'http://localhost:8080',
-				// Pass the parent page URL into the Iframe in a meaningful way (this URL could be
-				// passed via query string or hard coded into the child page, it depends on your needs).
-					src = domain + '/pricing-internal/wordpress/?<?php echo http_build_query($params) ?>#' + encodeURIComponent(document.location.href),
-				// Append the Iframe into the DOM.
-					iframe = $('<iframe " src="' + src + '" width="100%" height="' + iframe_height + 'px" scrolling="no" frameborder="0" style="background: transparent;"><\/iframe>')
-						.load(function () {
-						})
-						.appendTo('#iframe');
+		<script type="text/javascript">
+			(function($, undef) {
+				$(function () {
+					var
+					// Keep track of the iframe height.
+						iframe_height = 800,
+						base_url = '<?php echo WP_FS__ADDRESS ?>',
+					// Pass the parent page URL into the Iframe in a meaningful way (this URL could be
+					// passed via query string or hard coded into the child page, it depends on your needs).
+						src = base_url + '/pricing/?<?php echo http_build_query($query_params) ?>#' + encodeURIComponent(document.location.href),
 
-				// Setup a callback to handle the dispatched MessageEvent event. In cases where
-				// window.postMessage is supported, the passed event will have .data, .origin and
-				// .source properties. Otherwise, this will only have the .data property.
-				$.receiveMessage(function (e) {
-					var data = JSON.parse(e.data),
-						h = data.height;
+					// Append the Iframe into the DOM.
+						iframe = $('<iframe " src="' + src + '" width="100%" height="' + iframe_height + 'px" scrolling="no" frameborder="0" style="background: transparent;"><\/iframe>')
+							.appendTo('#iframe');
 
-					if (!isNaN(h) && h > 0 && h != iframe_height) {
-						iframe_height = (h < iframe_height) ? iframe_height : h;
-						$("#iframe iframe").height(iframe_height + 'px');
-					}
+					FS.PostMessage.init(base_url);
 
-					/*if (null == identity.user_id)
-					 return;
+					FS.PostMessage.receive('height', function (data){
+						var h = data.height;
+						if (!isNaN(h) && h > 0 && h != iframe_height) {
+							iframe_height = h;
+							$("#iframe iframe").height(iframe_height + 'px');
+						}
+					});
 
-					 $(document.body).css({'cursor':'wait'});
-
-					 // Update user values.
-					 for (var k in identity)
-					 $('#rw_wp_registration form input[name=' + k + ']').val(identity[k]);
-
-					 $('#rw_wp_registration form').submit();*/
-				}, domain);
-			});
-		})(jQuery);
-	</script>
-</div>
+					FS.PostMessage.receive('get_dimensions', function (data){
+						FS.PostMessage.post('dimensions', {
+							height: $(document.body).height(),
+							scrollTop: $(document).scrollTop()
+						}, iframe[0]);
+					});
+				});
+			})(jQuery);
+		</script>
+	</div>
 <?php fs_require_template('powered-by.php') ?>

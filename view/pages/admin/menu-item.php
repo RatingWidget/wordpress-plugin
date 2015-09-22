@@ -6,7 +6,7 @@
 	ul#adminmenu li.toplevel_page_<?php echo WP_RW__ADMIN_MENU_SLUG;?>.current .wp-menu-image a
 	{ background-position: -1px 0; }
 	ul#adminmenu li.toplevel_page_<?php echo WP_RW__ADMIN_MENU_SLUG;?> .wp-menu-image a img { display: none; }
-<?php if (!ratingwidget()->RW_IsPaying()) : ?>
+<?php if (rw_fs()->is_not_paying()) : ?>
 	ul#adminmenu li.toplevel_page_<?php echo WP_RW__ADMIN_MENU_SLUG;?> ul li:last-child a {
 		color: yellowgreen;
 		font-weight: bold;
