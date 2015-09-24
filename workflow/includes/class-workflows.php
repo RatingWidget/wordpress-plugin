@@ -116,7 +116,7 @@
 			add_filter( 'ratingwidget_dashboard_submenus', array( &$this, '_add_dashboard_menu' ) );
 			
 			// AJAX request handlers
-			add_action( 'wp_ajax_create-workflow', array( &$this, 'create_workflow' ) );
+			add_action( 'wp_ajax_new-workflow', array( &$this, 'new_workflow' ) );
 			add_action( 'wp_ajax_update-workflow', array( &$this, 'update_workflow' ) );
 			add_action( 'wp_ajax_update-workflows-id-order', array( &$this, 'update_workflows_id_order' ) );
 			add_action( 'wp_ajax_delete-workflow', array( &$this, 'delete_workflow' ) );
@@ -431,12 +431,12 @@
 		}
 		
 		/**
-		 * Creates a new workflow.
+		 * Creates a new workflow via AJAX request.
          * 
          * @author Leo Fajardo (@leorw)
          * @since 1.0.0
 		 */
-		function create_workflow() {
+		function new_workflow() {
 			$name = isset( $_POST['name'] ) ? trim( stripslashes( $_POST['name'] ) ) : $_POST['name'];
 			
 			// Validate the name of the new workflow.
@@ -452,28 +452,13 @@
 				exit;
 			}
 			
-			// Generate a unique ID based on the name of the new workflow.
-			$id = $this->generate_workflow_id( $name );
-			
-			$workflow = (object) array(
-				'name'			=> $name,
-				'active'		=> false,
-				'conditions'	=> array(),
-				'actions'		=> array(),
-				'eventTypes'	=> array()
-			);
-			
-			$this->_workflows->{ $id } = $workflow;
-			$this->_workflows_id_order[] = $id;
-			
-			$this->_options->set_option( 'workflows', $this->_workflows, true );
-			$this->_options->set_option( 'workflows_id_order', $this->_workflows_id_order, true );
+			$id = $this->insert_workflow( array( 'name' => $name ) );
 			
 			$message = array(
 				'success' => 1,
 				'data'    => array(
 					'id'		=> $id,
-					'workflow'	=> $workflow
+					'workflow'	=> $this->_workflows->{ $id }
 				)
 			);
 
@@ -483,7 +468,7 @@
 		}
 		
 		/**
-		 * Updates the details of the workflow specified by ID.
+		 * Updates the details of a workflow via AJAX request.
          * 
          * @author Leo Fajardo (@leorw)
          * @since 1.0.0
@@ -555,7 +540,7 @@
 		}
 		
 		/**
-		 * Deletes the workflow specified by $_POST['id'].
+		 * Deletes a workflow via AJAX request.
          * 
          * @author Leo Fajardo (@leorw)
          * @since 1.0.0
@@ -563,6 +548,119 @@
 		function delete_workflow() {
 			$id = isset( $_POST['id'] ) ? trim( $_POST['id'] ) : $_POST['id'];
 			
+			$this->_delete_workflow( $id );
+			
+			$message = array(
+				'success' => 1,
+				'data'    => array(
+					'id'  => $id
+				)
+			);
+
+			echo json_encode( $message );
+			
+			exit;
+		}
+		
+		/**
+		 * Inserts an add-on's workflow into the database option.
+         * 
+         * @author Leo Fajardo (@leorw)
+         * @since 1.0.0
+		 *
+		 * @param string $addon_slug
+		 * @param array $workflow
+		 */
+		function insert_addon_workflow( $addon_slug, $workflow = array() ) {
+			if ( empty( $workflow ) ) {
+				return;
+			}
+			
+			$addon_settings = $this->get_single_addon_settings( $addon_slug );
+			if ( ! is_object( $addon_settings ) ) {
+				$addon_settings = new stdClass();
+			}
+
+			$workflow_id = isset( $addon_settings->workflow_id ) ? $addon_settings->workflow_id : false;
+			
+			// Only add the workflow if it has not been added before.
+			if ( false === $workflow_id ) {
+				$workflow_id = $this->insert_workflow( $workflow );
+				
+				// Save the workflow ID so that it will not be added again everytime the add-on is activated.
+				$addon_settings->workflow_id = $workflow_id;
+				
+				// Update the add-on's settings.
+				$this->_addons_settings->{ $addon_slug } = $addon_settings;
+
+				$this->_options->set_option( 'addons_settings', $this->_addons_settings, true );
+			}
+		}
+		
+		/**
+		 * Removes an add-on's workflow from the database option.
+         * 
+         * @author Leo Fajardo (@leorw)
+         * @since 1.0.0
+		 *
+		 * @param string $addon_slug
+		 */
+		function remove_addon_workflow( $addon_slug ) {
+			$addon_settings = $this->get_single_addon_settings( $addon_slug );
+			if ( ! is_object( $addon_settings ) ) {
+				return;
+			}
+			
+			if ( ! isset( $addon_settings->workflow_id ) ) {
+				return;
+			}
+			
+			$workflow_id = $addon_settings->workflow_id;
+			
+			$this->_delete_workflow( $workflow_id );
+			
+			unset( $addon_settings->workflow_id );
+
+			$this->_options->set_option( 'addons_settings', $this->_addons_settings, true );
+		}
+		
+		/**
+		 * Inserts a new workflow into the database option.
+         * 
+         * @author Leo Fajardo (@leorw)
+         * @since 1.0.0
+		 *
+		 * @param array $properties
+		 * @return string
+		 */
+		function insert_workflow( $properties = array() ) {
+			// Generate a unique ID based on the name of the new workflow.
+			$id = $this->generate_workflow_id( $properties['name'] );
+			
+			$workflow = (object) array(
+				'name'			=> $properties['name'],
+				'active'		=> ( isset( $properties['active'] ) ? $properties['active'] : false ),
+				'conditions'	=> ( isset( $properties['conditions'] ) ? $properties['conditions'] : array() ),
+				'actions'		=> ( isset( $properties['actions'] ) ? $properties['actions'] : array() ),
+				'eventTypes'	=> ( isset( $properties['eventTypes'] ) ? $properties['eventTypes'] : array() )
+			);
+			
+			$this->_workflows->{ $id } = $workflow;
+			$this->_workflows_id_order[] = $id;
+			
+			$this->_options->set_option( 'workflows', $this->_workflows, true );
+			$this->_options->set_option( 'workflows_id_order', $this->_workflows_id_order, true );
+			
+			return $id;
+		}
+		
+		/**
+		 * Removes the workflow specified by $id from the database option.
+         * 
+         * @author Leo Fajardo (@leorw)
+         * @since 1.0.0
+		 */
+		function _delete_workflow( $id ) {
 			$update = false;
 			
 			if ( isset( $this->_workflows->{ $id } ) ) {
@@ -580,42 +678,31 @@
 			if ( $update ) {
 				$this->_options->set_option( 'workflows', $this->_workflows, true );
 			}
-			
-			$message = array(
-				'success' => 1,
-				'data'    => array(
-					'id'  => $id
-				)
-			);
-
-			echo json_encode( $message );
-			
-			exit;
 		}
 		
 		/* Management Dashboard Menu
 		------------------------------------------------------------------------------------------------------------------*/
 
         /**
-         * Adds sub menu items under the RatingWidget dashboard menu item.
+         * Adds submenu items under the RatingWidget dashboard menu item.
          * 
          * @author Leo Fajardo (@leorw)
          * @since 1.0.0
          * 
-         * @param array $ratingwidget_submenus Current sub menu items added by RatingWiget.
+         * @param array $ratingwidget_submenus Current submenu items added by RatingWiget.
          * 
          * @return array
          */
 		function _add_dashboard_menu( $ratingwidget_submenus ) {
 			// Add Ons Config submenu
-			// Check if there is any active add ons
+			// Check if there is any active add-on
 			$settings_tab = apply_filters( 'rw_wf_addons_settings_tab', array() );
 			if ( ! empty( $settings_tab ) ) {
 				$ratingwidget_submenus[] = array(
 					'menu_title'	=> __( 'Add Ons Config', WP_WF__SLUG ),
 					'function'		=> array( &$this, '_addons_config_page_render' ),
 					'load_function' => array( &$this, '_addons_config_page_load' ),
-					'slug'			=> 'rw-addons-config'
+					'slug'			=> 'addons-config'
 				);
 			}
 			
@@ -624,7 +711,7 @@
 				'menu_title'	=> __( 'Workflows', WP_WF__SLUG ),
 				'function'		=> array( &$this, '_workflows_page_render' ),
 				'load_function' => array( &$this, '_workflows_page_load' ),
-				'slug'			=> 'rw-workflows'
+				'slug'			=> 'workflows'
 			);
 			
 			return $ratingwidget_submenus;

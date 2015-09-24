@@ -79,7 +79,7 @@
 						url: ajaxurl,
 						method: 'POST',
 						data: {
-							action: ( workflowId.length > 0 ) ? 'update-workflow' : 'create-workflow',
+							action: ( workflowId.length > 0 ) ? 'update-workflow' : 'new-workflow',
 							name: name,
 							id: workflowId
 						},
