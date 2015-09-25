@@ -24,6 +24,16 @@
         $tab_keys = array_keys( $addons_settings_tab );
         $selected_key = $tab_keys[0];
     }
+	
+	// Retrieve all add-ons' settings.
+	$addons_settings = wf()->get_addons_settings();
+	
+	if ( ( false !== $addons_settings ) && isset( $addons_settings->{ $selected_key } ) ) {
+		$selected_addon_settings = $addons_settings->{ $selected_key };
+	} else {
+		$selected_addon_settings = new stdClass();
+	}
+	
     ?>
     <div class="wrap rw-dir-ltr rw-wp-container">
         <h2 class="nav-tab-wrapper rw-nav-tab-wrapper">
@@ -36,9 +46,6 @@
             <div id="poststuff">
                 <div id="rw_wp_set">
                     <?php
-                    // Retrieve all add-ons' settings.
-                    $addons_settings = wf()->get_addons_settings();
-
                     foreach ( $addons_settings_tab[ $selected_key ]['sections'] as $section ) {
                     ?>
                     <div class="has-sidebar has-right-sidebar">
@@ -59,12 +66,9 @@
                                                 $value = false;
 
                                                 // Get the field's value from the options saved to the database.
-                                                if ( ( false !== $addons_settings ) && isset( $addons_settings->{ $selected_key } ) ) {
-                                                    $selected_addon_settings = $addons_settings->{ $selected_key };
-                                                    if ( isset( $selected_addon_settings->{ $field_id } ) ) {
-                                                        $value = $selected_addon_settings->{ $field_id };
-                                                    }
-                                                }
+												if ( isset( $selected_addon_settings->{ $field_id } ) ) {
+													$value = $selected_addon_settings->{ $field_id };
+												}
 
                                                 // Retrieve the default value if there is no value saved to the database.
                                                 if ( ( false === $value ) ) {

@@ -58,7 +58,12 @@
 }
 .rw-wf-modal .rw-wf-modal-footer {
   border-top: #eeeeee solid 1px;
-  text-align: right;
+}
+.rw-wf-modal .rw-wf-modal-footer > .button {
+  margin: 0 7px;
+}
+.rw-wf-modal .rw-wf-modal-footer > .button:first-child {
+  margin-left: 0;
 }
 .rw-wf-modal .rw-wf-modal-footer > .rw-wf-button {
   background-image: none !important;
@@ -81,6 +86,9 @@
   border-radius: 4px;
   margin: 0 7px;
   text-decoration: none;
+}
+.rw-wf-modal .rw-wf-modal-footer > .rw-wf-button:first-child {
+  margin-left: 0;
 }
 .rw-wf-modal .rw-wf-modal-footer > .rw-wf-button:last-child {
   margin: 0;
@@ -127,9 +135,13 @@
 .rw-wf-modal.no-body .rw-wf-modal-header {
   border-bottom: 0 none;
 }
-.rw-wf-modal.no-body .rw-wf-modal-header h2 {
-  font-weight: normal;
-  font-size: 16px;
+.rw-wf-modal.no-body .rw-wf-modal-header > div {
+  margin-top: 10px;
+}
+.rw-wf-modal.no-body .rw-wf-modal-header > div h2 {
+  font-weight: bold;
+  font-size: 20px;
+  margin-top: 0;
 }
 .rw-wf-modal.no-body .rw-wf-modal-body {
   display: none;

@@ -296,4 +296,9 @@
 			</p>
 		</div>
 	</form>
+	
+	<?php
+		// Allow other plugins to add HTML code below the <form> element. The Twitter add-on is using this action to add its own modal box that shows an information message after the add-on activation.
+		do_action( 'after_workflows_page_form_element' );
+	?>
 </div>

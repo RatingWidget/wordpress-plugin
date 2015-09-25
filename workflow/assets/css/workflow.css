@@ -14,7 +14,6 @@
   /*! normalize.css v3.0.3 | MIT License | github.com/necolas/normalize.css */
   /*! Source: https://github.com/h5bp/html5-boilerplate/blob/master/src/css/main.css */
   /* WORKFLOWS */
-  /* MODAL */
 }
 #workflows-page html {
   font-family: sans-serif;
@@ -4552,7 +4551,8 @@
 #workflows-page .workflow-summary .label.and {
   margin-left: 0;
 }
-#workflows-page .rw-wf-modal:before {
+/* MODAL */
+.rw-wf-modal:before {
   content: "";
   display: none;
   background: rgba(0, 0, 0, 0.6);
@@ -4563,7 +4563,7 @@
   bottom: 0;
   z-index: 100000;
 }
-#workflows-page .rw-wf-modal .rw-wf-modal-dialog {
+.rw-wf-modal .rw-wf-modal-dialog {
   background: #fefefe;
   border: #333333 solid 1px;
   border-radius: 5px;
@@ -4581,40 +4581,45 @@
   -o-transition: -o-transform 0.3s ease-out;
   transition: transform 0.3s ease-out;
 }
-#workflows-page .rw-wf-modal.active:before {
+.rw-wf-modal.active:before {
   display: block;
 }
-#workflows-page .rw-wf-modal.active .rw-wf-modal-dialog {
+.rw-wf-modal.active .rw-wf-modal-dialog {
   -webkit-transform: translate(0, 0);
   -ms-transform: translate(0, 0);
   transform: translate(0, 0);
   top: 20%;
 }
-#workflows-page .rw-wf-modal a.rw-wf-button-close {
+.rw-wf-modal a.rw-wf-button-close {
   position: absolute;
   top: 2px;
   right: 5px;
   text-decoration: none;
   font-size: 30px;
 }
-#workflows-page .rw-wf-modal .rw-wf-modal-body {
+.rw-wf-modal .rw-wf-modal-body {
   padding: 20px;
 }
-#workflows-page .rw-wf-modal .rw-wf-modal-header,
-#workflows-page .rw-wf-modal .rw-wf-modal-footer {
+.rw-wf-modal .rw-wf-modal-header,
+.rw-wf-modal .rw-wf-modal-footer {
   padding: 20px;
 }
-#workflows-page .rw-wf-modal .rw-wf-modal-header {
+.rw-wf-modal .rw-wf-modal-header {
   border-bottom: #eeeeee solid 1px;
 }
-#workflows-page .rw-wf-modal .rw-wf-modal-header h2 {
+.rw-wf-modal .rw-wf-modal-header h2 {
   font-size: 20px;
 }
-#workflows-page .rw-wf-modal .rw-wf-modal-footer {
+.rw-wf-modal .rw-wf-modal-footer {
   border-top: #eeeeee solid 1px;
-  text-align: right;
 }
-#workflows-page .rw-wf-modal .rw-wf-modal-footer > .rw-wf-button {
+.rw-wf-modal .rw-wf-modal-footer > .button {
+  margin: 0 7px;
+}
+.rw-wf-modal .rw-wf-modal-footer > .button:first-child {
+  margin-left: 0;
+}
+.rw-wf-modal .rw-wf-modal-footer > .rw-wf-button {
   background-image: none !important;
   display: inline-block;
   padding: 6px 12px;
@@ -4636,56 +4641,63 @@
   margin: 0 7px;
   text-decoration: none;
 }
-#workflows-page .rw-wf-modal .rw-wf-modal-footer > .rw-wf-button:last-child {
+.rw-wf-modal .rw-wf-modal-footer > .rw-wf-button:first-child {
+  margin-left: 0;
+}
+.rw-wf-modal .rw-wf-modal-footer > .rw-wf-button:last-child {
   margin: 0;
 }
-#workflows-page .rw-wf-modal .rw-wf-modal-footer > .rw-wf-button:hover,
-#workflows-page .rw-wf-modal .rw-wf-modal-footer > .rw-wf-button:focus {
+.rw-wf-modal .rw-wf-modal-footer > .rw-wf-button:hover,
+.rw-wf-modal .rw-wf-modal-footer > .rw-wf-button:focus {
   color: #333;
   text-decoration: none;
   outline: thin dotted;
   outline: 5px auto -webkit-focus-ring-color;
   outline-offset: -2px;
 }
-#workflows-page .rw-wf-modal .rw-wf-modal-footer > .rw-wf-button:active {
+.rw-wf-modal .rw-wf-modal-footer > .rw-wf-button:active {
   background-image: none;
   outline: 0;
   -webkit-box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
   box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
 }
-#workflows-page .rw-wf-modal .rw-wf-modal-footer > .rw-wf-button.rw-wf-button-primary {
+.rw-wf-modal .rw-wf-modal-footer > .rw-wf-button.rw-wf-button-primary {
   color: #fff;
   background-color: #428bca;
   border-color: #357ebd;
 }
-#workflows-page .rw-wf-modal .rw-wf-modal-footer > .rw-wf-button.rw-wf-button-primary:active {
+.rw-wf-modal .rw-wf-modal-footer > .rw-wf-button.rw-wf-button-primary:active {
   background-image: none;
   color: #fff;
   background-color: #3071a9;
   border-color: #285e8e;
 }
-#workflows-page .rw-wf-modal .rw-wf-modal-footer > .rw-wf-button.rw-wf-button-primary:hover,
-#workflows-page .rw-wf-modal .rw-wf-modal-footer > .rw-wf-button.rw-wf-button-primary:focus {
+.rw-wf-modal .rw-wf-modal-footer > .rw-wf-button.rw-wf-button-primary:hover,
+.rw-wf-modal .rw-wf-modal-footer > .rw-wf-button.rw-wf-button-primary:focus {
   color: #fff;
   background-color: #3071a9;
   border-color: #285e8e;
   outline: 5px auto -webkit-focus-ring-color;
   outline-offset: -2px;
 }
-#workflows-page .rw-wf-modal .rw-wf-modal-footer > .rw-wf-button.rw-wf-button-primary:active {
+.rw-wf-modal .rw-wf-modal-footer > .rw-wf-button.rw-wf-button-primary:active {
   border-color: #005684;
   -webkit-box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.1);
   box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.1);
   vertical-align: top;
 }
-#workflows-page .rw-wf-modal.no-body .rw-wf-modal-header {
+.rw-wf-modal.no-body .rw-wf-modal-header {
   border-bottom: 0 none;
 }
-#workflows-page .rw-wf-modal.no-body .rw-wf-modal-header h2 {
-  font-weight: normal;
-  font-size: 16px;
+.rw-wf-modal.no-body .rw-wf-modal-header > div {
+  margin-top: 10px;
 }
-#workflows-page .rw-wf-modal.no-body .rw-wf-modal-body {
+.rw-wf-modal.no-body .rw-wf-modal-header > div h2 {
+  font-weight: bold;
+  font-size: 20px;
+  margin-top: 0;
+}
+.rw-wf-modal.no-body .rw-wf-modal-body {
   display: none;
 }
 /* ON-OFF SWITCH */

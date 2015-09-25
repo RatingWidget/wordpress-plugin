@@ -70,7 +70,13 @@
 
 	.rw-wf-modal-footer {
 		border-top: #eeeeee solid 1px;
-		text-align: right;
+		> .button {
+			margin: 0 7px;
+
+			&:first-child {
+				margin-left: 0;
+			}
+		}
 
 		> .rw-wf-button {
 			background-image: none !important;
@@ -93,6 +99,10 @@
 			border-radius: 4px;
 			margin: 0 7px;
 			text-decoration: none;
+			
+			&:first-child {
+				margin-left: 0;
+			}
 
 			&:last-child {
 				margin: 0;
@@ -146,10 +156,15 @@
 	&.no-body {
 		.rw-wf-modal-header {
 			border-bottom: 0 none;
+			
+			> div {
+				margin-top: 10px;
 
-			h2 {
-				font-weight: normal;
-				font-size: 16px;
+				h2 {
+					font-weight: bold;
+					font-size: 20px;
+					margin-top: 0;
+				}
 			}
 		}
 

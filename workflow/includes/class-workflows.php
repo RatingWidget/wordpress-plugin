@@ -172,7 +172,7 @@
          * @author Leo Fajardo (@leorw)
          * @since 1.0.0
          * 
-		 * @param type $addon The id of the target add-on.
+		 * @param string $addon The id of the target add-on.
 		 * 
 		 * @return boolean|object
 		 */
@@ -186,6 +186,20 @@
 			}
 			
 			return $this->_addons_settings->{ $addon };
+		}
+		
+		/**
+		 * Updates the settings of the specified add-on.
+		 * 
+         * @author Leo Fajardo (@leorw)
+         * @since 1.0.0
+         * 
+		 * @param string $addon The id of the target add-on.
+		 * @param object $settings The new settings of the add-on.
+		 */
+		function update_single_addon_settings( $addon, $settings ) {
+			$this->_addons_settings->{ $addon } = $settings;
+			$this->_options->set_option( 'addons_settings', $this->_addons_settings, true );
 		}
 		
 		/**
@@ -731,6 +745,7 @@
 			wf_enqueue_local_script( 'jquery-ui-sortable' );
 			wf_enqueue_local_script( 'bootstrap', 'bootstrap.min.js' );
 			wf_enqueue_local_script( 'workflows', 'workflow.js' );
+            wf_enqueue_local_script( 'workflows-modal', 'modal.js' );
 			wf_enqueue_local_style( 'workflows', 'workflow.css' );
 		}
 		
