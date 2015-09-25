@@ -625,7 +625,7 @@
 				return;
 			}
 			
-			if ( ! isset( $addon_settings->workflow_id ) ) {
+			if ( ! isset( $addon_settings->workflow_id ) && ! isset( $addon_settings->show_install_message ) ) {
 				return;
 			}
 			
@@ -634,6 +634,7 @@
 			$this->_delete_workflow( $workflow_id );
 			
 			unset( $addon_settings->workflow_id );
+			unset( $addon_settings->show_install_message );
 
 			$this->_options->set_option( 'addons_settings', $this->_addons_settings, true );
 		}
@@ -708,15 +709,15 @@
          * @return array
          */
 		function _add_dashboard_menu( $ratingwidget_submenus ) {
-			// Add Ons Config submenu
+			// Add-On Settings submenu
 			// Check if there is any active add-on
 			$settings_tab = apply_filters( 'rw_wf_addons_settings_tab', array() );
 			if ( ! empty( $settings_tab ) ) {
 				$ratingwidget_submenus[] = array(
-					'menu_title'	=> __( 'Add Ons Config', WP_WF__SLUG ),
+					'menu_title'	=> __( 'Add-On Settings', WP_WF__SLUG ),
 					'function'		=> array( &$this, '_addons_config_page_render' ),
 					'load_function' => array( &$this, '_addons_config_page_load' ),
-					'slug'			=> 'addons-config'
+					'slug'			=> 'addon-settings'
 				);
 			}
 			
@@ -758,7 +759,7 @@
 		function _addons_config_page_load() {
 			$this->handle_addons_settings_save();
 			
-			wf_enqueue_local_style( 'addons-config', 'addons-config.css' );
+			wf_enqueue_local_style( 'addon-settings', 'addon-settings.css' );
 		}
 		
         /**
@@ -778,7 +779,7 @@
          * @since 1.0.0
          */
 		function _addons_config_page_render() {
-			wf_require_once_template( 'addons-config.php' );
+			wf_require_once_template( 'addon-settings.php' );
 		}
         
 		/**
