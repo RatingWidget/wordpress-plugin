@@ -182,13 +182,14 @@ The RatingWidget Team
 
 == Change Log ==
 
-= 2.6.6 - 2015
+= 2.6.6 - 2015-09-17 =
 * Fix: Resolved the upgrade issues users without an API secret-key were having on upgrade to the new version.
 * Fix: The [ratingwidget] shortcode can now retrieve the current post's ID if the post_id attribute is not set.
 * New: Added an option to force account reset with external details.
 
-= 2.6.5 - 2015-09-16 =
+= 2.6.5 - 2015-09-12 =
 * Fix: Improved API connectivity messaging + added the error from the API call when user submit a request to fix.
+* Optimization: No need to validate connectivity after the user is already register, since there might be temporary connectivity issues which the plugin must handle.
 
 = 2.6.4 - 2015-09-11 =
 * Optimization: Resized and compressed all screenshot images to significantly reduce plugin Zip size.
