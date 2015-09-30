@@ -15,7 +15,7 @@
 <div class="wrap rw-dir-ltr rw-wp-container">
 	<h2 class="nav-tab-wrapper rw-nav-tab-wrapper">
 		<a href="#" class="nav-tab nav-tab-active"><?php _e( 'Workflows', WP_WF__SLUG );?></a>
-		<a href="https://rating-widget.com/support/get-started-with-workflows/" class="nav-tab"><?php _e( 'Get started with Workflows', WP_WF__SLUG );?></a>
+		<a target="_blank" href="https://rating-widget.com/support/get-started-with-workflows/" class="nav-tab"><?php _e( 'Get started with Workflows', WP_WF__SLUG );?></a>
 	</h2>
 
 	<form id="workflows-page" method="post" action="">
