@@ -759,7 +759,7 @@
 		function _addons_config_page_load() {
 			$this->handle_addons_settings_save();
 			
-			wf_enqueue_local_style( 'addon-settings', 'addon-settings.css' );
+			wf_enqueue_local_style( 'addons-config', 'addons-config.css' );
 		}
 		
         /**
