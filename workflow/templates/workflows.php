@@ -91,32 +91,6 @@
 			</div>
 		</div>
 
-		<!-- MODALS -->
-		<div class="rw-wf-modal no-body" id="confirm-delete-workflow" aria-hidden="true">
-			<div class="rw-wf-modal-dialog">
-				<div class="rw-wf-modal-header">
-					<p><?php _e( 'Are you sure you would like to delete this workflow?', WP_WF__SLUG ); ?></p>
-					<a href="#close" class="rw-wf-button-close" aria-hidden="true">&times;</a>
-				</div>
-				<div class="rw-wf-modal-footer">
-					<button href="#" class="button button-primary"><?php _e( 'Delete', WP_WF__SLUG ); ?></button>
-					<button href="#" class="button button-close"><?php _e( 'Cancel', WP_WF__SLUG ); ?></button>
-				</div>
-			</div>
-		</div>
-		
-		<div class="rw-wf-modal no-body" id="information-message" aria-hidden="true">
-			<div class="rw-wf-modal-dialog">
-				<div class="rw-wf-modal-header">
-					<p></p>
-					<a href="#close" class="rw-wf-button-close" aria-hidden="true">&times;</a>
-				</div>
-				<div class="rw-wf-modal-footer">
-					<button href="#" class="button button-close"><?php _e( 'Close', WP_WF__SLUG ); ?></button>
-				</div>
-			</div>
-		</div>
-		
 		<!-- TEMPLATES -->
 		<!-- Edit workflow -->
 		<a class="workflow-template" href="#edit-workflow" data-class="list-group-item">

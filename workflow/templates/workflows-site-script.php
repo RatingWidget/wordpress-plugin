@@ -110,9 +110,15 @@ function Class_WF_Engine( options, $ ) {
 					setTimeout(function() {
 						$modal.addClass( 'active' ).appendTo( $( 'body' ) );
 
+						if ( args.width ) {
+							$modal.find( '.rw-wf-modal-dialog' ).css({
+								width: args.width,
+								marginLeft: - ( args.width / 2 )
+							});
+						}
+
 						$modal.css({
-							display: 'block',
-							top: '20%'
+							display: 'block'
 						});
 					}, 1000 );
 				}

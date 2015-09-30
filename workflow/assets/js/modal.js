@@ -15,6 +15,7 @@ var RW_WF_Modal = (function( $ ) {
 		+	'</div>',
 		_init = function() {
 			$( 'body' ).on( 'click', '.rw-wf-button-close', function() {
+				$( 'body' ).removeClass( 'has-rw-wf-modal' );
 				$( this ).parents( '.rw-wf-modal:first' ).remove();
 			});
 		};
@@ -33,7 +34,17 @@ var RW_WF_Modal = (function( $ ) {
 			}
 
 			var $modal = $( modalHTML );
-
+			
+			if ( args.id ) {
+				$modal.attr( 'id', args.id );
+			}
+			
+			if ( args.data ) {
+				for ( var dataKey in args.data ) {
+					$modal.attr( 'data-' + dataKey, args.data[ dataKey ] );
+				}
+			}
+			
 			if ( ! args.title ) {
 				$modal.addClass( 'no-body' );
 				$modal.find( '.rw-wf-modal-body' ).remove();
@@ -60,14 +71,9 @@ var RW_WF_Modal = (function( $ ) {
 			}
 
 			setTimeout(function() {
+				$( 'body' ).addClass( 'has-rw-wf-modal' );
+				
 				$modal.addClass( 'active' ).appendTo( $( 'body' ) );
-				
-				var style = {
-					display: 'block',
-					top: '20%'
-				};
-				
-				$modal.css( style );
 				
 				if ( args.width ) {
 					$modal.find( '.rw-wf-modal-dialog' ).css({
@@ -84,7 +90,11 @@ var RW_WF_Modal = (function( $ ) {
 						});
 					}
 				}
-			}, 1000 );
+			}, args.delay ? args.delay : 1000 );
+		},
+		hide: function() {
+			$( 'body' ).removeClass( 'has-rw-wf-modal' );
+			$( '.rw-wf-modal' ).remove();
 		}
 	};
 })( jQuery );

@@ -98,7 +98,7 @@
          * @author Leo Fajardo (@leorw)
          */
 		function init() {
-			if ( is_admin() ) {
+			if ( is_admin() && rw_fs()->_has_addons() ) {
 				$this->_init_admin();
 			} else {
 				$this->_init_site();
@@ -830,7 +830,11 @@
 					'add_and'			=> __( '+ AND', WP_WF__SLUG ),
 					'add_or'			=> __( '+ OR', WP_WF__SLUG ),
 					'activate'			=> __( 'Activate', WP_WF__SLUG ),
-					'deactivate'		=> __( 'Deactivate', WP_WF__SLUG )
+					'deactivate'		=> __( 'Deactivate', WP_WF__SLUG ),
+					'confirm_delete'	=> __( 'Are you sure you would like to delete this workflow?', WP_WF__SLUG ),
+					'delete_button'		=> __( 'Delete', WP_WF__SLUG ),
+					'cancel_button'		=> __( 'Cancel', WP_WF__SLUG ),
+					'close_button'		=> __( 'Close', WP_WF__SLUG )
 				),
 				'operators'				=> $this->get_operators(),
 				'variable-types'		=> $this->get_variable_types(),

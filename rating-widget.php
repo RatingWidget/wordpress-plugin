@@ -6543,7 +6543,9 @@
 					<!-- This site's ratings are powered by RatingWidget plugin v<?php echo WP_RW__VERSION ?> - https://rating-widget.com/wordpress-plugin/ -->
 					<div class="rw-js-container">
 						<?php
-						rw_wf()->print_site_script();
+						if ( rw_fs()->_has_addons() ) {
+							rw_wf()->print_site_script();
+						}
 						?>
 						<script type="text/javascript">
 
@@ -6601,29 +6603,34 @@
 									?>
 							var options = <?php echo !empty($rw_settings[$alias]["options"]) ? json_encode($rw_settings[$rclass]["options"]) : '{}'; ?>;
 							<?php echo $this->GetCustomSettings($alias); ?>
-							if ( WF_Engine ) {
-								var _beforeRate = options.beforeRate ? options.beforeRate : false;
-								options.beforeRate = function(rating, score) {
-									var returnValue = true;
-									if (false !== _beforeRate) {
-										returnValue = _beforeRate(rating, score);
-									}
-									
-									return WF_Engine.eval( 'beforeVote', rating, score, returnValue );
-								};
-								
-								var _afterRate = options.afterRate ? options.afterRate : false;
-								options.afterRate = function(success, score, rating) {
-									if (false !== _afterRate) {
-										_afterRate(success, score, rating);
-									}
-									
-									WF_Engine.eval( 'afterVote', rating, score );
-									
-									return true;
-								};
+							<?php
+							if ( rw_fs()->_has_addons() ) { ?>
+								if ( WF_Engine ) {
+									var _beforeRate = options.beforeRate ? options.beforeRate : false;
+									options.beforeRate = function(rating, score) {
+										var returnValue = true;
+										if (false !== _beforeRate) {
+											returnValue = _beforeRate(rating, score);
+										}
+
+										return WF_Engine.eval( 'beforeVote', rating, score, returnValue );
+									};
+
+									var _afterRate = options.afterRate ? options.afterRate : false;
+									options.afterRate = function(success, score, rating) {
+										if (false !== _afterRate) {
+											_afterRate(success, score, rating);
+										}
+
+										WF_Engine.eval( 'afterVote', rating, score );
+
+										return true;
+									};
+								}
+							<?php
 							}
-							
+							?>
+									
 							RW.initClass("<?php echo $criteria_class; ?>", options);
 							<?php
 						}

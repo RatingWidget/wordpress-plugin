@@ -56,6 +56,16 @@
 				$colVariable.append( createFromTemplate( variableTypeId ) );
 			});
 			
+			$( '.view-workflows' ).on( 'click', function() {
+				// Cancel workflow create mode
+				$( '#edit-workflow' ).removeClass( 'is-creating' );
+				
+				// Cancel title editing
+				if ( $( '.workflow-title').hasClass( 'is-editing' ) ) {
+					$( '.workflow-title' ).replaceWith( '<h3 class="workflow-title">' + $( '.workflow-title input' ).val() + '</h3>');
+				}
+			});
+			
 			$( '#edit-workflow' ).on( 'click' , '.button.next-step', function( event ) {
 				event.preventDefault();
 				
@@ -84,6 +94,8 @@
 							id: workflowId
 						},
 						success: function( result ) {
+							var $listGroupItemTemplate = $( '.list-group-item[data-id="' + workflowId + '"]' );
+							
 							if ( 0 === workflowId.length ) {
 								var jsonResult = JSON.parse( result ),
 									$editConditions = $( '#edit-conditions' ).find( '.edit-conditions' ),
@@ -92,7 +104,6 @@
 
 								workflowId = jsonResult.data.id;
 
-								var $listGroupItemTemplate = $( '.list-group-item[data-id="' + workflowId + '"]' );
 								if ( 0 === $listGroupItemTemplate.length ) {
 									$listGroupItemTemplate = createFromTemplate( 'list-group-item' );
 									$listGroupItemTemplate.attr( 'data-id', workflowId );
@@ -101,8 +112,6 @@
 									$( '#workflows > .panel' ).show();
 								}
 
-								$listGroupItemTemplate.find( '.list-group-item-content' ).html( name );
-									
 								if ( 0 === $editConditions.length ) {
 									$editConditions = createFromTemplate( 'edit-conditions' );
 									$( '#edit-conditions' ).prepend( $editConditions );
@@ -119,8 +128,12 @@
 
 								$( '#edit-workflow' ).attr( 'data-id', workflowId );
 								WORKFLOWS_SETTINGS.workflows[ workflowId ] = jsonResult.data.workflow;
+							} else {
+								WORKFLOWS_SETTINGS.workflows[ workflowId ].name = name;
 							}
 
+							$listGroupItemTemplate.find( '.list-group-item-content' ).html( name );
+									
 							$( '.nav-pills li:nth-child(1)' ).removeClass( 'active' );
 							$( '.nav-pills li:nth-child(2)' ).removeClass( 'disabled' ).find( 'a' ).attr( 'data-toggle', 'tab' ).tab( 'show' );
 						},
@@ -335,6 +348,61 @@
 				}
 			});
 			
+			$( 'body' ).on( 'click', '.workflow-title', function( evt ) {
+				// Prevent default behavior. e.g.: prevent form submission when the submit button is clicked.
+				evt.preventDefault();
+				
+				if ( $( this ).hasClass( 'is-editing' ) ) {
+					
+					// If the submit save button is clicked, update the workflow name via AJAX.
+					if ( $( evt.target ).hasClass( 'button' ) ) {
+						var $button			= $( evt.target ),
+							workflowId		= $( '#edit-workflow' ).attr( 'data-id' ),
+							newWorkflowName = $( this ).find( 'input' ).val().trim();
+						
+						if ( newWorkflowName.length > 0 ) {
+							$.ajax({
+								url: ajaxurl,
+								method: 'POST',
+								data: {
+									action: 'update-workflow',
+									name: newWorkflowName,
+									id: workflowId
+								},
+								success: function( result ) {
+									var $listGroupItemTemplate = $( '.list-group-item[data-id="' + workflowId + '"]' );
+									$listGroupItemTemplate.find( '.list-group-item-content' ).html( newWorkflowName );
+										
+									WORKFLOWS_SETTINGS.workflows[ workflowId ].name = newWorkflowName;
+									
+									$( '.workflow-title' ).replaceWith( '<h3 class="workflow-title">' + newWorkflowName + '</h3>');
+								},
+								complete: function() {
+									$button.button( 'reset' );
+								},
+								beforeSend: function() {
+									$button.button( 'loading' );
+								}
+							});
+						}
+					}
+					
+					return;
+				}
+				
+				// If not yet editing, replace the title with an input field and a save button so that the user can change the name.
+				var $titleEditorContainer = $( '<div class="workflow-title is-editing"><input type="text" placeholder="Edit title" /><button class="button button-primary">Save</button></div>' );
+
+				// Replace the title (h3 element) with a div element that contains an input field and a save button.
+				$( this ).replaceWith( $titleEditorContainer );
+				
+				// Set the value of the input field to the current title and highlight the text.
+				var $inputField = $titleEditorContainer.find( 'input:first' );
+				$inputField.val( $( this ).text() );
+				$inputField.focus();
+	            $inputField.select();
+			});
+			
 			$( '#new-workflow' ).click(function( evt ) {
 				evt.preventDefault();
 				
@@ -496,39 +564,50 @@
 				var	$button = $( this ),
 					targetWorkflowId = $button.parents( '.list-group-item:first' ).attr( 'data-id' );
 				
-				$( '#confirm-delete-workflow' ).attr( 'data-target-workflow-id', targetWorkflowId );
-				$( '#confirm-delete-workflow' ).addClass( 'active' );
-			});
+				RW_WF_Modal.show({
+					body      : '<p>' + WORKFLOWS_SETTINGS.text.confirm_delete + '</p>',
+					id		  : 'confirm-delete-workflow',
+					data	  : {'target-workflow-id': targetWorkflowId},
+					delay     : 1,
+					width     : 360,
+					wp_buttons: true,
+					buttons   : {
+						delete_workflow: {
+							primary: true,
+							html   : '<a type="button">' + WORKFLOWS_SETTINGS.text.delete_button + '</a>',
+							click  : function () {
+								var workflowId		= $( '#confirm-delete-workflow' ).attr( 'data-target-workflow-id' ),
+									$listGroupItem	= $( '.list-group.ui-sortable a.list-group-item[data-id="'+workflowId+'"]' );
 
-			$( '#confirm-delete-workflow' ).on( 'click', '.button-primary', function( evt ) {
-				evt.preventDefault();
-				
-				$( '#confirm-delete-workflow' ).removeClass( 'active' );
-				
-				var workflowId		= $( '#confirm-delete-workflow' ).attr( 'data-target-workflow-id' ),
-					$listGroupItem	= $( '.list-group.ui-sortable a.list-group-item[data-id="'+workflowId+'"]' ),
-					len				= $listGroupItem.length;
+								RW_WF_Modal.hide();
 
-				if ( workflowId ) {
-					$.ajax({
-						url: ajaxurl,
-						method: 'POST',
-						data: {
-							action: 'delete-workflow',
-							id: workflowId
+								if ( workflowId ) {
+									$.ajax({
+										url: ajaxurl,
+										method: 'POST',
+										data: {
+											action: 'delete-workflow',
+											id: workflowId
+										},
+										success: function( result ) {
+											result = JSON.parse( result );
+											$( '.list-group-item[data-id="'+workflowId+'"]' ).remove();
+										},
+										beforeSend: function() {
+											$listGroupItem.addClass( 'disabled' );
+
+											var text = $listGroupItem.find( '.list-group-item-content' ).text();
+											$listGroupItem.find( '.list-group-item-content' ).text( text + ' (deleting...)' );
+										}
+									});
+								}
+							}
 						},
-						success: function( result ) {
-							result = JSON.parse( result );
-							$( '.list-group-item[data-id="'+workflowId+'"]' ).remove();
-						},
-						beforeSend: function() {
-							$listGroupItem.addClass( 'disabled' );
-
-							var text = $listGroupItem.find( '.list-group-item-content' ).text();
-							$listGroupItem.find( '.list-group-item-content' ).text( text + ' (deleting...)' );
+						cancel       : {
+							html: '<a type="button" class="button-close">' + WORKFLOWS_SETTINGS.text.cancel_button + '</a>'
 						}
-					});
-				}
+					}
+				});
 			});
 
 			$( '#workflows' ).on( 'change', '.workflow-state', function() {
@@ -771,9 +850,17 @@
 	 * @param string msg
 	 */
 	function showError( message ) {
-		var $modal = $( '#information-message' );
-		$modal.find( 'p' ).html( message );
-		$modal.addClass( 'active' );
+		RW_WF_Modal.show({
+			body      : '<p>' + message + '</p>',
+			delay     : 1,
+			width     : 360,
+			wp_buttons: true,
+			buttons   : {
+				close       : {
+					html: '<a type="button" class="button-close">' + WORKFLOWS_SETTINGS.text.close_button + '</a>'
+				}
+			}
+		});
 	}
 	
 	/**
@@ -782,10 +869,20 @@
 	 * 2. Reset the state of the buttons.
 	 */
 	function resetWorkflow() {
-		$( '#edit-workflow' ).removeClass( 'is-editing' ).addClass( 'is-creating' ).data( 'id', '' );
+		// Cancel edit mode and begin create mode.
+		$( '#edit-workflow' ).removeClass( 'is-editing' ).addClass( 'is-creating' ).attr( 'data-id', '' );
+		
+		// Reset the actions, conditions, and events panels.
 		$( 'div.edit-actions, div.edit-conditions, div.edit-events' ).remove();
-
-		$( 'a[href="#edit-conditions"]' ).tab( 'show' );
+		
+		// Disable step buttons
+		$( '.nav-pills li' ).addClass( 'disabled' ).find( 'a' ).removeAttr( 'data-toggle' );
+		
+		// Enable first step button
+		$( '.nav-pills li:nth-child(1)' ).removeClass( 'disabled' ).find( 'a' ).attr( 'data-toggle', 'tab' );
+							
+		// Clear workflow name field
+		$( '#workflow-name').val( '' );
 	}
 	
 	/**
