@@ -283,7 +283,18 @@
 //			return $method . '_' . array_pop($exploded) . '_' . md5($canonized . json_encode($params));
 			return $method . ':' . $canonized . (!empty($params) ? '#' . md5(json_encode($params))  : '');
 		}
+		
+		/**
+		 * Clears the cache for the specific endpoint.
+		 * 
+		 * @param string $path
+		 */
+		function unset_get_cache( $path = '/' ) {
+			$cache_key = $this->get_cache_key( $path );
 
+			self::$_cache->unset_option( $cache_key, true );
+		}
+		
 		/**
 		 * @return bool True if successful connectivity to the API.
 		 */

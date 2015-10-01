@@ -1,0 +1,8 @@
+.rw-wp-container [type="text"],
+.rw-wp-container textarea {
+  width: 100%;
+}
+.rw-wp-container p.submit {
+  margin-top: 0;
+  padding-top: 0;
+}

@@ -1,0 +1,554 @@
+// This is only for the specific part of the page.
+#workflows-page {
+	margin: 20px 0 0;
+	font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+	font-size: 14px;
+	line-height: 1.42857143;
+	color: #333;
+	background-color: #fff;
+	max-width: 800px;
+	
+	@import (less) url("bootstrap/dist/css/bootstrap.css");
+	
+	#poststuff {
+		padding-top: 0;
+
+		.inside {
+			padding: 0;
+			margin: 20px;
+		}
+	}
+
+	ol.breadcrumb {
+		margin-left: 0;
+		width: 427px;
+
+		> li {
+			margin-bottom: 0;
+			
+			> a {
+				text-decoration: none;
+			}
+
+			span:last-child {
+				position: relative;
+				top: 2px;
+			}
+
+			&+li {
+				&:before {
+					position: relative;
+					top: 2px;
+				}
+			}
+		}
+	}
+
+	ul.dropdown-menu > li {
+		margin-bottom: 0;
+	}
+	
+	a { 
+		text-decoration: none;
+
+		&:focus {
+			box-shadow: none;
+		}
+	}
+
+	.button {
+		padding-top: 2px;
+
+		&:not(.button-small) {
+			height: 29px;
+		}
+		
+		&.button-primary {
+			padding-top: 1px;
+			color: #fff;
+		}
+
+		&.button-small {
+			padding-top: 2px;
+		}
+
+		&.button-link {
+			&:focus, &:active {
+				outline: none;
+			}
+		}
+	}
+	
+	.list-group-item {
+		.button {
+			&.remove-workflow {
+				position: relative;
+				top: -2px;
+				margin-right: 5px;
+			}
+		}
+		
+		.list-group-item-content {
+			overflow: hidden;
+			cursor: pointer;
+		}
+
+		&.disabled {
+			cursor: pointer;
+
+			&:hover {
+				cursor: pointer;
+			}
+		}
+		
+		.pull-right {
+			position: relative;
+			left: 16px;
+		}
+	}
+
+	.label {
+		font-size: 85%;
+	}
+
+	.form-inline {
+		> .button {
+			margin-top: 20px;
+		}
+
+		.form-group {
+			width: 100%;
+
+			> .col * {
+				width: 100%;
+			}
+
+			> .col+.col {
+				padding-left: 0;
+			}
+
+			> label {
+				padding-top: 5px;
+			}
+		}
+	}
+
+	.hidden-nav-tabs {
+		display: none;
+	}
+	
+	/* WORKFLOWS */
+	.workflow-template {
+		display: none;
+	}
+
+	#workflows {
+		> .panel {
+			display: none;
+		}
+
+		> p {
+			margin-bottom: 20px;
+		}
+	}
+
+	#edit-workflow {
+		.save-name,
+		.save-conditions,
+		.save-actions,
+		.save-event-types,
+		.cancel-save,
+		.view-workflows {
+			display: none;
+		}
+		
+		&.is-editing {
+			&:not(.is-creating) {
+				.nav-pills {
+					display: none;
+				}
+			}
+
+			.next-step,
+			.activate-workflow {
+				display: none;
+			}
+
+			.save-name,
+			.save-conditions,
+			.save-event-types,
+			.save-actions,
+			.cancel-save,
+			.view-workflows {
+				display: inline-block;
+			}
+		}
+		
+		div.workflow-title {
+			margin-bottom: 20px;
+			
+			input {
+				margin-right: 7px;
+			}
+		}
+
+		&.is-creating {
+			.button.save,
+			.workflow-title {
+				display: none;
+			}
+
+			.next-step {
+				display: inline-block;
+			}
+		}
+
+		> .form-horizontal {
+			> .tab-content {
+				margin-top: 20px;
+			}
+		}
+
+		.tab-pane {
+			> p {
+				margin-top: 20px;
+			}
+
+			h3 {
+				padding-top: 0;
+				padding-left: 0;
+				margin-top: 0;
+			}
+		}
+	}
+
+	#edit-workflow, #edit-conditions {
+		> .panel {
+			.panel-heading {
+				border-bottom-width: 0;
+			}
+
+			.panel {
+				position: relative;
+				margin-top: 10px;
+
+				&:last-child {
+					margin-bottom: 0;
+				}
+
+				.panel-body {
+					padding: 8px 15px;
+				}
+			}
+		}
+	}
+
+	.workflowHeader {
+		padding: 0 0 10px;
+	}
+
+	.and-operation-container {
+		margin: 1em 0 2em;
+		margin-top: 5px;
+		color: #2b2b2b;
+		font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+		font-size: 12px;
+		line-height: 1.22;
+
+		p {
+			background: none;
+			font-size: 12px;
+			line-height: 16px;
+		}
+
+		a:focus {
+			outline: none;
+			box-shadow: none
+		}
+
+		a:hover {
+			text-decoration: underline;
+		}
+		
+		.operations-container {
+			&+div {
+				margin-left: -16px;
+				margin-right: -16px;
+				background: #fff;
+				padding-bottom: 7px;
+				margin-bottom: 9px;
+
+				.and-operation em {
+					background: #fff;
+				}
+			}
+		}
+
+		.operation {
+			position: relative;
+			padding: 13px 30px 7px 20px;
+			border-bottom: 1px solid #e7e7e7;
+			border-top: 1px solid #fff;
+			padding-top: 0;
+			padding-left: 0;
+			padding-right: 0;
+			padding-bottom: 12px;
+
+			&+.operation {
+				padding-top: 4px;
+				.col, .pull-right {
+					margin-top: 10px;
+					margin-bottom: 3px;
+				}
+			}
+
+			&:first-child {
+				border-top: 0;
+
+				.badge.or {
+					display: none;
+				}
+			}
+
+			&:before, &:after {
+				display: table;
+				content: "";
+				line-height: 0;
+			}
+
+			&:after {
+				clear:both;
+			}
+		}
+
+		> div + div .operation:first-child {
+			padding-top: 4px;
+		}
+
+		.col {
+			float: left;
+			margin-right: 20px;
+			padding-bottom: 6px;
+			padding-bottom: 0;
+
+			select, [type="text"], [type="number"] {
+				width: 200px;
+				height: 28px;
+				margin: 0;
+			}
+
+			input {
+				margin-right: 5px;
+			}
+		}
+
+		.add-or {
+			border-top: 1px solid #fff;
+			text-align: center;
+
+			> .add {
+				left: -6.5px;
+				position: relative;
+				top: -9px;
+			}
+		}
+
+		.or, .add-or > .add {
+			background: #f5f5f5;
+			font-size: 14px;
+			padding: 0 10px;
+
+			outline: none;
+
+			&:hover, &:focus {
+				outline: none;
+			}
+		}
+
+		.or {
+			color: #484848;
+			font-weight: 500;
+			margin-left: -21px;
+			left: 50%;
+			position: absolute;
+			top: -9px;
+			text-transform: uppercase;
+			font-style: normal;
+		}
+
+		.and-operation {
+			border-bottom: 1px dashed #e1e1e1;
+			margin: .5em 0 1.7em;
+			margin-bottom: 9px;
+			text-align: center;
+
+			a {
+				left: -6.5px;
+				outline: none;
+				text-decoration: none;
+					
+				&:hover {
+					text-decoration: underline;
+				}
+			}
+
+			em, a, label {
+				background: #f5f5f5;
+				font-size: 14px;
+				font-style: normal;
+				margin: 0 10px;
+				padding: 0 10px;
+				position: relative;
+				top: 9px;
+			}
+		}
+
+		.actions {
+			a {
+				margin-left: 5px;
+
+				&:hover {
+					text-decoration: none;
+
+					.icon-add, .icon-remove {
+						color: #555;
+					}
+				}
+			}
+
+			.button {
+				padding-top: 0;
+				padding-bottom: 0;
+			}
+		}
+
+		.icon-add, .icon-remove {
+			color: #999;
+		}
+	}
+
+	.operation-inputs {
+		display: none;
+	}
+
+	.edit-actions, .edit-events {
+		.operation {
+			border-bottom: 0;
+		}
+
+		.and {
+			margin-top: 0;
+		}
+	}
+
+	.workflow-summary {
+		.label-workflow-status {
+			font-size: 10.5px;
+			position: relative;
+			top: -4px;
+			display: none;
+		}
+
+		.pull-right + div {
+			margin-bottom: 12px;
+		}
+
+		.label {
+			margin: 0 10px;
+			text-transform: uppercase;
+
+			&.and {
+				margin-left: 0;
+			}
+		}
+	}
+}
+
+/* MODAL */
+@import "_modal";
+
+/* ON-OFF SWITCH */
+:root {
+	input[type="checkbox"].workflow-state {
+		position: absolute;
+		opacity: 0;
+
+		&+div {
+			-webkit-box-sizing: border-box;
+			box-sizing: border-box;
+			display: inline-block;
+			vertical-align: middle;
+			width: 60px; height: 22px;
+			border: 1px solid rgba(0,0,0,.3);
+			border-radius: 999px;
+			margin-right: 10px;
+			background: white;
+			background-image: -webkit-linear-gradient(rgba(0, 0, 0, .1), transparent),
+							  -webkit-linear-gradient(0deg, #53d76a 50%, transparent 50%);
+			background-image: linear-gradient(rgba(0,0,0,.1), transparent),
+							  linear-gradient(90deg, hsl(130,62%,58%) 50%, transparent 50%);
+			background-size: 200% 100%;
+			background-position: 100% 0;
+			background-origin: border-box;
+			background-clip: border-box;
+			overflow: hidden;
+			-webkit-transition-duration: .4s;
+			-webkit-transition-property: padding, width, background-position, text-indent;
+			transition-duration: .4s;
+			transition-property: padding, width, background-position, text-indent;
+			box-shadow: 0 .1em .1em rgba(0,0,0,.2) inset,
+						0 .45em 0 .1em rgba(0,0,0,.05) inset;
+			font-size: 150%; /* change this and see how they adjust! */
+
+			&:before {
+				-webkit-box-sizing: border-box;
+				box-sizing: border-box;
+				position: relative;
+				content: 'On';
+				float: left;
+				width: 21px; height: 21px;
+				margin: -.1em;
+				border: 1px solid rgba(0,0,0,.35);
+				border-radius: inherit;
+				background: white;
+				background-image: linear-gradient(rgba(0,0,0,.2), transparent);
+				box-shadow: 0 .1em .1em .1em hsla(0,0%,100%,.8) inset,
+							0 0 .5em rgba(0,0,0,.3);
+				color: white;
+				text-shadow: 0 -1px 1px rgba(0,0,0,.3);
+				text-indent: -2.5em;
+			}
+
+			&:before, &:after {
+				font: bold 60%/1.9 sans-serif;
+				text-transform: uppercase;
+			}
+
+			&:after {
+				content: 'Off';
+				float: left;
+				text-indent: .5em;
+				color: rgba(0,0,0,.45);
+				text-shadow: none;
+				position: relative;
+			}
+		}
+
+		&:checked + div {
+			padding-left: 2em;
+			background-position: 0 0;
+		}
+
+		&:active + div {
+			&:before {
+				background-color: #eee;
+			}
+		}
+
+		&:focus + div {
+			box-shadow: 0 .1em .1em rgba(0,0,0,.2) inset,
+			0 .45em 0 .1em rgba(0,0,0,.05) inset,
+			0 0 .4em 1px rgba(255,0,0,.5);
+		}
+	}
+}

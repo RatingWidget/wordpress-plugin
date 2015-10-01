@@ -3,7 +3,7 @@
 	 * Plugin Name: Rating-Widget: Star Review System
 	 * Plugin URI:  http://rating-widget.com/wordpress-plugin/
 	 * Description: Create and manage Rating-Widget ratings in WordPress.
-	 * Version:     2.6.6
+	 * Version:     2.6.7
 	 * Author:      Rating-Widget
 	 * Author URI:  http://rating-widget.com/wordpress-plugin/
 	 * License:     GPLv2
@@ -24,6 +24,7 @@
 
 	if (!class_exists('RatingWidgetPlugin')) :
 		// Load common config.
+		require_once( dirname( __FILE__ ) . "/workflow/start.php" );
 		require_once( dirname( __FILE__ ) . "/lib/rw-core-functions.php" );
 		require_once( dirname( __FILE__ ) . "/lib/config.common.php" );
 		require_once( WP_RW__PLUGIN_LIB_DIR . "rw-core-rw-functions.php" );
@@ -112,6 +113,7 @@
 			private function __construct() {
 				$this->account          = rw_account();
 				$this->fs               = rw_fs();
+				$this->wf               = rw_wf();
 				$this->_options = rw_fs_options();
 
 				if ( WP_RW__DEBUG ) {
@@ -2728,23 +2730,27 @@
 					'menu_title' => __('Affiliation', WP_RW__ID),
 					'function' => 'affiliation_settings_page_render',
 				);
-
+				
+				/*
 				// Add Ons page
 				$submenu[] = array(
 					'menu_title' => __('Add Ons', WP_RW__ID),
 					'function' => 'addons_settings_page_render',
 					'slug' => 'addons'
 				);
+				*/
 
+				$submenu = apply_filters( 'ratingwidget_dashboard_submenus', $submenu );
+				
 				foreach ($submenu as $item)
 				{
 					$this->fs->add_submenu_item(
 						$item['menu_title'],
-						array(&$this, $item['function']),
+						is_array( $item['function'] ) ? $item['function'] : array(&$this, $item['function']),
 						__('Ratings', WP_RW__ID) . '&ndash;' . $item['menu_title'],
 						'edit_posts',
 						isset($item['slug']) ? $item['slug'] : false,
-						(isset($item['load_function']) && !empty($item['load_function'])) ? array( &$this, $item['load_function']) : false
+						(isset($item['load_function']) && !empty($item['load_function'])) ? ( is_array( $item['load_function'] ) ? $item['load_function'] : array( &$this, $item['load_function'])) : false
 					);
 				}
 			}
@@ -6536,6 +6542,11 @@
 					?>
 					<!-- This site's ratings are powered by RatingWidget plugin v<?php echo WP_RW__VERSION ?> - https://rating-widget.com/wordpress-plugin/ -->
 					<div class="rw-js-container">
+						<?php
+						if ( rw_fs()->_has_addons() ) {
+							rw_wf()->print_site_script();
+						}
+						?>
 						<script type="text/javascript">
 
 							// Initialize ratings.
@@ -6592,6 +6603,34 @@
 									?>
 							var options = <?php echo !empty($rw_settings[$alias]["options"]) ? json_encode($rw_settings[$rclass]["options"]) : '{}'; ?>;
 							<?php echo $this->GetCustomSettings($alias); ?>
+							<?php
+							if ( rw_fs()->_has_addons() ) { ?>
+								if ( WF_Engine ) {
+									var _beforeRate = options.beforeRate ? options.beforeRate : false;
+									options.beforeRate = function(rating, score) {
+										var returnValue = true;
+										if (false !== _beforeRate) {
+											returnValue = _beforeRate(rating, score);
+										}
+
+										return WF_Engine.eval( 'beforeVote', rating, score, returnValue );
+									};
+
+									var _afterRate = options.afterRate ? options.afterRate : false;
+									options.afterRate = function(success, score, rating) {
+										if (false !== _afterRate) {
+											_afterRate(success, score, rating);
+										}
+
+										WF_Engine.eval( 'afterVote', rating, score );
+
+										return true;
+									};
+								}
+							<?php
+							}
+							?>
+									
 							RW.initClass("<?php echo $criteria_class; ?>", options);
 							<?php
 						}
@@ -7663,7 +7702,7 @@
 					'menu_slug'         => 'rating-widget',
 					'is_live'           => true,
 					'is_premium'        => false,
-					'has_addons'        => false,
+					'has_addons'        => true,
 					'has_paid_plans'    => true,
 					'enable_anonymous'  => false,
 					// Set the SDK to work in a sandbox mode (for development & testing).
@@ -7675,6 +7714,16 @@
 			}
 
 			return $rw_fs;
+		}
+
+		function rw_wf() {
+			global $rw_wf;
+
+			if ( ! isset( $rw_wf ) ) {
+				$rw_wf = wf_init();
+			}
+
+			return $rw_wf;
 		}
 
 		function rw_migration_to_freemius()
@@ -7819,11 +7868,13 @@
 		 * way.
 		 */
 //define('WP_RW___LATE_LOAD', 20);
-		if (defined('WP_RW___LATE_LOAD')) {
-			add_action( 'plugins_loaded', 'ratingwidget', (int) WP_RW___LATE_LOAD );
-		} else {
+//		if (defined('WP_RW___LATE_LOAD')) {
+//			add_action( 'plugins_loaded', 'ratingwidget', (int) WP_RW___LATE_LOAD );
+//		} else {
 			$GLOBALS['rw'] = ratingwidget();
-		}
+//		}
+
+		do_action( 'ratingwidget_loaded' );
 
 		#endregion Plugin Initialization ------------------------------------------------------------------
 	endif;
