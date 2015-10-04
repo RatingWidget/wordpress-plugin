@@ -1,5 +1,7 @@
 <?php
-	if ( ! defined( 'ABSPATH' ) ) exit;
+	if ( ! defined( 'ABSPATH' ) ) {
+		exit;
+	}
 
 	/* String Helpers.
 	--------------------------------------------------------------------------------------------*/
@@ -25,6 +27,20 @@
 		}
 
 		return - 1;
+	}
+
+	function __rw( $key ) {
+		global $rw_text;
+
+		if ( ! isset( $rw_text ) ) {
+			require_once( dirname( __FILE__ ) . '/rw-text.php' );
+		}
+
+		return isset( $rw_text[ $key ] ) ? $rw_text[ $key ] : $key;
+	}
+
+	function _erw( $key ) {
+		echo __rw( $key );
 	}
 
 	/* Url.
@@ -94,7 +110,7 @@
 	}
 
 	function rw_get_css_url( $css ) {
-		if ( rw_starts_with( $css, 'http' )  || rw_starts_with( $css, '//' )) {
+		if ( rw_starts_with( $css, 'http' ) || rw_starts_with( $css, '//' ) ) {
 			return $css;
 		}
 
@@ -105,9 +121,9 @@
 		return WP_RW__ADDRESS_CSS . $css . '?ck=' . rw_get_url_daily_cache_killer();
 	}
 
-	function rw_get_thumb_url( $img, $width = 160, $height = 100, $permalink = '') {
+	function rw_get_thumb_url( $img, $width = 160, $height = 100, $permalink = '' ) {
 		return rw_get_img_thumb_url(
-			(is_string($img) && 0 < count($img)) ? $img : $permalink,
+			( is_string( $img ) && 0 < count( $img ) ) ? $img : $permalink,
 			$width,
 			$height
 		);
@@ -116,7 +132,7 @@
 	function rw_get_post_thumb_url( $post, $width = 160, $height = 100 ) {
 		$img = ratingwidget()->GetPostImage( $post, WP_RW__CACHE_TIMEOUT_POST_THUMB_EXTRACT );
 
-		return rw_get_thumb_url($img, $width, $height, get_permalink( $post->ID ));
+		return rw_get_thumb_url( $img, $width, $height, get_permalink( $post->ID ) );
 	}
 
 	function rw_get_img_thumb_url( $src, $width = 160, $height = 100 ) {
@@ -160,6 +176,7 @@
 		$VARS = &$params;
 		ob_start();
 		require( rw_get_view_path( $path ) );
+
 		return ob_get_clean();
 	}
 
@@ -203,12 +220,12 @@
 	/**
 	 * Redirects to another page, with a workaround for the IIS Set-Cookie bug.
 	 *
-	 * @link http://support.microsoft.com/kb/q176113/
+	 * @link  http://support.microsoft.com/kb/q176113/
 	 * @since 1.5.1
-	 * @uses apply_filters() Calls 'wp_redirect' hook on $location and $status.
+	 * @uses  apply_filters() Calls 'wp_redirect' hook on $location and $status.
 	 *
 	 * @param string $location The path to redirect to
-	 * @param int $status Status code to use
+	 * @param int    $status   Status code to use
 	 *
 	 * @return bool False if $location is not set
 	 */

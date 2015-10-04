@@ -1,17 +1,20 @@
 <?php
-	if ( ! defined( 'ABSPATH' ) ) exit;
+	if ( ! defined( 'ABSPATH' ) ) {
+		exit;
+	}
 
-	if (class_exists("WP_Widget") && !class_exists('RatingWidgetPlugin_TopRatedWidget')) :
+	if ( class_exists( "WP_Widget" ) && ! class_exists( 'RatingWidgetPlugin_TopRatedWidget' ) ) :
 
-		define('WP_RW__TR_DEFAULT_ITEMS_COUNT', 5);
-		define('WP_RW__TR_DEFAULT_MIN_VOTES', 1);
-		define('WP_RW__TR_DEFAULT_ORDERY_BY', 'avgrate');
-		define('WP_RW__TR_DEFAULT_ORDERY', 'DESC');
-		define('WP_RW__TR_DEFAULT_STYLE', 'compact_thumbs');
-		define('WP_RW__TR_DEFAULT_SINCE_CREATED', -1);
+		define( 'WP_RW__TR_DEFAULT_ITEMS_COUNT', 5 );
+		define( 'WP_RW__TR_DEFAULT_MIN_VOTES', 1 );
+		define( 'WP_RW__TR_DEFAULT_ORDERY_BY', 'avgrate' );
+		define( 'WP_RW__TR_DEFAULT_ORDERY', 'DESC' );
+		define( 'WP_RW__TR_DEFAULT_STYLE', 'compact_thumbs' );
+		define( 'WP_RW__TR_DEFAULT_SINCE_CREATED', - 1 );
 
 		/* Top Rated Widget
 		---------------------------------------------------------------------------------------------------------------*/
+
 		class RatingWidgetPlugin_TopRatedWidget extends WP_Widget {
 			var $rw_address;
 			var $version;
@@ -25,7 +28,7 @@
 				$this->rw_address = WP_RW__ADDRESS;
 				$widget_ops       = array(
 					'classname'   => 'rw_top_rated',
-					'description' => __( 'A list of your top rated posts.' )
+					'description' => __rw( 'top-rated-posts' )
 				);
 				parent::__construct( strtolower( 'RatingWidgetPlugin_TopRatedWidget' ), "Rating-Widget: Top Rated", $widget_ops );
 
@@ -67,9 +70,9 @@
 
 				$bpInstalled = $rwp->IsBuddyPressInstalled();
 
-				if (rw_fs()->is__premium_only()) {
+				if ( rw_fs()->is__premium_only() ) {
 					$bbInstalled = $rwp->IsBBPressInstalled();
-				}else{
+				} else {
 					$bbInstalled = false;
 				}
 
@@ -138,13 +141,13 @@
 				if ( null === $rw_ret_obj || true !== $rw_ret_obj->success ) {
 					return;
 				}
-				
+
 				// Check if data is available
-				if ( !isset($rw_ret_obj->data) ) {
+				if ( ! isset( $rw_ret_obj->data ) ) {
 					return;
 				}
-				
-				$title = empty( $instance['title'] ) ? __( 'Top Rated', WP_RW__ID ) : apply_filters( 'widget_title', $instance['title'] );
+
+				$title = empty( $instance['title'] ) ? __rw( 'top-rated' ) : apply_filters( 'widget_title', $instance['title'] );
 
 				$titleMaxLength = ( isset( $instance['title_max_length'] ) && is_numeric( $instance['title_max_length'] ) ) ? (int) $instance['title_max_length'] : 30;
 
@@ -347,7 +350,7 @@
 										$page      = bb_get_page_number( $forum_post->post_position );
 										$permalink = get_topic_link( $id, $page ) . "#post-{$id}";
 									} else if ( function_exists( 'bbp_get_reply_id' ) ) {
-										$forum_item = bbp_get_topic($id);
+										$forum_item = bbp_get_topic( $id );
 
 										if ( is_object( $forum_item ) ) {
 											$is_topic = true;
@@ -472,7 +475,7 @@
 						}
 					}
 				}
-	
+
 				if ( true === $empty ) {
 //            echo '<p style="margin: 0;">There are no rated items for this period.</p>';
 
@@ -540,12 +543,12 @@
 				$bbInstalled = ratingwidget()->IsBBPressInstalled();
 
 				if ( $bpInstalled || $bbInstalled ) {
-					$types['users'] = array(
+					$types['users']         = array(
 						"rclass"  => "user",
 						"classes" => "user",
 						"options" => WP_RW__USERS_OPTIONS,
 					);
-					$types['forum_posts'] = array(
+					$types['forum_posts']   = array(
 						"rclass"  => "forum-post",
 						"classes" => "forum-post,new-forum-post,user-forum-post",
 						"options" => WP_RW__FORUM_POSTS_OPTIONS,
@@ -635,9 +638,9 @@
 						$values["{$type}_order"] = strtoupper( $instance["{$type}_order"] );
 					}
 					if ( isset( $values["{$type}_order"] ) && ! in_array( $values["{$type}_order"], array(
-								"DESC",
-								"ASC"
-							) )
+							"DESC",
+							"ASC"
+						) )
 					) {
 						$values["{$type}_order"] = WP_RW__TR_DEFAULT_ORDERY;
 					}
@@ -650,13 +653,13 @@
 					<div class="rw-toprated-settings-section selected">
 						<div class="rw-section-body">
 							<p><label
-									for="<?php echo $this->get_field_id( 'title' ); ?>"><?php _e( 'Widget Title', WP_RW__ID ); ?>
+									for="<?php echo $this->get_field_id( 'title' ); ?>"><?php _erw( 'widget-title' ) ?>
 									: <input id="<?php echo $this->get_field_id( 'title' ); ?>"
 									         name="<?php echo $this->get_field_name( 'title' ); ?>" type="text"
 									         value="<?php echo esc_attr( $title ); ?>"/></label></p>
 
 							<p><label
-									for="<?php echo $this->get_field_id( 'title_max_length' ); ?>"><?php _e( 'Title Max Length', WP_RW__ID ); ?>
+									for="<?php echo $this->get_field_id( 'title_max_length' ); ?>"><?php _erw( 'title-max-length' ) ?>
 									: <input style="width: 110px;"
 									         id="<?php echo $this->get_field_id( 'title_max_length' ); ?>"
 									         name="<?php echo $this->get_field_name( 'title_max_length' ); ?>"
@@ -730,7 +733,7 @@
 											<?php
 												$values["{$type}_title"] = empty( $values["{$type}_title"] ) ? $typeTitle : $values["{$type}_title"];
 											?>
-											<?php _e( "Title", WP_RW__ID ); ?>:
+											<?php _erw( 'title' ) ?>:
 										</label>
 										<input
 											id="<?php echo $this->get_field_id( 'title' ); ?>"<?php echo $disabled; ?>
@@ -741,7 +744,7 @@
 
 									<p>
 										<label
-											for="rss-items-<?php echo $values["{$type}_count"]; ?>"><?php _e( "Max Items", WP_RW__ID ); ?>
+											for="rss-items-<?php echo $values["{$type}_count"]; ?>"><?php _erw( 'max-items' ) ?>
 											:
 											<select id="<?php echo $this->get_field_id( "{$type}_count" ); ?>"
 											        name="<?php echo $this->get_field_name( "{$type}_count" ); ?>">
@@ -756,7 +759,7 @@
 
 									<p>
 										<label
-											for="<?php echo $this->get_field_id( "{$type}_min_votes" ); ?>"><?php _e( "Min Votes", WP_RW__ID ); ?>
+											for="<?php echo $this->get_field_id( "{$type}_min_votes" ); ?>"><?php _erw( 'min-votes' ) ?>
 											(>= 1):
 											<input style="width: 40px; text-align: center;"
 											       id="<?php echo $this->get_field_id( "{$type}_min_votes" ); ?>"
@@ -768,7 +771,7 @@
 
 									<p>
 										<label
-											for="rss-items-<?php echo $values["{$type}_orderby"]; ?>"><?php _e( "Order By", WP_RW__ID ); ?>
+											for="rss-items-<?php echo $values["{$type}_orderby"]; ?>"><?php _erw( 'orderby' ) ?>
 											:
 											<select id="<?php echo $this->get_field_id( "{$type}_orderby" ); ?>"
 											        name="<?php echo $this->get_field_name( "{$type}_orderby" ); ?>">
@@ -783,17 +786,17 @@
 
 									<p>
 										<label
-											for="rss-items-<?php echo $values["{$type}_order"]; ?>"><?php _e( "Order", WP_RW__ID ); ?>
+											for="rss-items-<?php echo $values["{$type}_order"]; ?>"><?php _erw( 'order' ) ?>
 											:
 											<select id="<?php echo $this->get_field_id( "{$type}_order" ); ?>"
 											        name="<?php echo $this->get_field_name( "{$type}_order" ); ?>">
 												<option
 													value="DESC"<?php echo( $values["{$type}_order"] == "DESC" ? " selected='selected'" : '' ); ?>>
-													BEST (Descending)
+													<?php _erw( 'best' ) ?> (<?php _erw( 'descending' ) ?>)
 												</option>
 												<option
 													value="ASC"<?php echo( $values["{$type}_order"] == "ASC" ? " selected='selected'" : '' ); ?>>
-													WORST (Ascending)
+													<?php _erw( 'worst' ) ?> (<?php _erw( 'ascending' ) ?>)
 												</option>
 											</select>
 										</label>
@@ -801,17 +804,17 @@
 
 									<?php
 										$since_created_options = array(
-											WP_RW__TIME_ALL_TIME        => __( 'All Time', WP_RW__ID ),
-											WP_RW__TIME_YEAR_IN_SEC     => __( 'Last Year', WP_RW__ID ),
-											WP_RW__TIME_6_MONTHS_IN_SEC => __( 'Last 6 Months', WP_RW__ID ),
-											WP_RW__TIME_30_DAYS_IN_SEC  => __( 'Last 30 Days', WP_RW__ID ),
-											WP_RW__TIME_WEEK_IN_SEC     => __( 'Last 7 Days', WP_RW__ID ),
-											WP_RW__TIME_24_HOURS_IN_SEC => __( 'Last 24 Hours', WP_RW__ID )
+											WP_RW__TIME_ALL_TIME        => __rw( 'all-time', WP_RW__ID ),
+											WP_RW__TIME_YEAR_IN_SEC     => __rw( 'last-year', WP_RW__ID ),
+											WP_RW__TIME_6_MONTHS_IN_SEC => sprintf( __rw( 'last-x-months' ), 6 ),
+											WP_RW__TIME_30_DAYS_IN_SEC  => sprintf( __rw( 'last-x-days' ), 30 ),
+											WP_RW__TIME_WEEK_IN_SEC     => sprintf( __rw( 'last-x-days' ), 7 ),
+											WP_RW__TIME_24_HOURS_IN_SEC => sprintf( __rw( 'last-x-hours' ), 24 )
 										);
 									?>
 									<p>
 										<label
-											for="rss-items-<?php echo $values["{$type}_since_created"]; ?>"><?php printf( __( "%s created in:", WP_RW__ID ), $typeTitle ); ?>
+											for="rss-items-<?php echo $values["{$type}_since_created"]; ?>"><?php printf( __rw( 's-created-in' ), $typeTitle ); ?>
 											<select id="<?php echo $this->get_field_id( "{$type}_since_created" ); ?>"
 											        name="<?php echo $this->get_field_name( "{$type}_since_created" ); ?>">
 												<?php
@@ -857,6 +860,6 @@
 //        add_action('wp_head', 'rw_toprated_widget_load_style');
 		}
 
-		add_action('widgets_init', 'rw_register_toprated_widget');
+		add_action( 'widgets_init', 'rw_register_toprated_widget' );
 
 	endif;

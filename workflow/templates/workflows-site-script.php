@@ -60,7 +60,7 @@ function Class_WF_Engine( options, $ ) {
 				+	'			{{modal.body}}'
 				+	'		</div>'
 				+	'		<div class="rw-wf-modal-footer">'
-				+	'			<input type="button" href="#close" class="rw-wf-button-close rw-wf-button" value="<?php _e( 'Cancel', WP_WF__SLUG ); ?>" />'
+				+	'			<input type="button" href="#close" class="rw-wf-button-close rw-wf-button" value="<?php _erw( 'cancel' ) ?>" />'
 				+	'		</div>'
 				+	'	</div>'
 				+	'</div>',
