@@ -4335,6 +4335,14 @@
 #workflows-page #edit-workflow div.workflow-title input {
   margin-right: 7px;
 }
+#workflows-page #edit-workflow h3.workflow-title {
+  display: inline-block;
+  border: 1px solid transparent;
+}
+#workflows-page #edit-workflow h3.workflow-title:hover {
+  border-bottom: 1px dashed #333;
+  cursor: pointer;
+}
 #workflows-page #edit-workflow.is-creating .button.save,
 #workflows-page #edit-workflow.is-creating .workflow-title {
   display: none;
