@@ -4823,9 +4823,6 @@
 							</div>
 						</div>
 					</form>
-					<div class="rw-body">
-						<?php rw_include_once_view( 'settings/custom_color.php' ); ?>
-					</div>
 				</div>
 				<?php fs_require_template( 'powered-by.php' ) ?>
 				<?php
