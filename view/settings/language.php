@@ -1,4 +1,4 @@
-<td><span class="rw-ui-def">Language:</span></td>
+<td><span class="rw-ui-def"><?php _erw( 'language' ) ?>:</span></td>
 <td>
     <select id="rw_lng_select" tabindex="1" name="rw_language" style="font-size: 12px;" onchange="RWM.Set.language(this.value);">
         <?php

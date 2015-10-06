@@ -4,7 +4,7 @@
 <div id="rw_frequency_settings" class="has-sidebar has-right-sidebar">
 	<div class="has-sidebar-content">
 		<div class="postbox rw-body">
-			<h3>Voting Frequency Settings</h3>
+			<h3><?php _erw( 'voting-frequency-settings' ) ?></h3>
 
 			<div class="inside rw-ui-content-container rw-no-radius" style="padding: 5px; width: 610px;">
 				<?php

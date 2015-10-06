@@ -7,7 +7,7 @@
     $options_type = rw_options()->type;
     $options_theme = rw_options()->theme;
 ?>
-<td><span class="rw-ui-def">Theme:</span></td>
+<td><span class="rw-ui-def"><?php _erw( 'theme' ) ?>:</span></td>
 <td>
     <img id="rw_theme_loader" src="<?php echo WP_RW__ADDRESS_IMG;?>rw.loader.gif" alt="" />
     <?php
