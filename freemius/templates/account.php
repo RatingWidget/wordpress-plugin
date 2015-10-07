@@ -247,7 +247,7 @@
 								</div>
 							<?php elseif ( 'version' === $p['id'] ) : ?>
 								<div class="button-group">
-									<?php if ( $is_paying ) : ?>
+									<?php if ( $is_paying || $fs->is_trial() ) : ?>
 										<?php if ( ! $fs->is_allowed_to_install() ) : ?>
 											<a target="_blank" class="button button-primary"
 											   href="<?php echo $fs->_get_latest_download_local_url() ?>"><?php echo sprintf( __fs( 'download-x-version' ), $site->plan->title ) . ( is_object( $update ) ? ' [' . $update->version . ']' : '' ) ?></a>
