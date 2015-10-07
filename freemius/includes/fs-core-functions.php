@@ -68,7 +68,7 @@
 	}
 
 	function _efs( $key ) {
-		echo __rw( $key );
+		echo __fs( $key );
 	}
 
 	/* Scripts and styles including.
