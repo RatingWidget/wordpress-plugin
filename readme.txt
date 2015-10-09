@@ -182,8 +182,10 @@ The RatingWidget Team
 
 == Change Log ==
 
-= 2.6.7 - 2015-10-05 =
+= 2.6.7 - 2015-10-09 =
 * Optimization: Prepared plugin for WordPress.org Language Packs release.
+* New: Implemented Workflows! A rule-engine based on rating related actions.
+* New: Released first Add-On!
 
 = 2.6.6 - 2015-09-17 =
 * Fix: Resolved the upgrade issues users without an API secret-key were having on upgrade to the new version.
