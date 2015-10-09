@@ -7887,18 +7887,33 @@
 		// Init RW API (must be called after account is loaded).
 		rwapi();
 
-		if (rw_request_is_action('rw_reset_account') && !$rw_fs->is_ajax())
-		{
+		if ( rw_request_is_action( 'rw_reset_account' ) && ! $rw_fs->is_ajax() ) {
 			rw_reset_account();
-		}
-		else if (!$fs->is_registered() &&
-		         ($fs->is_plugin_upgrade_mode() ||
-		         rw_request_is_action('rw_migrate_to_freemius'))
+		} else if ( ! $fs->is_registered() &&
+		            ( $fs->is_plugin_upgrade_mode() ||
+		              rw_request_is_action( 'rw_migrate_to_freemius' ) )
 		) {
 			// Migration to new Freemius account management.
 			if ( rw_migration_to_freemius() ) {
 				$fs->set_plugin_upgrade_complete();
 			}
+		} else if ( $fs->is_registered() &&
+		            $fs->is_plugin_upgrade_mode() &&
+		            '2.6.7' === $fs->get_plugin_version()
+		) {
+			$fs->add_sticky_admin_message(
+				__rw( 'tweets-promotion_msg' ) .
+				sprintf(
+					'<a style="margin-left: 10px;" href="%s"><button class="button button-primary">%s &nbsp;&#10140;</button></a>',
+					rw_fs()->addon_url( 'rw-addon-tweets' ),
+					__rw( 'learn-more' )
+				),
+				'tweets-release',
+				__rw( 'tweets-promotion_title' ),
+				'promotion'
+			);
+
+			$fs->set_plugin_upgrade_complete();
 		}
 
 		/**
