@@ -303,8 +303,6 @@
 						add_action('admin_footer', array( &$this, '_add_uninstall_confirm_message' ));
 					}*/
 				}
-
-//				$this->add_action( 'plugin_version_update', array( &$this, 'update_plugin_version_event' ));
 			}
 		}
 
@@ -552,9 +550,6 @@
 			self::$_static_logger->entrance();
 
 			self::$_accounts = FS_Option_Manager::get_manager( WP_FS__ACCOUNTS_OPTION_NAME, true );
-			if ( ! isset( self::$_accounts->unique_id ) ) {
-				self::$_accounts->unique_id = md5( get_site_url() );
-			}
 
 			// Configure which Freemius powered plugins should be auto updated.
 //			add_filter( 'auto_update_plugin', '_include_plugins_in_auto_update', 10, 2 );
@@ -731,7 +726,7 @@
 
 			$is_connected = WP_FS__SIMULATE_NO_API_CONNECTIVITY ?
 				false :
-				$this->get_api_plugin_scope()->test( self::$_accounts->unique_id );
+				$this->get_api_plugin_scope()->test( $this->get_anonymous_id() );
 
 			if ( ! $is_connected ) {
 				$this->_add_connectivity_issue_message();
@@ -758,7 +753,11 @@
 		 * @return string
 		 */
 		function get_anonymous_id() {
-			return self::$_accounts->unique_id;
+			if ( ! self::$_accounts->has_option( 'unique_id' ) ) {
+				self::$_accounts->set_option( 'unique_id', md5( get_site_url() ), true );
+			}
+
+			return self::$_accounts->get_option( 'unique_id' );
 		}
 
 		/**
