@@ -783,9 +783,7 @@
 		 * @return array[string]array
 		 */
 		private function get_active_plugins() {
-			if ( ! function_exists( 'get_plugins' ) ) {
-				require_once( ABSPATH . 'wp-admin/includes/plugin.php' );
-			}
+			$this->require_plugin_essentials();
 
 			$active_plugin            = array();
 			$all_plugins              = get_plugins();
@@ -1020,12 +1018,15 @@
 			if ( ! $this->is_registered() ) {
 				if ( ! $this->has_api_connectivity() ) {
 					if ( is_admin() && $this->_admin_notices->has_sticky( 'failed_connect_api' ) ) {
+						if ( ! $this->_enable_anonymous ) {
+							// If anonymous mode is disabled, add firewall admin-notice message.
 						add_action( 'admin_footer', array( 'Freemius', '_add_firewall_issues_javascript' ) );
 
 						add_action( "wp_ajax_{$this->_slug}_resolve_firewall_issues", array(
 							&$this,
 							'_email_about_firewall_issue'
 						) );
+					}
 					}
 
 					// Turn Freemius off.
@@ -1161,9 +1162,13 @@
 		 */
 		function _plugin_code_type_changed() {
 			// Send code type changes event.
-			$this->get_api_site_scope()->call( '/', 'put', array( 'is_premium' => $this->_plugin->is_premium ) );
+			$this->get_api_site_scope()->call( '/', 'put', array(
+					'is_active'  => true,
+					'is_premium' => $this->is_premium(),
+					'version'    => $this->get_plugin_version(),
+			) );
 
-			if ( true === $this->_plugin->is_premium ) {
+			if ( $this->is_premium() ) {
 				// Activated premium code.
 				$this->do_action( 'after_premium_version_activation' );
 
@@ -1608,7 +1613,7 @@
 			if ( fs_request_is_action( $this->_slug . '_skip_activation' ) ) {
 				check_admin_referer( $this->_slug . '_skip_activation' );
 				$this->_storage->is_anonymous = true;
-				if ( fs_redirect( $this->_get_admin_page_url() ) ) {
+				if ( fs_redirect( $this->apply_filters( 'after_skip_url', $this->_get_admin_page_url() ) ) ) {
 					exit();
 				}
 			}
@@ -1925,6 +1930,16 @@
 		}
 
 		/**
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.1.1
+		 *
+		 * @return string
+		 */
+		private function premium_plugin_basename(){
+			return preg_replace('/\//', '-premium/', $this->_free_plugin_basename, 1 );
+		}
+
+		/**
 		 * Uninstall plugin hook. Called only when connected his account with Freemius for active sites tracking.
 		 *
 		 * @author Vova Feldman (@svovaf)
@@ -1948,6 +1963,15 @@
 			$fs = self::get_instance_by_file( $plugin_file );
 
 			if ( is_object( $fs ) ) {
+				$this->require_plugin_essentials();
+
+				if (is_plugin_active( $fs->_free_plugin_basename ) ||
+				    is_plugin_active( $fs->premium_plugin_basename() )
+				){
+					// Deleting Free or Premium plugin version while the other version still installed.
+					return;
+				}
+
 				$fs->_uninstall_plugin_event();
 
 				$fs->do_action( 'after_uninstall' );
@@ -1955,6 +1979,19 @@
 		}
 
 		#region Plugin Information ------------------------------------------------------------------
+
+		/**
+		 * Load WordPress core plugin.php essential module.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.1.1
+		 */
+		private function require_plugin_essentials()
+		{
+			if ( ! function_exists( 'get_plugins' ) ) {
+				require_once( ABSPATH . 'wp-admin/includes/plugin.php' );
+			}
+		}
 
 		/**
 		 * Return plugin data.
@@ -1966,9 +2003,7 @@
 		 */
 		function get_plugin_data() {
 			if ( ! isset( $this->_plugin_data ) ) {
-				if ( ! function_exists( 'get_plugins' ) ) {
-					require_once( ABSPATH . 'wp-admin/includes/plugin.php' );
-				}
+				$this->require_plugin_essentials();
 
 				$this->_plugin_data = get_plugin_data( $this->_plugin_main_file_path );
 			}
@@ -3474,7 +3509,7 @@
 			}
 			else {
 				// Reload the page with the keys.
-				if ( fs_redirect( $this->_get_admin_page_url() ) ) {
+				if ( fs_redirect( $this->apply_filters( 'after_connect_url', $this->_get_admin_page_url() ) ) ) {
 					exit();
 				}
 			}
@@ -3523,7 +3558,7 @@
 					$this->_add_pending_activation_notice( fs_request_get( 'user_email' ) );
 
 					// Reload the page with with pending activation message.
-					if ( fs_redirect( $this->_get_admin_page_url() ) ) {
+					if ( fs_redirect( $this->apply_filters( 'connect_url', $this->_get_admin_page_url() ) ) ) {
 						exit();
 					}
 				}
@@ -3719,12 +3754,61 @@
 		}
 
 		/**
+		 * Override submenu's action.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.1.0
+		 *
+		 * @param $parent_slug
+		 * @param $menu_slug
+		 * @param $function
+		 *
+		 * @return false|string If submenu exist, will return the hook name.
+		 */
+		private function override_plugin_submenu_action($parent_slug, $menu_slug, $function)
+		{
+			global $submenu;
+
+			$menu_slug = plugin_basename( $menu_slug );
+			$parent_slug = plugin_basename( $parent_slug);
+
+			if (!isset($submenu[$parent_slug])) {
+				// Parent menu not exist.
+				return false;
+			}
+
+			$found_submenu_item = false;
+			foreach ($submenu[$parent_slug] as $submenu_item)
+			{
+				if ($menu_slug === $submenu_item[2]){
+					$found_submenu_item = $submenu_item;
+					break;
+				}
+			}
+
+			if (false === $found_submenu_item)
+			{
+				// Submenu item not found.
+				return false;
+			}
+
+			// Remove current function.
+			$hookname = get_plugin_page_hookname( $menu_slug, $parent_slug);
+			remove_all_actions($hookname);
+
+			// Attach new action.
+			add_action($hookname, $function);
+
+			return $hookname;
+		}
+
+		/**
 		 * Find plugin's admin dashboard main menu item.
 		 *
 		 * @author Vova Feldman (@svovaf)
 		 * @since  1.0.2
 		 *
-		 * @return string[]
+		 * @return string[]|false
 		 */
 		private function find_plugin_main_menu() {
 			global $menu;
@@ -3741,6 +3825,9 @@
 					break;
 				}
 			}
+
+			if (false === $found_menu)
+				return false;
 
 			return array(
 				'menu'      => $found_menu,
@@ -3782,6 +3869,9 @@
 			// Find main menu item.
 			$menu = $this->find_plugin_main_menu();
 
+			if (false === $menu)
+				return $menu;
+
 			// Remove it with its actions.
 			remove_all_actions( $menu['hook_name'] );
 
@@ -3802,11 +3892,7 @@
 
 			$menu = $this->remove_menu_item();
 
-			if ( $this->is_activation_page() ) {
-				// Clean admin page from distracting content.
-				$this->_clean_admin_content_section();
-			}
-
+			if (false !== $menu) {
 			// Override menu action.
 			$hook = add_menu_page(
 				$menu['menu'][3],
@@ -3817,6 +3903,20 @@
 				$menu['menu'][6],
 				$menu['position']
 			);
+			}
+			else {
+				// Try to override tools submenu item if exist.
+				$hook = $this->override_plugin_submenu_action(
+					'tools.php',
+					$this->_menu_slug,
+					array( &$this, '_connect_page_render' )
+				);
+			}
+
+			if ( $this->is_activation_page() ) {
+				// Clean admin page from distracting content.
+				$this->_clean_admin_content_section();
+			}
 
 			if ( fs_request_is_action( $this->_slug . '_activate_existing' ) ) {
 				add_action( "load-$hook", array( &$this, '_install_with_current_user' ) );
@@ -3825,6 +3925,12 @@
 			}
 		}
 
+		/**
+		 * Add default Freemius menu items.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.0.0
+		 */
 		private function add_submenu_items() {
 			$this->_logger->entrance();
 
@@ -6261,7 +6367,7 @@
 
 			if ( ! $this->is_addon() ) {
 				$plugin_fs = $this;
-				$url       = $plugin_fs->_get_admin_page_url();
+				$url       = $plugin_fs->apply_filters( 'connect_url', $plugin_fs->_get_admin_page_url() );
 			} else {
 				if ( $this->is_parent_plugin_installed() ) {
 					$plugin_fs = self::get_parent_instance();
@@ -6269,8 +6375,8 @@
 
 				if ( is_object( $plugin_fs ) ) {
 					if ( ! $plugin_fs->is_registered() ) {
-						// Forward to parent plugin activation when parent not registered.
-						$url = $plugin_fs->_get_admin_page_url();
+						// Forward to parent plugin connect when parent not registered.
+						$url = $plugin_fs->apply_filters( 'connect_url', $plugin_fs->_get_admin_page_url() );
 					} else {
 						// Forward to account page.
 						$url = $plugin_fs->_get_admin_page_url( 'account' );
