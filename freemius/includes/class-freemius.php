@@ -291,10 +291,65 @@
 							$this->add_action( 'after_init_plugin_registered', array( &$this, '_add_trial_notice' ) );
 						}
 					}
+
+
+/*
+					global $pagenow;
+					if( 'plugins.php' === $pagenow &&
+					    // If user is paying or in trial and have the free version installed,
+					    // assume that the deactivation is for the upgrade process.
+					    (!$this->is_paying_or_trial() || $this->is_premium())
+					) {
+						add_action('admin_footer', array( &$this, '_add_uninstall_confirm_message' ));
+					}*/
 				}
 
 //				$this->add_action( 'plugin_version_update', array( &$this, 'update_plugin_version_event' ));
 			}
+		}
+
+		/**
+		 * Add confirmation and feedback dialog box to plugin deactivation link.
+		 *
+		 * @todo NOT IMPLEMENTED
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.1.1
+		 */
+		function _add_uninstall_confirm_message()
+		{
+			$deactivation_confirm_message = false;
+			$deactivation_confirm_message = $this->apply_filters( 'deactivation_confirm_message', $deactivation_confirm_message );
+
+			if (is_string($deactivation_confirm_message)){
+				// Show plugin specific value-based confirm message.
+
+			}
+
+			// Ask for the reason.
+			$is_long_term_user = true;
+//			$is_long_term_user = ($this->_site->created); // Check if at least 2 day old.
+			$is_long_term_user = $this->apply_filters( 'is_long_term_user', $is_long_term_user );
+
+			if ($is_long_term_user) {
+				// Long term users.
+
+			}
+			else {
+				// Short term users.
+
+			}
+			?>
+			<script>
+				(function($){
+					// Build modal dialog box.
+					$('#the-list [data-slug=<?php echo $this->_slug ?>].active .deactivate a').click(function(){
+						var result = confirm('Are you sure you would like to proceed?');
+						return (result) ? true : false;
+					});
+				})(jQuery);
+			</script>
+		<?php
 		}
 
 		/**
@@ -783,7 +838,7 @@
 		 * @return array[string]array
 		 */
 		private function get_active_plugins() {
-			$this->require_plugin_essentials();
+			self::require_plugin_essentials();
 
 			$active_plugin            = array();
 			$all_plugins              = get_plugins();
@@ -1020,13 +1075,13 @@
 					if ( is_admin() && $this->_admin_notices->has_sticky( 'failed_connect_api' ) ) {
 						if ( ! $this->_enable_anonymous ) {
 							// If anonymous mode is disabled, add firewall admin-notice message.
-						add_action( 'admin_footer', array( 'Freemius', '_add_firewall_issues_javascript' ) );
+							add_action( 'admin_footer', array( 'Freemius', '_add_firewall_issues_javascript' ) );
 
-						add_action( "wp_ajax_{$this->_slug}_resolve_firewall_issues", array(
-							&$this,
-							'_email_about_firewall_issue'
-						) );
-					}
+							add_action( "wp_ajax_{$this->_slug}_resolve_firewall_issues", array(
+								&$this,
+								'_email_about_firewall_issue'
+							) );
+						}
 					}
 
 					// Turn Freemius off.
@@ -1963,7 +2018,7 @@
 			$fs = self::get_instance_by_file( $plugin_file );
 
 			if ( is_object( $fs ) ) {
-				$this->require_plugin_essentials();
+				self::require_plugin_essentials();
 
 				if (is_plugin_active( $fs->_free_plugin_basename ) ||
 				    is_plugin_active( $fs->premium_plugin_basename() )
@@ -1986,7 +2041,7 @@
 		 * @author Vova Feldman (@svovaf)
 		 * @since  1.1.1
 		 */
-		private function require_plugin_essentials()
+		private static function require_plugin_essentials()
 		{
 			if ( ! function_exists( 'get_plugins' ) ) {
 				require_once( ABSPATH . 'wp-admin/includes/plugin.php' );
@@ -2003,7 +2058,7 @@
 		 */
 		function get_plugin_data() {
 			if ( ! isset( $this->_plugin_data ) ) {
-				$this->require_plugin_essentials();
+				self::require_plugin_essentials();
 
 				$this->_plugin_data = get_plugin_data( $this->_plugin_main_file_path );
 			}
@@ -3893,16 +3948,16 @@
 			$menu = $this->remove_menu_item();
 
 			if (false !== $menu) {
-			// Override menu action.
-			$hook = add_menu_page(
-				$menu['menu'][3],
-				$menu['menu'][0],
-				'manage_options',
-				$this->_menu_slug,
-				array( &$this, '_connect_page_render' ),
-				$menu['menu'][6],
-				$menu['position']
-			);
+				// Override menu action.
+				$hook = add_menu_page(
+					$menu['menu'][3],
+					$menu['menu'][0],
+					'manage_options',
+					$this->_menu_slug,
+					array( &$this, '_connect_page_render' ),
+					$menu['menu'][6],
+					$menu['position']
+				);
 			}
 			else {
 				// Try to override tools submenu item if exist.
