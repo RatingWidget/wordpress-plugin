@@ -943,7 +943,7 @@
 					$current_user->user_firstname,
 					$current_user->user_lastname,
 					$active_plugin_string,
-					( is_string( $ping ) ? $ping : json_encode( $ping ) )
+					( is_string( $ping ) ? htmlentities( $ping ) : json_encode( $ping ) )
 				),
 				"Content-type: text/html\r\n" .
 				"Reply-To: $admin_email <$admin_email>"
@@ -4939,12 +4939,21 @@
 		private function _sync_plugin_license( $background = false ) {
 			$this->_logger->entrance();
 
-			// Load site details.
-			$site = $this->_fetch_site( true );
+			// Sync site info.
+			$site = $this->get_api_site_scope()->call( '/', 'put', array(
+				'is_active'        => true,
+				'is_premium'       => $this->is_premium(),
+				'version'          => $this->get_plugin_version(),
+				'url'              => get_site_url(),
+				'title'            => get_bloginfo( 'name' ),
+				'platform_version' => get_bloginfo( 'version' ),
+				'language'         => get_bloginfo( 'language' ),
+				'charset'          => get_bloginfo( 'charset' ),
+			) );
 
 			$plan_change = 'none';
 
-			if ( isset( $site->error ) ) {
+			if ( $this->is_api_error( $site ) ) {
 				$api = $this->get_api_site_scope();
 
 				// Try to ping API to see if not blocked.
@@ -4968,10 +4977,9 @@
 						'error'
 					);
 				}
-
-				// Plan update failure, set update time to 24hours + 10min so it won't annoy the admin too much.
-				$this->_site->updated = time() - WP_FS__TIME_24_HOURS_IN_SEC + WP_FS__TIME_10_MIN_IN_SEC;
 			} else {
+				$site = new FS_Site( $site );
+
 				// Sync licenses.
 				$this->_sync_licenses();
 
@@ -5662,11 +5670,13 @@
 		 * @since  1.0.3
 		 * @uses   FS_Api
 		 *
+		 * @param string $new_email
+		 *
 		 * @return object
 		 */
-		private function _update_email() {
+		private function _update_email($new_email) {
 			$this->_logger->entrance();
-			$new_email = fs_request_get( 'fs_email_' . $this->_slug, '' );
+
 
 			$api  = $this->get_api_user_scope();
 			$user = $api->call( "?plugin_id={$this->_plugin->id}&fields=id,email,is_verified", 'put', array(
@@ -5690,6 +5700,83 @@
 		}
 
 		/**
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.1.1
+		 *
+		 * @param mixed $result
+		 *
+		 * @return bool Is API result contains an error.
+		 */
+		private function is_api_error($result) {
+			return ( is_object( $result ) && isset( $result->error ) ) ||
+			       is_string( $result );
+		}
+
+		/**
+		 * Start install ownership change.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.1.1
+		 * @uses   FS_Api
+		 *
+		 * @param string $candidate_email
+		 *
+		 * @return bool Is ownership change successfully initiated.
+		 */
+		private function init_change_owner( $candidate_email ) {
+			$this->_logger->entrance();
+
+			$api  = $this->get_api_site_scope();
+			$result = $api->call( "/users/{$this->_user->id}.json", 'put', array(
+				'email'                   => $candidate_email,
+				'after_confirm_url' => $this->_get_admin_page_url(
+					'account',
+					array( 'fs_action' => 'change_owner' )
+				),
+			) );
+
+			return ! $this->is_api_error($result);
+		}
+
+		/**
+		 * Handle install ownership change.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.1.1
+		 * @uses   FS_Api
+		 *
+		 * @return bool Was ownership change successfully complete.
+		 */
+		private function complete_change_owner() {
+			$this->_logger->entrance();
+
+			$site_result = $this->get_api_site_scope( true )->get();
+			$site        = new FS_Site( $site_result );
+			$this->_site = $site;
+
+			$user     = new FS_User();
+			$user->id = fs_request_get( 'user_id' );
+
+			// Validate install's user and given user.
+			if ( $user->id != $this->_site->user_id ) {
+				return false;
+			}
+
+			$user->public_key = fs_request_get( 'user_public_key' );
+			$user->secret_key = fs_request_get( 'user_secret_key' );
+
+			// Fetch new user information.
+			$this->_user = $user;
+			$user_result = $this->get_api_user_scope( true )->get();
+			$user        = new FS_User( $user_result );
+			$this->_user = $user;
+
+			$this->_set_account( $user, $site );
+
+			return true;
+		}
+
+		/**
 		 * Handle user name update.
 		 *
 		 * @author Vova Feldman (@svovaf)
@@ -5698,7 +5785,7 @@
 		 *
 		 * @return object
 		 */
-		private function _update_user_name() {
+		private function update_user_name() {
 			$this->_logger->entrance();
 			$name = fs_request_get( 'fs_user_name_' . $this->_slug, '' );
 
@@ -5726,7 +5813,7 @@
 		 * @since  1.0.3
 		 * @uses   FS_Api
 		 */
-		private function _verify_email() {
+		private function verify_email() {
 			$this->_handle_account_user_sync();
 
 			if ( $this->_user->is_verified() ) {
@@ -5830,16 +5917,56 @@
 
 					return;
 
+				case 'change_owner':
+					$state = fs_request_get( 'state', 'init' );
+					switch ( $state ) {
+						case 'init':
+							$candidate_email = fs_request_get( 'candidate_email', '' );
+
+							if ( $this->init_change_owner( $candidate_email ) ) {
+								$this->_admin_notices->add( sprintf( __fs( 'change-owner-request-sent-x' ), '<b>' . $this->_user->email . '</b>' ) );
+							}
+							break;
+						case 'owner_confirmed':
+							$candidate_email = fs_request_get( 'candidate_email', '' );
+
+							$this->_admin_notices->add( sprintf( __fs( 'change-owner-request_owner-confirmed' ), '<b>' . $candidate_email . '</b>' ) );
+							break;
+						case 'candidate_confirmed':
+							if ( $this->complete_change_owner() ) {
+								$this->_admin_notices->add_sticky(
+									sprintf( __fs( 'change-owner-request_candidate-confirmed' ), '<b>' . $this->_user->email . '</b>' ),
+									'ownership_changed',
+									__fs( 'congrats' ) . '!'
+								);
+							} else {
+								// @todo Handle failed ownership change message.
+							}
+							break;
+					}
+
+					return;
+
 				case 'update_email':
 					check_admin_referer( 'update_email' );
 
-					$result = $this->_update_email();
+					$new_email = fs_request_get( 'fs_email_' . $this->_slug, '' );
+					$result = $this->_update_email($new_email);
 
 					if ( isset( $result->error ) ) {
 						switch ( $result->error->code ) {
 							case 'user_exist':
 								$this->_admin_notices->add(
-									__fs( 'user-exist-message' ),
+									__fs( 'user-exist-message' ) . ' '.
+									sprintf( __fs( 'user-exist-message_ownership' ), '<b>' . $new_email . '</b>') .
+									sprintf(
+										'<a style="margin-left: 10px;" href="%s"><button class="button button-primary">%s &nbsp;&#10140;</button></a>',
+										$this->get_account_url( 'change_owner', array(
+												'state' => 'init',
+												'candidate_email' => $new_email
+											) ),
+										__fs( 'change-ownership' )
+									),
 									__fs( 'oops' ) . '...',
 									'error'
 								);
@@ -5854,7 +5981,7 @@
 				case 'update_user_name':
 					check_admin_referer( 'update_user_name' );
 
-					$result = $this->_update_user_name();
+					$result = $this->update_user_name();
 
 					if ( isset( $result->error ) ) {
 						$this->_admin_notices->add(
@@ -5876,7 +6003,7 @@
 					return;
 
 				case 'verify_email':
-					$this->_verify_email();
+					$this->verify_email();
 
 					return;
 
@@ -6119,10 +6246,12 @@
 		 * @author Vova Feldman (@svovaf)
 		 * @since  1.0.2
 		 *
+		 * @param bool $flush
+		 *
 		 * @return FS_Api
 		 */
-		function get_api_user_scope() {
-			if ( ! isset( $this->_user_api ) ) {
+		function get_api_user_scope( $flush = false ) {
+			if ( ! isset( $this->_user_api ) || $flush ) {
 				$this->_user_api = FS_Api::instance(
 					$this->_slug,
 					'user',
@@ -6143,10 +6272,12 @@
 		 * @author Vova Feldman (@svovaf)
 		 * @since  1.0.2
 		 *
+		 * @param bool $flush
+		 *
 		 * @return FS_Api
 		 */
-		function get_api_site_scope() {
-			if ( ! isset( $this->_site_api ) ) {
+		function get_api_site_scope( $flush = false ) {
+			if ( ! isset( $this->_site_api ) || $flush ) {
 				$this->_site_api = FS_Api::instance(
 					$this->_slug,
 					'install',
