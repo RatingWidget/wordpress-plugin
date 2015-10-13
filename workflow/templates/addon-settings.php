@@ -26,7 +26,7 @@
 	}
 
 	// Retrieve all add-ons' settings.
-	$addons_settings = wf()->get_addons_settings();
+	$addons_settings = rw_wf()->get_addons_settings();
 
 	if ( ( false !== $addons_settings ) && isset( $addons_settings->{$selected_key} ) ) {
 		$selected_addon_settings = $addons_settings->{$selected_key};

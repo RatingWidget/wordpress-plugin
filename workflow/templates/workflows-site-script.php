@@ -302,8 +302,8 @@ function Class_WF_Engine( options, $ ) {
 };
 
 var engineOptions = {
-	workflows: <?php echo json_encode( wf()->get_active_workflows() ); ?>,
-	operandTypes: <?php echo json_encode( wf()->get_variable_types() ); ?>,
+	workflows: <?php echo json_encode( rw_wf()->get_active_workflows() ); ?>,
+	operandTypes: <?php echo json_encode( rw_wf()->get_variable_types() ); ?>,
 	currentPost: <?php echo json_encode( get_post() ); ?>,
 	currentPostCategories: <?php echo json_encode( get_the_category() ); ?>,
 	currentUserId: <?php echo json_encode( get_current_user_id() ); ?>,
@@ -311,7 +311,7 @@ var engineOptions = {
 };
 
 <?php
-$active_actions = wf()->get_active_actions();
+$active_actions = rw_wf()->get_active_actions();
 
 if ( ! empty( $active_actions ) ) {
 	foreach( $active_actions as $action_id ) {
