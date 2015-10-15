@@ -180,6 +180,7 @@
 		#endregion Admin Notices
 		#region Connectivity Issues
 		'cloudflare-blocks-connection-message'     => __( 'From unknown reason, CloudFlare, the firewall we use, blocks the connection.', 'freemius' ),
+		'squid-blocks-connection-message'     => __( 'It looks like your server is using Squid caching proxy which blocks the connection. Please contact your hosting company ...', 'freemius' ),
 		'connectivity-test-fails-message'          => __( 'From unknown reason, the API connectivity test fails.', 'freemius' ),
 		'x-requires-access-to-api'                 => _x( '%s requires an access to our API.', 'as pluginX requires an access to our API', 'freemius' ),
 		'happy-to-resolve-issue-asap'              => __( 'We are sure it\'s an issue on our side and more than happy to resolve it for you ASAP if you give us a chance.', 'freemius' ),

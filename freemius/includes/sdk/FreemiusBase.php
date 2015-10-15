@@ -157,6 +157,17 @@
 							'http'    => 402
 						)
 					);
+				} else if (preg_match('/Access control configuration prevents your request from being allowed at this time. Please contact your service provider if you feel this is incorrect./', $result) &&
+				           preg_match('/squid/', $result)
+				) {
+					$decoded = (object) array(
+						'error' => (object) array(
+							'type'    => 'SquidCacheBlock',
+							'message' => $result,
+							'code'    => 'squid_cache_block',
+							'http'    => 402
+						)
+					);
 				}
 				else {
 					$decoded = (object) array(

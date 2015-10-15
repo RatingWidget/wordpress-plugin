@@ -14,7 +14,7 @@
 		/**
 		 * @var string
 		 */
-		public $version = '1.1.0';
+		public $version = '1.1.1';
 
 		/**
 		 * @since 1.0.1
@@ -100,6 +100,11 @@
 		private $_plugin = false;
 		/**
 		 * @var FS_Plugin
+		 * @since 1.0.4
+		 */
+		private $_parent_plugin = false;
+		/**
+		 * @var Freemius
 		 * @since 1.0.4
 		 */
 		private $_parent = false;
@@ -754,7 +759,14 @@
 		 */
 		function get_anonymous_id() {
 			if ( ! self::$_accounts->has_option( 'unique_id' ) ) {
-				self::$_accounts->set_option( 'unique_id', md5( get_site_url() ), true );
+				$key = get_site_url();
+
+				// If localhost, assign microtime instead of domain.
+				if ( WP_FS__IS_LOCALHOST || false !== strpos( $key, 'localhost' ) ) {
+					$key = microtime();
+				}
+
+				self::$_accounts->set_option( 'unique_id', md5( $key ), true );
 			}
 
 			return self::$_accounts->get_option( 'unique_id' );
@@ -781,10 +793,20 @@
 			$ping = $this->get_api_plugin_scope()->ping();
 
 			if ( is_object( $ping ) &&
-			     isset( $ping->error ) &&
-			     'cloudflare_ddos_protection' === $ping->error->code
+			     isset( $ping->error )
 			) {
-				$message = __fs( 'cloudflare-blocks-connection-message' );
+				switch ($ping->error->code)
+				{
+					case 'cloudflare_ddos_protection':
+						$message = __fs( 'cloudflare-blocks-connection-message' );
+						break;
+					case 'squid_cache_block':
+						$message = __fs( 'squid-blocks-connection-message' );
+						break;
+					default:
+						$message = __fs( 'connectivity-test-fails-message' );
+						break;
+				}
 			} else {
 				$message = __fs( 'connectivity-test-fails-message' );
 			}
@@ -1108,6 +1130,15 @@
 				}
 			}
 
+			if ( $this->is_addon() ) {
+				if ( $this->is_parent_plugin_installed() ) {
+					// Link to parent FS.
+					$this->_parent = self::get_instance_by_id( $parent_id );
+
+					// Get parent plugin reference.
+					$this->_parent_plugin = $parent_fs->get_plugin();
+				}
+			}
 
 			if ( is_admin() ) {
 				if ( $this->is_addon() ) {
@@ -1123,20 +1154,15 @@
 
 						return;
 					} else {
-						$parent_fs = self::get_instance_by_id( $parent_id );
-
-						// Get parent plugin reference.
-						$this->_parent = $parent_fs->get_plugin();
-
-						if ( $parent_fs->is_registered() && ! $this->is_registered() ) {
+						if ( $this->_parent->is_registered() && ! $this->is_registered() ) {
 							// If parent plugin activated, automatically install add-on for the user.
-							$this->_activate_addon_account( $parent_fs );
+							$this->_activate_addon_account( $this->_parent );
 						}
 
 						// @todo This should be only executed on activation. It should be migrated to register_activation_hook() together with other activation related logic.
 						if ( $this->is_premium() ) {
 							// Remove add-on download admin-notice.
-							$parent_fs->_admin_notices->remove_sticky( 'addon_plan_upgraded_' . $this->_slug );
+							$this->_parent->_admin_notices->remove_sticky( 'addon_plan_upgraded_' . $this->_slug );
 						}
 					}
 				} else {
@@ -1457,14 +1483,34 @@
 		function get_installed_addons() {
 			$installed_addons = array();
 			foreach ( self::$_instances as $slug => $instance ) {
-				if ( $instance->is_addon() && is_object( $instance->_parent ) ) {
-					if ( $this->_plugin->id == $instance->_parent->id ) {
+				if ( $instance->is_addon() && is_object( $instance->_parent_plugin ) ) {
+					if ( $this->_plugin->id == $instance->_parent_plugin->id ) {
 						$installed_addons[] = $instance;
 					}
 				}
 			}
 
 			return $installed_addons;
+		}
+
+		/**
+		 * Check if any add-ons of the plugin are installed.
+		 *
+		 * @author Leo Fajardo (@leorw)
+		 * @since  1.1.1
+		 *
+		 * @return bool
+		 */
+		function has_installed_addons() {
+			foreach ( self::$_instances as $slug => $instance ) {
+				if ( $instance->is_addon() && is_object( $instance->_parent_plugin ) ) {
+					if ( $this->_plugin->id == $instance->_parent_plugin->id ) {
+						return true;
+					}
+				}
+			}
+
+			return false;
 		}
 
 		/**
