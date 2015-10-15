@@ -1136,7 +1136,7 @@
 					$this->_parent = self::get_instance_by_id( $parent_id );
 
 					// Get parent plugin reference.
-					$this->_parent_plugin = $parent_fs->get_plugin();
+					$this->_parent_plugin = $this->_parent->get_plugin();
 				}
 			}
 
