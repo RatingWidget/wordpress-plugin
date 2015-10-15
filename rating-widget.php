@@ -111,9 +111,9 @@
 			#region Plugin Setup ------------------------------------------------------------------
 
 			private function __construct() {
-				$this->account          = rw_account();
-				$this->fs               = rw_fs();
-				$this->wf               = rw_wf();
+				$this->account  = rw_account();
+				$this->fs       = rw_fs();
+				$this->wf       = rw_wf();
 				$this->_options = rw_fs_options();
 
 				if ( WP_RW__DEBUG ) {
@@ -144,7 +144,6 @@
 			function Init()
 			{
 				$this->init_fs_hooks();
-
 
 				if ( ! $this->fs->is_registered() && ! is_admin() ) {
 					return;
@@ -225,15 +224,21 @@
 			 */
 			function init_fs_hooks()
 			{
-				$this->fs->add_filter('connect_message', array(&$this, 'fs_connect_message'));
-				$this->fs->add_action('after_account_connection', array(&$this, 'connect_account'), 10, 2);
-				$this->fs->add_action('after_premium_version_activation', array(&$this, 'after_premium_version_activation_hook'), 10, 2);
-				$this->fs->add_action('after_account_delete', array(&$this, 'delete_account_and_settings'));
+				$this->fs->add_filter( 'connect_message', array( &$this, 'fs_connect_message' ) );
+				$this->fs->add_action( 'after_account_connection', array( &$this, 'connect_account' ), 10, 2 );
+				$this->fs->add_action( 'after_premium_version_activation', array(
+						&$this,
+						'after_premium_version_activation_hook'
+					), 10, 2 );
+				$this->fs->add_action( 'after_account_delete', array( &$this, 'delete_account_and_settings' ) );
 //				$this->fs->add_action('account_email_verified', array(&$this, 'verify_email'));
 
-				$this->fs->add_action('after_account_details', array(&$this, 'AccountPageRender'));
+				$this->fs->add_action( 'after_account_details', array( &$this, 'AccountPageRender' ) );
 
-				$this->fs->add_action('account_page_load_before_departure', array(&$this, 'AccountPageLoad'), 10, 3);
+				$this->fs->add_action( 'account_page_load_before_departure', array(
+						&$this,
+						'AccountPageLoad'
+					), 10, 3 );
 			}
 
 			private function LoadExtensionsDefaultOptions()
@@ -7863,9 +7868,16 @@
 			return true;
 		}
 
+		function rw_fs_add_api_domain( $domains ){
+			$domains[] = 'api.rating-widget.com';
+			return $domains;
+		}
+
 		#endregion Freemius Helpers ------------------------------------------------------------------
 
 		#region Plugin Initialization ------------------------------------------------------------------
+
+		add_filter( 'fs_api_domains_rating-widget', 'rw_fs_add_api_domain' );
 
 		// Init Freemius.
 		$fs = rw_fs();
