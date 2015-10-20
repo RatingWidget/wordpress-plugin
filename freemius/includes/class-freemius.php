@@ -296,61 +296,188 @@
 							$this->add_action( 'after_init_plugin_registered', array( &$this, '_add_trial_notice' ) );
 						}
 					}
-
-
-					/*
-										global $pagenow;
-										if( 'plugins.php' === $pagenow &&
-											// If user is paying or in trial and have the free version installed,
-											// assume that the deactivation is for the upgrade process.
-											(!$this->is_paying_or_trial() || $this->is_premium())
-										) {
-											add_action('admin_footer', array( &$this, '_add_uninstall_confirm_message' ));
-										}*/
+					
+					global $pagenow;
+					
+					if ( 'plugins.php' === $pagenow &&
+						// If user is paying or in trial and have the free version installed,
+						// assume that the deactivation is for the upgrade process.
+						// Added 'true' for testing purposes.
+						( true || ! $this->is_paying_or_trial() || $this->is_premium() )
+					) {
+						add_action( 'admin_footer', array( &$this, '_add_uninstall_confirm_message' ) );
+					}
 				}
 			}
 		}
 
 		/**
-		 * Add confirmation and feedback dialog box to plugin deactivation link.
-		 *
-		 * @todo   NOT IMPLEMENTED
+		 * Displays a confirmation and feedback dialog box when the user clicks on the "Deactivate" link on the plugins page.
 		 *
 		 * @author Vova Feldman (@svovaf)
+		 * @author Leo Fajardo (@leorw)
+		 * 
 		 * @since  1.1.1
 		 */
 		function _add_uninstall_confirm_message() {
-			$deactivation_confirm_message = false;
-			$deactivation_confirm_message = $this->apply_filters( 'deactivation_confirm_message', $deactivation_confirm_message );
+			// Retrieve the site's ratings and votes count and display the deactivation feedback dialog box if the user has more than 10 votes.
 
-			if ( is_string( $deactivation_confirm_message ) ) {
-				// Show plugin specific value-based confirm message.
+			// Initialize statistics
+			$stats = array(
+				'ratings' => 0,
+				'votes' => 0
+			);
 
+			// Retrieve ratings and votes count
+			$response = rwapi()->get( '/votes/count.json', false, WP_RW__CACHE_TIMEOUT_DASHBOARD_STATS );
+			if ( ! isset( $response->error ) ) {
+				$stats['votes'] = $response->count;
+
+				$response = rwapi()->get( '/ratings/count.json', false, WP_RW__CACHE_TIMEOUT_DASHBOARD_STATS );
+				if ( ! isset( $response->error ) ) {
+					$stats['ratings'] = $response->count;
+				}
 			}
+
+			if ( $stats['votes'] <= 10 ) {
+				// Disable for now for testing purposes.
+				//return;
+			}
+			
+			fs_enqueue_local_style( 'fs_deactivation_feedback_modal', '/admin/deactivation-feedback-modal.css' );
+				
+			// Allow other plugins or themes to modify the confirmation message.
+			$deactivation_confirm_message = $this->apply_filters( 'deactivation_confirm_message', __fs( 'deactivation-modal-confirm-message' ) );
+			
+			if ( ! is_string( $deactivation_confirm_message ) ) {
+				$deactivation_confirm_message = '';
+			} else {
+				$deactivation_confirm_message = trim( $deactivation_confirm_message );
+			}
+			
+			// Ensure that the confirmation message is always valid.
+			if ( empty( $deactivation_confirm_message ) ) {
+				$deactivation_confirm_message = __fs( 'deactivation-modal-confirm-message' );
+			}
+			
+			$deactivation_confirm_message = sprintf( $deactivation_confirm_message, $stats['ratings'], $stats['votes'] );
 
 			// Ask for the reason.
 			$is_long_term_user = true;
-//			$is_long_term_user = ($this->_site->created); // Check if at least 2 day old.
+			
+			// Check if the site is at least 2 days old.
+			
+			// TODO: Check api_clock_diff issues.
+			$api_clock_diff = false;
+			if ( false === $api_clock_diff ) {
+				$pong = $this->get_api_site_scope()->ping();
+				if ( is_object( $pong ) && ! isset( $pong->error ) ) {
+					$time_server_current = strtotime( $pong->timestamp );
+				}
+			} else {
+				$time_server_current = now() - $api_clock_diff;
+			}
+
+			$time_created = strtotime( $this->_site->created );
+
+			// Difference in seconds.
+			$date_diff = $time_server_current - $time_created;
+
+			// Convert seconds to days.
+			$date_diff_days = floor( $date_diff / ( 60 * 60 * 24 ) );
+
+			if ( $date_diff_days < 2 ) {
+				$is_long_term_user = false;
+			}
+		
 			$is_long_term_user = $this->apply_filters( 'is_long_term_user', $is_long_term_user );
 
 			if ( $is_long_term_user ) {
-				// Long term users.
-
+				// Reasons for long-term user.
+				$reasons = array(
+					'reason-no-longer-needed',
+					array(
+						'text' => 'reason-found-a-better-plugin',
+						'type' => 'textfield',
+						'placeholder' => __fs( 'placeholder-plugin-name' )
+					),
+					'reason-needed-for-a-short-period',
+					'reason-broke-my-site',
+					'reason-suddenly-stopped-working',
+					array(
+						'text' => 'reason-cant-pay-anymore',
+						'type' => 'textfield',
+						'placeholder' => __fs( 'placeholder-comfortable-price' )
+					),
+					array(
+						'text' => 'reason-other',
+						'type' => 'textfield',
+						'placeholder' => ''
+					)
+				);
 			} else {
-				// Short term users.
-
+				// Short-term user
+				if ( ! $this->is_registered() && ! $this->is_anonymous() ) {
+					// Reasons for short-term, non-registered, and non-anonymous user.
+					$reasons = array(
+						'reason-didnt-work',
+						'reason-dont-like-to-share-my-information',
+						array(
+							'text' => 'reason-found-a-better-plugin',
+							'type' => 'textfield',
+							'placeholder' => __fs( 'placeholder-plugin-name' )
+						),
+						array(
+							'text' => 'reason-other',
+							'type' => 'textfield',
+							'placeholder' => ''
+						)
+					);
+				} else {
+					$reasons = array(
+						'reason-couldnt-make-it-work',
+						array(
+							'text' => 'reason-found-a-better-plugin',
+							'type' => 'textfield',
+							'placeholder' => __fs( 'placeholder-plugin-name' )
+						),
+						array(
+							'text' => 'reason-great-but-need-specific-feature',
+							'type' => 'textarea',
+							'placeholder' => __fs( 'placeholder-feature' )
+						),
+						array(
+							'text' => 'reason-not-working',
+							'type' => 'textarea',
+							'placeholder' => __fs( 'placeholder-share-what-didnt-work' )
+						),
+						array(
+							'text' => 'reason-not-what-i-was-looking-for',
+							'type' => 'textarea',
+							'placeholder' => __fs( 'placeholder-what-youve-been-looking-for' )
+						),
+						array(
+							'text' => 'reason-didnt-work-as-expected',
+							'type' => 'textarea',
+							'placeholder' => __fs( 'placeholder-what-did-you-expect' )
+						),
+						array(
+							'text' => 'reason-other',
+							'type' => 'textfield',
+							'placeholder' => ''
+						)
+					);
+				}
 			}
-			?>
-			<script>
-				(function ($) {
-					// Build modal dialog box.
-					$('#the-list [data-slug=<?php echo $this->_slug ?>].active .deactivate a').click(function () {
-						var result = confirm('Are you sure you would like to proceed?');
-						return (result) ? true : false;
-					});
-				})(jQuery);
-			</script>
-		<?php
+			
+			// Load the HTML template for the deactivation feedback dialog box.
+			$vars = array(
+				'confirm-message' => $deactivation_confirm_message,
+				'reasons'         => $reasons,
+				'slug'            => $this->_slug
+			);
+			
+			fs_require_once_template( 'deactivation-feedback-modal.php', $vars );
 		}
 
 		/**
