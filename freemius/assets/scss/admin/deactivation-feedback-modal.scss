@@ -41,23 +41,29 @@
 		}
 	}
 
-	.freemius-modal-body {
-		padding: 20px;
-	}
-
-	.freemius-modal-header,
+	.freemius-modal-body,
 	.freemius-modal-footer {
 		border: 0;
 		background: #fefefe;
 		padding: 20px;
 	}
 
-	.freemius-modal-header {
-		border-bottom: #eeeeee solid 1px;
+	.freemius-modal-body {
+		border-bottom: 0;
 		border-radius: 5px 5px 0 0;
 
 		h2 {
 			font-size: 20px;
+		}
+		
+		> div {
+			margin-top: 10px;
+
+			h2 {
+				font-weight: bold;
+				font-size: 20px;
+				margin-top: 0;
+			}
 		}
 	}
 
@@ -75,26 +81,6 @@
 		}
 	}
 
-	&.no-body {
-		.freemius-modal-header {
-			border-bottom: 0;
-			
-			> div {
-				margin-top: 10px;
-
-				h2 {
-					font-weight: bold;
-					font-size: 20px;
-					margin-top: 0;
-				}
-			}
-		}
-
-		.freemius-modal-body {
-			display: none;
-		}
-	}
-	
 	.freemius-modal-panel:not(.active) {
 		display: none;
 	}

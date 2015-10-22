@@ -1,4 +1,11 @@
 <?php
+	/**
+	 * @package     Freemius
+	 * @copyright   Copyright (c) 2015, Freemius, Inc.
+	 * @license     http://opensource.org/licenses/gpl-2.0.php GNU Public License
+	 * @since       1.1.1
+	 */
+
 	$reasons = $VARS['reasons'];
 	
 	$reasons_list_items_html = '';
@@ -20,20 +27,18 @@
 			$list_item_classes .= ' has-input';
 		}
 		
-		$reasons_list_items_html .= '<li class="' . $list_item_classes . '" data-input-type="' . $input_type . '" data-input-placeholder="' . $placeholder . '"><label><input type="radio" name="selected-reason" value="' . $text_i18n_key . '"/> ' . __fs( $text_i18n_key ) . '</label></li>';
+		$reasons_list_items_html .= '<li class="' . $list_item_classes . '" data-input-type="' . $input_type . '" data-input-placeholder="' . $placeholder . '"><label><input type="radio" name="selected-reason" value="' . $text_i18n_key . '"/> <span>' . __fs( $text_i18n_key ) . '.</span></label></li>';
 	}
 	?>
 	<script>
 		(function( $ ) {
 			var reasonsHtml		= <?php echo json_encode( $reasons_list_items_html ); ?>,
 				modalHtml		=
-				'<div class="freemius-modal no-body">'
+				'<div class="freemius-modal">'
 				+	'	<div class="freemius-modal-dialog">'
-				+	'		<div class="freemius-modal-header">'
+				+	'		<div class="freemius-modal-body">'
 				+	'			<div class="freemius-modal-panel panel-headsup active"><p><?php printf( $VARS['confirm-message'] ); ?></p></div>'
 				+	'			<div class="freemius-modal-panel panel-reasons"><p><strong><?php printf( __fs( 'deactivation-share-reason' ) ); ?>:</strong></p><ul id="reasons-list">' + reasonsHtml + '</ul></div>'
-				+	'		</div>'
-				+	'		<div class="freemius-modal-body">'
 				+	'		</div>'
 				+	'		<div class="freemius-modal-footer">'
 				+	'			<a href="#" class="button button-secondary button-deactivate"></a>'
@@ -58,14 +63,43 @@
 				$modal.on( 'click', '.button', function( evt ) {
 					evt.preventDefault();
 					
+					if ( $( this ).hasClass( 'disabled' ) ) {
+						return;
+					}
+					
 					var _parent = $( this ).parents( '.freemius-modal:first' );
 					var _this = $( this );
 
 					if ( _this.hasClass( 'button-close' ) ) {
 						$modal.removeClass( 'active' );
 					} else if ( _this.hasClass( 'allow-deactivate' ) ) {
-						// Do not show the dialog box, deactivate the plugin.
-						window.location.href = $deactivateLink.attr( 'href' );
+						var $selected_reason = $( 'input[type="radio"]:checked' ).parents( 'li:first' ),
+							$input = $selected_reason.find( 'textarea' );
+							
+						if ( 0 === $input.length ) {
+							$input = $selected_reason.find( 'input[type="text"]' );
+						}
+						
+						var	additional_reason_info = [ $input.attr( 'placeholder' ), $input.val() ].join( ' ' );
+						
+						$.ajax({
+							url: ajaxurl,
+							method: 'POST',
+							data: {
+								'action'                 : 'deactivation-feedback-modal-action',
+								'user-action'            : 'submitted-reason',
+								'reason'                 : $selected_reason.find( 'span' ).text(),
+								'additional_reason_info' : additional_reason_info
+							},
+							beforeSend: function() {
+								_parent.find( '.button' ).addClass( 'disabled' );
+								_parent.find( '.button-secondary' ).text( 'Processing...' );
+							},
+							complete: function() {
+								// Do not show the dialog box, deactivate the plugin.
+								window.location.href = $deactivateLink.attr( 'href' );
+							}
+						});
 					} else if ( _this.hasClass( 'button-deactivate' ) ) {
 						// Change the Deactivate button's text and show the reasons panel.
 						_parent.find( '.button-deactivate').addClass( 'allow-deactivate' );
@@ -88,6 +122,16 @@
 						_parent.append( $( reasonInputHtml ) );
 						_parent.find( 'input, textarea' ).attr( 'placeholder', inputPlaceholder ).focus();
 					}
+					
+					$.ajax({
+						url: ajaxurl,
+						method: 'POST',
+						data: {
+							'action'      : 'deactivation-feedback-modal-action',
+							'user-action' : 'selected-reason',
+							'reason'      : _parent.find( 'span' ).text()
+						}
+					});
 				});
 			}
 			
@@ -99,6 +143,8 @@
 			}
 			
 			function resetModal() {
+				$modal.find( '.button' ).removeClass( 'disabled' );
+				
 				// Reset the deactivate button's text.
 				$modal.find( '.button-deactivate' ).removeClass( 'allow-deactivate' ).text( '<?php printf( __fs( 'deactivation-modal-button-deactivate' ) ); ?>' );
 				
