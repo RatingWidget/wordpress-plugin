@@ -367,22 +367,10 @@
 			$is_long_term_user = true;
 			
 			// Check if the site is at least 2 days old.
+			$time_installed = $this->_storage->get( 'install_timestamp' );
 			
-			// TODO: Check api_clock_diff issues.
-			$api_clock_diff = false;
-			if ( false === $api_clock_diff ) {
-				$pong = $this->get_api_site_scope()->ping();
-				if ( is_object( $pong ) && ! isset( $pong->error ) ) {
-					$time_server_current = strtotime( $pong->timestamp );
-				}
-			} else {
-				$time_server_current = now() - $api_clock_diff;
-			}
-
-			$time_created = strtotime( $this->_site->created );
-
 			// Difference in seconds.
-			$date_diff = $time_server_current - $time_created;
+			$date_diff = time() - $time_installed;
 
 			// Convert seconds to days.
 			$date_diff_days = floor( $date_diff / ( 60 * 60 * 24 ) );
