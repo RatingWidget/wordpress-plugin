@@ -89,7 +89,6 @@
 		
 		#region Plugin Deactivation
 		'deactivation-share-reason'				   => __( 'If you have a moment, please let us know why you are deactivating', 'freemius' ),
-		'deactivation-modal-confirm-message'       => __( 'Just a heads up - your site currently has %d ratings and %d votes. If you are about to delete the plugin after the deactivation you will lose all that data. Are you sure that you would like to proceed?', 'freemius' ),
 		'deactivation-modal-button-deactivate'     => __( 'Yes - Deactivate' ),
 		'deactivation-modal-button-submit'         => __( 'Submit & Deactivate', 'freemius' ),
 		'deactivation-modal-button-cancel'         => _x( 'Cancel', 'the text of the cancel button of the plugin deactivation dialog box.', 'freemius' ),

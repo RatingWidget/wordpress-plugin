@@ -6,38 +6,25 @@
 	 * @since       1.1.1
 	 */
 
+    $confirmation_message = apply_filters( 'fs_uninstall_confirmation_message', '' );
+    
 	$reasons = $VARS['reasons'];
 	
 	$reasons_list_items_html = '';
 
 	foreach ( $reasons as $reason ) {
-		$text_i18n_key = '';
-		$input_type = '';
-		$placeholder = '';
-
-		$list_item_classes = 'reason';
-
-		if ( ! is_array( $reason ) ) {
-			$text_i18n_key = $reason;
-		} else {
-			$text_i18n_key = $reason['text'];
-			$input_type = $reason['type'];
-			$placeholder = $reason['placeholder'];
-			
-			$list_item_classes .= ' has-input';
-		}
-		
-		$reasons_list_items_html .= '<li class="' . $list_item_classes . '" data-input-type="' . $input_type . '" data-input-placeholder="' . $placeholder . '"><label><input type="radio" name="selected-reason" value="' . $text_i18n_key . '"/> <span>' . __fs( $text_i18n_key ) . '.</span></label></li>';
+		$list_item_classes = 'reason' . ( ! empty( $reason['input_type'] ) ? ' has-input' : '' );
+		$reasons_list_items_html .= '<li class="' . $list_item_classes . '" data-input-type="' . $reason['input_type'] . '" data-input-placeholder="' . $reason['input_placeholder'] . '"><label><input type="radio" name="selected-reason" value="' . $reason['id'] . '"/> <span>' . $reason['text'] . '.</span></label></li>';
 	}
 	?>
 	<script>
 		(function( $ ) {
 			var reasonsHtml		= <?php echo json_encode( $reasons_list_items_html ); ?>,
 				modalHtml		=
-				'<div class="freemius-modal">'
+				'<div class="freemius-modal<?php echo empty( $confirmation_message ) ? ' no-confirmation-message' : ''; ?>">'
 				+	'	<div class="freemius-modal-dialog">'
 				+	'		<div class="freemius-modal-body">'
-				+	'			<div class="freemius-modal-panel panel-headsup active"><p><?php printf( $VARS['confirm-message'] ); ?></p></div>'
+				+	'			<div class="freemius-modal-panel panel-confirmation"><p><?php echo $confirmation_message; ?></p></div>'
 				+	'			<div class="freemius-modal-panel panel-reasons"><p><strong><?php printf( __fs( 'deactivation-share-reason' ) ); ?>:</strong></p><ul id="reasons-list">' + reasonsHtml + '</ul></div>'
 				+	'		</div>'
 				+	'		<div class="freemius-modal-footer">'
@@ -73,23 +60,23 @@
 					if ( _this.hasClass( 'button-close' ) ) {
 						$modal.removeClass( 'active' );
 					} else if ( _this.hasClass( 'allow-deactivate' ) ) {
-						var $selected_reason = $( 'input[type="radio"]:checked' ).parents( 'li:first' ),
-							$input = $selected_reason.find( 'textarea' );
+                        var $radio           = $( 'input[type="radio"]:checked' ),
+                            $selected_reason = $radio.parents( 'li:first' ),
+							$input           = $selected_reason.find( 'textarea' );
 							
 						if ( 0 === $input.length ) {
 							$input = $selected_reason.find( 'input[type="text"]' );
 						}
 						
-						var	additional_reason_info = [ $input.attr( 'placeholder' ), $input.val() ].join( ' ' );
+						var	reason_info = [ $input.attr( 'placeholder' ), $input.val() ].join( ' ' );
 						
 						$.ajax({
 							url: ajaxurl,
 							method: 'POST',
 							data: {
-								'action'                 : 'deactivation-feedback-modal-action',
-								'user-action'            : 'submitted-reason',
-								'reason'                 : $selected_reason.find( 'span' ).text(),
-								'additional_reason_info' : additional_reason_info
+								'action'      : 'submit-uninstall-reason',
+								'reason_id'   : $radio.val(),
+								'reason_info' : reason_info
 							},
 							beforeSend: function() {
 								_parent.find( '.button' ).addClass( 'disabled' );
@@ -103,8 +90,8 @@
 					} else if ( _this.hasClass( 'button-deactivate' ) ) {
 						// Change the Deactivate button's text and show the reasons panel.
 						_parent.find( '.button-deactivate').addClass( 'allow-deactivate' );
-						_parent.find( '.panel-headsup').hide();
-						_parent.find( '.panel-reasons').show();
+                        
+                        showPanel( 'reasons' );
 					}
 				});
 
@@ -122,16 +109,6 @@
 						_parent.append( $( reasonInputHtml ) );
 						_parent.find( 'input, textarea' ).attr( 'placeholder', inputPlaceholder ).focus();
 					}
-					
-					$.ajax({
-						url: ajaxurl,
-						method: 'POST',
-						data: {
-							'action'      : 'deactivation-feedback-modal-action',
-							'user-action' : 'selected-reason',
-							'reason'      : _parent.find( 'span' ).text()
-						}
-					});
 				});
 			}
 			
@@ -153,12 +130,25 @@
 
 				// Remove all input fields ( textfield, textarea ).
 				$modal.find( '.reason-input' ).remove();
-				
-				// Display the first panel (heads-up panel).
-				$modal.find( '.panel-headsup').show();
-				
-				// Hide the second panel (reasons panel).
-				$modal.find( '.panel-reasons').hide();
+                
+                showDefaultPanel();
 			}
+            
+            function showDefaultPanel() {
+                if ( $modal.hasClass( 'no-confirmation-message' ) ) {
+                    // If no confirmation message, show the reasons panel immediately.
+    				$modal.find( '.panel-confirmation').removeClass( 'active' );
+    				$modal.find( '.panel-reasons').addClass( 'active' );
+                } else {
+                    // Show the confirmation message first if it is available, then hide the reasons panel.
+    				$modal.find( '.panel-reasons').removeClass( 'active' );
+    				$modal.find( '.panel-confirmation').addClass( 'active' );
+                }                   
+            }
+            
+            function showPanel( panelType ) {
+                $modal.find( '.freemius-modal-panel' ).removeClass( 'active ');
+                $modal.find( '.panel-' + panelType ).addClass( 'active' );
+            }
 		})( jQuery );
 	</script>

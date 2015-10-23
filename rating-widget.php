@@ -372,7 +372,15 @@
 						if (-1 !== $min_votes_trigger) {
 							add_action('admin_notices', array(&$this, 'five_star_wp_rate_notice'));
 						}
+                        
+                        $stats = $this->_get_site_stats();
+                        
+                        if ( $stats['votes'] <= 10 ) {
+                            add_filter( 'fs_disable_deactivation_feedback_dialog_box', '__return_true' );
+                        }
 					}
+                    
+                    add_filter( 'fs_uninstall_confirmation_message', array( &$this, '_add_uninstall_confirmation_message' ) );
 				}
 
 				add_action( 'admin_head', array( &$this, "rw_admin_menu_icon_css" ) );
@@ -389,7 +397,59 @@
 			}
 
 			#endregion Plugin Setup ------------------------------------------------------------------
+            
+            /**
+			 * Adds a confirmation message in the dialog box that is shown when the user tries to
+             * deactivate the plugin by clicking on the Deactivate link in the plugins page.
+			 *
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.7.0
+             */
+            function _add_uninstall_confirmation_message( $current_confirmation_message ) {
+                $stats = $this->_get_site_stats();
+                
+                if ( 0 === $stats['votes'] ) {
+                    $current_confirmation_message = __rw( 'deactivation-confirm-message-no-stats' );
+                } else {
+                    $current_confirmation_message = sprintf( __rw( 'deactivation-confirm-message' ), $stats['ratings'], $stats['votes'] );
+                }
+                
+                return $current_confirmation_message;
+            }
+            
+            /**
+             * Returns the number of ratings and votes of this site.
+             * 
+             * @author Leo Fajardo (@leorw)
+             * @since 2.7.0
+             * 
+             * @return array
+             */
+            function _get_site_stats() {
+				// Initialize statistics
+				$stats = array(
+					'ratings' => 0,
+					'votes' => 0
+				);
+                
+                if ( ! $this->is_api_supported() ) {
+                    return $stats;
+                }
+                
+				// Retrieve ratings and votes count
+				$response = rwapi()->get( "/votes/count.json", false, WP_RW__CACHE_TIMEOUT_DASHBOARD_STATS );
+				if ( ! isset( $response->error ) ) {
+					$stats['votes'] = $response->count;
 
+					$response = rwapi()->get( "/ratings/count.json", false, WP_RW__CACHE_TIMEOUT_DASHBOARD_STATS );
+					if ( ! isset( $response->error ) ) {
+						$stats['ratings'] = $response->count;
+					}
+				}
+                
+                return $stats;
+            }
+            
 			function _update_account() {
 				if ( strtoupper( $_SERVER['REQUEST_METHOD'] ) !== 'POST' ) {
 					return;

@@ -302,11 +302,11 @@
 				// assume that the deactivation is for the upgrade process.
 				// Added 'true' for testing purposes.
 				if ( true || ! $this->is_paying_or_trial() || $this->is_premium() ) {
-					add_action( 'wp_ajax_deactivation-feedback-modal-action', array( &$this, '_deactivation_feedback_modal_action' ) );
+					add_action( 'wp_ajax_submit-uninstall-reason', array( &$this, '_submit_uninstall_reason_action' ) );
 					
 					global $pagenow;
 					if ( 'plugins.php' === $pagenow ) {
-						add_action( 'admin_footer', array( &$this, '_add_uninstall_confirm_message' ) );
+						add_action( 'admin_footer', array( &$this, '_add_deactivation_feedback_dialog_box' ) );
 					}
 				}
 			}
@@ -320,54 +320,24 @@
 		 * 
 		 * @since  1.1.1
 		 */
-		function _add_uninstall_confirm_message() {
-			// Retrieve the site's ratings and votes count and display the deactivation feedback dialog box if the user has more than 10 votes.
-
-			// Initialize statistics
-			$stats = array(
-				'ratings' => 0,
-				'votes' => 0
-			);
-
-			// Retrieve ratings and votes count
-			$response = rwapi()->get( '/votes/count.json', false, WP_RW__CACHE_TIMEOUT_DASHBOARD_STATS );
-			if ( ! isset( $response->error ) ) {
-				$stats['votes'] = $response->count;
-
-				$response = rwapi()->get( '/ratings/count.json', false, WP_RW__CACHE_TIMEOUT_DASHBOARD_STATS );
-				if ( ! isset( $response->error ) ) {
-					$stats['ratings'] = $response->count;
-				}
-			}
-
-			// TODO: return if votes is less than or equal to 10.
-			/*if ( $stats['votes'] <= 10 ) {
-				 return;
-			}*/
-
+		function _add_deactivation_feedback_dialog_box() {
+            $disable_deactivation_feedback_dialog_box = apply_filters( 'fs_disable_deactivation_feedback_dialog_box', false );
+                  
+            if ( true === $disable_deactivation_feedback_dialog_box ) {
+                return;
+            }
+            
 			fs_enqueue_local_style( 'fs_deactivation_feedback_modal', '/admin/deactivation-feedback-modal.css' );
 				
-			// Allow other plugins or themes to modify the confirmation message.
-			$deactivation_confirm_message = $this->apply_filters( 'deactivation_confirm_message', __fs( 'deactivation-modal-confirm-message' ) );
-			
-			if ( ! is_string( $deactivation_confirm_message ) ) {
-				$deactivation_confirm_message = '';
-			} else {
-				$deactivation_confirm_message = trim( $deactivation_confirm_message );
-			}
-			
-			// Ensure that the confirmation message is always valid.
-			if ( empty( $deactivation_confirm_message ) ) {
-				$deactivation_confirm_message = __fs( 'deactivation-modal-confirm-message' );
-			}
-			
-			$deactivation_confirm_message = sprintf( $deactivation_confirm_message, $stats['ratings'], $stats['votes'] );
-
-			// Ask for the reason.
+            /* Check the type of user:
+             * 1. Long-term (long-term)
+             * 2. Non-registered and non-anonymous short-term (non-registered-and-non-anonymous-short-term).
+             * 3. Short-term (short-term)
+             */
 			$is_long_term_user = true;
 			
 			// Check if the site is at least 2 days old.
-			$time_installed = $this->_storage->get( 'install_timestamp' );
+			$time_installed = $this->_storage->install_timestamp;
 			
 			// Difference in seconds.
 			$date_diff = time() - $time_installed;
@@ -380,137 +350,185 @@
 			}
 		
 			$is_long_term_user = $this->apply_filters( 'is_long_term_user', $is_long_term_user );
-
-			if ( $is_long_term_user ) {
-				// Reasons for long-term user.
-				$reasons = array(
-					'reason-no-longer-needed',
-					array(
-						'text' => 'reason-found-a-better-plugin',
-						'type' => 'textfield',
-						'placeholder' => __fs( 'placeholder-plugin-name' )
-					),
-					'reason-needed-for-a-short-period',
-					'reason-broke-my-site',
-					'reason-suddenly-stopped-working',
-					array(
-						'text' => 'reason-cant-pay-anymore',
-						'type' => 'textfield',
-						'placeholder' => __fs( 'placeholder-comfortable-price' )
-					),
-					array(
-						'text' => 'reason-other',
-						'type' => 'textfield',
-						'placeholder' => ''
-					)
-				);
-			} else {
-				// Short-term user
+            
+            if ( $is_long_term_user ) {
+                $user_type = 'long-term';
+            } else {
 				if ( ! $this->is_registered() && ! $this->is_anonymous() ) {
-					// Reasons for short-term, non-registered, and non-anonymous user.
-					$reasons = array(
-						'reason-didnt-work',
-						'reason-dont-like-to-share-my-information',
-						array(
-							'text' => 'reason-found-a-better-plugin',
-							'type' => 'textfield',
-							'placeholder' => __fs( 'placeholder-plugin-name' )
-						),
-						array(
-							'text' => 'reason-other',
-							'type' => 'textfield',
-							'placeholder' => ''
-						)
-					);
-				} else {
-					$reasons = array(
-						'reason-couldnt-make-it-work',
-						array(
-							'text' => 'reason-found-a-better-plugin',
-							'type' => 'textfield',
-							'placeholder' => __fs( 'placeholder-plugin-name' )
-						),
-						array(
-							'text' => 'reason-great-but-need-specific-feature',
-							'type' => 'textarea',
-							'placeholder' => __fs( 'placeholder-feature' )
-						),
-						array(
-							'text' => 'reason-not-working',
-							'type' => 'textarea',
-							'placeholder' => __fs( 'placeholder-share-what-didnt-work' )
-						),
-						array(
-							'text' => 'reason-not-what-i-was-looking-for',
-							'type' => 'textarea',
-							'placeholder' => __fs( 'placeholder-what-youve-been-looking-for' )
-						),
-						array(
-							'text' => 'reason-didnt-work-as-expected',
-							'type' => 'textarea',
-							'placeholder' => __fs( 'placeholder-what-did-you-expect' )
-						),
-						array(
-							'text' => 'reason-other',
-							'type' => 'textfield',
-							'placeholder' => ''
-						)
-					);
-				}
-			}
-			
+                    $user_type = 'non-registered-and-non-anonymous-short-term';
+                } else {
+                    $user_type = 'short-term';
+                }
+            }
+            
+            $uninstall_reasons = $this->_get_uninstall_reasons( $user_type );
+            
 			// Load the HTML template for the deactivation feedback dialog box.
 			$vars = array(
-				'confirm-message' => $deactivation_confirm_message,
-				'reasons'         => $reasons,
+				'reasons'         => $uninstall_reasons,
 				'slug'            => $this->_slug
 			);
 			
 			fs_require_once_template( 'deactivation-feedback-modal.php', $vars );
 		}
-		
+        
+        /**
+         * @author Leo Fajardo (leorw)
+         * 
+         * @param string $user_type
+         * 
+         * @return array The uninstall reasons for the specified user type.
+         */
+        function _get_uninstall_reasons( $user_type = 'long-term' ) {
+            $long_term_user_reasons = array(
+                array(
+                    'id'                => 1,
+                    'text'              => __fs( 'reason-no-longer-needed' ),
+                    'input_type'        => '',
+                    'input_placeholder' => ''
+                ),
+                array(
+                    'id'                => 2,
+                    'text'              => __fs( 'reason-found-a-better-plugin' ),
+                    'input_type'        => 'textfield',
+                    'input_placeholder' => __fs( 'placeholder-plugin-name' )
+                ),
+                array(
+                    'id'                => 3,
+                    'text'              => __fs( 'reason-needed-for-a-short-period' ),
+                    'input_type'        => '',
+                    'input_placeholder' => ''
+                ),
+                array(
+                    'id'                => 4,
+                    'text'              => __fs( 'reason-broke-my-site' ),
+                    'input_type'        => '',
+                    'input_placeholder' => ''
+                ),
+                array(
+                    'id'                => 5,
+                    'text'              => __fs( 'reason-suddenly-stopped-working' ),
+                    'input_type'        => '',
+                    'input_placeholder' => ''
+                )
+            );
+            
+            if ( $this->is_paying() ) {
+                $long_term_user_reasons[] = array(
+                    'id'                => 6,
+                    'text'              => __fs( 'reason-cant-pay-anymore' ),
+                    'input_type'        => 'textfield',
+                    'input_placeholder' => __fs( 'placeholder-comfortable-price' )
+                );
+            }
+                
+            $long_term_user_reasons[] = array(
+                'id'                    => 7,
+                'text'                  => __fs( 'reason-other' ),
+                'input_type'            => 'textfield',
+                'input_placeholder'     => ''
+            );
+
+            $uninstall_reasons = array(
+                'long-term' => $long_term_user_reasons,
+                'non-registered-and-non-anonymous-short-term' => array(
+                    array(
+                        'id'                => 8,
+                        'text'              => __fs( 'reason-didnt-work' ),
+                        'input_type'        => '',
+                        'input_placeholder' => ''
+                    ),
+                    array(
+                        'id'                => 9,
+                        'text'              => __fs( 'reason-dont-like-to-share-my-information' ),
+                        'input_type'        => '',
+                        'input_placeholder' => ''
+                    ),
+                    array(
+                        'id'                => 2,
+                        'text'              => __fs( 'reason-found-a-better-plugin' ),
+                        'input_type'        => 'textfield',
+                        'input_placeholder' => __fs( 'placeholder-plugin-name' )
+                    ),
+                    array(
+                        'id'                => 7,
+                        'text'              => __fs( 'reason-other' ),
+                        'input_type'        => 'textfield',
+                        'input_placeholder' => ''
+                    )
+                ),
+                'short-term' => array(
+                    array(
+                        'id'                => 10,
+                        'text'              => __fs( 'reason-couldnt-make-it-work' ),
+                        'input_type'        => '',
+                        'input_placeholder' => ''
+                    ),
+                    array(
+                        'id'                => 2,
+                        'text'              => __fs( 'reason-found-a-better-plugin' ),
+                        'input_type'        => 'textfield',
+                        'input_placeholder' => __fs( 'placeholder-plugin-name' )
+                    ),
+                    array(
+                        'id'                => 11,
+                        'text'              => __fs( 'reason-great-but-need-specific-feature' ),
+                        'input_type'        => 'textarea',
+                        'input_placeholder' => __fs( 'placeholder-feature' )
+                    ),
+                    array(
+                        'id'                => 12,
+                        'text'              => __fs( 'reason-not-working' ),
+                        'input_type'        => 'textarea',
+                        'input_placeholder' => __fs( 'placeholder-share-what-didnt-work' )
+                    ),
+                    array(
+                        'id'                => 13,
+                        'text'              => __fs( 'reason-not-what-i-was-looking-for' ),
+                        'input_type'        => 'textarea',
+                        'input_placeholder' => __fs( 'placeholder-what-youve-been-looking-for' )
+                    ),
+                    array(
+                        'id'                => 14,
+                        'text'              => __fs( 'reason-didnt-work-as-expected' ),
+                        'input_type'        => 'textarea',
+                        'input_placeholder' => __fs( 'placeholder-what-did-you-expect' )
+                    ),
+                    array(
+                        'id'                => 7,
+                        'text'              => __fs( 'reason-other' ),
+                        'input_type'        => 'textfield',
+                        'input_placeholder' => ''
+                    )
+				)
+			);
+            
+            $uninstall_reasons = apply_filters( 'uninstall_reasons', $uninstall_reasons );
+            
+            return $uninstall_reasons[ $user_type ];
+        }
+        
 		/**
-		 * Handles the sending of emails when the user selects or submits his reason for deactivating the plugin.
+		 * Called after the user has submitted his reason for deactivating the plugin.
 		 *
 		 * @author Leo Fajardo (@leorw)
 		 * 
 		 * @since  1.1.1
 		 */
-		function _deactivation_feedback_modal_action() {
-			if ( ! isset( $_POST['user-action'] ) && ! isset( $_POST['reason'] ) ) {
+		function _submit_uninstall_reason_action() {
+			if ( ! isset( $_POST['reason_id'] ) ) {
 				exit;
 			}
 			
-			$user_action = $_POST['user-action'];
-			$reason = stripslashes( $_POST['reason'] );
-			
-			// Generate custom email section.
-			$custom_email_sections['deactivation_feedback'] = array(
-				'title' => 'Deactivation Feedback',
-				'rows'  => array(
-					'reason' => array( $reason )
-				)
-			);
-			
-			if ( 'selected-reason' === $user_action ) {
-				$recipient_email = 'uninstall@freemius.com';
-			} else if ( 'submitted-reason' === $user_action && isset( $_REQUEST['additional_reason_info'] ) ) {
-				// TODO: replace with developer's email address.
-				$recipient_email = 'uninstall@freemius.com';
-				
-				$additional_reason_info = trim( stripslashes( $_REQUEST['additional_reason_info'] ) );
-				
-				// Insert the additional information after the reason.
-				$custom_email_sections['deactivation_feedback']['rows']['additional_reason_info'] = array( $additional_reason_info );
-			}
-			
-			// Send email containing the reason for the deactivation and details of the plugin, site, and user.
-			$this->_mail(
-				$recipient_email,
-				'Deactivation Feedback [' . $this->get_plugin_name() . ']', // Subject.
-				$custom_email_sections
-			);
-			
+			$reason_info = isset( $_REQUEST['reason_info'] ) ? trim( stripslashes( $_REQUEST['reason_info'] ) ) : '';
+            
+            $reason = (object) array(
+                'id' => $_POST['reason_id'],
+                'info' => substr( $reason_info, 0, 128 )
+            );
+
+            $this->_storage->store( 'uninstall_reason', $reason );
+            
 			// Print '1' for successful operation.
 			echo 1;
 			exit;
@@ -1153,12 +1171,12 @@
 				)
 			);
 			
-			// Send email with technical details to resolve CloudFlare's firewall unnecessary protection.
+    		// Send email with technical details to resolve CloudFlare's firewall unnecessary protection.
 			$this->_mail(
-				'api@freemius.com', // Recipient.
-				$title . ' [' . $this->get_plugin_name() . ']', // Subject.
+				'api@freemius.com',                              // recipient
+				$title . ' [' . $this->get_plugin_name() . ']',  // subject
 				$custom_email_sections,
-				array( "Reply-To: $admin_email <$admin_email>" ) // Headers.
+				array( "Reply-To: $admin_email <$admin_email>" ) // headers
 			);
 			
 			$this->_admin_notices->add_sticky(
