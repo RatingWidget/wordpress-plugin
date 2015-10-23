@@ -907,7 +907,15 @@
 				$this->get_api_plugin_scope()->test( $this->get_anonymous_id() );
 
 			if ( ! $is_connected ) {
-				$this->_add_connectivity_issue_message();
+				// 2nd try of connectivity.
+				$pong = $this->get_api_plugin_scope()->ping( $this->get_anonymous_id() );
+
+				if ( $this->get_api_plugin_scope()->is_valid_ping( $pong ) ) {
+					$is_connected = true;
+				} else {
+					// Another API failure.
+					$this->_add_connectivity_issue_message( $pong );
+				}
 			}
 
 			$this->_storage->connectivity_test = array(
@@ -950,8 +958,10 @@
 		 *
 		 * @author Vova Feldman (@svovaf)
 		 * @since  1.0.9
+		 *
+		 * @param mixed $api_result
 		 */
-		function _add_connectivity_issue_message() {
+		function _add_connectivity_issue_message( $api_result ) {
 			if ( ! function_exists( 'wp_nonce_url' ) ) {
 				require_once( ABSPATH . 'wp-includes/functions.php' );
 			}
@@ -963,13 +973,11 @@
 //			$admin_email = get_option( 'admin_email' );
 			$admin_email = $current_user->user_email;
 
-			$ping = $this->get_api_plugin_scope()->ping();
-
 			$message = false;
-			if ( is_object( $ping ) &&
-			     isset( $ping->error )
+			if ( is_object( $api_result ) &&
+			     isset( $api_result->error )
 			) {
-				switch ( $ping->error->code ) {
+				switch ( $api_result->error->code ) {
 					case 'cloudflare_ddos_protection':
 						$message = sprintf(
 							__fs( 'x-requires-access-to-api', 'freemius' ) . ' ' .
@@ -2351,14 +2359,28 @@
 				return;
 			}
 
-			// Send uninstall event.
-			$this->get_api_site_scope()->call( '/', 'put', array(
-				'is_active'      => false,
-				'is_premium'     => $this->is_premium(),
-				'is_uninstalled' => true,
-				// Send version on uninstall.
-				'version'        => $this->get_plugin_version(),
-			) );
+			$params = array();
+			if ( isset( $this->_storage->uninstall_reason ) ) {
+				$params['reason_id']   = $this->_storage->uninstall_reason->id;
+				$params['reason_info'] = $this->_storage->uninstall_reason->info;
+			}
+
+			if ( ! $this->is_registered() && isset( $this->_storage->uninstall_reason ) ) {
+				// Send anonymous uninstall event only if user submitted a feedback.
+				$params['uid'] = $this->get_anonymous_id();
+				$this->get_api_plugin_scope()->call( 'uninstall.json', 'put', $params );
+			} else {
+				$params = array_merge( $params, array(
+					'is_active'      => false,
+					'is_premium'     => $this->is_premium(),
+					'is_uninstalled' => true,
+					// Send version on uninstall.
+					'version'        => $this->get_plugin_version(),
+				) );
+
+				// Send uninstall event.
+				$this->get_api_site_scope()->call( '/', 'put', $params );
+			}
 
 			// @todo Decide if we want to delete plugin information from db.
 		}
@@ -3025,7 +3047,7 @@
 		 */
 		function _sync_plans() {
 			$plans = $this->_fetch_plugin_plans();
-			if ( ! isset( $plans->error ) ) {
+			if ( ! $this->is_api_error( $plans ) ) {
 				$this->_plans = $plans;
 				$this->_store_plans();
 			}
@@ -5039,7 +5061,7 @@
 
 			$result = $api->get( '/plans.json', true );
 
-			if ( ! isset( $result->error ) ) {
+			if ( ! $this->is_api_error( $result ) ) {
 				for ( $i = 0, $len = count( $result->plans ); $i < $len; $i ++ ) {
 					$result->plans[ $i ] = new FS_Plugin_Plan( $result->plans[ $i ] );
 				}
@@ -5357,6 +5379,9 @@
 
 				// Sync licenses.
 				$this->_sync_licenses();
+
+				// Sync plans.
+				$this->_sync_plans();
 
 				// Check if plan / license changed.
 				if ( ! FS_Entity::equals( $site->plan, $this->_site->plan ) ||
