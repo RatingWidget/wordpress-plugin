@@ -321,7 +321,7 @@
 		 * @since  1.1.1
 		 */
 		function _add_deactivation_feedback_dialog_box() {
-            $disable_deactivation_feedback_dialog_box = apply_filters( 'fs_disable_deactivation_feedback_dialog_box', false );
+            $disable_deactivation_feedback_dialog_box = $this->apply_filters( 'disable_deactivation_feedback_dialog_box', false );
                   
             if ( true === $disable_deactivation_feedback_dialog_box ) {
                 return;
@@ -503,7 +503,7 @@
 				)
 			);
             
-            $uninstall_reasons = apply_filters( 'uninstall_reasons', $uninstall_reasons );
+            $uninstall_reasons = $this->apply_filters( 'uninstall_reasons', $uninstall_reasons );
             
             return $uninstall_reasons[ $user_type ];
         }
@@ -1329,7 +1329,7 @@
 			);
 
 			// Allow the sections to be modified by other code.
-			$sections = apply_filters( 'fs_email_template_sections', $sections );
+			$sections = $this->apply_filters( 'email_template_sections', $sections );
 			
 			return $sections;
 		}

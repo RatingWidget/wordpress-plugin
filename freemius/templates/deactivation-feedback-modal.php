@@ -5,12 +5,14 @@
 	 * @license     http://opensource.org/licenses/gpl-2.0.php GNU Public License
 	 * @since       1.1.1
 	 */
-
-    $confirmation_message = apply_filters( 'fs_uninstall_confirmation_message', '' );
+    $slug         = $VARS['slug'];
+    $fs           = freemius( $slug );
     
-	$reasons = $VARS['reasons'];
+    $confirmation_message = $fs->apply_filters( 'uninstall_confirmation_message', '' );
+    
+    $reasons = $VARS['reasons'];
 	
-	$reasons_list_items_html = '';
+    $reasons_list_items_html = '';
 
 	foreach ( $reasons as $reason ) {
 		$list_item_classes = 'reason' . ( ! empty( $reason['input_type'] ) ? ' has-input' : '' );

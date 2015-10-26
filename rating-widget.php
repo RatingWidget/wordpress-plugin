@@ -376,11 +376,11 @@
                         $stats = $this->_get_site_stats();
                         
                         if ( $stats['votes'] <= 10 ) {
-                            add_filter( 'fs_disable_deactivation_feedback_dialog_box', '__return_true' );
+                            $this->fs->add_filter( 'disable_deactivation_feedback_dialog_box', '__return_true' );
                         }
 					}
                     
-                    add_filter( 'fs_uninstall_confirmation_message', array( &$this, '_add_uninstall_confirmation_message' ) );
+                    $this->fs->add_filter( 'uninstall_confirmation_message', array( &$this, '_add_uninstall_confirmation_message' ) );
 				}
 
 				add_action( 'admin_head', array( &$this, "rw_admin_menu_icon_css" ) );
