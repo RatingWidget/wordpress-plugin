@@ -70,15 +70,13 @@
 							$input = $selected_reason.find( 'input[type="text"]' );
 						}
 						
-						var	reason_info = [ $input.attr( 'placeholder' ), $input.val() ].join( ' ' );
-						
 						$.ajax({
 							url: ajaxurl,
 							method: 'POST',
 							data: {
 								'action'      : 'submit-uninstall-reason',
 								'reason_id'   : $radio.val(),
-								'reason_info' : reason_info
+								'reason_info' : $input.val().trim()
 							},
 							beforeSend: function() {
 								_parent.find( '.button' ).addClass( 'disabled' );
