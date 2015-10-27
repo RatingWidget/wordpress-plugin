@@ -300,8 +300,7 @@
 
 				// If user is paying or in trial and have the free version installed,
 				// assume that the deactivation is for the upgrade process.
-				// Added 'true' for testing purposes.
-				if ( true || ! $this->is_paying_or_trial() || $this->is_premium() ) {
+				if ( ! $this->is_paying_or_trial() || $this->is_premium() ) {
 					add_action( 'wp_ajax_submit-uninstall-reason', array( &$this, '_submit_uninstall_reason_action' ) );
 					
 					global $pagenow;
