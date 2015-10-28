@@ -62,8 +62,15 @@
 					if ( _this.hasClass( 'button-close' ) ) {
 						$modal.removeClass( 'active' );
 					} else if ( _this.hasClass( 'allow-deactivate' ) ) {
-                        var $radio           = $( 'input[type="radio"]:checked' ),
-                            $selected_reason = $radio.parents( 'li:first' ),
+                        var $radio           = $( 'input[type="radio"]:checked' );
+						
+						if ( 0 === $radio.length ) {
+							// If no selected reason, just deactivate the plugin.
+							window.location.href = $deactivateLink.attr( 'href' );
+							return;
+						}
+						
+                        var	$selected_reason = $radio.parents( 'li:first' ),
 							$input           = $selected_reason.find( 'textarea' );
 							
 						if ( 0 === $input.length ) {
@@ -122,15 +129,27 @@
 			function resetModal() {
 				$modal.find( '.button' ).removeClass( 'disabled' );
 				
-				// Reset the deactivate button's text.
-				$modal.find( '.button-deactivate' ).removeClass( 'allow-deactivate' ).text( '<?php printf( __fs( 'deactivation-modal-button-deactivate' ) ); ?>' );
-				
 				// Uncheck all radio buttons.
 				$modal.find( 'input[type="radio"]' ).prop( 'checked', false );
 
 				// Remove all input fields ( textfield, textarea ).
 				$modal.find( '.reason-input' ).remove();
-                
+				
+				var $deactivateButton = $modal.find( '.button-deactivate' );
+				
+				// Reset the deactivate button's text.
+				$deactivateButton.text( '<?php printf( __fs( 'deactivation-modal-button-deactivate' ) ); ?>' );
+				
+				/*
+				 * If the modal dialog has no confirmation message, that is, it has only one panel, then ensure
+				 * that clicking the deactivate button will actually deactivate the plugin.
+				 */
+				if ( $modal.hasClass( 'no-confirmation-message' ) ) {
+					$deactivateButton.addClass( 'allow-deactivate' );
+				} else {
+					$deactivateButton.removeClass( 'allow-deactivate' );
+				}
+				
                 showDefaultPanel();
 			}
             
