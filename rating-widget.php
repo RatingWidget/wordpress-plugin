@@ -372,12 +372,6 @@
 						if (-1 !== $min_votes_trigger) {
 							add_action('admin_notices', array(&$this, 'five_star_wp_rate_notice'));
 						}
-                        
-                        $stats = $this->_get_site_stats();
-                        
-                        if ( $stats['votes'] <= 10 ) {
-                            $this->fs->add_filter( 'disable_deactivation_feedback_dialog_box', '__return_true' );
-                        }
 					}
                     
                     $this->fs->add_filter( 'uninstall_confirmation_message', array( &$this, '_add_uninstall_confirmation_message' ) );
@@ -408,11 +402,9 @@
             function _add_uninstall_confirmation_message( $current_confirmation_message ) {
                 $stats = $this->_get_site_stats();
                 
-                if ( 0 === $stats['votes'] ) {
-                    $current_confirmation_message = __rw( 'deactivation-confirm-message-no-stats' );
-                } else {
+                if ( $stats['votes'] > 10 ) {
                     $current_confirmation_message = sprintf( __rw( 'deactivation-confirm-message' ), $stats['ratings'], $stats['votes'] );
-                }
+				}
                 
                 return $current_confirmation_message;
             }

@@ -313,7 +313,6 @@
 		/* Plugin Deactivation
 		-----------------------------------------------------------------------*/
 		'deactivation-confirm-message'                => __( 'Just a heads up - your site currently has %d ratings and %d votes. If you are about to delete the plugin after the deactivation you will lose all that data. Are you sure that you would like to proceed?', 'rating-widget' ),
-		'deactivation-confirm-message-no-stats'       => __( 'If you are about to delete the plugin after the deactivation, you will lose all of your ratings data. Are you sure that you would like to proceed?', 'rating-widget' ),
 		/* Workflows
 		-----------------------------------------------------------------------*/
 		'workflows'                                   => __( 'Workflows', 'rating-widget' ),

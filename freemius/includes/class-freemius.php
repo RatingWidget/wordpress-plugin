@@ -320,12 +320,6 @@
 		 * @since  1.1.1
 		 */
 		function _add_deactivation_feedback_dialog_box() {
-            $disable_deactivation_feedback_dialog_box = $this->apply_filters( 'disable_deactivation_feedback_dialog_box', false );
-                  
-            if ( true === $disable_deactivation_feedback_dialog_box ) {
-                return;
-            }
-            
 			fs_enqueue_local_style( 'fs_deactivation_feedback_modal', '/admin/deactivation-feedback-modal.css' );
 				
             /* Check the type of user:
@@ -379,19 +373,28 @@
          * @return array The uninstall reasons for the specified user type.
          */
         function _get_uninstall_reasons( $user_type = 'long-term' ) {
-            $long_term_user_reasons = array(
+			$reason_found_better_plugin = array(
+				'id'				=> 2,
+				'text'				=> __fs( 'reason-found-a-better-plugin' ),
+				'input_type'        => 'textfield',
+				'input_placeholder' => __fs( 'placeholder-plugin-name' )
+			);
+			
+			$reason_other				= array(
+                'id'				=> 7,
+                'text'				=> __fs( 'reason-other' ),
+                'input_type'        => 'textfield',
+                'input_placeholder' => ''
+            );
+			
+			$long_term_user_reasons = array(
                 array(
                     'id'                => 1,
                     'text'              => __fs( 'reason-no-longer-needed' ),
                     'input_type'        => '',
                     'input_placeholder' => ''
                 ),
-                array(
-                    'id'                => 2,
-                    'text'              => __fs( 'reason-found-a-better-plugin' ),
-                    'input_type'        => 'textfield',
-                    'input_placeholder' => __fs( 'placeholder-plugin-name' )
-                ),
+				$reason_found_better_plugin,
                 array(
                     'id'                => 3,
                     'text'              => __fs( 'reason-needed-for-a-short-period' ),
@@ -421,12 +424,7 @@
                 );
             }
                 
-            $long_term_user_reasons[] = array(
-                'id'                    => 7,
-                'text'                  => __fs( 'reason-other' ),
-                'input_type'            => 'textfield',
-                'input_placeholder'     => ''
-            );
+            $long_term_user_reasons[] = $reason_other;
 
             $uninstall_reasons = array(
                 'long-term' => $long_term_user_reasons,
@@ -443,18 +441,8 @@
                         'input_type'        => '',
                         'input_placeholder' => ''
                     ),
-                    array(
-                        'id'                => 2,
-                        'text'              => __fs( 'reason-found-a-better-plugin' ),
-                        'input_type'        => 'textfield',
-                        'input_placeholder' => __fs( 'placeholder-plugin-name' )
-                    ),
-                    array(
-                        'id'                => 7,
-                        'text'              => __fs( 'reason-other' ),
-                        'input_type'        => 'textfield',
-                        'input_placeholder' => ''
-                    )
+					$reason_found_better_plugin,
+					$reason_other
                 ),
                 'short-term' => array(
                     array(
@@ -463,12 +451,7 @@
                         'input_type'        => '',
                         'input_placeholder' => ''
                     ),
-                    array(
-                        'id'                => 2,
-                        'text'              => __fs( 'reason-found-a-better-plugin' ),
-                        'input_type'        => 'textfield',
-                        'input_placeholder' => __fs( 'placeholder-plugin-name' )
-                    ),
+					$reason_found_better_plugin,
                     array(
                         'id'                => 11,
                         'text'              => __fs( 'reason-great-but-need-specific-feature' ),
@@ -493,12 +476,7 @@
                         'input_type'        => 'textarea',
                         'input_placeholder' => __fs( 'placeholder-what-did-you-expect' )
                     ),
-                    array(
-                        'id'                => 7,
-                        'text'              => __fs( 'reason-other' ),
-                        'input_type'        => 'textfield',
-                        'input_placeholder' => ''
-                    )
+					$reason_other
 				)
 			);
             
