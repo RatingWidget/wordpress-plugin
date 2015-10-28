@@ -310,6 +310,9 @@
 		'last-x-months'                               => __( 'Last %d Months', 'rating-widget' ),
 		'last-x-days'                                 => __( 'Last %d Days', 'rating-widget' ),
 		'last-x-hours'                                => __( 'Last %d Hours', 'rating-widget' ),
+		/* Plugin Deactivation
+		-----------------------------------------------------------------------*/
+		'deactivation-confirm-message'                => __( 'Just a heads up - your site currently has %d ratings and %d votes. If you are about to delete the plugin after the deactivation you will lose all that data. Are you sure that you would like to proceed?', 'rating-widget' ),
 		/* Workflows
 		-----------------------------------------------------------------------*/
 		'workflows'                                   => __( 'Workflows', 'rating-widget' ),

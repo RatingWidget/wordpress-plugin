@@ -296,63 +296,220 @@
 							$this->add_action( 'after_init_plugin_registered', array( &$this, '_add_trial_notice' ) );
 						}
 					}
+				}
 
-
-					/*
-										global $pagenow;
-										if( 'plugins.php' === $pagenow &&
-											// If user is paying or in trial and have the free version installed,
-											// assume that the deactivation is for the upgrade process.
-											(!$this->is_paying_or_trial() || $this->is_premium())
-										) {
-											add_action('admin_footer', array( &$this, '_add_uninstall_confirm_message' ));
-										}*/
+				// If user is paying or in trial and have the free version installed,
+				// assume that the deactivation is for the upgrade process.
+				if ( ! $this->is_paying_or_trial() || $this->is_premium() ) {
+					add_action( 'wp_ajax_submit-uninstall-reason', array( &$this, '_submit_uninstall_reason_action' ) );
+					
+					global $pagenow;
+					if ( 'plugins.php' === $pagenow ) {
+						add_action( 'admin_footer', array( &$this, '_add_deactivation_feedback_dialog_box' ) );
+					}
 				}
 			}
 		}
 
 		/**
-		 * Add confirmation and feedback dialog box to plugin deactivation link.
-		 *
-		 * @todo   NOT IMPLEMENTED
+		 * Displays a confirmation and feedback dialog box when the user clicks on the "Deactivate" link on the plugins page.
 		 *
 		 * @author Vova Feldman (@svovaf)
-		 * @since  1.1.1
+		 * @author Leo Fajardo (@leorw)
+		 * @since  1.1.2
 		 */
-		function _add_uninstall_confirm_message() {
-			$deactivation_confirm_message = false;
-			$deactivation_confirm_message = $this->apply_filters( 'deactivation_confirm_message', $deactivation_confirm_message );
-
-			if ( is_string( $deactivation_confirm_message ) ) {
-				// Show plugin specific value-based confirm message.
-
-			}
-
-			// Ask for the reason.
+		function _add_deactivation_feedback_dialog_box() {
+			fs_enqueue_local_style( 'fs_deactivation_feedback', '/admin/deactivation-feedback.css' );
+				
+            /* Check the type of user:
+             * 1. Long-term (long-term)
+             * 2. Non-registered and non-anonymous short-term (non-registered-and-non-anonymous-short-term).
+             * 3. Short-term (short-term)
+             */
 			$is_long_term_user = true;
-//			$is_long_term_user = ($this->_site->created); // Check if at least 2 day old.
-			$is_long_term_user = $this->apply_filters( 'is_long_term_user', $is_long_term_user );
+			
+			// Check if the site is at least 2 days old.
+			$time_installed = $this->_storage->install_timestamp;
+			
+			// Difference in seconds.
+			$date_diff = time() - $time_installed;
 
-			if ( $is_long_term_user ) {
-				// Long term users.
+			// Convert seconds to days.
+			$date_diff_days = floor( $date_diff / ( 60 * 60 * 24 ) );
 
-			} else {
-				// Short term users.
-
+			if ( $date_diff_days < 2 ) {
+				$is_long_term_user = false;
 			}
-			?>
-			<script>
-				(function ($) {
-					// Build modal dialog box.
-					$('#the-list [data-slug=<?php echo $this->_slug ?>].active .deactivate a').click(function () {
-						var result = confirm('Are you sure you would like to proceed?');
-						return (result) ? true : false;
-					});
-				})(jQuery);
-			</script>
-		<?php
+		
+			$is_long_term_user = $this->apply_filters( 'is_long_term_user', $is_long_term_user );
+            
+            if ( $is_long_term_user ) {
+                $user_type = 'long-term';
+            } else {
+				if ( ! $this->is_registered() && ! $this->is_anonymous() ) {
+                    $user_type = 'non-registered-and-non-anonymous-short-term';
+                } else {
+                    $user_type = 'short-term';
+                }
+            }
+            
+            $uninstall_reasons = $this->_get_uninstall_reasons( $user_type );
+            
+			// Load the HTML template for the deactivation feedback dialog box.
+			$vars = array(
+				'reasons'         => $uninstall_reasons,
+				'slug'            => $this->_slug
+			);
+			
+			fs_require_once_template( 'deactivation-feedback-modal.php', $vars );
 		}
+        
+        /**
+         * @author Leo Fajardo (leorw)
+		 * @since  1.1.2
+		 * 
+         * @param string $user_type
+         * 
+         * @return array The uninstall reasons for the specified user type.
+         */
+        function _get_uninstall_reasons( $user_type = 'long-term' ) {
+			$reason_found_better_plugin = array(
+				'id'				=> 2,
+				'text'				=> __fs( 'reason-found-a-better-plugin' ),
+				'input_type'        => 'textfield',
+				'input_placeholder' => __fs( 'placeholder-plugin-name' )
+			);
+			
+			$reason_other				= array(
+                'id'				=> 7,
+                'text'				=> __fs( 'reason-other' ),
+                'input_type'        => 'textfield',
+                'input_placeholder' => ''
+            );
+			
+			$long_term_user_reasons = array(
+                array(
+                    'id'                => 1,
+                    'text'              => __fs( 'reason-no-longer-needed' ),
+                    'input_type'        => '',
+                    'input_placeholder' => ''
+                ),
+				$reason_found_better_plugin,
+                array(
+                    'id'                => 3,
+                    'text'              => __fs( 'reason-needed-for-a-short-period' ),
+                    'input_type'        => '',
+                    'input_placeholder' => ''
+                ),
+                array(
+                    'id'                => 4,
+                    'text'              => __fs( 'reason-broke-my-site' ),
+                    'input_type'        => '',
+                    'input_placeholder' => ''
+                ),
+                array(
+                    'id'                => 5,
+                    'text'              => __fs( 'reason-suddenly-stopped-working' ),
+                    'input_type'        => '',
+                    'input_placeholder' => ''
+                )
+            );
+            
+            if ( $this->is_paying() ) {
+                $long_term_user_reasons[] = array(
+                    'id'                => 6,
+                    'text'              => __fs( 'reason-cant-pay-anymore' ),
+                    'input_type'        => 'textfield',
+                    'input_placeholder' => __fs( 'placeholder-comfortable-price' )
+                );
+            }
+                
+            $long_term_user_reasons[] = $reason_other;
 
+            $uninstall_reasons = array(
+                'long-term' => $long_term_user_reasons,
+                'non-registered-and-non-anonymous-short-term' => array(
+                    array(
+                        'id'                => 8,
+                        'text'              => __fs( 'reason-didnt-work' ),
+                        'input_type'        => '',
+                        'input_placeholder' => ''
+                    ),
+                    array(
+                        'id'                => 9,
+                        'text'              => __fs( 'reason-dont-like-to-share-my-information' ),
+                        'input_type'        => '',
+                        'input_placeholder' => ''
+                    ),
+					$reason_found_better_plugin,
+					$reason_other
+                ),
+                'short-term' => array(
+                    array(
+                        'id'                => 10,
+                        'text'              => __fs( 'reason-couldnt-make-it-work' ),
+                        'input_type'        => '',
+                        'input_placeholder' => ''
+                    ),
+					$reason_found_better_plugin,
+                    array(
+                        'id'                => 11,
+                        'text'              => __fs( 'reason-great-but-need-specific-feature' ),
+                        'input_type'        => 'textarea',
+                        'input_placeholder' => __fs( 'placeholder-feature' )
+                    ),
+                    array(
+                        'id'                => 12,
+                        'text'              => __fs( 'reason-not-working' ),
+                        'input_type'        => 'textarea',
+                        'input_placeholder' => __fs( 'placeholder-share-what-didnt-work' )
+                    ),
+                    array(
+                        'id'                => 13,
+                        'text'              => __fs( 'reason-not-what-i-was-looking-for' ),
+                        'input_type'        => 'textarea',
+                        'input_placeholder' => __fs( 'placeholder-what-youve-been-looking-for' )
+                    ),
+                    array(
+                        'id'                => 14,
+                        'text'              => __fs( 'reason-didnt-work-as-expected' ),
+                        'input_type'        => 'textarea',
+                        'input_placeholder' => __fs( 'placeholder-what-did-you-expect' )
+                    ),
+					$reason_other
+				)
+			);
+            
+            $uninstall_reasons = $this->apply_filters( 'uninstall_reasons', $uninstall_reasons );
+            
+            return $uninstall_reasons[ $user_type ];
+        }
+        
+		/**
+		 * Called after the user has submitted his reason for deactivating the plugin.
+		 *
+		 * @author Leo Fajardo (@leorw)
+		 * @since  1.1.2
+		 */
+		function _submit_uninstall_reason_action() {
+			if ( ! isset( $_POST['reason_id'] ) ) {
+				exit;
+			}
+			
+			$reason_info = isset( $_REQUEST['reason_info'] ) ? trim( stripslashes( $_REQUEST['reason_info'] ) ) : '';
+            
+            $reason = (object) array(
+                'id' => $_POST['reason_id'],
+                'info' => substr( $reason_info, 0, 128 )
+            );
+
+            $this->_storage->store( 'uninstall_reason', $reason );
+            
+			// Print '1' for successful operation.
+			echo 1;
+			exit;
+		}
+		
 		/**
 		 * Leverage backtrace to find caller plugin file path.
 		 *
@@ -950,28 +1107,15 @@
 		function _email_about_firewall_issue() {
 			$this->_admin_notices->remove_sticky( 'failed_connect_api' );
 
-			$active_plugin        = $this->get_active_plugins();
-			$active_plugin_string = '';
-			foreach ( $active_plugin as $plugin ) {
-				$active_plugin_string .= sprintf(
-					'<a href="%s">%s</a> [v%s]<br>',
-					$plugin['PluginURI'],
-					$plugin['Name'],
-					$plugin['Version']
-				);
-			}
-
 			if ( ! function_exists( 'wp_get_current_user' ) ) {
 				require_once( ABSPATH . 'wp-includes/pluggable.php' );
 			}
 
-			$curl_version = curl_version();
 			$current_user = wp_get_current_user();
-//			$admin_email = get_option( 'admin_email' );
 			$admin_email = $current_user->user_email;
 
 			$ping = $this->get_api_plugin_scope()->ping();
-
+			
 			$error_type = fs_request_get( 'error_type', 'general' );
 
 			switch ( $error_type ) {
@@ -985,74 +1129,34 @@
 					$title = 'API Connectivity Issue';
 					break;
 			}
-
-			// Send email with technical details to resolve CloudFlare's firewall unnecessary protection.
-			wp_mail(
-				'api@freemius.com',
-				$title . ' [' . $this->get_plugin_name() . ']',
-				sprintf( '<table>
-	<thead>
-		<tr><th colspan="2" style="text-align: left; background: #333; color: #fff; padding: 5px;">SDK</th></tr>
-	</thead>
-	<tbody>
-		<tr><td><b>FS Version:</b></td><td>%s</td></tr>
-		<tr><td><b>cURL Version:</b></td><td>%s</td></tr>
-	</tbody>
-	<thead>
-		<tr><th colspan="2" style="text-align: left; background: #333; color: #fff; padding: 5px;">Plugin</th></tr>
-	</thead>
-	<tbody>
-		<tr><td><b>Name:</b></td><td>%s</td></tr>
-		<tr><td><b>Version:</b></td><td>%s</td></tr>
-	</tbody>
-	<thead>
-		<tr><th colspan="2" style="text-align: left; background: #333; color: #fff; padding: 5px;">Site</th></tr>
-	</thead>
-	<tbody>
-		<tr><td><b>Address:</b></td><td>%s</td></tr>
-		<tr><td><b>HTTP_HOST:</b></td><td>%s</td></tr>
-		<tr><td><b>SERVER_ADDR:</b></td><td>%s</td></tr>' . ( ( 'squid' !== $error_type ) ? '' : '
-		<tr><td><b>Hosting Company:</b></td><td>' . fs_request_get( 'hosting_company' ) . '</td></tr>' ) . '
-	</tbody>
-	<thead>
-		<tr><th colspan="2" style="text-align: left; background: #333; color: #fff; padding: 5px;">User</th></tr>
-	</thead>
-	<tbody>
-		<tr><td><b>Email:</b></td><td><a href="mailto:%s">%s</a></td></tr>
-		<tr><td><b>First:</b></td><td>%s</td></tr>
-		<tr><td><b>Last:</b></td><td>%s</td></tr>
-	</tbody>
-	<thead>
-		<tr><th colspan="2" style="text-align: left; background: #333; color: #fff; padding: 5px;">Plugins</th></tr>
-	</thead>
-	<tbody>
-		<tr><td style="vertical-align: top"><b>Active Plugins:</b></td><td>%s</td></tr>
-	</tbody>
-	<thead>
-		<tr><th colspan="2" style="text-align: left; background: #333; color: #fff; padding: 5px;">API Error</th></tr>
-	</thead>
-	<tbody>
-		<tr><td colspan="2">%s</td></tr>
-	</tbody>
-</table>',
-					$this->version,
-					$curl_version['version'],
-					$this->get_plugin_name(),
-					$this->get_plugin_version(),
-					site_url(),
-					! empty( $_SERVER['HTTP_HOST'] ) ? $_SERVER['HTTP_HOST'] : '',
-					! empty( $_SERVER['SERVER_ADDR'] ) ? '<a href="http://www.projecthoneypot.org/ip_' . $_SERVER['SERVER_ADDR'] . '">' . $_SERVER['SERVER_ADDR'] . '</a>' : '',
-					$admin_email,
-					$admin_email,
-					$current_user->user_firstname,
-					$current_user->user_lastname,
-					$active_plugin_string,
-					( is_string( $ping ) ? htmlentities( $ping ) : json_encode( $ping ) )
-				),
-				"Content-type: text/html\r\n" .
-				"Reply-To: $admin_email <$admin_email>"
+			
+			$custom_email_sections = array();
+			
+			if ( 'squid' === $error_type ) {
+				// Override the 'Site' email section.
+				$custom_email_sections['site'] = array(
+					'rows' => array(
+						'hosting_company' => array( 'Hosting Company', fs_request_get( 'hosting_company' ) )
+					)
+				);
+			}
+				
+			// Add 'API Error' custom email section.
+			$custom_email_sections['api_error'] = array(
+				'title' => 'API Error',
+				'rows'	=> array(
+					'ping' => array( is_string( $ping ) ? htmlentities( $ping ) : json_encode( $ping ) )
+				)
 			);
-
+			
+    		// Send email with technical details to resolve CloudFlare's firewall unnecessary protection.
+			$this->_mail(
+				'api@freemius.com',                              // recipient
+				$title . ' [' . $this->get_plugin_name() . ']',  // subject
+				$custom_email_sections,
+				array( "Reply-To: $admin_email <$admin_email>" ) // headers
+			);
+			
 			$this->_admin_notices->add_sticky(
 				sprintf(
 					__fs( 'fix-request-sent-message' ),
@@ -1066,7 +1170,7 @@
 			echo "1";
 			exit;
 		}
-
+		
 		static function _add_firewall_issues_javascript() {
 			$params = array();
 			fs_require_once_template( 'firewall-issues-js.php', $params );
@@ -1074,6 +1178,142 @@
 
 		#endregion Connectivity Issues ------------------------------------------------------------------
 
+		#region Email ------------------------------------------------------------------
+		
+		/**
+		 * Generates and sends an HTML email with customizable sections.
+		 *
+		 * @author Leo Fajardo (@leorw)
+		 * @since  1.1.1
+		 *
+		 * @return bool Whether the email contents were sent successfully.
+		 */
+		function _mail( $recipient_email, $subject, $custom_email_sections = array(), $headers = array() ) {
+			$email_sections = $this->_get_email_sections();
+			
+			// Insert new sections or replace the default email sections.
+			if ( is_array( $custom_email_sections ) && ! empty( $custom_email_sections ) ) {
+				foreach ( $custom_email_sections as $section_id => $custom_section ) {
+					if ( ! isset( $email_sections[ $section_id ] ) ) {
+						// If the section does not exist, add it.
+						$email_sections[ $section_id ] = $custom_section;
+					} else {
+						// If the section already exists, override it.
+						$current_section = $email_sections[ $section_id ];
+						
+						// Replace the current section's title if a custom section title exists.
+						if ( isset( $custom_section['title'] ) ) {
+							$current_section['title'] = $custom_section['title'];
+						}
+						
+						// Insert new rows under the current section or replace the default rows.
+						if ( isset( $custom_section['rows'] ) && is_array( $custom_section['rows'] ) && ! empty( $custom_section['rows'] ) ) {
+							foreach ( $custom_section['rows'] as $row_id => $row ) {
+								$current_section['rows'][ $row_id ] = $row;
+							}
+						}
+						
+						$email_sections[ $section_id ] = $current_section;
+					}
+				}
+			}
+			
+			$vars    = array( 'sections' => $email_sections );
+			$message = fs_get_template( 'email.php', $vars );
+			
+			// Set the type of email to HTML.
+			$headers[] = 'Content-type: text/html';
+			
+			$header_string = implode( "\r\n", $headers );
+
+			return wp_mail(
+				$recipient_email,
+				$subject,
+				$message,
+				$header_string
+			);
+		}
+		
+		/**
+		 * Generates the data for the sections of the email content.
+		 *
+		 * @author Leo Fajardo (@leorw)
+		 * @since  1.1.1
+		 *
+		 * @return array
+		 */
+		function _get_email_sections() {
+			if ( ! function_exists( 'wp_get_current_user' ) ) {
+				require_once( ABSPATH . 'wp-includes/pluggable.php' );
+			}
+
+			// Retrieve the current user's information so that we can get the user's email, first name, and last name below.
+			$current_user             = wp_get_current_user();
+
+			// Retrieve the cURL version information so that we can get the version number below.
+			$curl_version_information = curl_version();
+
+			$active_plugin            = $this->get_active_plugins();
+			
+			// Generate the list of active plugins separated by new line. 
+			$active_plugin_string     = '';
+			foreach ( $active_plugin as $plugin ) {
+				$active_plugin_string .= sprintf(
+					'<a href="%s">%s</a> [v%s]<br>',
+					$plugin['PluginURI'],
+					$plugin['Name'],
+					$plugin['Version']
+				);
+			}
+
+			// Generate the default email sections.
+			$sections = array(
+				'sdk' => array(
+					'title' => 'SDK',
+					'rows'	=> array(
+						'fs_version'     => array( 'FS Version', $this->version ),
+						'curl_version'   => array( 'cURL Version', $curl_version_information['version'] )
+					)
+				),
+				'plugin' => array(
+					'title' => 'Plugin',
+					'rows'	=> array(
+						'name'           => array( 'Name', $this->get_plugin_name() ),
+						'version'        => array( 'Version', $this->get_plugin_version() )
+					)
+				),
+				'site' => array(
+					'title' => 'Site',
+					'rows'	=> array(
+						'address'        => array( 'Address', site_url() ),
+						'host'           => array( 'HTTP_HOST', ( ! empty( $_SERVER['HTTP_HOST'] ) ? $_SERVER['HTTP_HOST'] : '' ) ),
+						'server_addr'    => array( 'SERVER_ADDR', ( ! empty( $_SERVER['SERVER_ADDR'] ) ? '<a href="http://www.projecthoneypot.org/ip_' . $_SERVER['SERVER_ADDR'] . '">' . $_SERVER['SERVER_ADDR'] . '</a>' : '' ) )
+					)
+				),
+				'user' => array(
+					'title' => 'User',
+					'rows'	=> array(
+						'email'          => array( 'Email', $current_user->user_email ),
+						'first'          => array( 'First', $current_user->user_firstname ),
+						'last'           => array( 'Last', $current_user->user_lastname )
+					)
+				),
+				'plugins' => array(
+					'title' => 'Plugins',
+					'rows'	=> array(
+						'active_plugins' => array( 'Active Plugins', $active_plugin_string )
+					)
+				),
+			);
+
+			// Allow the sections to be modified by other code.
+			$sections = $this->apply_filters( 'email_template_sections', $sections );
+			
+			return $sections;
+		}
+		
+		#endregion Email ------------------------------------------------------------------
+		
 		#region Initialization ------------------------------------------------------------------
 
 		/**
@@ -2146,7 +2386,7 @@
 				// Send uninstall event.
 				$this->get_api_site_scope()->call( '/', 'put', $params );
 			}
-
+			
 			// @todo Decide if we want to delete plugin information from db.
 		}
 
@@ -6781,7 +7021,19 @@
 					$links[ $link['key'] ] = '<a href="' . $link['href'] . '"' . ( $link['external'] ? ' target="_blank"' : '' ) . '>' . $link['label'] . '</a>';
 				}
 			}
-
+			
+			/*
+			 * This HTML element is used to identify the correct plugin when attaching an event to its Deactivate link.
+			 * 
+			 * If user is paying or in trial and have the free version installed,
+			 * assume that the deactivation is for the upgrade process, so this is not needed.
+			 */
+			if ( ! $this->is_paying_or_trial() || $this->is_premium() ) {
+				if ( isset( $links['deactivate'] ) ) {
+					$links['deactivate'] .= '<i class="fs-slug" data-slug="' . $this->_slug . '"></i>';
+				}
+			}
+			
 			return $links;
 		}
 
