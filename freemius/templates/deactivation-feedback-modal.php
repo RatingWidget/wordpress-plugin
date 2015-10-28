@@ -3,7 +3,7 @@
 	 * @package     Freemius
 	 * @copyright   Copyright (c) 2015, Freemius, Inc.
 	 * @license     http://opensource.org/licenses/gpl-2.0.php GNU Public License
-	 * @since       1.1.1
+	 * @since       1.1.2
 	 */
     $slug         = $VARS['slug'];
     $fs           = freemius( $slug );

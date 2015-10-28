@@ -316,8 +316,7 @@
 		 *
 		 * @author Vova Feldman (@svovaf)
 		 * @author Leo Fajardo (@leorw)
-		 * 
-		 * @since  1.1.1
+		 * @since  1.1.2
 		 */
 		function _add_deactivation_feedback_dialog_box() {
 			fs_enqueue_local_style( 'fs_deactivation_feedback', '/admin/deactivation-feedback.css' );
@@ -367,7 +366,8 @@
         
         /**
          * @author Leo Fajardo (leorw)
-         * 
+		 * @since  1.1.2
+		 * 
          * @param string $user_type
          * 
          * @return array The uninstall reasons for the specified user type.
@@ -489,8 +489,7 @@
 		 * Called after the user has submitted his reason for deactivating the plugin.
 		 *
 		 * @author Leo Fajardo (@leorw)
-		 * 
-		 * @since  1.1.1
+		 * @since  1.1.2
 		 */
 		function _submit_uninstall_reason_action() {
 			if ( ! isset( $_POST['reason_id'] ) ) {
