@@ -11,11 +11,36 @@
 	}
 
 	define( 'WP_FS__SLUG', 'freemius' );
-	if ( !defined('WP_FS__DEV_MODE' )) {
+	if ( ! defined( 'WP_FS__DEV_MODE' ) ) {
 		define( 'WP_FS__DEV_MODE', false );
 	}
+
+	/**
+	 * API Connectivity Simulation
+	 */
 	define( 'WP_FS__SIMULATE_NO_API_CONNECTIVITY', false );
 	define( 'WP_FS__SIMULATE_NO_API_CONNECTIVITY_SQUID_ACL', false );
+	if ( WP_FS__SIMULATE_NO_API_CONNECTIVITY ) {
+		define( 'FS_SDK__SIMULATE_NO_API_CONNECTIVITY', true );
+	}
+	if ( WP_FS__SIMULATE_NO_API_CONNECTIVITY_SQUID_ACL ) {
+		define( 'FS_SDK__SIMULATE_NO_API_CONNECTIVITY_SQUID_ACL', true );
+	}
+
+	/**
+	 * If true and running with secret key, the opt-in process
+	 * will skip the email activation process which is invoked
+	 * when the email of the context user already exist in Freemius
+	 * database (as a security precaution, to prevent sharing user
+	 * secret with unauthorized entity).
+	 *
+	 * IMPORTANT:
+	 *      AS A SECURITY PRECAUTION, WE VALIDATE THE TIMESTAMP OF THE OPT-IN REQUEST.
+	 *      THEREFORE, MAKE SURE THAT WHEN USING THIS PARAMETER,YOUR TESTING ENVIRONMENT'S
+	 *      CLOCK IS SYNCED.
+	 */
+	define( 'WP_FS__SKIP_EMAIL_ACTIVATION', true );
+
 
 	/**
 	 * Directories
