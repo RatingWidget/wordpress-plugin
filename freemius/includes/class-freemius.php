@@ -690,7 +690,9 @@
 		 * @return bool
 		 */
 		function is_activation_page() {
-			return isset( $_GET['page'] ) && ( strtolower( $this->_menu_slug ) === strtolower( $_GET['page'] ) );
+			return isset( $_GET['page'] ) &&
+			       ( ( strtolower( $this->_menu_slug ) === strtolower( $_GET['page'] ) ) ||
+			         ( strtolower( $this->_slug ) === strtolower( $_GET['page'] ) ) );
 		}
 
 		private static $_statics_loaded = false;
@@ -2037,7 +2039,9 @@
 
 			if ( fs_request_is_action( $this->_slug . '_skip_activation' ) ) {
 				check_admin_referer( $this->_slug . '_skip_activation' );
-				$this->_storage->is_anonymous = true;
+
+				$this->skip_connection();
+
 				if ( fs_redirect( $this->apply_filters( 'after_skip_url', $this->_get_admin_page_url() ) ) ) {
 					exit();
 				}
@@ -2101,7 +2105,8 @@
 		 * @return bool
 		 */
 		function _is_plugin_page() {
-			return fs_is_plugin_page( $this->_menu_slug );
+			return fs_is_plugin_page( $this->_menu_slug ) ||
+			       fs_is_plugin_page( $this->_slug );
 		}
 
 		/* Events
@@ -2290,6 +2295,24 @@
 
 			// Clear API cache on deactivation.
 			FS_Api::clear_cache();
+		}
+
+		/**
+		 * Skip account connect, and set anonymous mode.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.1.1
+		 */
+		private function skip_connection() {
+			$this->_logger->entrance();
+
+			$this->_storage->is_anonymous = true;
+
+			// Send anonymous skip event.
+			// No user identified info nor any tracking will be sent after the user skips the opt-in.
+			$this->get_api_plugin_scope()->call( 'skip.json', 'put', array(
+				'uid' => $this->get_anonymous_id(),
+			) );
 		}
 
 		/**
@@ -2489,6 +2512,16 @@
 		 */
 		function get_secret_key() {
 			return $this->_plugin->secret_key;
+		}
+
+		/**
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.1.1
+		 *
+		 * @return bool
+		 */
+		function has_secret_key() {
+			return ! empty( $this->_plugin->secret_key );
 		}
 
 		/**
@@ -3514,9 +3547,15 @@
 		 * @return string
 		 */
 		function _get_admin_page_url( $page = '', $params = array() ) {
-			return add_query_arg( array_merge( $params, array(
-				'page' => trim( "{$this->_menu_slug}-{$page}", '-' )
-			) ), admin_url( 'admin.php', 'admin' ) );
+			if ( false === strpos( $this->_menu_slug, '.php' ) ) {
+				return add_query_arg( array_merge( $params, array(
+					'page' => trim( "{$this->_menu_slug}-{$page}", '-' )
+				) ), admin_url( 'admin.php', 'admin' ) );
+			} else {
+				return add_query_arg( array_merge( $params, array(
+					'page' => trim( "{$this->_slug}-{$page}", '-' )
+				) ), admin_url( 'admin.php', 'admin' ) );
+			}
 		}
 
 		/**
@@ -3994,7 +4033,7 @@
 					$this->_add_pending_activation_notice( fs_request_get( 'user_email' ) );
 
 					// Reload the page with with pending activation message.
-					if ( fs_redirect( $this->apply_filters( 'connect_url', $this->_get_admin_page_url() ) ) ) {
+					if ( fs_redirect( $this->apply_filters( 'after_pending_connect_url', $this->apply_filters( 'connect_url', $this->_get_admin_page_url() ) ) ) ) {
 						exit();
 					}
 				}
@@ -4333,7 +4372,7 @@
 					$menu['menu'][3],
 					$menu['menu'][0],
 					'manage_options',
-					$this->_menu_slug,
+					$this->_get_menu_slug(),
 					array( &$this, '_connect_page_render' ),
 					$menu['menu'][6],
 					$menu['position']
@@ -4466,7 +4505,11 @@
 		}
 
 		private function _get_menu_slug( $slug = '' ) {
-			return $this->_menu_slug . ( empty( $slug ) ? '' : ( '-' . $slug ) );
+			if ( false === strpos( $this->_menu_slug, '.php' ) ) {
+				return $this->_menu_slug . ( empty( $slug ) ? '' : ( '-' . $slug ) );
+			} else {
+				return $this->_slug . ( empty( $slug ) ? '' : ( '-' . $slug ) );
+			}
 		}
 
 		/**
@@ -5442,7 +5485,7 @@
 									'<a href="%s">%s</a>',
 									$this->contact_url(
 										'bug',
-										sprintf( __( 'plan-did-not-change-email-message', 'freemius' ),
+										sprintf( __fs( 'plan-did-not-change-email-message', 'freemius' ),
 											strtoupper( $this->_site->plan->name )
 										)
 									),

@@ -10,6 +10,15 @@
 		exit;
 	}
 
+	/**
+	 * Class FS_Api
+	 *
+	 * Wraps Freemius API SDK to handle:
+	 *      1. Clock sync.
+	 *      2. Fallback to HTTP when HTTPS fails.
+	 *      3. Adds caching layer to GET requests.
+	 *      4. Adds consistency for failed requests by using last cached version.
+	 */
 	class FS_Api {
 		/**
 		 * @var FS_Api[]
@@ -55,7 +64,6 @@
 		 * @param bool        $is_sandbox
 		 * @param bool|string $secret_key Element's secret key.
 		 *
-		 * @internal param Freemius $freemius
 		 * @return FS_Api
 		 */
 		static function instance( $slug, $scope, $id, $public_key, $is_sandbox, $secret_key = false ) {
@@ -95,8 +103,6 @@
 		 * @param string      $public_key Public key.
 		 * @param bool|string $secret_key Element's secret key.
 		 * @param bool        $is_sandbox
-		 *
-		 * @internal param \Freemius $freemius
 		 */
 		private function __construct( $slug, $scope, $id, $public_key, $secret_key, $is_sandbox ) {
 			$this->_api = new Freemius_Api( $scope, $id, $public_key, $secret_key, $is_sandbox );
@@ -108,17 +114,23 @@
 		/**
 		 * Find clock diff between server and API server, and store the diff locally.
 		 *
+		 * @param bool|int $diff
+		 *
 		 * @return bool|int False if clock diff didn't change, otherwise returns the clock diff in seconds.
 		 */
-		private function _sync_clock_diff() {
+		private function _sync_clock_diff( $diff = false ) {
 			$this->_logger->entrance();
 
 			// Sync clock and store.
-			$new_clock_diff = $this->_api->FindClockDiff();
+			$new_clock_diff = ( false === $diff ) ?
+				$this->_api->FindClockDiff() :
+				$diff;
 
 			if ( $new_clock_diff === self::$_clock_diff ) {
 				return false;
 			}
+
+			self::$_clock_diff = $new_clock_diff;
 
 			// Update API clock's diff.
 			$this->_api->SetClockDiff( self::$_clock_diff );
@@ -148,11 +160,14 @@
 			     isset( $result->error ) &&
 			     'request_expired' === $result->error->code
 			) {
-
 				if ( ! $retry ) {
+					$diff = isset( $result->error->timestamp ) ?
+						( time() - strtotime( $result->error->timestamp ) ) :
+						false;
+
 					// Try to sync clock diff.
-					if ( false !== $this->_sync_clock_diff() ) // Retry call with new synced clock.
-					{
+					if ( false !== $this->_sync_clock_diff( $diff ) ) {
+						// Retry call with new synced clock.
 						return $this->_call( $path, $method, $params, true );
 					}
 				}
@@ -280,7 +295,9 @@
 
 				self::$_options->set_option( 'api_force_http', true, true );
 
-				$test = $this->_api->Test();
+				$test = is_null( $unique_anonymous_id ) ?
+					$this->_api->Test() :
+					$this->_api->Test( $this->_call( 'ping.json?uid=' . $unique_anonymous_id ) );
 			}
 
 			return $test;

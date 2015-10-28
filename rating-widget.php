@@ -466,7 +466,7 @@
 								$this->account->update_site_secret_key( $value );
 								break;
 							case 'user_id':
-								$this->account->update_site_secret_key( $value );
+								$this->account->update_user_id( $value );
 								break;
 							default:
 								return;
