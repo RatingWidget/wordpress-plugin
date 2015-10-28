@@ -320,7 +320,7 @@
 		 * @since  1.1.1
 		 */
 		function _add_deactivation_feedback_dialog_box() {
-			fs_enqueue_local_style( 'fs_deactivation_feedback_modal', '/admin/deactivation-feedback-modal.css' );
+			fs_enqueue_local_style( 'fs_deactivation_feedback', '/admin/deactivation-feedback.css' );
 				
             /* Check the type of user:
              * 1. Long-term (long-term)
@@ -2387,7 +2387,7 @@
 				// Send uninstall event.
 				$this->get_api_site_scope()->call( '/', 'put', $params );
 			}
-
+			
 			// @todo Decide if we want to delete plugin information from db.
 		}
 
@@ -7022,7 +7022,19 @@
 					$links[ $link['key'] ] = '<a href="' . $link['href'] . '"' . ( $link['external'] ? ' target="_blank"' : '' ) . '>' . $link['label'] . '</a>';
 				}
 			}
-
+			
+			/*
+			 * This HTML element is used to identify the correct plugin when attaching an event to its Deactivate link.
+			 * 
+			 * If user is paying or in trial and have the free version installed,
+			 * assume that the deactivation is for the upgrade process, so this is not needed.
+			 */
+			if ( ! $this->is_paying_or_trial() || $this->is_premium() ) {
+				if ( isset( $links['deactivate'] ) ) {
+					$links['deactivate'] .= '<i class="fs-slug" data-slug="' . $this->_slug . '"></i>';
+				}
+			}
+			
 			return $links;
 		}
 

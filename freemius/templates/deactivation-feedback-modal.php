@@ -36,7 +36,7 @@
 				+	'	</div>'
 				+	'</div>',
 				$modal			= $( modalHtml ),
-				$deactivateLink = $( '#the-list [data-slug=<?php echo $VARS['slug']; ?>].active .deactivate a' );
+				$deactivateLink = $( '#the-list .deactivate > [data-slug=<?php echo $VARS['slug']; ?>].fs-slug' ).prev();
 				
 			$modal.appendTo( $( 'body' ) );
 
@@ -71,19 +71,15 @@
 						}
 						
                         var	$selected_reason = $radio.parents( 'li:first' ),
-							$input           = $selected_reason.find( 'textarea' );
+							$input           = $selected_reason.find( 'textarea, input[type="text"]' );
 							
-						if ( 0 === $input.length ) {
-							$input = $selected_reason.find( 'input[type="text"]' );
-						}
-						
 						$.ajax({
 							url: ajaxurl,
 							method: 'POST',
 							data: {
 								'action'      : 'submit-uninstall-reason',
 								'reason_id'   : $radio.val(),
-								'reason_info' : $input.val().trim()
+								'reason_info' : ( 0 !== $input.length ) ? $input.val().trim() : ''
 							},
 							beforeSend: function() {
 								_parent.find( '.button' ).addClass( 'disabled' );
