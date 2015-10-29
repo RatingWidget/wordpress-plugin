@@ -302,7 +302,7 @@
 				// assume that the deactivation is for the upgrade process.
 				if ( ! $this->is_paying_or_trial() || $this->is_premium() ) {
 					add_action( 'wp_ajax_submit-uninstall-reason', array( &$this, '_submit_uninstall_reason_action' ) );
-					
+
 					global $pagenow;
 					if ( 'plugins.php' === $pagenow ) {
 						add_action( 'admin_footer', array( &$this, '_add_deactivation_feedback_dialog_box' ) );
@@ -312,7 +312,8 @@
 		}
 
 		/**
-		 * Displays a confirmation and feedback dialog box when the user clicks on the "Deactivate" link on the plugins page.
+		 * Displays a confirmation and feedback dialog box when the user clicks on the "Deactivate" link on the plugins
+		 * page.
 		 *
 		 * @author Vova Feldman (@svovaf)
 		 * @author Leo Fajardo (@leorw)
@@ -320,17 +321,17 @@
 		 */
 		function _add_deactivation_feedback_dialog_box() {
 			fs_enqueue_local_style( 'fs_deactivation_feedback', '/admin/deactivation-feedback.css' );
-				
-            /* Check the type of user:
-             * 1. Long-term (long-term)
-             * 2. Non-registered and non-anonymous short-term (non-registered-and-non-anonymous-short-term).
-             * 3. Short-term (short-term)
-             */
+
+			/* Check the type of user:
+			 * 1. Long-term (long-term)
+			 * 2. Non-registered and non-anonymous short-term (non-registered-and-non-anonymous-short-term).
+			 * 3. Short-term (short-term)
+			 */
 			$is_long_term_user = true;
-			
+
 			// Check if the site is at least 2 days old.
 			$time_installed = $this->_storage->install_timestamp;
-			
+
 			// Difference in seconds.
 			$date_diff = time() - $time_installed;
 
@@ -340,151 +341,151 @@
 			if ( $date_diff_days < 2 ) {
 				$is_long_term_user = false;
 			}
-		
+
 			$is_long_term_user = $this->apply_filters( 'is_long_term_user', $is_long_term_user );
-            
-            if ( $is_long_term_user ) {
-                $user_type = 'long-term';
-            } else {
+
+			if ( $is_long_term_user ) {
+				$user_type = 'long-term';
+			} else {
 				if ( ! $this->is_registered() && ! $this->is_anonymous() ) {
-                    $user_type = 'non-registered-and-non-anonymous-short-term';
-                } else {
-                    $user_type = 'short-term';
-                }
-            }
-            
-            $uninstall_reasons = $this->_get_uninstall_reasons( $user_type );
-            
+					$user_type = 'non-registered-and-non-anonymous-short-term';
+				} else {
+					$user_type = 'short-term';
+				}
+			}
+
+			$uninstall_reasons = $this->_get_uninstall_reasons( $user_type );
+
 			// Load the HTML template for the deactivation feedback dialog box.
 			$vars = array(
-				'reasons'         => $uninstall_reasons,
-				'slug'            => $this->_slug
+				'reasons' => $uninstall_reasons,
+				'slug'    => $this->_slug
 			);
-			
+
 			fs_require_once_template( 'deactivation-feedback-modal.php', $vars );
 		}
-        
-        /**
-         * @author Leo Fajardo (leorw)
+
+		/**
+		 * @author Leo Fajardo (leorw)
 		 * @since  1.1.2
-		 * 
-         * @param string $user_type
-         * 
-         * @return array The uninstall reasons for the specified user type.
-         */
-        function _get_uninstall_reasons( $user_type = 'long-term' ) {
+		 *
+		 * @param string $user_type
+		 *
+		 * @return array The uninstall reasons for the specified user type.
+		 */
+		function _get_uninstall_reasons( $user_type = 'long-term' ) {
 			$reason_found_better_plugin = array(
-				'id'				=> 2,
-				'text'				=> __fs( 'reason-found-a-better-plugin' ),
+				'id'                => 2,
+				'text'              => __fs( 'reason-found-a-better-plugin' ),
 				'input_type'        => 'textfield',
 				'input_placeholder' => __fs( 'placeholder-plugin-name' )
 			);
-			
-			$reason_other				= array(
-                'id'				=> 7,
-                'text'				=> __fs( 'reason-other' ),
-                'input_type'        => 'textfield',
-                'input_placeholder' => ''
-            );
-			
-			$long_term_user_reasons = array(
-                array(
-                    'id'                => 1,
-                    'text'              => __fs( 'reason-no-longer-needed' ),
-                    'input_type'        => '',
-                    'input_placeholder' => ''
-                ),
-				$reason_found_better_plugin,
-                array(
-                    'id'                => 3,
-                    'text'              => __fs( 'reason-needed-for-a-short-period' ),
-                    'input_type'        => '',
-                    'input_placeholder' => ''
-                ),
-                array(
-                    'id'                => 4,
-                    'text'              => __fs( 'reason-broke-my-site' ),
-                    'input_type'        => '',
-                    'input_placeholder' => ''
-                ),
-                array(
-                    'id'                => 5,
-                    'text'              => __fs( 'reason-suddenly-stopped-working' ),
-                    'input_type'        => '',
-                    'input_placeholder' => ''
-                )
-            );
-            
-            if ( $this->is_paying() ) {
-                $long_term_user_reasons[] = array(
-                    'id'                => 6,
-                    'text'              => __fs( 'reason-cant-pay-anymore' ),
-                    'input_type'        => 'textfield',
-                    'input_placeholder' => __fs( 'placeholder-comfortable-price' )
-                );
-            }
-                
-            $long_term_user_reasons[] = $reason_other;
 
-            $uninstall_reasons = array(
-                'long-term' => $long_term_user_reasons,
-                'non-registered-and-non-anonymous-short-term' => array(
-                    array(
-                        'id'                => 8,
-                        'text'              => __fs( 'reason-didnt-work' ),
-                        'input_type'        => '',
-                        'input_placeholder' => ''
-                    ),
-                    array(
-                        'id'                => 9,
-                        'text'              => __fs( 'reason-dont-like-to-share-my-information' ),
-                        'input_type'        => '',
-                        'input_placeholder' => ''
-                    ),
+			$reason_other = array(
+				'id'                => 7,
+				'text'              => __fs( 'reason-other' ),
+				'input_type'        => 'textfield',
+				'input_placeholder' => ''
+			);
+
+			$long_term_user_reasons = array(
+				array(
+					'id'                => 1,
+					'text'              => __fs( 'reason-no-longer-needed' ),
+					'input_type'        => '',
+					'input_placeholder' => ''
+				),
+				$reason_found_better_plugin,
+				array(
+					'id'                => 3,
+					'text'              => __fs( 'reason-needed-for-a-short-period' ),
+					'input_type'        => '',
+					'input_placeholder' => ''
+				),
+				array(
+					'id'                => 4,
+					'text'              => __fs( 'reason-broke-my-site' ),
+					'input_type'        => '',
+					'input_placeholder' => ''
+				),
+				array(
+					'id'                => 5,
+					'text'              => __fs( 'reason-suddenly-stopped-working' ),
+					'input_type'        => '',
+					'input_placeholder' => ''
+				)
+			);
+
+			if ( $this->is_paying() ) {
+				$long_term_user_reasons[] = array(
+					'id'                => 6,
+					'text'              => __fs( 'reason-cant-pay-anymore' ),
+					'input_type'        => 'textfield',
+					'input_placeholder' => __fs( 'placeholder-comfortable-price' )
+				);
+			}
+
+			$long_term_user_reasons[] = $reason_other;
+
+			$uninstall_reasons = array(
+				'long-term'                                   => $long_term_user_reasons,
+				'non-registered-and-non-anonymous-short-term' => array(
+					array(
+						'id'                => 8,
+						'text'              => __fs( 'reason-didnt-work' ),
+						'input_type'        => '',
+						'input_placeholder' => ''
+					),
+					array(
+						'id'                => 9,
+						'text'              => __fs( 'reason-dont-like-to-share-my-information' ),
+						'input_type'        => '',
+						'input_placeholder' => ''
+					),
 					$reason_found_better_plugin,
 					$reason_other
-                ),
-                'short-term' => array(
-                    array(
-                        'id'                => 10,
-                        'text'              => __fs( 'reason-couldnt-make-it-work' ),
-                        'input_type'        => '',
-                        'input_placeholder' => ''
-                    ),
+				),
+				'short-term'                                  => array(
+					array(
+						'id'                => 10,
+						'text'              => __fs( 'reason-couldnt-make-it-work' ),
+						'input_type'        => '',
+						'input_placeholder' => ''
+					),
 					$reason_found_better_plugin,
-                    array(
-                        'id'                => 11,
-                        'text'              => __fs( 'reason-great-but-need-specific-feature' ),
-                        'input_type'        => 'textarea',
-                        'input_placeholder' => __fs( 'placeholder-feature' )
-                    ),
-                    array(
-                        'id'                => 12,
-                        'text'              => __fs( 'reason-not-working' ),
-                        'input_type'        => 'textarea',
-                        'input_placeholder' => __fs( 'placeholder-share-what-didnt-work' )
-                    ),
-                    array(
-                        'id'                => 13,
-                        'text'              => __fs( 'reason-not-what-i-was-looking-for' ),
-                        'input_type'        => 'textarea',
-                        'input_placeholder' => __fs( 'placeholder-what-youve-been-looking-for' )
-                    ),
-                    array(
-                        'id'                => 14,
-                        'text'              => __fs( 'reason-didnt-work-as-expected' ),
-                        'input_type'        => 'textarea',
-                        'input_placeholder' => __fs( 'placeholder-what-did-you-expect' )
-                    ),
+					array(
+						'id'                => 11,
+						'text'              => __fs( 'reason-great-but-need-specific-feature' ),
+						'input_type'        => 'textarea',
+						'input_placeholder' => __fs( 'placeholder-feature' )
+					),
+					array(
+						'id'                => 12,
+						'text'              => __fs( 'reason-not-working' ),
+						'input_type'        => 'textarea',
+						'input_placeholder' => __fs( 'placeholder-share-what-didnt-work' )
+					),
+					array(
+						'id'                => 13,
+						'text'              => __fs( 'reason-not-what-i-was-looking-for' ),
+						'input_type'        => 'textarea',
+						'input_placeholder' => __fs( 'placeholder-what-youve-been-looking-for' )
+					),
+					array(
+						'id'                => 14,
+						'text'              => __fs( 'reason-didnt-work-as-expected' ),
+						'input_type'        => 'textarea',
+						'input_placeholder' => __fs( 'placeholder-what-did-you-expect' )
+					),
 					$reason_other
 				)
 			);
-            
-            $uninstall_reasons = $this->apply_filters( 'uninstall_reasons', $uninstall_reasons );
-            
-            return $uninstall_reasons[ $user_type ];
-        }
-        
+
+			$uninstall_reasons = $this->apply_filters( 'uninstall_reasons', $uninstall_reasons );
+
+			return $uninstall_reasons[ $user_type ];
+		}
+
 		/**
 		 * Called after the user has submitted his reason for deactivating the plugin.
 		 *
@@ -495,21 +496,21 @@
 			if ( ! isset( $_POST['reason_id'] ) ) {
 				exit;
 			}
-			
-			$reason_info = isset( $_REQUEST['reason_info'] ) ? trim( stripslashes( $_REQUEST['reason_info'] ) ) : '';
-            
-            $reason = (object) array(
-                'id' => $_POST['reason_id'],
-                'info' => substr( $reason_info, 0, 128 )
-            );
 
-            $this->_storage->store( 'uninstall_reason', $reason );
-            
+			$reason_info = isset( $_REQUEST['reason_info'] ) ? trim( stripslashes( $_REQUEST['reason_info'] ) ) : '';
+
+			$reason = (object) array(
+				'id'   => $_POST['reason_id'],
+				'info' => substr( $reason_info, 0, 128 )
+			);
+
+			$this->_storage->store( 'uninstall_reason', $reason );
+
 			// Print '1' for successful operation.
 			echo 1;
 			exit;
 		}
-		
+
 		/**
 		 * Leverage backtrace to find caller plugin file path.
 		 *
@@ -949,9 +950,8 @@
 			if ( ! function_exists( 'wp_nonce_url' ) ) {
 				require_once( ABSPATH . 'wp-includes/functions.php' );
 			}
-			if ( ! function_exists( 'wp_get_current_user' ) ) {
-				require_once( ABSPATH . 'wp-includes/pluggable.php' );
-			}
+
+			self::require_pluggable_essentials();
 
 			$current_user = wp_get_current_user();
 //			$admin_email = get_option( 'admin_email' );
@@ -1107,15 +1107,13 @@
 		function _email_about_firewall_issue() {
 			$this->_admin_notices->remove_sticky( 'failed_connect_api' );
 
-			if ( ! function_exists( 'wp_get_current_user' ) ) {
-				require_once( ABSPATH . 'wp-includes/pluggable.php' );
-			}
+			self::require_pluggable_essentials();
 
 			$current_user = wp_get_current_user();
-			$admin_email = $current_user->user_email;
+			$admin_email  = $current_user->user_email;
 
 			$ping = $this->get_api_plugin_scope()->ping();
-			
+
 			$error_type = fs_request_get( 'error_type', 'general' );
 
 			switch ( $error_type ) {
@@ -1129,9 +1127,9 @@
 					$title = 'API Connectivity Issue';
 					break;
 			}
-			
+
 			$custom_email_sections = array();
-			
+
 			if ( 'squid' === $error_type ) {
 				// Override the 'Site' email section.
 				$custom_email_sections['site'] = array(
@@ -1140,23 +1138,23 @@
 					)
 				);
 			}
-				
+
 			// Add 'API Error' custom email section.
 			$custom_email_sections['api_error'] = array(
 				'title' => 'API Error',
-				'rows'	=> array(
+				'rows'  => array(
 					'ping' => array( is_string( $ping ) ? htmlentities( $ping ) : json_encode( $ping ) )
 				)
 			);
-			
-    		// Send email with technical details to resolve CloudFlare's firewall unnecessary protection.
-			$this->_mail(
+
+			// Send email with technical details to resolve CloudFlare's firewall unnecessary protection.
+			$this->send_email(
 				'api@freemius.com',                              // recipient
 				$title . ' [' . $this->get_plugin_name() . ']',  // subject
 				$custom_email_sections,
 				array( "Reply-To: $admin_email <$admin_email>" ) // headers
 			);
-			
+
 			$this->_admin_notices->add_sticky(
 				sprintf(
 					__fs( 'fix-request-sent-message' ),
@@ -1170,7 +1168,7 @@
 			echo "1";
 			exit;
 		}
-		
+
 		static function _add_firewall_issues_javascript() {
 			$params = array();
 			fs_require_once_template( 'firewall-issues-js.php', $params );
@@ -1179,84 +1177,92 @@
 		#endregion Connectivity Issues ------------------------------------------------------------------
 
 		#region Email ------------------------------------------------------------------
-		
+
 		/**
 		 * Generates and sends an HTML email with customizable sections.
 		 *
 		 * @author Leo Fajardo (@leorw)
-		 * @since  1.1.1
+		 * @since  1.1.2
+		 *
+		 * @param string $to_address
+		 * @param string $subject
+		 * @param array  $sections
+		 * @param array  $headers
 		 *
 		 * @return bool Whether the email contents were sent successfully.
 		 */
-		function _mail( $recipient_email, $subject, $custom_email_sections = array(), $headers = array() ) {
-			$email_sections = $this->_get_email_sections();
-			
+		private function send_email(
+			$to_address,
+			$subject,
+			$sections = array(),
+			$headers = array()
+		) {
+			$default_sections = $this->get_email_sections();
+
 			// Insert new sections or replace the default email sections.
-			if ( is_array( $custom_email_sections ) && ! empty( $custom_email_sections ) ) {
-				foreach ( $custom_email_sections as $section_id => $custom_section ) {
-					if ( ! isset( $email_sections[ $section_id ] ) ) {
+			if ( is_array( $sections ) && ! empty( $sections ) ) {
+				foreach ( $sections as $section_id => $custom_section ) {
+					if ( ! isset( $default_sections[ $section_id ] ) ) {
 						// If the section does not exist, add it.
-						$email_sections[ $section_id ] = $custom_section;
+						$default_sections[ $section_id ] = $custom_section;
 					} else {
 						// If the section already exists, override it.
-						$current_section = $email_sections[ $section_id ];
-						
+						$current_section = $default_sections[ $section_id ];
+
 						// Replace the current section's title if a custom section title exists.
 						if ( isset( $custom_section['title'] ) ) {
 							$current_section['title'] = $custom_section['title'];
 						}
-						
+
 						// Insert new rows under the current section or replace the default rows.
 						if ( isset( $custom_section['rows'] ) && is_array( $custom_section['rows'] ) && ! empty( $custom_section['rows'] ) ) {
 							foreach ( $custom_section['rows'] as $row_id => $row ) {
 								$current_section['rows'][ $row_id ] = $row;
 							}
 						}
-						
-						$email_sections[ $section_id ] = $current_section;
+
+						$default_sections[ $section_id ] = $current_section;
 					}
 				}
 			}
-			
-			$vars    = array( 'sections' => $email_sections );
+
+			$vars    = array( 'sections' => $default_sections );
 			$message = fs_get_template( 'email.php', $vars );
-			
+
 			// Set the type of email to HTML.
 			$headers[] = 'Content-type: text/html';
-			
+
 			$header_string = implode( "\r\n", $headers );
 
 			return wp_mail(
-				$recipient_email,
+				$to_address,
 				$subject,
 				$message,
 				$header_string
 			);
 		}
-		
+
 		/**
 		 * Generates the data for the sections of the email content.
 		 *
 		 * @author Leo Fajardo (@leorw)
-		 * @since  1.1.1
+		 * @since  1.1.2
 		 *
 		 * @return array
 		 */
-		function _get_email_sections() {
-			if ( ! function_exists( 'wp_get_current_user' ) ) {
-				require_once( ABSPATH . 'wp-includes/pluggable.php' );
-			}
+		private function get_email_sections() {
+			self::require_pluggable_essentials();
 
 			// Retrieve the current user's information so that we can get the user's email, first name, and last name below.
-			$current_user             = wp_get_current_user();
+			$current_user = wp_get_current_user();
 
 			// Retrieve the cURL version information so that we can get the version number below.
 			$curl_version_information = curl_version();
 
-			$active_plugin            = $this->get_active_plugins();
-			
+			$active_plugin = $this->get_active_plugins();
+
 			// Generate the list of active plugins separated by new line. 
-			$active_plugin_string     = '';
+			$active_plugin_string = '';
 			foreach ( $active_plugin as $plugin ) {
 				$active_plugin_string .= sprintf(
 					'<a href="%s">%s</a> [v%s]<br>',
@@ -1268,39 +1274,45 @@
 
 			// Generate the default email sections.
 			$sections = array(
-				'sdk' => array(
+				'sdk'     => array(
 					'title' => 'SDK',
-					'rows'	=> array(
-						'fs_version'     => array( 'FS Version', $this->version ),
-						'curl_version'   => array( 'cURL Version', $curl_version_information['version'] )
+					'rows'  => array(
+						'fs_version'   => array( 'FS Version', $this->version ),
+						'curl_version' => array( 'cURL Version', $curl_version_information['version'] )
 					)
 				),
-				'plugin' => array(
+				'plugin'  => array(
 					'title' => 'Plugin',
-					'rows'	=> array(
-						'name'           => array( 'Name', $this->get_plugin_name() ),
-						'version'        => array( 'Version', $this->get_plugin_version() )
+					'rows'  => array(
+						'name'    => array( 'Name', $this->get_plugin_name() ),
+						'version' => array( 'Version', $this->get_plugin_version() )
 					)
 				),
-				'site' => array(
+				'site'    => array(
 					'title' => 'Site',
-					'rows'	=> array(
-						'address'        => array( 'Address', site_url() ),
-						'host'           => array( 'HTTP_HOST', ( ! empty( $_SERVER['HTTP_HOST'] ) ? $_SERVER['HTTP_HOST'] : '' ) ),
-						'server_addr'    => array( 'SERVER_ADDR', ( ! empty( $_SERVER['SERVER_ADDR'] ) ? '<a href="http://www.projecthoneypot.org/ip_' . $_SERVER['SERVER_ADDR'] . '">' . $_SERVER['SERVER_ADDR'] . '</a>' : '' ) )
+					'rows'  => array(
+						'address'     => array( 'Address', site_url() ),
+						'host'        => array(
+							'HTTP_HOST',
+							( ! empty( $_SERVER['HTTP_HOST'] ) ? $_SERVER['HTTP_HOST'] : '' )
+						),
+						'server_addr' => array(
+							'SERVER_ADDR',
+							( ! empty( $_SERVER['SERVER_ADDR'] ) ? '<a href="http://www.projecthoneypot.org/ip_' . $_SERVER['SERVER_ADDR'] . '">' . $_SERVER['SERVER_ADDR'] . '</a>' : '' )
+						)
 					)
 				),
-				'user' => array(
+				'user'    => array(
 					'title' => 'User',
-					'rows'	=> array(
-						'email'          => array( 'Email', $current_user->user_email ),
-						'first'          => array( 'First', $current_user->user_firstname ),
-						'last'           => array( 'Last', $current_user->user_lastname )
+					'rows'  => array(
+						'email' => array( 'Email', $current_user->user_email ),
+						'first' => array( 'First', $current_user->user_firstname ),
+						'last'  => array( 'Last', $current_user->user_lastname )
 					)
 				),
 				'plugins' => array(
 					'title' => 'Plugins',
-					'rows'	=> array(
+					'rows'  => array(
 						'active_plugins' => array( 'Active Plugins', $active_plugin_string )
 					)
 				),
@@ -1308,12 +1320,12 @@
 
 			// Allow the sections to be modified by other code.
 			$sections = $this->apply_filters( 'email_template_sections', $sections );
-			
+
 			return $sections;
 		}
-		
+
 		#endregion Email ------------------------------------------------------------------
-		
+
 		#region Initialization ------------------------------------------------------------------
 
 		/**
@@ -2386,7 +2398,7 @@
 				// Send uninstall event.
 				$this->get_api_site_scope()->call( '/', 'put', $params );
 			}
-			
+
 			// @todo Decide if we want to delete plugin information from db.
 		}
 
@@ -2450,6 +2462,18 @@
 		private static function require_plugin_essentials() {
 			if ( ! function_exists( 'get_plugins' ) ) {
 				require_once( ABSPATH . 'wp-admin/includes/plugin.php' );
+			}
+		}
+
+		/**
+		 * Load WordPress core pluggable.php module.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.1.2
+		 */
+		private static function require_pluggable_essentials() {
+			if ( ! function_exists( 'wp_get_current_user' ) ) {
+				require_once( ABSPATH . 'wp-includes/pluggable.php' );
 			}
 		}
 
@@ -3575,9 +3599,7 @@
 				$params['fs_action'] = $action;
 			}
 
-			if ( ! function_exists( 'wp_create_nonce' ) ) {
-				require_once( ABSPATH . 'wp-includes/pluggable.php' );
-			}
+			self::require_pluggable_essentials();
 
 			return ( $add_action_nonce && is_string( $action ) ) ?
 				wp_nonce_url( $this->_get_admin_page_url( 'account', $params ), $action ) :
@@ -7021,7 +7043,7 @@
 					$links[ $link['key'] ] = '<a href="' . $link['href'] . '"' . ( $link['external'] ? ' target="_blank"' : '' ) . '>' . $link['label'] . '</a>';
 				}
 			}
-			
+
 			/*
 			 * This HTML element is used to identify the correct plugin when attaching an event to its Deactivate link.
 			 * 
@@ -7033,7 +7055,7 @@
 					$links['deactivate'] .= '<i class="fs-slug" data-slug="' . $this->_slug . '"></i>';
 				}
 			}
-			
+
 			return $links;
 		}
 
