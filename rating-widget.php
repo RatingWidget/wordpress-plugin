@@ -7838,7 +7838,8 @@
 
 			rw_fs()->setup_account(
 				new FS_User($result->user),
-				new FS_Site($result->install)
+				new FS_Site($result->install),
+				false
 			);
 
 			return true;

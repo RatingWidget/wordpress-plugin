@@ -3934,7 +3934,7 @@
 		 *
 		 * @return bool False if account already set.
 		 */
-		function setup_account( FS_User $user, FS_Site $site ) {
+		function setup_account( FS_User $user, FS_Site $site, $redirect = true ) {
 			$this->_user = $user;
 			$this->_site = $site;
 			$this->_enrich_site_plan( false );
@@ -4005,7 +4005,7 @@
 				}
 			} else {
 				// Reload the page with the keys.
-				if ( fs_redirect( $this->apply_filters( 'after_connect_url', $this->_get_admin_page_url() ) ) ) {
+				if ( $redirect && fs_redirect( $this->apply_filters( 'after_connect_url', $this->_get_admin_page_url() ) ) ) {
 					exit();
 				}
 			}
