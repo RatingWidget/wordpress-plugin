@@ -4,7 +4,7 @@ Donate link: http://rating-widget.com/pricing/wordpress/
 Tags: rate, rating, ratings, vote, votes, voting, star, stars, like, dislike, thumbs, widget, widgets, star rating, thumb rating, rating platform, rating system, seo, post rating, comment rating, 5 star, five star, sidebar, comment, comments, post, posts, page, pages, google, admin, administrator, review, reviews, rich-snippets, plugin, plugins, ajax, buddypress, bbpress, social, javascript, js, wordpress, meta, woocommerce, jquery, contest, competition, voting contest, rtmedia
 Requires at least: 2.9
 Tested up to: 4.3
-Stable tag: 2.6.9
+Stable tag: 2.7.0
 License: GPLv2 or later
 
 The most popular Five Star Review System on the web. User-friendly ratings for: posts, pages, comments, WooCommerce, BuddyPress and bbPress forums.
@@ -182,8 +182,15 @@ The RatingWidget Team
 
 == Change Log ==
 
+= 2.7.0 - 2015-10-30 =
+* Announcement: Happy Halloween!!!
+* Fix: Resolved API connectivity and activation issue for servers with non-synced clock.
+* Fix: Fixed a bug in the upgrade data migration process.
+* New: Added feedback mechanism to plugin deactivation.
+
 = 2.6.9 - 2015-10-13 =
 * Fix: Renamed workflows shortcode from wf to rw_wf since was colliding with other themes / plugins.
+* New: Implemented plugin install ownership transfer protocol.
 
 = 2.6.8 - 2015-10-12 =
 * Fix: Minor bug fix in the activation.
