@@ -186,6 +186,7 @@ The RatingWidget Team
 * Announcement: Happy Halloween!!!
 * Fix: Resolved API connectivity and activation issue for servers with non-synced clock.
 * Fix: Fixed a bug in the upgrade data migration process.
+* Fix: Fixed the issues with the afterRate and beforeRate handlers when overridden by the workflow engine.
 * New: Added feedback mechanism to plugin deactivation.
 
 = 2.6.9 - 2015-10-13 =
