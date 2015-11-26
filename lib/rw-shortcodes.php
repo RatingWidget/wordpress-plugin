@@ -3,13 +3,13 @@
 
 	/* Ratings PHP Shortcodes.
 	--------------------------------------------------------------------------------------------*/
-	function rw_get_post_rating( $postID = false, $class = 'blog-post', $schema = false ) {
+	function rw_get_post_rating( $postID = false, $class = 'blog-post', $schema = true ) {
 		$postID = ( false === $postID ) ? get_the_ID() : $postID;
 
 		return ratingwidget()->EmbedRatingByPost( get_post( $postID ), $class, $schema );
 	}
 
-	function rw_the_post_rating( $postID = false, $class = 'blog-post', $schema = false ) {
+	function rw_the_post_rating( $postID = false, $class = 'blog-post', $schema = true ) {
 		echo rw_get_post_rating( $postID, $class, $schema );
 	}
 
@@ -109,7 +109,7 @@
 		extract( shortcode_atts( array(
 			'post_id'    => false,
 			'type'       => 'blog-post',
-			'add_schema' => false,
+			'add_schema' => true,
 		), $atts ) );
 
 		if (is_string($add_schema))
