@@ -5586,7 +5586,10 @@
 				$rating_html = '<div class="rw-ui-container rw-class-' . $pElementClass . ' rw-urid-' . $pUrid . '"' . $ratingData . '></div>';
 
 				if ( $this->fs->is_plan_or_trial__premium_only( 'professional' ) ) {
-					if ( true === $pAddSchema && 'front-post' !== $pElementClass && ! isset( $_REQUEST['schema_test'] ) ) {
+					if ( true === $pAddSchema &&
+					     !in_array($pElementClass, array('', 'front-post', 'comment')) &&
+					     ! isset( $_REQUEST['schema_test'] )
+					) {
 						$rich_snippet_settings   = $this->get_rich_snippet_settings();
 						$type_wrapper_available  = $rich_snippet_settings->type_wrapper_available;
 						$properties_availability = $rich_snippet_settings->properties_availability;

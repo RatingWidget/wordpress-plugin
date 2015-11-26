@@ -103,6 +103,11 @@ Check our full features list: http://rating-widget.com/wordpress-plugin/
 > #### Rating-Widget Support Forum
 > Please visit [RatingWidget WordPress FAQ](http://rating-widget.com/support/wordpress/faq/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org) and [RatingWidget WordPress Support Forum](https://wordpress.org/support/plugin/rating-widget/) for additional help with using this plugin. You may also post feature requests, ideas and bug reports there.
 
+---
+
+> #### DISCLAIMER:
+> For optimized user experience, upon activation, the plugin will make an API connectivity test. This API call is **anonymous** and will **NOT** share any identifiable information about your site or user.
+
 == Installation ==
 
 1. Upload the plugin to your blog.
@@ -924,3 +929,7 @@ Update: Updated the FAQ section on the plugin's listing.
 
 = 1.0.1 =
 * New: Initial release
+
+== Custom Section Test ==
+
+{"msg": "This is a custom section."}
