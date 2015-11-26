@@ -61,7 +61,7 @@
 					</div>
 					<div
 						class="rw-ui-container rw-class-<?php echo $criteria_rclass ?>" <?php echo $multi_criteria ? "data-uarid=\"$urid_summary\"" : ''; ?> <?php echo ( $multi_criteria || $default_hide_recommendations ) ? ' data-hide-recommendations="true" ' : ''; ?>
-						data-urid="<?php echo $urid; ?>" data-sync="false"></div>
+						data-urid="<?php echo $urid; ?>" data-read-only="false" data-sync="false"></div>
 					<p></p>
 				</td>
 			</tr>
