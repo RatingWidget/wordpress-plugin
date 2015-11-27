@@ -67,7 +67,7 @@
 									<div class="form-group">
 										<div class="col-sm-5">
 											<button type="submit" class="button button-secondary next-step"
-											        data-loading-text="Saving..."><?php _erw( ' next-step' ) ?></button>
+											        data-loading-text="Saving..."><?php _erw( 'next-step' ) ?></button>
 											<button type="submit" class="button button-secondary save"
 											        href="#edit-summary"><?php _erw( 'update-name' ) ?></button>
 											<button type="submit" class="button cancel-save" href="#edit-summary"
