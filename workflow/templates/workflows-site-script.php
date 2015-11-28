@@ -13,7 +13,7 @@
     }
 ?>
 <script type="text/javascript">
-function Class_WF_Engine( options, $ ) {
+function Class_WF_Engine( options, $, undef ) {
 	var _options = $.extend({}, options ),
 		_init = function() {
 			if ( ! _options.workflows ) {
@@ -88,6 +88,10 @@ function Class_WF_Engine( options, $ ) {
 					
 					var $modal = $( modalHTML );
 					
+                                        if ( undef !== args.id ) {
+                                            $modal.attr( 'id', args.id );
+                                        }
+
 					if ( ! args.title ) {
 						$modal.addClass( 'no-body' );
 					}
