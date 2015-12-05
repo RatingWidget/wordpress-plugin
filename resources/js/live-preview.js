@@ -51,16 +51,6 @@
             }
         });
 
-        $('.rw-add-rating').on('click', addRatingCriterion);
-
-        $('.show-summary-rating').on('click', function() {
-            if ($(this).prop('checked')) {
-                $('.rw-summary-rating').show();
-            } else {
-                $('.rw-summary-rating').hide();
-            }
-        });
-
         $('#rw_preview_container').on('keyup keydown blur', '.rw-add-label input', function(e) {
             if (e.type == 'keydown') {
                 // If enter key is pressed
@@ -135,7 +125,7 @@
         });
 
         $('#rw_preview_container').on('click', '.rw-add-label a', function() {
-            var currentLabel = $(this).text();
+            var currentLabel = $(this).text().trim();
             var placeholderText = $(this).data('placeholder');
             var inputField = $('<input type="text" />');
             inputField.attr('placeholder', placeholderText);
