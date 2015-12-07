@@ -4524,9 +4524,26 @@
 
 					if ( $this->_menu->is_override_exact() ) {
 						// Make sure the current page is matching the activation page.
-						if ( fs_canonize_url( $_SERVER['REQUEST_URI'] ) !== fs_canonize_url( $this->get_activation_url(), true ) ) {
-							// DO NOT OVERRIDE PAGE.
+						$activation_url = strtolower( $this->get_activation_url() );
+						$request_url    = strtolower( $_SERVER['REQUEST_URI'] );
+
+						if ( parse_url( $activation_url, PHP_URL_PATH ) !== parse_url( $request_url, PHP_URL_PATH ) ) {
+							// Different path - DO NOT OVERRIDE PAGE.
 							return;
+						}
+
+						$activation_url_params = array();
+						parse_str( parse_url( $activation_url, PHP_URL_QUERY ), $activation_url_params );
+
+						$request_url_params = array();
+						parse_str( parse_url( $request_url, PHP_URL_QUERY ), $request_url_params );
+
+
+						foreach ( $activation_url_params as $key => $val ) {
+							if ( ! isset( $request_url_params[ $key ] ) || $val != $request_url_params[ $key ] ) {
+								// Not matching query string - DO NOT OVERRIDE PAGE.
+								return;
+							}
 						}
 					}
 				} else {
@@ -4564,6 +4581,17 @@
 			}
 		}
 
+		/**
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.0.0
+		 *
+		 * @return string
+		 */
+		private function get_top_level_menu_slug() {
+			return ( $this->is_addon() ?
+				$this->get_parent_instance()->_menu->get_top_level_menu_slug() :
+				$this->_menu->get_top_level_menu_slug() );
+		}
 
 		/**
 		 * Add default Freemius menu items.
@@ -4640,9 +4668,7 @@
 					if ( ! isset( $item['url'] ) ) {
 						$hook = add_submenu_page(
 							$item['show_submenu'] ?
-								( $this->is_addon() ?
-									$this->get_parent_instance()->_menu->get_original_menu_slug() :
-									$this->_menu->get_original_menu_slug() ) :
+								$this->get_top_level_menu_slug() :
 								null,
 							$item['page_title'],
 							$item['menu_title'],
@@ -4656,9 +4682,7 @@
 						}
 					} else {
 						add_submenu_page(
-							$this->is_addon() ?
-								$this->get_parent_instance()->_menu->get_original_menu_slug() :
-								$this->_menu->get_original_menu_slug(),
+							$this->get_top_level_menu_slug(),
 							$item['page_title'],
 							$item['menu_title'],
 							$item['capability'],
@@ -4885,21 +4909,6 @@
 			$this->_logger->entrance( $tag );
 
 			add_filter( 'fs_' . $tag . '_' . $this->_slug, $function_to_add, $priority, $accepted_args );
-		}
-
-		/* Activation
-		------------------------------------------------------------------------------------------------------------------*/
-		/**
-		 * Render activation/sign-up page.
-		 *
-		 * @author Vova Feldman (@svovaf)
-		 * @since  1.0.1
-		 */
-		function _activation_page_render() {
-			$this->_logger->entrance();
-
-			$vars = array( 'slug' => $this->_slug );
-			fs_require_once_template( 'activation.php', $vars );
 		}
 
 		/* Account Page
