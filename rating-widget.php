@@ -3135,6 +3135,7 @@
 								$shown_records_num = min( $records_num, $rw_limit );
 								for ( $i = 0; $i < $shown_records_num; $i ++ ) {
 									$rating = $rw_ret_obj->data[ $i ];
+									$rating->title = mb_decode_numericentity( $rating->title, array( 0x80, 0xffff, 0, 0xffff ), 'UTF-8' );
 									?>
 									<tr<?php if ( $alternate ) {
 										echo ' class="alternate"';
