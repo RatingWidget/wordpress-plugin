@@ -21,7 +21,7 @@
         handleRatingReadOnlyStateChange();
         handleRatingTypeChange();
 
-        $('#rw_comment_rating_mode_settings').on('click', '.rw-ui-img-radio-review-mode', function() {
+        $('#rw_comment_rating_mode_settings').delegate( '.rw-ui-img-radio-review-mode', 'click', function() {
             // Change the rating style to stars when the user enables comment review mode.
             $('#rw_rate_type .rw-ui-img-radio:first').click();
 
@@ -41,17 +41,17 @@
             $('#rw_align').val(position);
         });
 
-        $('.rw-add-rating').on('click', addRatingCriterion);
+        $('.rw-add-rating').click( addRatingCriterion );
 
-        $('.show-summary-rating').on('click', function() {
-            if ($(this).prop('checked')) {
+        $('.show-summary-rating').click(function() {
+            if ($(this).attr('checked')) {
                 $('.rw-summary-rating').show();
             } else {
                 $('.rw-summary-rating').hide();
             }
         });
 
-        $('#rw_preview_container').on('keyup keydown blur', '.rw-add-label input', function(e) {
+        $('#rw_preview_container').delegate( '.rw-add-label input', 'keyup keydown blur', function(e) {
             if (e.type == 'keydown') {
                 // If enter key is pressed
                 if (e.keyCode == 13) {
@@ -91,7 +91,7 @@
         });
 
         // Handles the removal of a criterion
-        $('#rw_wp_set').on('click', '.multi-rating .rw-remove-button', function() {
+        $('#rw_wp_set').delegate( '.multi-rating .rw-remove-button', 'click', function() {
             $('tr.rw-rating:last').remove();
 
             // If not multi-criterion, remove the summary rating and make the 1st criterion the main rating
@@ -124,7 +124,7 @@
             return false;
         });
 
-        $('#rw_preview_container').on('click', '.rw-add-label a', function() {
+        $('#rw_preview_container').delegate( '.rw-add-label a', 'click', function() {
             var currentLabel = $(this).text().trim();
             var placeholderText = $(this).data('placeholder');
             var inputField = $('<input type="text" />');
@@ -283,8 +283,8 @@
      * @returns {undefined}
      */
     function handleShowInfoChange() {
-        $('.hide-info-bubble').on('click', function() {
-            var showInfo = !$(this).prop('checked');
+        $('.hide-info-bubble').click(function() {
+            var showInfo = !$(this).attr('checked');
 
             for (var typeIndex in RW.TYPE) {
                 var type = RW.TYPE[typeIndex];
@@ -320,7 +320,7 @@
      * @returns {undefined}
      */
     function handleRatingTypeChange() {
-        $('#rw_rate_type').on('click', '.rw-ui-img-radio', function() {
+        $('#rw_rate_type').delegate( '.rw-ui-img-radio', 'click', function() {
             var type = $(this).find('span:first').text().toLowerCase();
 
             if (type == RW.TYPE.STAR) {
@@ -336,8 +336,9 @@
      * @returns {undefined}
      */
     function handleRatingReadOnlyStateChange() {
-        $('.author-rating-readonly').on('click', function() {
-            var readOnly = $(this).prop('checked');
+        $('.author-rating-readonly').click(function() {
+            var readOnlyAttr = $(this).attr('checked'),
+                readOnly     = ( true === readOnlyAttr || 'checked' === readOnlyAttr );
 
             setRatingReadOnly(readOnly);
 
@@ -348,9 +349,9 @@
             }
         });
 
-        $('#rw_rate_readonly').on('click', '.rw-ui-img-radio', function() {
-            var readOnly = ('ReadOnly' == $(this).find('span:first').text());
-            $('.author-rating-readonly').prop('checked', readOnly);
+        $('#rw_rate_readonly').delegate( '.rw-ui-img-radio', 'click', function() {
+            var readOnly = ('Read Only' == $(this).find('span:first').text());
+            $('.author-rating-readonly').attr('checked', readOnly);
         });
     }
 
@@ -435,7 +436,7 @@
 
         if (total > 1) { // We have a multi-criterion, show additional options
             $('#rw_wp_preview').addClass('multi-rating');
-            if ($('.show-summary-rating').prop('checked')) {
+            if ($('.show-summary-rating').attr('checked')) {
                 $('.rw-summary-rating').show();
             }
         } else {

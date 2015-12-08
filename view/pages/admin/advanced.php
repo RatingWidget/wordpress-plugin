@@ -75,7 +75,7 @@
 									</div>
 									<span
 										style="font-size: 10px; background: white; padding: 2px; border: 1px solid gray; display: block; margin-top: 5px; font-weight: bold; background: rgb(240,240,240); color: black;">Flash dependency <b
-											style="text-decoration: underline;">don't</b> means that if a user don't have a flash player installed on his browser then it will stuck. The reason to disable flash is for users which have flash blocking add-ons (e.g. FF Flashblock add-on), which is quite rare.</span>
+											style="text-decoration: underline;">doesn't</b> mean that if a user doesn't have a flash player installed on his browser then it will get stuck. The reason to disable flash is for users which have flash blocking add-ons (e.g. FF Flashblock add-on), which is quite rare.</span>
 								</div>
 							</div>
 						</div>

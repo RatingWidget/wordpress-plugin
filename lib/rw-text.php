@@ -328,6 +328,7 @@
 		'events'                                      => __( 'Events', 'rating-widget' ),
 		'workflow-name'                               => __( 'Workflow Name', 'rating-widget' ),
 		'next-step'                                   => __( 'Next Step', 'rating-widget' ),
+		'saving'                                      => __( 'Saving...', 'rating-widget' ),
 		'update-name'                                 => __( 'Update Name', 'rating-widget' ),
 		'update-conditions'                           => __( 'Update Conditions', 'rating-widget' ),
 		'update-actions'                              => __( 'Update Actions', 'rating-widget' ),

@@ -14,7 +14,7 @@ var RW_WF_Modal = (function( $ ) {
 		+	'	</div>'
 		+	'</div>',
 		_init = function() {
-			$( 'body' ).on( 'click', '.rw-wf-button-close', function() {
+			$( 'body' ).delegate( '.rw-wf-button-close', 'click', function() {
 				$( 'body' ).removeClass( 'has-rw-wf-modal' );
 				$( this ).parents( '.rw-wf-modal:first' ).remove();
 			});

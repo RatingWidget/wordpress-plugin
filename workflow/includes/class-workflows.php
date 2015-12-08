@@ -452,7 +452,7 @@
 		 * @since  1.0.0
 		 */
 		function new_workflow() {
-			$name = isset( $_POST['name'] ) ? trim( stripslashes( $_POST['name'] ) ) : $_POST['name'];
+			$name = isset( $_POST['name'] ) ? trim( stripslashes( $_POST['name'] ) ) : '';
 
 			// Validate the name of the new workflow.
 			if ( empty( $name ) ) {
@@ -561,7 +561,7 @@
 		 * @since  1.0.0
 		 */
 		function delete_workflow() {
-			$id = isset( $_POST['id'] ) ? trim( $_POST['id'] ) : $_POST['id'];
+			$id = isset( $_POST['id'] ) ? trim( $_POST['id'] ) : '';
 
 			$this->_delete_workflow( $id );
 
@@ -678,6 +678,10 @@
 		 * @since  1.0.0
 		 */
 		function _delete_workflow( $id ) {
+                        if ( empty( $id ) ) {
+                            return;
+                        }
+                        
 			$update = false;
 
 			if ( isset( $this->_workflows->{$id} ) ) {
@@ -746,7 +750,6 @@
 		function _workflows_page_load() {
 			add_action( 'admin_footer', array( &$this, '_admin_footer' ) );
 			wf_enqueue_local_script( 'jquery-ui-sortable' );
-			wf_enqueue_local_script( 'bootstrap', 'bootstrap.min.js' );
 			wf_enqueue_local_script( 'workflows', 'workflow.js' );
 			wf_enqueue_local_script( 'workflows-modal', 'modal.js' );
 			wf_enqueue_local_style( 'workflows', 'workflow.css' );

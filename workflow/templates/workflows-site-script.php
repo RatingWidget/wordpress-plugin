@@ -65,7 +65,7 @@ function Class_WF_Engine( options, $, undef ) {
 				+	'	</div>'
 				+	'</div>',
 				_init = function() {
-					$( 'body' ).on( 'click', '.rw-wf-button-close', function() {
+					$( 'body' ).delegate( '.rw-wf-button-close', 'click', function() {
 						$( this ).parents( '.rw-wf-modal:first' ).remove();
 					});
 				};
@@ -265,8 +265,13 @@ function Class_WF_Engine( options, $, undef ) {
 							continue;
 						}
 						
-						_options.actions[ workflow.actions[ idx ] ] ( workflow, idx );
-						evaluatedWorkflowsCount++;
+						var action = _options.actions[ workflow.actions[ idx ] ];
+						if ( undef === action ) {
+                                                    continue;
+						}
+                                                
+                                                action( workflow, idx );
+                                                evaluatedWorkflowsCount++;
 					}
 				}
 			}

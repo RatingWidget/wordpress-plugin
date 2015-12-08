@@ -13,7 +13,7 @@
 
 					$.ajax({
 						url: ajaxurl,
-						method: 'POST',
+						type: 'POST',
 						data: {
 							action: 'update-workflows-id-order',
 							ids: sortedIDs
@@ -25,7 +25,7 @@
 			/*
 			 * Event Handlers
 			***************************************************************************************/
-			$( 'body' ).on( 'change', 'select.variable-types', function() {
+			$( 'body' ).delegate( 'select.variable-types', 'change', function() {
 				var	$operation = $( this ).parents( '.operation:first' ),
 					$variablesContainer = $operation.find( '.operation-inputs' ),
 					variableTypeId = $( this ).val(),
@@ -56,7 +56,9 @@
 				$colVariable.append( createFromTemplate( variableTypeId ) );
 			});
 			
-			$( '.view-workflows' ).on( 'click', function() {
+			$( '.view-workflows' ).click(function( evt ) {
+                                evt.preventDefault();
+                                
 				// Cancel workflow create mode
 				$( '#edit-workflow' ).removeClass( 'is-creating' );
 				
@@ -64,9 +66,15 @@
 				if ( $( '.workflow-title').hasClass( 'is-editing' ) ) {
 					$( '.workflow-title' ).replaceWith( '<h3 class="workflow-title">' + $( '.workflow-title input' ).val() + '</h3>');
 				}
+                                
+                                showTab( $( this ) );
 			});
 			
-			$( '#edit-workflow' ).on( 'click' , '.button.next-step', function( event ) {
+			$( '#edit-workflow' ).delegate( 'a[data-toggle="tab"]', 'click' , function( event ) {
+                            showTab( $( this ) );
+                        });
+                        
+			$( '#edit-workflow' ).delegate( '.button.next-step', 'click' , function( event ) {
 				event.preventDefault();
 				
 				var	$button	 = $( this ),
@@ -87,7 +95,7 @@
 
 					$.ajax({
 						url: ajaxurl,
-						method: 'POST',
+						type: 'POST',
 						data: {
 							action: ( workflowId.length > 0 ) ? 'update-workflow' : 'new-workflow',
 							name: name,
@@ -135,17 +143,17 @@
 							$listGroupItemTemplate.find( '.list-group-item-content' ).html( name );
 									
 							$( '.nav-pills li:nth-child(1)' ).removeClass( 'active' );
-							$( '.nav-pills li:nth-child(2)' ).removeClass( 'disabled' ).find( 'a' ).attr( 'data-toggle', 'tab' ).tab( 'show' );
+							showTab( $( '.nav-pills li:nth-child(2)' ).removeClass( 'disabled' ).find( 'a' ).attr( 'data-toggle', 'tab' ) );
 						},
 						complete: function() {
-							$button.button( 'reset' );
+							updateButtonState( $button, 'reset' );
 						},
 						beforeSend: function() {
-							$button.button( 'loading' );
+							updateButtonState( $button, 'loading' );
 						}
 					});
 				} else if ( 'edit-conditions' === currentStep ) {
-					$button.button( 'loading' );
+					updateButtonState( $button, 'loading' );
 
 					updateConditions(function() {
 						var $editActions = $( '#edit-actions' ).find( '.edit-actions' );
@@ -158,12 +166,12 @@
 						}
 
 						$( '.nav-pills li:nth-child(2)' ).removeClass( 'active' );
-						$( '.nav-pills li:nth-child(3)' ).removeClass( 'disabled' ).find( 'a' ).attr( 'data-toggle', 'tab' ).tab( 'show' );
+						showTab( $( '.nav-pills li:nth-child(3)' ).removeClass( 'disabled' ).find( 'a' ).attr( 'data-toggle', 'tab' ) );
 					}, function() {
-						$button.button( 'reset' );
+						updateButtonState( $button, 'reset' );
 					});
 				} else if ( 'edit-actions' === currentStep ) {
-					$button.button( 'loading' );
+					updateButtonState( $button, 'loading' );
 
 					updateActions(function() {
 						var $editEvents = $( '#edit-events' ).find( '.edit-events' );
@@ -176,12 +184,12 @@
 						}
 
 						$( '.nav-pills li:nth-child(3)' ).removeClass( 'active' );
-						$( '.nav-pills li:nth-child(4)' ).removeClass( 'disabled' ).find( 'a' ).attr( 'data-toggle', 'tab' ).tab( 'show' );
+						showTab( $( '.nav-pills li:nth-child(4)' ).removeClass( 'disabled' ).find( 'a' ).attr( 'data-toggle', 'tab' ) );
 					}, function() {
-						$button.button( 'reset' );
+						updateButtonState( $button, 'reset' );
 					});
 				} else if ( 'edit-events' === currentStep ) {
-					$button.button( 'loading' );
+					updateButtonState( $button, 'loading' );
 
 					updateEvents(function() {
 						var $workflowSummary = $( '#edit-summary' ).find( '.workflow-summary' );
@@ -277,16 +285,16 @@
 						$workflowSummary.find( '.list-group:eq(2)' ).html( eventTypesHtml );
 
 						$( '.nav-pills li:nth-child(4)' ).removeClass( 'active' );
-						$( '.nav-pills li:nth-child(5)' ).removeClass( 'disabled' ).find( 'a' ).attr( 'data-toggle', 'tab' ).tab( 'show' );
+						showTab( $( '.nav-pills li:nth-child(5)' ).removeClass( 'disabled' ).find( 'a' ).attr( 'data-toggle', 'tab' ) );
 
 						$( '#edit-workflow' ).addClass( 'is-editing' );
 					}, function() {
-						$button.button( 'reset' );
+						updateButtonState( $button, 'reset' );
 					});
 				}
 			});
 			
-			$( 'body' ).on( 'click', '.button.save', function( evt ) {
+			$( 'body' ).delegate( '.button.save', 'click', function( evt ) {
 				evt.preventDefault();
 				
 				var	$button	 = $( this ),
@@ -304,7 +312,7 @@
 
 					$.ajax({
 						url: ajaxurl,
-						method: 'POST',
+						type: 'POST',
 						data: {
 							action: 'update-workflow',
 							name: name,
@@ -315,40 +323,40 @@
 							showSummary();
 						},
 						complete: function() {
-							$button.button( 'reset' );
+							updateButtonState( $button, 'reset' );
 						},
 						beforeSend: function() {
-							$button.button( 'loading' );
+							updateButtonState( $button, 'loading' );
 						}
 					});
 				} else if ( 'edit-conditions' === currentTabId ) {
-					$button.button( 'loading' );
+					updateButtonState( $button, 'loading' );
 					updateConditions(function() {
 						updateSummary();
 						showSummary();
 					}, function() {
-						$button.button( 'reset' );
+						updateButtonState( $button, 'reset' );
 					});
 				} else if ( 'edit-actions' === currentTabId ) {
-					$button.button( 'loading' );
+					updateButtonState( $button, 'loading' );
 					updateActions( function() {
 						updateSummary();
 						showSummary();
 					}, function() {
-						$button.button( 'reset' );
+						updateButtonState( $button, 'reset' );
 					});
 				} else if ( 'edit-events' === currentTabId ) {
-					$button.button( 'loading' );
+					updateButtonState( $button, 'loading' );
 					updateEvents(function() {
 						updateSummary();
 						showSummary();
 					}, function() {
-						$button.button( 'reset' );
+						updateButtonState( $button, 'reset' );
 					});
 				}
 			});
 			
-			$( 'body' ).on( 'click', '.workflow-title', function( evt ) {
+			$( 'body' ).delegate( '.workflow-title', 'click', function( evt ) {
 				// Prevent default behavior. e.g.: prevent form submission when the submit button is clicked.
 				evt.preventDefault();
 				
@@ -363,7 +371,7 @@
 						if ( newWorkflowName.length > 0 ) {
 							$.ajax({
 								url: ajaxurl,
-								method: 'POST',
+								type: 'POST',
 								data: {
 									action: 'update-workflow',
 									name: newWorkflowName,
@@ -378,10 +386,10 @@
 									$( '.workflow-title' ).replaceWith( '<h3 class="workflow-title">' + newWorkflowName + '</h3>');
 								},
 								complete: function() {
-									$button.button( 'reset' );
+									updateButtonState( $button, 'reset' );
 								},
 								beforeSend: function() {
-									$button.button( 'loading' );
+									updateButtonState( $button, 'loading' );
 								}
 							});
 						}
@@ -408,11 +416,11 @@
 				
 				resetWorkflow();
 				
-				$( 'a[href="#edit-name"]' ).tab( 'show' );
-				$( this ).tab( 'show' );
+				showTab( $( 'a[href="#edit-name"]' ) );
+				showTab( $( this ) );
 			});
 			
-			$( 'body' ).on( 'click', '.workflow-summary .button.edit-workflow', function( evt ) {
+			$( 'body' ).delegate( '.workflow-summary .button.edit-workflow', 'click', function( evt ) {
 				evt.preventDefault();
 				
 				if ( $( this ).hasClass( 'edit-conditions' ) ) {
@@ -557,10 +565,10 @@
 					return;
 				}
 				
-				$( this ).tab( 'show' );
+				showTab( $( this ) );
 			});
 			
-			$( '#workflows' ).on( 'click', '.button.remove-workflow', function() {
+			$( '#workflows' ).delegate( '.button.remove-workflow', 'click', function() {
 				var	$button = $( this ),
 					targetWorkflowId = $button.parents( '.list-group-item:first' ).attr( 'data-id' );
 				
@@ -584,7 +592,7 @@
 								if ( workflowId ) {
 									$.ajax({
 										url: ajaxurl,
-										method: 'POST',
+										type: 'POST',
 										data: {
 											action: 'delete-workflow',
 											id: workflowId
@@ -610,13 +618,14 @@
 				});
 			});
 
-			$( '#workflows' ).on( 'change', '.workflow-state', function() {
-				var workflowId	= $( this ).parents( '.list-group-item:first' ).attr( 'data-id' ),
-					active		= $( this ).prop( 'checked' );
+			$( '#workflows' ).delegate( '.workflow-state', 'change', function() {
+				var workflowId  = $( this ).parents( '.list-group-item:first' ).attr( 'data-id' ),
+                                    activeAttr  = $( this ).attr( 'checked' ),
+                                    active      = ( true === activeAttr || 'checked' === activeAttr );
 
 				$.ajax({
 					url: ajaxurl,
-					method: 'POST',
+					type: 'POST',
 					data: {
 						action: 'update-workflow',
 						id: workflowId,
@@ -625,9 +634,14 @@
 				});
 			});
 			
-			$( '#workflows' ).on( 'click', '.list-group-item-content', function( evt ) {
-				evt.preventDefault();
-
+			$( '#workflows' ).delegate( '.list-group-item', 'click', function( evt ) {
+                                var $target = $( evt.target );
+                                if ( $target.is( '.pull-right' ) || $target.parents( '.pull-right' ).length > 0 ) {
+                                    return true;
+                                }
+                                
+                                evt.preventDefault();
+                                
 				var $workflowSummary = $( '#edit-summary' ).find( '.workflow-summary' );
 
 				if ( 0 === $workflowSummary.length ) {
@@ -638,7 +652,7 @@
 					$workflowSummary.find( '.list-group:last' ).html( '' );
 				}
 				
-				var workflowId = $( this ).parent().attr( 'data-id' );
+				var workflowId = $( this ).attr( 'data-id' );
 				var workflow = WORKFLOWS_SETTINGS.workflows[ workflowId ];
 				
 				var conditionsHtml = '';
@@ -733,16 +747,16 @@
 				$( '#workflows' ).removeClass( 'active' );
 				$( '#edit-workflow' ).addClass( 'active' );
 				$( 'a[href="#edit-summary"]' ).parent().removeClass( 'active' );
-				$( 'a[href="#edit-summary"]' ).tab( 'show' );
+				showTab( $( 'a[href="#edit-summary"]' ) );
 			});
 			
-			$( 'body' ).on( 'click', '.rw-wf-modal .rw-wf-button-close, .rw-wf-modal .button-close', function( evt ) {
+			$( 'body' ).delegate( '.rw-wf-modal .rw-wf-button-close, .rw-wf-modal .button-close', 'click', function( evt ) {
                 evt.preventDefault();
                 
 				$( this ).parents( '.rw-wf-modal:first' ).removeClass( 'active' );
 			});
 			
-			$( 'body' ).on( 'click', '.and-operation-container .add-or, .and-operation-container .remove-operation, .and-operation-container .add-operation', function() {
+			$( 'body' ).delegate( '.and-operation-container .add-or, .and-operation-container .remove-operation, .and-operation-container .add-operation', 'click', function() {
 				var $currentTab = $( this ).parents( '.tab-pane:first' ),
 					currentTabId = $currentTab.attr( 'id' );
 				
@@ -922,7 +936,7 @@
 
 		$.ajax({
 			url: ajaxurl,
-			method: 'POST',
+			type: 'POST',
 			data: {
 				action: 'update-workflow',
 				id: $( '#edit-workflow' ).attr( 'data-id' ),
@@ -948,7 +962,7 @@
 
 		$.ajax({
 			url: ajaxurl,
-			method: 'POST',
+			type: 'POST',
 			data: {
 				action: 'update-workflow',
 				id: $( '#edit-workflow' ).attr( 'data-id' ),
@@ -974,7 +988,7 @@
 
 		$.ajax({
 			url: ajaxurl,
-			method: 'POST',
+			type: 'POST',
 			data: {
 				action: 'update-workflow',
 				id: $( '#edit-workflow' ).attr( 'data-id' ),
@@ -1101,7 +1115,7 @@
 	 */
 	function showSummary() {
 		$( '.nav-pills' ).children().removeClass( 'active' );
-		$( 'a[href="#edit-summary"]' ).attr( 'data-toggle', 'tab' ).tab( 'show' );
+                showTab( $( 'a[href="#edit-summary"]' ).attr( 'data-toggle', 'tab' ) );
 	}
 	
 	/**
@@ -1129,7 +1143,6 @@
 	
 	/**
 	 * Creates the list of workflows and populates the operators dropdown list.
-	 *
 	 */
 	function initWorkflows() {
 		populateWorkflowsList();
@@ -1193,7 +1206,7 @@
 				
 				$listGroupItemTemplate.find( '.list-group-item-content' ).html( workflow.name );
 				if ( workflow.active ) {
-					$listGroupItemTemplate.find( '.workflow-state' ).prop( 'checked', true );
+					$listGroupItemTemplate.find( '.workflow-state' ).attr( 'checked', true );
 				}
 				
 				$listGroup.append( $listGroupItemTemplate );
@@ -1226,4 +1239,48 @@
 			}
 		}
 	}
+        
+	/**
+	 * Changes the current view.
+	 * 
+	 * @param Object $tab The clicked tab navigation control.
+	 */
+        function showTab( $tab ) {
+            if ( $tab.parent( 'li' ).hasClass( 'active' ) ) {
+                return;
+            }
+            
+            var $tabParentNav  = $tab.parent().parent(),
+                $tabPane       = $( $tab.attr( 'href' ) ),
+                $tabPaneParent = $tabPane.parent();
+        
+            if ( $tabParentNav.hasClass( 'nav' ) ) {
+                if ( $tabParentNav.children( '.active' ).length > 0 ) {
+                    $tabParentNav.children( '.active' ).removeClass( 'active' );
+                }
+                
+                $tab.parent().addClass( 'active' );
+            }
+            
+            if ( $tabPaneParent.children( '.active' ).length > 0 ) {
+                $tabPaneParent.children( '.active' ).removeClass( 'active' );
+            }
+
+            $tabPane.addClass( 'active' );
+        }
+        
+	/**
+	 * Changes the button's state, e.g: loading.
+	 * 
+	 * @param Object $button.
+	 * @param String state The new state, e.g.: loading or reset.
+	 */
+        function updateButtonState( $button, state ) {
+            if ( 'loading' === state ) {
+                $button.data( 'default-text', $button.text() );
+                $button.addClass( 'disabled' ).attr( 'disabled', true ).text( $button.data( 'loading-text' ) );
+            } else {
+                $button.removeClass( 'disabled' ).attr( 'disabled', false ).text( $button.data( 'default-text' ) );
+            }
+        }
 }) ( jQuery );

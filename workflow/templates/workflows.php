@@ -67,7 +67,7 @@
 									<div class="form-group">
 										<div class="col-sm-5">
 											<button type="submit" class="button button-secondary next-step"
-											        data-loading-text="Saving..."><?php _erw( 'next-step' ) ?></button>
+											        data-loading-text="<?php _erw( 'saving' ) ?>"><?php _erw( 'next-step' ) ?></button>
 											<button type="submit" class="button button-secondary save"
 											        href="#edit-summary"><?php _erw( 'update-name' ) ?></button>
 											<button type="submit" class="button cancel-save" href="#edit-summary"
@@ -77,7 +77,7 @@
 								</div>
 								<div id="edit-conditions" class="tab-pane workflow-step">
 									<button type="submit" class="button button-secondary next-step"
-									        href="#edit-actions"><?php _erw( 'next-step' ) ?></button>
+									        href="#edit-actions" data-loading-text="<?php _erw( 'saving' ) ?>"><?php _erw( 'next-step' ) ?></button>
 									<button type="submit" class="button button-secondary save"
 									        href="#edit-summary"><?php _erw( 'update-conditions' ) ?></button>
 									<button type="submit" class="button cancel-save" href="#edit-summary"
@@ -86,7 +86,7 @@
 								</div>
 								<div id="edit-actions" class="tab-pane workflow-step">
 									<button type="submit" class="button button-secondary next-step"
-									        href="#edit-events"><?php _erw( 'next-step' ) ?></button>
+									        href="#edit-events" data-loading-text="<?php _erw( 'saving' ) ?>"><?php _erw( 'next-step' ) ?></button>
 									<button type="submit" class="button button-secondary save"
 									        href="#edit-summary"><?php _erw( 'update-actions' ) ?></button>
 									<button type="submit" class="button cancel-save" href="#edit-summary"
@@ -95,7 +95,7 @@
 								</div>
 								<div id="edit-events" class="tab-pane workflow-step">
 									<button type="submit" class="button button-secondary next-step"
-									        href="#edit-summary"><?php _erw( 'next-step' ) ?></button>
+									        href="#edit-summary" data-loading-text="<?php _erw( 'saving' ) ?>"><?php _erw( 'next-step' ) ?></button>
 									<button type="submit" class="button button-secondary save"
 									        href="#edit-summary"><?php _erw( 'update-events' ) ?></button>
 									<button type="submit" class="button cancel-save" href="#edit-summary"
