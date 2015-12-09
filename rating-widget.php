@@ -2496,7 +2496,7 @@
 					} else if ('rating-widget-affiliation' === $_GET['page']) {
 						// Enqueue the affiliation page CSS
 						rw_enqueue_style('rw-affiliation-style', WP_RW__PLUGIN_URL . 'resources/css/affiliation.css');
-					} else {
+					} else if ( 'rating-widget-workflows' !== $_GET['page'] ) {
 						// Settings page includes.
 						rw_enqueue_script('rw_cp', 'vendors/colorpicker.js');
 						rw_enqueue_script('rw_cp_eye', 'vendors/eye.js');
