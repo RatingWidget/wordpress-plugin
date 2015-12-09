@@ -499,7 +499,8 @@
 						__rw( 'invalid-workflow-name' )
 					)
 				);
-
+                                
+                                echo json_encode( $message );
 				exit;
 			}
 

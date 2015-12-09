@@ -70,12 +70,20 @@
                                 showTab( $( this ) );
 			});
 			
-			$( '#edit-workflow' ).delegate( 'a[data-toggle="tab"]', 'click' , function( event ) {
+			$( '#edit-workflow' ).delegate( 'button.cancel-save', 'click' , function( evt ) {
+                            evt.preventDefault();
+                                
                             showTab( $( this ) );
                         });
                         
-			$( '#edit-workflow' ).delegate( '.button.next-step', 'click' , function( event ) {
-				event.preventDefault();
+			$( '#edit-workflow' ).delegate( 'a[data-toggle="tab"]', 'click' , function( evt ) {
+                            evt.preventDefault();
+                                
+                            showTab( $( this ) );
+                        });
+                        
+			$( '#edit-workflow' ).delegate( '.button.next-step', 'click' , function( evt ) {
+				evt.preventDefault();
 				
 				var	$button	 = $( this ),
 					$currentTab = $button.parents( '.tab-pane:first' ),
@@ -1126,12 +1134,12 @@
 	function createFromTemplate( templateClass, defaultValue ) {
 		var $template = $( '.workflow-template[data-class^="' + templateClass + '"]' ).clone();
 		$template.attr({
-			'class': $template.data( 'class' ),
+			'class': $template.attr( 'data-class' ),
 			'data-class': ''
 		});
 		
-		if ( $template.data( 'id' ) ) {
-			$template.attr( 'id', $template.data( 'id' ) );
+		if ( $template.attr( 'data-id' ) ) {
+			$template.attr( 'id', $template.attr( 'data-id' ) );
 		}
 		
 		if ( defaultValue ) {
@@ -1199,7 +1207,7 @@
 
 			for ( var idx in workflowIds ) {
 				var workflowId	= workflowIds[ idx ],
-					workflow	= workflows[ workflowId ];
+                                    workflow	= workflows[ workflowId ];
 
 				var $listGroupItemTemplate = createFromTemplate( 'list-group-item' );
 				$listGroupItemTemplate.attr( 'data-id', workflowId );

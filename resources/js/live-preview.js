@@ -337,8 +337,8 @@
      */
     function handleRatingReadOnlyStateChange() {
         $('.author-rating-readonly').click(function() {
-            var readOnlyAttr = $(this).attr('checked'),
-                readOnly     = ( true === readOnlyAttr || 'checked' === readOnlyAttr );
+            var checkedAttr = $(this).attr('checked'),
+                readOnly    = ( true === checkedAttr || 'checked' === checkedAttr );
 
             setRatingReadOnly(readOnly);
 
