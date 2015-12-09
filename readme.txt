@@ -2,7 +2,7 @@
 Contributors: ratingwidget, svovaf, leorw, freemius
 Donate link: http://rating-widget.com/pricing/wordpress/
 Tags: rate, rating, ratings, vote, votes, voting, star, stars, like, dislike, thumbs, widget, widgets, star rating, thumb rating, rating platform, rating system, seo, post rating, comment rating, 5 star, five star, sidebar, comment, comments, post, posts, page, pages, google, admin, administrator, review, reviews, rich-snippets, plugin, plugins, ajax, buddypress, bbpress, social, javascript, js, wordpress, meta, woocommerce, jquery, contest, competition, voting contest, rtmedia
-Requires at least: 2.9
+Requires at least: 3.0
 Tested up to: 4.3
 Stable tag: 2.7.3
 License: GPLv2 or later
@@ -187,8 +187,13 @@ The RatingWidget Team
 
 == Change Log ==
 
-= 2.7.3 - 2015-11-18 =
+= 2.7.3 - 2015-12-09 =
 * Optimization: Removed unused templates.
+* Fix: Fixed reports page encoding issue.
+* Fix: Fixed issues related to the live preview.
+* Fix: The metabox rating should always be active (not read-only).
+* Fix: Fixed JavaScript compatibility issues with lower versions of WordPress.
+* Update: Rich snippet is now enabled by default when using the [ratingwidget] shortcode.
 
 = 2.7.2 - 2015-11-18 =
 * Fix: Minor fix in deactivation form.
