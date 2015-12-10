@@ -2459,7 +2459,7 @@
 
 						// "5-star WP rate" message styles
 						rw_enqueue_style('rw-five-star-wp-rate-notice-style', WP_RW__PLUGIN_URL . 'resources/css/five-star-wp-rate-notice.css');
-					}
+                                	}
 				}
 
 				if (!$this->_inDashboard)
@@ -3058,7 +3058,7 @@
 									"title"   => __rw( 'title' ),
 									"urid"    => __rw( 'id' ),
 									"created" => __rw( 'start-date' ),
-									"updated" => __rw( 'last-update' ),
+									"updated" => __rw( 'last-updated' ),
 									"votes"   => __rw( 'votes' ),
 									"avgrate" => __rw( 'average-rate' ),
 								);
@@ -3122,7 +3122,7 @@
 								<th scope="col" class="manage-column"><?php _erw( 'title' ) ?></th>
 								<th scope="col" class="manage-column"><?php _erw( 'id' ) ?></th>
 								<th scope="col" class="manage-column"><?php _erw( 'start-date' ) ?></th>
-								<th scope="col" class="manage-column"><?php _erw( 'last-update' ) ?></th>
+								<th scope="col" class="manage-column"><?php _erw( 'last-updated' ) ?></th>
 								<th scope="col" class="manage-column"><?php _erw( 'votes' ) ?></th>
 								<th scope="col" class="manage-column"><?php _erw( 'average-rate' ) ?></th>
 							</tr>
@@ -3433,7 +3433,7 @@
 								$select = array(
 									"rid"     => __rw( 'rating-id' ),
 									"created" => __rw( 'start-date' ),
-									"updated" => __rw( 'last-update' ),
+									"updated" => __rw( 'last-updated' ),
 									"rate"    => __rw( 'rate-noun' ),
 									"vid"     => __rw( 'user-id' ),
 									"pcid"    => __rw( 'device-id' ),
@@ -3752,7 +3752,7 @@
 								$select = array(
 									"rid"     => __rw( 'id' ),
 									"created" => __rw( 'start-date' ),
-									"updated" => __rw( 'last-update' ),
+									"updated" => __rw( 'last-updated' ),
 									"rate"    => __rw( 'rate-noun' ),
 									"vid"     => __rw( 'user-id' ),
 									"pcid"    => __rw( 'device-id' ),

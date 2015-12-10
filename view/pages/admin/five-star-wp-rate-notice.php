@@ -11,7 +11,7 @@
 	extract( $VARS );
 ?>
 <div>
-	<?php echo sprintf( __rw( 'rate-ask-message' ), $min_votes_trigger ) ?>
+	<?php echo sprintf( __rw( 'rate-ask_message' ), $min_votes_trigger ) ?>
 	<br/><br/>
 	<strong><em>~ Vova Feldman</em></strong>
 </div>
