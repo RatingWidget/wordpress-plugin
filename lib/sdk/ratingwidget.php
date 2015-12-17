@@ -18,7 +18,7 @@
 	if (!function_exists('curl_init'))
         throw new Exception('RatingWidget needs the CURL PHP extension.');
 
-    require_once(dirname(__FILE__) . '/RatingWidgetBase.php');
+    require_once( dirname( __FILE__ ) . '/RatingWidgetBase.php' );
 
     define('RW_SDK__USER_AGENT', 'rw-php-' . RatingWidgetBase::VERSION);
 

@@ -55,7 +55,7 @@
 
 		private static function _init() {
 			if ( ! class_exists( 'RatingWidget' ) ) {
-				require_once(WP_RW__PLUGIN_LIB_DIR . 'sdk/ratingwidget.php');
+				require_once( WP_RW__PLUGIN_LIB_DIR . 'sdk/ratingwidget.php' );
 			}
 
 			self::$_options    = FS_Option_Manager::get_manager( WP_RW__OPTIONS, true );
