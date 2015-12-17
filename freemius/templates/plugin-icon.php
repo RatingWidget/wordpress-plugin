@@ -10,6 +10,9 @@
 
 	$icons = glob( fs_normalize_path( WP_FS__DIR_IMG . '/icon.*' ) );
 	if ( ! is_array( $icons ) || 0 === count( $icons ) ) {
+		$icon_found = false;
+		$local_path = fs_normalize_path( WP_FS__DIR_IMG . '/icon.png' );
+
 		if ( WP_FS__IS_LOCALHOST && $fs->is_org_repo_compliant() ) {
 			/**
 			 * IMPORTANT: THIS CODE WILL NEVER RUN AFTER THE PLUGIN IS IN THE REPO.
@@ -20,17 +23,14 @@
 			 * the repository.
 			 */
 			$suffixes = array(
-				'128x128.png',
-				'128x128.jpg',
-				'256x256.png',
-				'256x256.jpg',
+				'-128x128.png',
+				'-128x128.jpg',
+				'-256x256.png',
+				'-256x256.jpg',
 				'.svg',
 			);
 
-			$base_url = 'https://plugins.svn.wordpress.org/' . $slug . '/assets/icon-';
-
-			$icon_found = false;
-			$local_path = fs_normalize_path( WP_FS__DIR_IMG . '/icon.png' );
+			$base_url = 'https://plugins.svn.wordpress.org/' . $slug . '/assets/icon';
 
 			foreach ( $suffixes as $s ) {
 				$headers = get_headers( $base_url . $s );
@@ -41,14 +41,14 @@
 					break;
 				}
 			}
-
-			if ( ! $icon_found ) {
-				// No icons found, fallback to default icon.
-				copy( fs_normalize_path( WP_FS__DIR_IMG . '/plugin-icon.png' ), $local_path );
-			}
-
-			$icons = array( $local_path );
 		}
+
+		if ( ! $icon_found ) {
+			// No icons found, fallback to default icon.
+			copy( fs_normalize_path( WP_FS__DIR_IMG . '/plugin-icon.png' ), $local_path );
+		}
+
+		$icons = array( $local_path );
 	}
 
 	$relative_url = fs_img_url( substr( $icons[0], strlen( fs_normalize_path( WP_FS__DIR_IMG ) ) ) );
