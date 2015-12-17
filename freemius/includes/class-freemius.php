@@ -9,14 +9,14 @@
 		exit;
 	}
 
-	// "final class" only supported since PHP 5.
+	// "final class"
 	class Freemius extends Freemius_Abstract {
 		/**
 		 * SDK Version
 		 *
 		 * @var string
 		 */
-		public $version = '1.1.3';
+		public $version = '1.1.5';
 
 		#region Plugin Info
 
@@ -276,7 +276,7 @@
 
 				}
 
-				$this->do_action( 'sdk_version_update' );
+				$this->do_action( 'sdk_version_update', $this->_storage->sdk_last_version, $this->version );
 			}
 
 			$plugin_version = $this->get_plugin_version();
@@ -295,7 +295,43 @@
 					$this->_storage->plugin_upgrade_mode   = false;
 				}
 
-				$this->do_action( 'plugin_version_update' );
+				if ( ! empty( $this->_storage->plugin_last_version ) ) {
+					// Different version of the plugin was installed before, therefore it's an update.
+					$this->_storage->is_plugin_new_install = false;
+				}
+
+				$this->do_action( 'plugin_version_update', $this->_storage->plugin_last_version, $plugin_version );
+			}
+		}
+
+		/**
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.1.5
+		 *
+		 * @param string $sdk_prev_version
+		 * @param string $sdk_version
+		 */
+		function _data_migration($sdk_prev_version, $sdk_version) {
+			if ( version_compare($sdk_prev_version, '1.1.5', '<' )  &&
+			     version_compare($sdk_version, '1.1.5', '>=')
+			) {
+				// On version 1.1.5 merged connectivity and is_on data.
+				if ( isset( $this->_storage->connectivity_test ) ) {
+					if ( ! isset( $this->_storage->is_on ) ) {
+						unset( $this->_storage->connectivity_test );
+					} else {
+						$connectivity_data              = $this->_storage->connectivity_test;
+						$connectivity_data['is_active'] = $this->_storage->is_on['is_active'];
+						$connectivity_data['timestamp'] = $this->_storage->is_on['timestamp'];
+
+						// Override.
+						$this->_storage->connectivity_test = $connectivity_data;
+
+						// Remove previous structure.
+						unset( $this->_storage->is_on );
+					}
+
+				}
 			}
 		}
 
@@ -327,6 +363,8 @@
 			add_action( 'init', array( &$this, '_redirect_on_clicked_menu_link' ), WP_FS__LOWEST_PRIORITY );
 
 			$this->add_action( 'after_plans_sync', array( &$this, '_check_for_trial_plans' ) );
+
+			$this->add_action('sdk_version_update', array(&$this, '_data_migration'), WP_FS__DEFAULT_PRIORITY, 2);
 		}
 
 		/**
@@ -572,21 +610,49 @@
 		 * @return string
 		 */
 		private function _find_caller_plugin_file() {
-			$bt              = debug_backtrace();
-			$abs_path_lenght = strlen( ABSPATH );
-			$i               = 1;
-			while (
-				$i < count( $bt ) - 1 &&
-				// substr is used to prevent cases where a freemius folder appears
-				// in the path. For example, if WordPress is installed on:
-				//  /var/www/html/some/path/freemius/path/wordpress/wp-content/...
-				( false !== strpos( substr( fs_normalize_path( $bt[ $i ]['file'] ), $abs_path_lenght ), '/freemius/' ) ||
-				  fs_normalize_path( dirname( dirname( $bt[ $i ]['file'] ) ) ) !== fs_normalize_path( WP_PLUGIN_DIR ) )
-			) {
-				$i ++;
+			$bt                      = debug_backtrace();
+			$backtrace_entries_count = count( $bt );
+
+			// Try to load the cached value of the file path.
+			if ( isset( $this->_storage->plugin_main_file ) ) {
+				if ( file_exists( $this->_storage->plugin_main_file->path ) ) {
+					return $this->_storage->plugin_main_file->path;
+				}
 			}
 
-			return $bt[ $i ]['file'];
+			/**
+			 * All the code below will be executed once on activation.
+			 * If the user changes the main plugin's file name, the file_exists()
+			 * will catch it.
+			 */
+			self::require_plugin_essentials();
+
+			$all_plugins       = get_plugins();
+			$all_plugins_paths = array();
+
+			// Get active plugin's main files real full names (might be symlinks).
+			foreach ( $all_plugins as $relative_path => &$data ) {
+				$all_plugins_paths[] = fs_normalize_path( realpath( WP_PLUGIN_DIR . '/' . $relative_path ) );
+			}
+
+			$plugin_file = null;
+			for ( $i = 1; $i < $backtrace_entries_count; $i ++ ) {
+				if ( in_array( fs_normalize_path( $bt[ $i ]['file'] ), $all_plugins_paths ) ) {
+					$plugin_file = $bt[ $i ]['file'];
+					break;
+				}
+			}
+
+			if ( is_null( $plugin_file ) ) {
+				// Throw an error to the developer in case of some edge case dev environment.
+				wp_die( __fs( 'failed-finding-main-path' ), __fs( 'error' ), array( 'back_link' => true ) );
+			}
+
+			$this->_storage->plugin_main_file = (object) array(
+				'path' => fs_normalize_path( $plugin_file ),
+			);
+
+			return $plugin_file;
 		}
 
 		#region Instance ------------------------------------------------------------------
@@ -825,8 +891,7 @@
 		#region Connectivity Issues ------------------------------------------------------------------
 
 		/**
-		 * Check if Freemius should be turned on for the current plugin install + version combination. The API query
-		 * will be only invoked once per plugin version (cached locally).
+		 * Check if Freemius should be turned on for the current plugin install.
 		 *
 		 * @author Vova Feldman (@svovaf)
 		 * @since  1.0.9
@@ -840,56 +905,12 @@
 				return $this->_is_on;
 			}
 
-			// If already installed then sure it's on :)
-			if ( $this->is_registered() ) {
+			// If already installed or pending then sure it's on :)
+			if ( $this->is_registered() || $this->is_pending_activation() ) {
 				$this->_is_on = true;
 
 				return $this->_is_on;
 			}
-
-			$version = $this->get_plugin_version();
-
-			if ( isset( $this->_storage->is_on ) ) {
-				if ( $version == $this->_storage->is_on['version'] ) {
-					$this->_is_on = $this->_storage->is_on['is_active'];
-
-					return $this->_is_on;
-				}
-			}
-
-			// Defaults to new install.
-			$is_update = false;
-			$is_update = $this->apply_filters( 'is_plugin_update', $is_update );
-
-			/**
-			 * Check anonymously if the SDK should be currently activated.
-			 * The logic is based on whether the developer turned Freemius off,
-			 * or set a limit to the number of activations. It's not related to
-			 * any private information of the current WordPress instance.
-			 *
-			 * Note:
-			 * Only the plugin's public key is being shared with the endpoint.
-			 * NO private nor sensitive information is being shared.
-			 */
-			$result = $this->get_api_plugin_scope()->get(
-				'is_active.json?is_update=' . json_encode( $is_update )
-			);
-
-			$is_active = ! isset( $result->error ) &&
-			             isset( $result->is_active ) &&
-			             is_bool( $result->is_active ) ?
-				$result->is_active :
-				false;
-
-			$this->_storage->is_on = array(
-				'is_active' => $is_active,
-				'timestamp' => WP_FS__SCRIPT_START_TIME,
-				'version'   => $version,
-			);
-
-			$this->_is_on = $is_active;
-
-			return $this->_is_on;
 		}
 
 		/**
@@ -898,10 +919,12 @@
 		 * @author Vova Feldman (@svovaf)
 		 * @since  1.0.9
 		 *
+		 * @param bool $flush
+		 *
 		 * @return bool
 		 */
-		private function has_api_connectivity() {
-			if ( isset( $this->_has_api_connection ) ) {
+		private function has_api_connectivity($flush = false) {
+			if (!$flush && isset( $this->_has_api_connection ) ) {
 				return $this->_has_api_connection;
 			}
 
@@ -914,24 +937,35 @@
 				unset( $this->_storage->connectivity_test );
 			}
 
-			if ( isset( $this->_storage->connectivity_test ) ) {
-				if ( $version == $this->_storage->connectivity_test['version'] &&
-				     $_SERVER['HTTP_HOST'] == $this->_storage->connectivity_test['host'] &&
+			if (isset( $this->_storage->connectivity_test ) ) {
+				if ( $_SERVER['HTTP_HOST'] == $this->_storage->connectivity_test['host'] &&
 				     $_SERVER['SERVER_ADDR'] == $this->_storage->connectivity_test['server_ip']
 				) {
-					$this->_has_api_connection = $this->_storage->connectivity_test['is_connected'];
+					if ( ( $this->_storage->connectivity_test['is_connected'] &&
+					       $this->_storage->connectivity_test['is_active'] ) ||
+					     (!$flush &&
+					      $version == $this->_storage->connectivity_test['version'])
+					) {
+						$this->_has_api_connection = $this->_storage->connectivity_test['is_connected'];
+						$this->_is_on              = $this->_storage->connectivity_test['is_active'];
 
-					return $this->_has_api_connection;
+						return $this->_has_api_connection;
+					}
 				}
 			}
 
-			$is_connected = WP_FS__SIMULATE_NO_API_CONNECTIVITY ?
-				false :
-				$this->get_api_plugin_scope()->test( $this->get_anonymous_id() );
+			$is_update = $this->apply_filters( 'is_plugin_update', !$this->is_plugin_new_install() );
+
+			if ( WP_FS__SIMULATE_NO_API_CONNECTIVITY ) {
+				$is_connected = false;
+			} else {
+				$pong         = $this->get_api_plugin_scope()->ping( $this->get_anonymous_id(), $is_update );
+				$is_connected = $this->get_api_plugin_scope()->is_valid_ping( $pong );
+			}
 
 			if ( ! $is_connected ) {
 				// 2nd try of connectivity.
-				$pong = $this->get_api_plugin_scope()->ping( $this->get_anonymous_id() );
+				$pong = $this->get_api_plugin_scope()->ping( $this->get_anonymous_id(), $is_update );
 
 				if ( $this->get_api_plugin_scope()->is_valid_ping( $pong ) ) {
 					$is_connected = true;
@@ -941,14 +975,22 @@
 				}
 			}
 
+			$is_active = ( ! $is_connected ) ?
+				false :
+				( isset( $pong->is_active ) && true == $pong->is_active );
+
 			$this->_storage->connectivity_test = array(
 				'is_connected' => $is_connected,
 				'host'         => $_SERVER['HTTP_HOST'],
 				'server_ip'    => $_SERVER['SERVER_ADDR'],
+				'is_active'    => $is_active,
+				'timestamp'    => WP_FS__SCRIPT_START_TIME,
+				// Last version with connectivity attempt.
 				'version'      => $version,
 			);
 
 			$this->_has_api_connection = $is_connected;
+			$this->_is_on              = $is_active;
 
 			return $this->_has_api_connection;
 		}
@@ -1523,9 +1565,6 @@
 						}
 					}
 
-					// Turn Freemius off.
-					$this->_is_on = false;
-
 					return;
 				}
 
@@ -1604,7 +1643,7 @@
 						add_action( 'install_plugins_pre_plugin-information', 'fs_install_plugin_information' );
 
 						// Override request for plugin information for Add-ons.
-						add_filter( 'fs_plugins_api', array( &$this, '_get_addon_info_filter' ), 10, 3 );
+						add_filter( 'fs_plugins_api', array( &$this, '_get_addon_info_filter' ), WP_FS__DEFAULT_PRIORITY, 3 );
 					} else {
 						if ( $this->is_paying() || $this->_has_addons() ) {
 							new FS_Plugin_Updater( $this );
@@ -2138,6 +2177,18 @@
 		}
 
 		/**
+		 * Check if currently in plugin activation.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.1.4
+		 *
+		 * @return bool
+		 */
+		function is_plugin_activation() {
+			return get_option( "fs_{$this->_slug}_activated", false );
+		}
+
+		/**
 		 *
 		 * NOTE: admin_menu action executed before admin_init.
 		 *
@@ -2146,7 +2197,7 @@
 		 */
 		function _admin_init_action() {
 			// Automatically redirect to connect/activation page after plugin activation.
-			if ( get_option( "fs_{$this->_slug}_activated", false ) ) {
+			if ( $this->is_plugin_activation() ) {
 				delete_option( "fs_{$this->_slug}_activated" );
 				$this->_redirect_on_activation_hook();
 
@@ -2166,22 +2217,126 @@
 			if ( ! $this->is_addon() && ! $this->is_registered() && ! $this->is_anonymous() ) {
 				if ( ! $this->is_pending_activation() ) {
 					if ( ! $this->_menu->is_activation_page() ) {
-						$this->_admin_notices->add(
-							sprintf(
-								__fs( 'you-are-step-away' ),
-								sprintf( '<b><a href="%s">%s</a></b>',
-									$this->get_activation_url(),
-									sprintf( __fs( 'activate-x-now' ), $this->get_plugin_name() )
-								)
-							),
-							'',
-							'update-nag'
-						);
+						if ( $this->is_plugin_new_install() ) {
+							// Show notice for new plugin installations.
+							$this->_admin_notices->add(
+								sprintf(
+									__fs( 'you-are-step-away' ),
+									sprintf( '<b><a href="%s">%s</a></b>',
+										$this->get_activation_url(),
+										sprintf( __fs( 'activate-x-now' ), $this->get_plugin_name() )
+									)
+								),
+								'',
+								'update-nag'
+							);
+						} else {
+							if ( ! isset( $this->_storage->sticky_optin_added ) ) {
+								$this->_storage->sticky_optin_added = true;
+
+								// Show notice for new plugin installations.
+								$this->_admin_notices->add_sticky(
+									sprintf(
+										__fs( 'few-plugin-tweaks' ),
+										sprintf( '<b><a href="%s">%s</a></b>',
+											$this->get_activation_url(),
+											sprintf( __fs( 'optin-x-now' ), $this->get_plugin_name() )
+										)
+									),
+									'connect_account',
+									'',
+									'update-nag'
+								);
+							}
+
+							if ( $this->has_filter( 'optin_pointer_element' ) ) {
+								// Don't show admin nag if plugin update.
+								wp_enqueue_script( 'wp-pointer' );
+								wp_enqueue_style( 'wp-pointer' );
+
+								$this->_enqueue_connect_essentials();
+
+								add_action( 'admin_print_footer_scripts', array(
+									$this,
+									'_add_connect_pointer_script'
+								) );
+							}
+
+						}
 					}
 				}
 			}
 
 			$this->_add_upgrade_action_link();
+		}
+
+		/**
+		 * Enqueue connect requires scripts and styles.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.1.4
+		 */
+		function _enqueue_connect_essentials() {
+			wp_enqueue_script( 'jquery' );
+			wp_enqueue_script( 'json2' );
+
+			fs_enqueue_local_script( 'postmessage', 'nojquery.ba-postmessage.min.js' );
+			fs_enqueue_local_script( 'fs-postmessage', 'postmessage.js' );
+
+			fs_enqueue_local_style( 'fs_connect', '/admin/connect.css' );
+		}
+
+		/**
+		 * Add connect / opt-in pointer.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.1.4
+		 */
+		function _add_connect_pointer_script() {
+			$vars            = array( 'slug' => $this->_slug );
+			$pointer_content = fs_get_template(
+				$this->is_pending_activation() ?
+					'pending-activation.php' :
+					'connect.php',
+				$vars
+			);
+			?>
+			<script type="text/javascript">// <![CDATA[
+				jQuery(document).ready(function ($) {
+					if ('undefined' !== typeof(jQuery().pointer)) {
+
+						var element = <?php echo $this->apply_filters('optin_pointer_element', '$("#non_existing_element");') ?>;
+
+						if (element.length > 0) {
+							var optin = $(element).pointer($.extend(true, {}, {
+								content     : <?php echo json_encode($pointer_content) ?>,
+								position    : {
+									edge : 'left',
+									align: 'center'
+								},
+								buttons     : function () {
+									// Don't show pointer buttons.
+									return '';
+								},
+								pointerWidth: 482
+							}, <?php echo $this->apply_filters('optin_pointer_options_json', '{}') ?>));
+
+							<?php
+							echo $this->apply_filters('optin_pointer_execute', "
+
+							optin.pointer('open');
+
+							// Tag the opt-in pointer with custom class.
+							$('.wp-pointer #fs_connect')
+								.parents('.wp-pointer.wp-pointer-top')
+								.addClass('fs-opt-in-pointer');
+
+							", 'element', 'optin') ?>
+						}
+					}
+				});
+				// ]]></script>
+		<?php
 		}
 
 		/**
@@ -2285,10 +2440,23 @@
 		}
 
 		/**
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.1.5
+		 *
+		 * @return bool
+		 */
+		private function is_plugin_new_install()
+		{
+			return isset($this->_storage->is_plugin_new_install) &&
+			       $this->_storage->is_plugin_new_install;
+		}
+
+		/**
 		 * Plugin activated hook.
 		 *
 		 * @author Vova Feldman (@svovaf)
 		 * @since  1.0.1
+		 *
 		 * @uses   FS_Api
 		 */
 		function _activate_plugin_event_hook() {
@@ -2332,7 +2500,23 @@
 				}
 			}
 
-			if ( $this->has_api_connectivity() ) {
+			if ( ! isset( $this->_storage->is_plugin_new_install ) ) {
+				/**
+				 * If no previous version of plugin's version exist, it means that it's either
+				 * the first time that the plugin installed on the site, or the plugin was installed
+				 * before but didn't have Freemius integrated.
+				 *
+				 * Since register_activation_hook() do NOT fires since 3.1, and only fires
+				 * on manual activation via the dashboard, is_plugin_activation() is TRUE
+				 * only after immediate activation.
+				 *
+				 * @since 1.1.4
+				 * @link  https://make.wordpress.org/core/2010/10/27/plugin-activation-hooks-no-longer-fire-for-updates/
+				 */
+				$this->_storage->is_plugin_new_install = empty( $this->_storage->plugin_last_version );
+			}
+
+			if ( $this->has_api_connectivity(true) ) {
 				// Store hint that the plugin was just activated to enable auto-redirection to settings.
 				add_option( "fs_{$this->_slug}_activated", true );
 			}
@@ -2403,6 +2587,11 @@
 				unset( $this->_storage->connectivity_test );
 			}
 
+			if (!isset($this->_storage->is_plugin_new_install)) {
+				// Remember that plugin was already installed.
+				$this->_storage->is_plugin_new_install = false;
+			}
+
 			if ( $this->is_registered() ) {
 				// Send deactivation event.
 				$this->sync_install( array(
@@ -2447,6 +2636,8 @@
 		private function skip_connection() {
 			$this->_logger->entrance();
 
+			$this->_admin_notices->remove_sticky( 'connect_account' );
+
 			$this->set_anonymous_mode();
 
 			// Send anonymous skip event.
@@ -2471,8 +2662,8 @@
 			$site = $this->send_install_update( array(), true );
 
 			if ( false !== $site && ! $this->is_api_error( $site ) ) {
-				$this->_site = new FS_Site( $site );
-                                $this->_site->plan = $this->_get_plan_by_id( $site->plan_id );
+				$this->_site       = new FS_Site( $site );
+				$this->_site->plan = $this->_get_plan_by_id( $site->plan_id );
 				$this->_store_site( true );
 			}
 		}
@@ -3797,42 +3988,32 @@
 		 * @return string
 		 */
 		function _get_admin_page_url( $page = '', $params = array() ) {
-			if ( empty( $page ) && ! $this->_menu->is_top_level() ) {
-				// If not a Top-Level menu and asking for main settings page,
-				// then try to replicate plugin's main setting original page URL.
-				switch ( $this->_menu->get_type() ) {
-					case 'tools':
-						return add_query_arg( array(
-							'page' => $this->_menu->get_raw_slug(),
-						), admin_url( 'tools.php' ) );
-					case 'settings':
-						return add_query_arg( array(
-							'page' => $this->_menu->get_raw_slug(),
-						), admin_url( 'options-general.php' ) );
-				}
+			if ( ! $this->_menu->is_top_level() ) {
+				$parent_slug = $this->_menu->get_parent_slug();
+				$menu_file   = ( false !== strpos( $parent_slug, '.php' ) ) ?
+					$parent_slug :
+					'admin.php';
+
+				return add_query_arg( array_merge( $params, array(
+					'page' => $this->_menu->get_slug( $page ),
+				) ), admin_url( $menu_file, 'admin' ) );
 			}
 
 			if ( $this->_menu->is_cpt() ) {
 				if ( empty( $page ) && $this->is_activation_mode() ) {
 					return add_query_arg( array_merge( $params, array(
-						'page' => $this->_menu->get_raw_slug()
+						'page' => $this->_menu->get_slug()
 					) ), admin_url( 'admin.php', 'admin' ) );
 				} else {
 					if ( ! empty( $page ) ) {
-						$params['page'] = trim( "{$this->_menu->get_raw_slug()}-{$page}", '-' );
+						$params['page'] = $this->_menu->get_slug( $page );
 					}
 
-					return add_query_arg( array_merge( $params, array(
-						'post_type' => $this->_menu->get_raw_slug(),
-					) ), admin_url( 'edit.php', 'admin' ) );
+					return add_query_arg( $params, admin_url( $this->_menu->get_raw_slug(), 'admin' ) );
 				}
-			} else if ( false === strpos( $this->_menu->get_raw_slug(), '.php?' ) ) {
-				return add_query_arg( array_merge( $params, array(
-					'page' => trim( "{$this->_menu->get_raw_slug()}-{$page}", '-' )
-				) ), admin_url( 'admin.php', 'admin' ) );
 			} else {
 				return add_query_arg( array_merge( $params, array(
-					'page' => trim( "{$this->_slug}-{$page}", '-' )
+					'page' => $this->_menu->get_slug( $page ),
 				) ), admin_url( 'admin.php', 'admin' ) );
 			}
 		}
@@ -4267,6 +4448,8 @@
 			if ( fs_request_is_action( $this->_slug . '_activate_new' ) ) {
 //				check_admin_referer( $this->_slug . '_activate_new' );
 
+				$this->_admin_notices->remove_sticky( 'connect_account' );
+
 				if ( fs_request_has( 'user_secret_key' ) ) {
 					$user             = new FS_User();
 					$user->id         = fs_request_get( 'user_id' );
@@ -4316,6 +4499,9 @@
 
 			if ( fs_request_is_action( $this->_slug . '_activate_existing' ) && fs_request_is_post() ) {
 //				check_admin_referer( 'activate_existing_' . $this->_plugin->public_key );
+
+				$this->_admin_notices->remove_sticky( 'connect_account' );
+
 				// Get current logged WP user.
 				$current_user = wp_get_current_user();
 
@@ -4505,53 +4691,44 @@
 			$hook = false;
 
 			if ( $this->_menu->is_top_level() ) {
-				$menu = $this->_menu->remove_menu_item();
+				$hook = $this->_menu->override_menu_item( array( &$this, '_connect_page_render' ) );
 
-				if ( false !== $menu ) {
-					// Override menu action.
+				if ( false === $hook ) {
+					// Create new menu item just for the opt-in.
 					$hook = add_menu_page(
-						$menu['menu'][3],
-						$menu['menu'][0],
+						$this->get_plugin_name(),
+						$this->get_plugin_name(),
 						'manage_options',
 						$this->_menu->get_slug(),
-						array( &$this, '_connect_page_render' ),
-						$menu['menu'][6],
-						$menu['position']
+						array( &$this, '_connect_page_render' )
 					);
 				}
 			} else {
-				if ( $this->_menu->has_custom_parent() ) {
-					$menus = array( $this->_menu->get_parent_slug() );
+				$menus = array( $this->_menu->get_parent_slug() );
 
-					if ( $this->_menu->is_override_exact() ) {
-						// Make sure the current page is matching the activation page.
-						$activation_url = strtolower( $this->get_activation_url() );
-						$request_url    = strtolower( $_SERVER['REQUEST_URI'] );
+				if ( $this->_menu->is_override_exact() ) {
+					// Make sure the current page is matching the activation page.
+					$activation_url = strtolower( $this->get_activation_url() );
+					$request_url    = strtolower( $_SERVER['REQUEST_URI'] );
 
-						if ( parse_url( $activation_url, PHP_URL_PATH ) !== parse_url( $request_url, PHP_URL_PATH ) ) {
-							// Different path - DO NOT OVERRIDE PAGE.
+					if ( parse_url( $activation_url, PHP_URL_PATH ) !== parse_url( $request_url, PHP_URL_PATH ) ) {
+						// Different path - DO NOT OVERRIDE PAGE.
+						return;
+					}
+
+					$activation_url_params = array();
+					parse_str( parse_url( $activation_url, PHP_URL_QUERY ), $activation_url_params );
+
+					$request_url_params = array();
+					parse_str( parse_url( $request_url, PHP_URL_QUERY ), $request_url_params );
+
+
+					foreach ( $activation_url_params as $key => $val ) {
+						if ( ! isset( $request_url_params[ $key ] ) || $val != $request_url_params[ $key ] ) {
+							// Not matching query string - DO NOT OVERRIDE PAGE.
 							return;
 						}
-
-						$activation_url_params = array();
-						parse_str( parse_url( $activation_url, PHP_URL_QUERY ), $activation_url_params );
-
-						$request_url_params = array();
-						parse_str( parse_url( $request_url, PHP_URL_QUERY ), $request_url_params );
-
-
-						foreach ( $activation_url_params as $key => $val ) {
-							if ( ! isset( $request_url_params[ $key ] ) || $val != $request_url_params[ $key ] ) {
-								// Not matching query string - DO NOT OVERRIDE PAGE.
-								return;
-							}
-						}
 					}
-				} else {
-					$menus = array(
-						'tools.php',
-						'options-general.php',
-					);
 				}
 
 				foreach ( $menus as $parent_slug ) {
@@ -4616,7 +4793,7 @@
 							'manage_options',
 							'account',
 							array( &$this, '_account_page_load' ),
-							10,
+							WP_FS__DEFAULT_PRIORITY,
 							$this->_menu->is_submenu_item_visible( 'account' )
 						);
 					}
@@ -4629,7 +4806,7 @@
 						'manage_options',
 						'contact',
 						array( &$this, '_clean_admin_content_section' ),
-						10,
+						WP_FS__DEFAULT_PRIORITY,
 						$this->_menu->is_submenu_item_visible( 'contact' )
 					);
 
@@ -4662,6 +4839,33 @@
 				}
 			}
 
+
+			if ( 0 < count( $this->_menu_items ) ) {
+				if ( ! $this->_menu->is_top_level() ) {
+					fs_enqueue_local_style( 'fs_common', '/admin/common.css' );
+
+					// Append submenu items right after the plugin's submenu item.
+					$this->order_sub_submenu_items();
+				} else {
+					// Append submenu items.
+					$this->embed_submenu_items();
+				}
+			}
+		}
+
+		/**
+		 * Moved the actual submenu item additions to a separated function,
+		 * in order to support sub-submenu items when the plugin's settings
+		 * only have a submenu and not top-level menu item.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.1.4
+		 */
+		private function embed_submenu_items() {
+			$item_template = $this->_menu->is_top_level() ?
+				'<span class="fs-submenu-item">%s</span>' :
+				'<span class="fs-submenu-item fs-sub">%s</span>';
+
 			ksort( $this->_menu_items );
 
 			foreach ( $this->_menu_items as $priority => $items ) {
@@ -4672,7 +4876,7 @@
 								$this->get_top_level_menu_slug() :
 								null,
 							$item['page_title'],
-							$item['menu_title'],
+							sprintf( $item_template, $item['menu_title'] ),
 							$item['capability'],
 							$item['menu_slug'],
 							$item['render_function']
@@ -4685,7 +4889,7 @@
 						add_submenu_page(
 							$this->get_top_level_menu_slug(),
 							$item['page_title'],
-							$item['menu_title'],
+							sprintf( $item_template, $item['menu_title'] ),
 							$item['capability'],
 							$item['menu_slug'],
 							array( $this, '' )
@@ -4693,6 +4897,50 @@
 					}
 				}
 			}
+		}
+
+		/**
+		 * Re-order the submenu items so all Freemius added new submenu items
+		 * are added right after the plugin's settings submenu item.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.1.4
+		 */
+		private function order_sub_submenu_items() {
+			global $submenu;
+
+			$top_level_menu = &$submenu[ $this->_menu->get_top_level_menu_slug() ];
+
+			$all_submenu_items_after = array();
+
+			$found_submenu_item = false;
+
+			foreach ( $top_level_menu as $submenu_id => $meta ) {
+				if ( $found_submenu_item ) {
+					// Remove all submenu items after the plugin's submenu item.
+					$all_submenu_items_after[] = $meta;
+					unset( $top_level_menu[ $submenu_id ] );
+				}
+
+				if ( $this->_menu->get_raw_slug() === $meta[2] ) {
+					// Found the submenu item, put all below.
+					$found_submenu_item = true;
+					continue;
+				}
+			}
+
+			// Embed all plugin's new submenu items.
+			$this->embed_submenu_items();
+
+			// Start with specially high number to make sure it's appended.
+			$i = 10000;
+			foreach ( $all_submenu_items_after as $meta ) {
+				$top_level_menu[ $i ] = $meta;
+				$i ++;
+			}
+
+			// Sort submenu items.
+			ksort( $top_level_menu );
 		}
 
 		function _add_default_submenu_items() {
@@ -4733,7 +4981,7 @@
 			$capability = 'manage_options',
 			$menu_slug = false,
 			$before_render_function = false,
-			$priority = 10,
+			$priority = WP_FS__DEFAULT_PRIORITY,
 			$show_submenu = true
 		) {
 			$this->_logger->entrance( 'Title = ' . $menu_title );
@@ -4788,7 +5036,7 @@
 			$url,
 			$menu_slug = false,
 			$capability = 'read',
-			$priority = 10
+			$priority = WP_FS__DEFAULT_PRIORITY
 		) {
 			$this->_logger->entrance( 'Title = ' . $menu_title . '; Url = ' . $url );
 
@@ -4863,7 +5111,7 @@
 		 *
 		 * @uses   add_action()
 		 */
-		function add_action( $tag, $function_to_add, $priority = 10, $accepted_args = 1 ) {
+		function add_action( $tag, $function_to_add, $priority = WP_FS__DEFAULT_PRIORITY, $accepted_args = 1 ) {
 			$this->_logger->entrance( $tag );
 
 			add_action( 'fs_' . $tag . '_' . $this->_slug, $function_to_add, $priority, $accepted_args );
@@ -4906,10 +5154,25 @@
 		 *
 		 * @uses   add_filter()
 		 */
-		function add_filter( $tag, $function_to_add, $priority = 10, $accepted_args = 1 ) {
+		function add_filter( $tag, $function_to_add, $priority = WP_FS__DEFAULT_PRIORITY, $accepted_args = 1 ) {
 			$this->_logger->entrance( $tag );
 
 			add_filter( 'fs_' . $tag . '_' . $this->_slug, $function_to_add, $priority, $accepted_args );
+		}
+
+		/**
+		 * Check if has filter.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.1.4
+		 *
+		 * @param string        $tag
+		 * @param callable|bool $function_to_check Optional. The callback to check for. Default false.
+		 */
+		function has_filter( $tag, $function_to_check = false ) {
+			$this->_logger->entrance( $tag );
+
+			return has_filter( 'fs_' . $tag . '_' . $this->_slug, $function_to_check );
 		}
 
 		/* Account Page
@@ -7098,11 +7361,11 @@
 			add_filter( 'plugin_action_links_' . $this->_plugin_basename, array(
 				&$this,
 				'_modify_plugin_action_links_hook'
-			), 10, 2 );
+			), WP_FS__DEFAULT_PRIORITY, 2 );
 			add_filter( 'network_admin_plugin_action_links_' . $this->_plugin_basename, array(
 				&$this,
 				'_modify_plugin_action_links_hook'
-			), 10, 2 );
+			), WP_FS__DEFAULT_PRIORITY, 2 );
 		}
 
 		/**
@@ -7117,7 +7380,7 @@
 		 * @param int  $priority
 		 * @param bool $key
 		 */
-		function add_plugin_action_link( $label, $url, $external = false, $priority = 10, $key = false ) {
+		function add_plugin_action_link( $label, $url, $external = false, $priority = WP_FS__DEFAULT_PRIORITY, $key = false ) {
 			$this->_logger->entrance();
 
 			if ( ! isset( $this->_action_links[ $priority ] ) ) {
@@ -7161,7 +7424,7 @@
 						__fs( 'add-ons' ),
 						$this->_get_admin_page_url( 'addons' ),
 						false,
-						10,
+						WP_FS__DEFAULT_PRIORITY,
 						'addons'
 					);
 				}

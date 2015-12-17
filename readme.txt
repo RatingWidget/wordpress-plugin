@@ -3,7 +3,7 @@ Contributors: ratingwidget, svovaf, leorw, freemius
 Donate link: http://rating-widget.com/pricing/wordpress/
 Tags: rate, rating, ratings, vote, votes, voting, star, stars, like, dislike, thumbs, widget, widgets, star rating, thumb rating, rating platform, rating system, seo, post rating, comment rating, 5 star, five star, sidebar, comment, comments, post, posts, page, pages, google, admin, administrator, review, reviews, rich-snippets, plugin, plugins, ajax, buddypress, bbpress, social, javascript, js, wordpress, meta, woocommerce, jquery, contest, competition, voting contest, rtmedia
 Requires at least: 3.0
-Tested up to: 4.3
+Tested up to: 4.4
 Stable tag: 2.7.3
 License: GPLv2 or later
 
@@ -20,6 +20,8 @@ The most popular Five Star Review System on the web. User-friendly ratings for: 
 * [bbPress Forum Topics](https://rating-widget.com/blog/bbpress-buddypress-star-rating-plugin/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org), Replies and Users ([PROFESSIONAL plan](http://rating-widget.com/pricing/wordpress/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org))
 * Custom Post Types
 * Author Review
+
+[Test drive RatingWidget Now! (DEMO)](https://addendio.com/try-plugin/?slug=rating-widget "Test drive RatingWidget Now! (DEMO)")
 
 [youtube https://www.youtube.com/watch?v=rRGKd_P5Oa4]
 

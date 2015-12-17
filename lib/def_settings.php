@@ -26,7 +26,7 @@
         {
             if (isset($settings->size))
             {
-                require_once(dirname(__FILE__) . "/defaults.php");
+                require_once( dirname( __FILE__ ) . "/defaults.php" );
                 global $DEF_FONT_SIZE, $DEF_LINE_HEIGHT;
                 $size = strtoupper($settings->size);
                 $settings->advanced->font->size = @rw_get_default_value($settings->advanced->font->size, $DEF_FONT_SIZE->$size);
@@ -58,7 +58,7 @@
         
         $hasTheme = $loadTheme && isset($settings->theme);
 
-        require_once(RW__PATH_THEMES . "dir.php");
+        require_once( RW__PATH_THEMES . "dir.php" );
         
         global $RW_THEMES;
         
