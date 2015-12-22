@@ -2617,13 +2617,18 @@
 
 				$multirating_settings_list = $this->GetOption(WP_RW__MULTIRATING_SETTINGS);
 
-				// If this class has no options set,
-				// load the default options to avoid issues in the
-				// site, live preview, and post edit meta boxes.
-				if (!isset($multirating_settings_list->{$rclass})) {
+                                /**
+                                 * If this class has no options set,
+                                 * load the default options to avoid issues in the
+                                 * site, live preview, and post edit meta boxes.
+                                 */
+				if (
+                                    ! isset( $multirating_settings_list->{$rclass} )
+                                    || ( isset( $multirating_settings_list->{$rclass} ) && ! is_array( $multirating_settings_list->{$rclass}->criteria ) )
+                                    ) {
 					$default_multirating_settings = $this->_OPTIONS_DEFAULTS[WP_RW__MULTIRATING_SETTINGS];
 					if (isset($default_multirating_settings->{$rclass})) {
-						$multirating_settings_list->{$rclass} = $default_multirating_settings->{$rclass};
+                                            $multirating_settings_list->{$rclass} = clone $default_multirating_settings->{$rclass};
 					}
 				}
 
