@@ -3037,7 +3037,7 @@
 								if ( $this->IsBuddyPressInstalled() ) {
 									$select[ __rw( 'activity-updates' ) ]  = "activity-updates";
 									$select[ __rw( 'activity-comments' ) ] = "activity-comments";
-									$select[ __rw( 'users-profiles' ) ]    = "users";
+									$select[ __rw( 'user-profiles' ) ]    = "users";
 
 									if ( $this->IsBBPressInstalled() ) {
 										$select[ __rw( 'forum-posts' ) ] = "forum-posts";
