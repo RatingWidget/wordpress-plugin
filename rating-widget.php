@@ -3,7 +3,7 @@
 	 * Plugin Name: Rating-Widget: Star Review System
 	 * Plugin URI:  http://rating-widget.com/wordpress-plugin/
 	 * Description: Create and manage Rating-Widget ratings in WordPress.
-	 * Version:     2.7.3
+	 * Version:     2.7.4
 	 * Author:      Rating-Widget
 	 * Author URI:  http://rating-widget.com/wordpress-plugin/
 	 * License:     GPLv2
@@ -2617,13 +2617,18 @@
 
 				$multirating_settings_list = $this->GetOption(WP_RW__MULTIRATING_SETTINGS);
 
-				// If this class has no options set,
-				// load the default options to avoid issues in the
-				// site, live preview, and post edit meta boxes.
-				if (!isset($multirating_settings_list->{$rclass})) {
+                                /**
+                                 * If this class has no options set,
+                                 * load the default options to avoid issues in the
+                                 * site, live preview, and post edit meta boxes.
+                                 */
+				if (
+                                    ! isset( $multirating_settings_list->{$rclass} )
+                                    || ( isset( $multirating_settings_list->{$rclass} ) && ! is_array( $multirating_settings_list->{$rclass}->criteria ) )
+                                    ) {
 					$default_multirating_settings = $this->_OPTIONS_DEFAULTS[WP_RW__MULTIRATING_SETTINGS];
 					if (isset($default_multirating_settings->{$rclass})) {
-						$multirating_settings_list->{$rclass} = $default_multirating_settings->{$rclass};
+                                            $multirating_settings_list->{$rclass} = clone $default_multirating_settings->{$rclass};
 					}
 				}
 
@@ -3032,7 +3037,7 @@
 								if ( $this->IsBuddyPressInstalled() ) {
 									$select[ __rw( 'activity-updates' ) ]  = "activity-updates";
 									$select[ __rw( 'activity-comments' ) ] = "activity-comments";
-									$select[ __rw( 'users-profiles' ) ]    = "users";
+									$select[ __rw( 'user-profiles' ) ]    = "users";
 
 									if ( $this->IsBBPressInstalled() ) {
 										$select[ __rw( 'forum-posts' ) ] = "forum-posts";
