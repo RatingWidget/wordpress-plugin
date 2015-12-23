@@ -3,7 +3,7 @@
 	 * Plugin Name: Rating-Widget: Star Review System
 	 * Plugin URI:  http://rating-widget.com/wordpress-plugin/
 	 * Description: Create and manage Rating-Widget ratings in WordPress.
-	 * Version:     2.7.4
+	 * Version:     2.7.5
 	 * Author:      Rating-Widget
 	 * Author URI:  http://rating-widget.com/wordpress-plugin/
 	 * License:     GPLv2
@@ -614,7 +614,7 @@
 						'id' => 1,
 						'title' => 'Reviews',
 						'description' => 'Open a comment form after visitor vote to get textual feedback from your users.',
-						'thumbnail_url' => rw_get_plugin_img_path('add-ons/reviews.jpg'),
+						'thumbnail_url' => rw_get_plugin_img_url( 'add-ons/reviews.jpg' ),
 						'avg_rate' => 5.0,
 						'pricing' => array(
 							array(
@@ -629,7 +629,7 @@
 						'id' => 2,
 						'title' => 'Product Reviews',
 						'description' => 'Open a comment form after visitor vote to get textual feedback from your customers.',
-						'thumbnail_url' => rw_get_plugin_img_path('add-ons/product_reviews.jpg'),
+						'thumbnail_url' => rw_get_plugin_img_url( 'add-ons/product_reviews.jpg' ),
 						'avg_rate' => 5.0,
 						'pricing' => array(
 							array(
@@ -644,7 +644,7 @@
 						'id' => 3,
 						'title' => 'Subscribers',
 						'description' => 'Ask your visitors to subscribe after after a 5-star rating.',
-						'thumbnail_url' => rw_get_plugin_img_path('add-ons/subscribers.jpg'),
+						'thumbnail_url' => rw_get_plugin_img_url( 'add-ons/subscribers.jpg' ),
 						'avg_rate' => 5.0,
 						'pricing' => array(
 							array(
@@ -659,7 +659,7 @@
 						'id' => 4,
 						'title' => 'Twitter Followers',
 						'description' => 'Ask your visitors to follow your Twitter account after a 5-star rating.',
-						'thumbnail_url' => rw_get_plugin_img_path('add-ons/twitter_followers.jpg'),
+						'thumbnail_url' => rw_get_plugin_img_url( 'add-ons/twitter_followers.jpg' ),
 						'avg_rate' => 5.0,
 						'pricing' => array(
 							array(
@@ -674,7 +674,7 @@
 						'id' => 5,
 						'title' => 'Facebook Fans',
 						'description' => 'Ask your visitors to like your Facebook Fans page after a 5-star rating.',
-						'thumbnail_url' => rw_get_plugin_img_path('add-ons/facebook_fans.jpg'),
+						'thumbnail_url' => rw_get_plugin_img_url( 'add-ons/facebook_fans.jpg' ),
 						'avg_rate' => 5.0,
 						'pricing' => array(
 							array(
@@ -689,7 +689,7 @@
 						'id' => 6,
 						'title' => 'Mobile Alerts',
 						'description' => 'Get push notification about every ratings on your site in real-time!',
-						'thumbnail_url' => rw_get_plugin_img_path('add-ons/mobile_alerts.jpg'),
+						'thumbnail_url' => rw_get_plugin_img_url( 'add-ons/mobile_alerts.jpg' ),
 						'avg_rate' => 5.0,
 						'pricing' => array(
 							array(
@@ -704,7 +704,7 @@
 						'id' => 7,
 						'title' => 'Tweets',
 						'description' => 'Ask your visitors to follow your Twitter account after a 5-star rating.',
-						'thumbnail_url' => rw_get_plugin_img_path('add-ons/tweets.jpg'),
+						'thumbnail_url' => rw_get_plugin_img_url( 'add-ons/tweets.jpg' ),
 						'avg_rate' => 5.0,
 						'pricing' => array(
 							array(
@@ -719,7 +719,7 @@
 						'id' => 8,
 						'title' => 'Facebook Likes',
 						'description' => 'Ask your visitors to like your Facebook Fans page after a 5-star rating.',
-						'thumbnail_url' => rw_get_plugin_img_path('add-ons/facebook_likes.png'),
+						'thumbnail_url' => rw_get_plugin_img_url( 'add-ons/facebook_likes.png' ),
 						'avg_rate' => 5.0,
 						'pricing' => array(
 							array(
@@ -2073,16 +2073,20 @@
 					WP_RW__DB_OPTION_WP_RATE_NOTICE_MIN_VOTES_TRIGGER => 10,
 					WP_RW__DB_OPTION_STATS_UPDATED => false,
 					WP_RW__DB_OPTION_RICH_SNIPPETS_SETTINGS => (object) array(
-						'timestamp' => false,
-						'type_wrapper_available' => false,
-						'properties_availability' => array(
-							'headline' => false,
-							'image' => false,
-							'datePublished' => false,
-							'name' => false,
-							'url' => false,
-							'description' => false
-						)
+                                            'timestamp'               => false,
+                                            'type_wrapper_available'  => false,
+                                            'properties_availability' => array(
+                                                'name'             => false,
+                                                'headline'         => false,
+                                                'image'            => false,
+                                                'author'           => false,
+                                                'publisher'        => false,
+                                                'description'      => false,
+                                                'datePublished'    => false,
+                                                'dateModified'     => false,
+                                                'url'              => false,
+                                                'mainEntityOfPage' => false
+                                            )
 					),
 					WP_RW__DB_OPTION_COMMENT_REVIEW_MODE_SETTINGS => (object) array(
 						'is_comment_review_mode' => false,
@@ -2644,24 +2648,25 @@
 			 * @return object
 			 */
 			function get_rich_snippet_settings() {
-				$rich_snippet_settings = $this->GetOption(WP_RW__DB_OPTION_RICH_SNIPPETS_SETTINGS);
-				if (!$rich_snippet_settings) {
-					$rich_snippet_settings = new stdClass();
-				}
+                            $rich_snippet_settings = $this->GetOption( WP_RW__DB_OPTION_RICH_SNIPPETS_SETTINGS );
+                            
+                            if ( ! $rich_snippet_settings ) {
+                                $rich_snippet_settings = new stdClass();
+                            }
 
-				$default_rich_snippet_settings = $this->_OPTIONS_DEFAULTS[WP_RW__DB_OPTION_RICH_SNIPPETS_SETTINGS];
+                            $default_rich_snippet_settings = $this->_OPTIONS_DEFAULTS[ WP_RW__DB_OPTION_RICH_SNIPPETS_SETTINGS ];
 
-				if ( !isset($rich_snippet_settings->properties_availability) ) {
-					$rich_snippet_settings->properties_availability = $default_rich_snippet_settings->properties_availability;
-				} else {
-					foreach ($default_rich_snippet_settings->properties_availability as $name => $value ) {
-						if ( !isset($rich_snippet_settings->properties_availability[$name]) ) {
-							$rich_snippet_settings->properties_availability[$name] = $value;
-						}
-					}
-				}
+                            if ( ! isset( $rich_snippet_settings->properties_availability ) ) {
+                                $rich_snippet_settings->properties_availability = $default_rich_snippet_settings->properties_availability;
+                            } else {
+                                foreach ( $default_rich_snippet_settings->properties_availability as $name => $value ) {
+                                    if ( ! isset( $rich_snippet_settings->properties_availability[ $name ] ) ) {
+                                        $rich_snippet_settings->properties_availability[ $name ] = $value;
+                                    }
+                                }
+                            }
 
-				return $rich_snippet_settings;
+                            return $rich_snippet_settings;
 			}
 
 			/**
@@ -4121,13 +4126,13 @@
 							<li>
 								<ul id="screenshots">
 									<li>
-										<img src="<?php echo rw_get_plugin_img_path('top-rated/legacy.png');?>" alt="">
+										<img src="<?php echo rw_get_plugin_img_url( 'top-rated/legacy.png' );?>" alt="">
 									</li>
 									<li>
-										<img src="<?php echo rw_get_plugin_img_path('top-rated/compact-thumbs.png');?>" alt="">
+										<img src="<?php echo rw_get_plugin_img_url( 'top-rated/compact-thumbs.png' );?>" alt="">
 									</li>
 									<li>
-										<img src="<?php echo rw_get_plugin_img_path('top-rated/thumbs.png');?>" alt="">
+										<img src="<?php echo rw_get_plugin_img_url( 'top-rated/thumbs.png' );?>" alt="">
 									</li>
 								</ul>
 								<div style="clear: both;"> </div>
@@ -4146,7 +4151,7 @@
 							<li>
 								<h3><?php _erw('install') ?></h3>
 								<p><?php _erw('go-to') ?> <b><i><a href="<?php echo get_admin_url(null, 'widgets.php'); ?>" class="button-primary">Appearence > Widgets</a></i></b> and simply drag the <b>Rating-Widget: Top Rated</b> widget to your sidebar.</p>
-								<img src="<?php echo rw_get_plugin_img_path('top-rated/add-widget.png');?>" alt="">
+								<img src="<?php echo rw_get_plugin_img_url( 'top-rated/add-widget.png' );?>" alt="">
 							</li>
 							<li>
 								<h3><?php _erw('new') ?></h3>
@@ -5629,42 +5634,96 @@
 							$schema_title_prop = 'itemprop="name"';
 							*/
 							if ( false === strpos($pElementClass, 'product') ) {
-								if ( !$type_wrapper_available ) {
-									$rating_html = '<div itemscope itemtype="http://schema.org/Article">' . $rating_html;
-								}
+                                                            if ( ! $type_wrapper_available ) {
+                                                                $rating_html = '<div itemscope itemtype="http://schema.org/Article">' . $rating_html;
+                                                            }
 
-								global $post;
+                                                            global $post;
 
-								if ( !empty($pTitle) ) {
-									if ( !$properties_availability['name'] ) {
-										$rating_html .= '<meta itemprop="name" content="' . esc_attr($pTitle) . '" />';
-									}
+                                                            if ( ! empty( $pTitle ) ) {
+                                                                if ( ! $properties_availability['name'] ) {
+                                                                    $rating_html .= '<meta itemprop="name" content="' . esc_attr( $pTitle ) . '" />';
+                                                                }
 
-									if ( !$properties_availability['headline'] ) {
-										$rating_html .= '<meta itemprop="headline" content="' . esc_attr($pTitle) . '" />';
-									}
+                                                                if ( ! $properties_availability['headline'] ) {
+                                                                    $rating_html .= '<meta itemprop="headline" content="' . esc_attr( $pTitle ) . '" />';
+                                                                }
+                                                            }
 
-									if ( !$properties_availability['description'] ) {
-										$post_excerpt =	$this->GetPostExcerpt($post);
+                                                            if ( ! $properties_availability['image'] ) {
+                                                                $image_data = $this->get_rich_snippet_default_image( $post->ID );
 
-										$rating_html .= '<meta itemprop="description" content="' . esc_attr($post_excerpt) . '" />';
-									}
-								}
+                                                                $rating_html .= 
+                                                                    '<span itemprop="image" itemscope itemtype="https://schema.org/ImageObject">'
+                                                                    . '<meta itemprop="url" content="'    . esc_attr( $image_data['url'] ) . '">'
+                                                                    . '<meta itemprop="width" content="'  . $image_data['width']  . '">'
+                                                                    . '<meta itemprop="height" content="' . $image_data['height'] . '">'
+                                                                    . '</span>';
+                                                            }
 
-								if ( !$properties_availability['image'] ) {
-									$image_url = $this->get_rich_snippet_default_image($post->ID);
-									$rating_html .= '<meta itemprop="image" content="' . $image_url . '" />';
-								}
+                                                            if ( ! $properties_availability['author'] ) {
+                                                                global $authordata;
 
-								if ( !$properties_availability['datePublished'] ) {
-									// Use 'c' for ISO 8601 date format.
-									$iso8601_date = mysql2date( 'c', $post->post_date );
-									$rating_html .= '<meta itemprop="datePublished" content="' . $iso8601_date . '" />';
-								}
+                                                                $author_name = trim( $authordata->user_firstname . ' ' . $authordata->user_lastname );
 
-								if ( !$properties_availability['url'] && !empty($pPermalink) ) {
-									$rating_html .= '<meta itemprop="url" content="' . esc_attr($pPermalink) . '" />';
-								}
+                                                                if ( empty( $author_name ) ) {
+                                                                    $author_name = get_the_author();
+                                                                }
+
+                                                                $rating_html .= 
+                                                                    '<span itemprop="author" itemscope itemtype="https://schema.org/Person">'
+                                                                    . '<meta itemprop="name" content="' . esc_attr( $author_name ) . '">'
+                                                                    . '</span>';
+                                                            }
+
+                                                            if ( ! $properties_availability['publisher'] ) {
+                                                                $blog_name = trim( get_bloginfo( 'name' ) );
+                                                                
+                                                                if ( empty( $blog_name ) ) {
+                                                                    $blog_name = $_SERVER['SERVER_NAME'];
+                                                                }
+                                                                
+                                                                // Logo should be no wider than 600px, and no taller than 60px.
+                                                                $image_data = $this->get_logo_placeholder_image_src( $blog_name, 600, 60 );
+
+                                                                $rating_html .= 
+                                                                    '<span itemprop="publisher" itemscope itemtype="https://schema.org/Organization">'
+                                                                    . '<meta itemprop="name" content="' . esc_attr( $blog_name ) . '">'
+                                                                    . '<span itemprop="logo" itemscope itemtype="https://schema.org/ImageObject">'
+                                                                        . '<meta itemprop="url" content="'    . esc_attr( $image_data['url'] ) . '">'
+                                                                        . '<meta itemprop="width" content="'  . $image_data['width']  . '">'
+                                                                        . '<meta itemprop="height" content="' . $image_data['height'] . '">'
+                                                                    . '</span>'
+                                                                    . '</span>';
+                                                            }
+
+                                                            if ( ! $properties_availability['description'] ) {
+                                                                $post_excerpt =	$this->GetPostExcerpt($post);
+
+                                                                $rating_html .= '<meta itemprop="description" content="' . esc_attr( $post_excerpt ) . '" />';
+                                                            }
+
+                                                            if ( ! $properties_availability['datePublished'] ) {
+                                                                // Use 'c' for ISO 8601 date format.
+                                                                $iso8601_date = mysql2date( 'c', $post->post_date );
+                                                                $rating_html .= '<meta itemprop="datePublished" content="' . $iso8601_date . '" />';
+                                                            }
+
+                                                            if ( ! $properties_availability['dateModified'] ) {
+                                                                // Use 'c' for ISO 8601 date format.
+                                                                $iso8601_date = mysql2date( 'c', $post->post_modified );
+                                                                $rating_html .= '<meta itemprop="dateModified" content="' . $iso8601_date . '" />';
+                                                            }
+
+                                                            if ( ! empty( $pPermalink ) ) {
+                                                                if ( ! $properties_availability['url'] ) {
+                                                                    $rating_html .= '<meta itemprop="url" content="' . esc_attr( $pPermalink ) . '" />';
+                                                                }
+
+                                                                if ( ! $properties_availability['mainEntityOfPage'] ) {
+                                                                    $rating_html .= '<meta itemscope itemprop="mainEntityOfPage" itemType="https://schema.org/WebPage" itemid="' . esc_attr( $pPermalink ) . '"/>';
+                                                                }
+                                                            }
 							}
 
 //						$title = mb_convert_to_utf8(trim($pTitle));
@@ -5696,47 +5755,90 @@
 			 *
 			 * @return string
 			 */
-			function get_rich_snippet_default_image($wp_post_id) {
-				// Retrieve the post's featured image URL if available.
-				$image_url = $this->GetPostFeaturedImage($wp_post_id);
+			function get_rich_snippet_default_image( $wp_post_id ) {
+                            $image_data = false;
+                            
+                            // Retrieve the post's featured image if available.
+                            if ( has_post_thumbnail( $wp_post_id ) ) {
+				$image_data = wp_get_attachment_image_src( get_post_thumbnail_id( $wp_post_id ), 'single-post-thumbnail' );
+                            }
 
-				// Retrieve an image from the gallery if the post's featured image is not available.
-				if ( empty($image_url) ) {
-					$image_url = $this->get_attachment_image();
-				}
+                            // Retrieve an image from the gallery if the post's featured image is not available.
+                            if ( false === $image_data ) {
+                                $image_data = $this->get_random_attachment_image_src();
+                            }
 
-				// Retrieve the URL of the placeholder image if there is no available image from the site.
-				if ( empty($image_url) ) {
-					$image_url = rw_get_plugin_img_path('top-rated/placeholder.png');
-				}
-
-				return $image_url;
+                            // Retrieve the placeholder image if there is no available image from the site.
+                            if ( false === $image_data ) {
+                                $image_data = $this->get_placeholder_image_src();
+                            }
+                            
+                            return array(
+                                'url'    => $image_data[0],
+                                'width'  => $image_data[1],
+                                'height' => $image_data[2]
+                            );
 			}
 
 			/**
-			 * Retrieves an image from the gallery and returns its URL.
+			 * Generates a placeholder image.
 			 *
 			 * @author Leo Fajardo (@leorw)
-			 * @since 2.5.8
+			 * @since 2.7.5
 			 *
-			 * @return string
+			 * @param string $text The text content of the image.
+			 * @param int $width
+			 * @param int $height
+			 *
+			 * @return array An array containing the URL, width, and height of the placeholder image.
 			 */
-			function get_attachment_image() {
-				$images = get_posts( array(
-					'post_type' => 'attachment',
-					'posts_per_page' => 1,
-					'post_status' => 'inherit',
-					'post_mime_type' => 'image'
-				) );
+			function get_logo_placeholder_image_src( $text, $width, $height ) {
+                            return array(
+                                'url'    => 'https://placeholdit.imgix.net/~text?txtsize=33&txt=' . urlencode( $text ) . "&w={$width}&h={$height}&logo.png",
+                                'width'  => $width,
+                                'height' => $height
+                            );
+			}
 
-				$image_url = '';
+			/**
+			 * Retrieves an image from the gallery and returns its URL and size.
+			 *
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.7.5
+			 *
+			 * @return false|array
+			 */
+			function get_random_attachment_image_src() {
+                            $images = get_posts( array(
+                                'post_type'      => 'attachment',
+                                'posts_per_page' => 1,
+                                'post_status'    => 'inherit',
+                                'post_mime_type' => 'image'
+                            ) );
 
-				if ( is_array($images) && !empty($images) ) {
-					$image = $images[0];
-					$image_url = $image->guid;
-				}
+                            if ( ! is_array( $images ) || empty( $images ) ) {
+                                return false;
+                            }
 
-				return $image_url;
+                            return wp_get_attachment_image_src( $images[0]->ID, 'single-post-thumbnail' );
+			}
+
+			/**
+			 * Retrieves the placeholder image that is included in this plugin.
+			 *
+			 * @author Leo Fajardo (@leorw)
+			 * @since 2.7.5
+			 *
+			 * @return array
+			 */
+			function get_placeholder_image_src() {
+                            $size = getimagesize( rw_get_plugin_img_path( 'top-rated/placeholder.png' ) );
+                            
+                            return array(
+                                rw_get_plugin_img_url( 'top-rated/placeholder.png' ),
+                                $size[0],
+                                $size[1]
+                            );
 			}
 
 			#region BuddyPress ------------------------------------------------------------------
@@ -7810,7 +7912,7 @@
 					'slug'              => 'rating-widget',
 					'menu_slug'         => 'rating-widget',
 					'is_live'           => true,
-					'is_premium'        => false,
+					'is_premium'        => true,
 					'has_addons'        => true,
 					'has_paid_plans'    => true,
 					'enable_anonymous'  => false,
