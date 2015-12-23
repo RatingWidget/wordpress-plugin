@@ -5820,7 +5820,7 @@
                                 return false;
                             }
 
-                            return wp_get_attachment_image_src( $image[0]->ID, 'single-post-thumbnail' );
+                            return wp_get_attachment_image_src( $images[0]->ID, 'single-post-thumbnail' );
 			}
 
 			/**
