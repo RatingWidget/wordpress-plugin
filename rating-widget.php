@@ -5684,7 +5684,7 @@
                                                                 }
                                                                 
                                                                 // Logo should be no wider than 600px, and no taller than 60px.
-                                                                $image_data = $this->get_placeholder_image( $blog_name, 600, 60 );
+                                                                $image_data = $this->get_logo_placeholder_image_src( $blog_name, 600, 60 );
 
                                                                 $rating_html .= 
                                                                     '<span itemprop="publisher" itemscope itemtype="https://schema.org/Organization">'
@@ -5792,9 +5792,9 @@
 			 *
 			 * @return array An array containing the URL, width, and height of the placeholder image.
 			 */
-			function get_placeholder_image( $text, $width, $height ) {
+			function get_logo_placeholder_image_src( $text, $width, $height ) {
                             return array(
-                                'url'    => 'https://placeholdit.imgix.net/~text?txtsize=33&txt=' . urlencode( $text ) . '&w=600&h=60&logo.png',
+                                'url'    => 'https://placeholdit.imgix.net/~text?txtsize=33&txt=' . urlencode( $text ) . "&w={$width}&h={$height}&logo.png",
                                 'width'  => $width,
                                 'height' => $height
                             );
