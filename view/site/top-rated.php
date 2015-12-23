@@ -99,8 +99,8 @@ if ($rw_ret_obj && count($rw_ret_obj->data)) {
 					if ($thumbnail) {
 						$thumbnail = trim($thumbnail);
 					}
-					if (empty($thumbnail)) {
-						$thumbnail = rw_get_plugin_img_path('top-rated/placeholder.png');
+					if ( empty( $thumbnail ) ) {
+                                            $thumbnail = rw_get_plugin_img_url( 'top-rated/placeholder.png' );
 					}
 					
 					$short = (mb_strlen($title) > 30) ? trim(mb_substr($title, 0, 30)) . "..." : $title;

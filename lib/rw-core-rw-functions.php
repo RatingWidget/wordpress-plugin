@@ -139,8 +139,12 @@
 		return WP_RW__ADDRESS_TMB . '?src=' . urlencode( $src ) . '&w=' . $width . '&h=' . $height . '&zc=1';
 	}
 
-	function rw_get_plugin_img_path( $path ) {
+	function rw_get_plugin_img_url( $path ) {
 		return WP_RW__PLUGIN_URL . 'resources/img/' . trim( $path, '/' );
+	}
+
+	function rw_get_plugin_img_path( $path ) {
+            return trailingslashit( WP_RW__PLUGIN_DIR ) . 'resources/img/' . trim( $path, '/' );
 	}
 
 	function rw_get_plugin_css_path( $path ) {
