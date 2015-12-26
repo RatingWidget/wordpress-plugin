@@ -14,7 +14,7 @@ switch ($created_in) {
 		$since_created = WP_RW__TIME_YEAR_IN_SEC;
 		break;
 	case 'last_6_months':
-		$since_created = WP_RW__TIME_YEAR_IN_SEC;
+		$since_created = WP_RW__TIME_6_MONTHS_IN_SEC;
 		break;
 	case 'last_30_days':
 		$since_created = WP_RW__TIME_30_DAYS_IN_SEC;
