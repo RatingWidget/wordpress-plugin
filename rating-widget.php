@@ -113,7 +113,6 @@
 			private function __construct() {
 				$this->account  = rw_account();
 				$this->fs       = rw_fs();
-				$this->wf       = rw_wf();
 				$this->_options = rw_fs_options();
 
 				if ( WP_RW__DEBUG ) {
