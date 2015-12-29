@@ -99,7 +99,7 @@
 		 * @author Leo Fajardo (@leorw)
 		 */
 		function init() {
-			if ( is_admin() && rw_fs()->_has_addons() ) {
+			if ( is_admin() && rw_fs()->has_installed_addons() ) {
 				$this->_init_admin();
 			} else {
 				$this->_init_site();
