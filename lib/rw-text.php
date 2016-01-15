@@ -358,6 +358,7 @@
 		'before-vote'                                 => __( 'Before Vote', 'rating-widget' ),
 		/*
 		-----------------------------------------------------------------------*/
+		'ok-i-am-in'                                  => __( "OK - I'm in!", 'rating-widget' ),
 		'tweets-promotion_title'                      => __( 'Tweets Add-On is here!', 'rating-widget' ),
 		'tweets-promotion_msg'                        => __( 'Increase your social traffic by asking your visitors to Tweet the post after submitting a 5-star rating.' )
 	);
