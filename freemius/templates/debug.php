@@ -1,3 +1,61 @@
+<?php
+	global $fs_active_plugins;
+?>
+<h1><?php echo __fs( 'Freemius Debug' ) . ' - ' . __fs( 'SDK' ) . ' v.' . $fs_active_plugins->newest->version ?></h1>
+<h2><?php _efs( 'actions' ) ?></h2>
+<table>
+	<tbody>
+	<tr>
+		<td>
+			<!-- Delete All Accounts -->
+			<form action="" method="POST">
+				<input type="hidden" name="fs_action" value="delete_all_accounts">
+				<?php wp_nonce_field( 'delete_all_accounts' ) ?>
+				<button class="button button-primary"
+				        onclick="if (confirm('<?php _efs( 'delete-all-confirm' ) ?>')) this.parentNode.submit(); return false;"><?php _efs( 'delete-all-accounts' ) ?></button>
+			</form>
+		</td>
+		<td>
+			<!-- Clear API Cache -->
+			<form action="" method="POST">
+				<input type="hidden" name="fs_clear_api_cache" value="true">
+				<button class="button button-primary"><?php _efs( 'clear-api-cache' ) ?></button>
+			</form>
+		</td>
+		<td>
+			<!-- Sync Data with Server -->
+			<form action="" method="POST">
+				<input type="hidden" name="background_sync" value="true">
+				<button class="button button-primary"><?php _efs( 'sync-data-from-server' ) ?></button>
+			</form>
+		</td>
+	</tr>
+	</tbody>
+</table>
+<h2><?php _efs( 'sdk-versions' ) ?></h2>
+<table id="fs_sdks" class="widefat">
+	<thead>
+	<tr>
+		<th><?php _efs( 'version' ) ?></th>
+		<th><?php _efs( 'plugin-path' ) ?></th>
+		<th><?php _efs( 'sdk-path' ) ?></th>
+		<th><?php _efs( 'is-active' ) ?></th>
+	</tr>
+	</thead>
+	<tbody>
+	<?php foreach ( $fs_active_plugins->plugins as $sdk_path => &$data ) : ?>
+		<?php $is_active = ( WP_FS__SDK_VERSION == $data->version ) ?>
+		<tr<?php if ( $is_active ) {
+			echo ' style="background: #E6FFE6"';
+		} ?>>
+			<td><?php echo $data->version ?></td>
+			<td><?php echo $sdk_path ?></td>
+			<td><?php echo $data->plugin_path ?></td>
+			<td><?php echo ( $is_active ) ? 'Active' : 'Inactive' ?></td>
+		</tr>
+	<?php endforeach ?>
+	</tbody>
+</table>
 <h2><?php _efs( 'plugin-installs' ) ?> / <?php _efs( 'sites' ) ?></h2>
 <?php
 	/**
@@ -94,10 +152,3 @@
 	<?php endforeach ?>
 	</tbody>
 </table>
-<br><br>
-<form action="" method="POST">
-	<input type="hidden" name="fs_action" value="delete_all_accounts">
-	<?php wp_nonce_field( 'delete_all_accounts' ) ?>
-	<button class="button button-primary"
-	        onclick="if (confirm('<?php _efs( 'delete-all-confirm' ) ?>')) this.parentNode.submit(); return false;"><?php _efs( 'delete-all-accounts' ) ?></button>
-</form>
