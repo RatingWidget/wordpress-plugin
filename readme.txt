@@ -4,7 +4,7 @@ Donate link: http://rating-widget.com/pricing/wordpress/
 Tags: rate, rating, ratings, vote, votes, voting, star, stars, like, dislike, thumbs, widget, widgets, star rating, thumb rating, rating platform, rating system, seo, post rating, comment rating, 5 star, five star, sidebar, comment, comments, post, posts, page, pages, google, admin, administrator, review, reviews, rich-snippets, plugin, plugins, ajax, buddypress, bbpress, social, javascript, js, wordpress, meta, woocommerce, jquery, contest, competition, voting contest, rtmedia
 Requires at least: 3.0
 Tested up to: 4.4
-Stable tag: 2.7.6
+Stable tag: 2.7.7
 License: GPLv2 or later
 
 The most popular Five Star Review System on the web. User-friendly ratings for: posts, pages, comments, WooCommerce, BuddyPress and bbPress forums.
@@ -188,6 +188,10 @@ If you didn't find a solution to your problem yet, check out our [WordPress Know
 The RatingWidget Team
 
 == Change Log ==
+
+= 2.7.7 - 2016-01-16 =
+* Minor: Updated opt-in button to be more user friendly.
+* Fix: Updated to Freemius latest SDK which prevents SDK versions collision (when two plugins using Freemius).
 
 = 2.7.6 - 2015-12-29 =
 * Fix: Fixed the 'Last Year' option in the top-rated widget and the 'Last 6 Months' option in the top-rated shortcode.

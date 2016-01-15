@@ -3,7 +3,7 @@
 	 * Plugin Name: Rating-Widget: Star Review System
 	 * Plugin URI:  http://rating-widget.com/wordpress-plugin/
 	 * Description: Create and manage Rating-Widget ratings in WordPress.
-	 * Version:     2.7.6
+	 * Version:     2.7.7
 	 * Author:      Rating-Widget
 	 * Author URI:  http://rating-widget.com/wordpress-plugin/
 	 * License:     GPLv2
@@ -372,7 +372,7 @@
 							add_action('admin_notices', array(&$this, 'five_star_wp_rate_notice'));
 						}
 					}
-                    
+
                     $this->fs->add_filter( 'uninstall_confirmation_message', array( &$this, '_add_uninstall_confirmation_message' ) );
 				}
 
@@ -390,7 +390,7 @@
 			}
 
 			#endregion Plugin Setup ------------------------------------------------------------------
-            
+
             /**
 			 * Adds a confirmation message in the dialog box that is shown when the user tries to
              * deactivate the plugin by clicking on the Deactivate link in the plugins page.
@@ -400,20 +400,20 @@
              */
             function _add_uninstall_confirmation_message( $current_confirmation_message ) {
                 $stats = $this->_get_site_stats();
-                
+
                 if ( $stats['votes'] > 10 ) {
                     $current_confirmation_message = sprintf( __rw( 'deactivation-confirm-message' ), $stats['ratings'], $stats['votes'] );
 				}
-                
+
                 return $current_confirmation_message;
             }
-            
+
             /**
              * Returns the number of ratings and votes of this site.
-             * 
+             *
              * @author Leo Fajardo (@leorw)
              * @since 2.7.0
-             * 
+             *
              * @return array
              */
             function _get_site_stats() {
@@ -422,11 +422,11 @@
 					'ratings' => 0,
 					'votes' => 0
 				);
-                
+
                 if ( ! $this->is_api_supported() ) {
                     return $stats;
                 }
-                
+
 				// Retrieve ratings and votes count
 				$response = rwapi()->get( "/votes/count.json", false, WP_RW__CACHE_TIMEOUT_DASHBOARD_STATS );
 				if ( ! isset( $response->error ) ) {
@@ -437,10 +437,10 @@
 						$stats['ratings'] = $response->count;
 					}
 				}
-                
+
                 return $stats;
             }
-            
+
 			function _update_account() {
 				if ( strtoupper( $_SERVER['REQUEST_METHOD'] ) !== 'POST' ) {
 					return;
@@ -2648,7 +2648,7 @@
 			 */
 			function get_rich_snippet_settings() {
                             $rich_snippet_settings = $this->GetOption( WP_RW__DB_OPTION_RICH_SNIPPETS_SETTINGS );
-                            
+
                             if ( ! $rich_snippet_settings ) {
                                 $rich_snippet_settings = new stdClass();
                             }
@@ -2810,7 +2810,7 @@
 					'menu_title' => __rw('affiliation'),
 					'function' => 'affiliation_settings_page_render',
 				);
-				
+
 				/*
 				// Add Ons page
 				$submenu[] = array(
@@ -2821,7 +2821,7 @@
 				*/
 
 				$submenu = apply_filters( 'ratingwidget_dashboard_submenus', $submenu );
-				
+
 				foreach ($submenu as $item)
 				{
 					$this->fs->add_submenu_item(
@@ -5652,7 +5652,7 @@
                                                             if ( ! $properties_availability['image'] ) {
                                                                 $image_data = $this->get_rich_snippet_default_image( $post->ID );
 
-                                                                $rating_html .= 
+                                                                $rating_html .=
                                                                     '<span itemprop="image" itemscope itemtype="https://schema.org/ImageObject">'
                                                                     . '<meta itemprop="url" content="'    . esc_attr( $image_data['url'] ) . '">'
                                                                     . '<meta itemprop="width" content="'  . $image_data['width']  . '">'
@@ -5669,7 +5669,7 @@
                                                                     $author_name = get_the_author();
                                                                 }
 
-                                                                $rating_html .= 
+                                                                $rating_html .=
                                                                     '<span itemprop="author" itemscope itemtype="https://schema.org/Person">'
                                                                     . '<meta itemprop="name" content="' . esc_attr( $author_name ) . '">'
                                                                     . '</span>';
@@ -5677,15 +5677,15 @@
 
                                                             if ( ! $properties_availability['publisher'] ) {
                                                                 $blog_name = trim( get_bloginfo( 'name' ) );
-                                                                
+
                                                                 if ( empty( $blog_name ) ) {
                                                                     $blog_name = $_SERVER['SERVER_NAME'];
                                                                 }
-                                                                
+
                                                                 // Logo should be no wider than 600px, and no taller than 60px.
                                                                 $image_data = $this->get_logo_placeholder_image_src( $blog_name, 600, 60 );
 
-                                                                $rating_html .= 
+                                                                $rating_html .=
                                                                     '<span itemprop="publisher" itemscope itemtype="https://schema.org/Organization">'
                                                                     . '<meta itemprop="name" content="' . esc_attr( $blog_name ) . '">'
                                                                     . '<span itemprop="logo" itemscope itemtype="https://schema.org/ImageObject">'
@@ -5756,7 +5756,7 @@
 			 */
 			function get_rich_snippet_default_image( $wp_post_id ) {
                             $image_data = false;
-                            
+
                             // Retrieve the post's featured image if available.
                             if ( has_post_thumbnail( $wp_post_id ) ) {
 				$image_data = wp_get_attachment_image_src( get_post_thumbnail_id( $wp_post_id ), 'single-post-thumbnail' );
@@ -5771,7 +5771,7 @@
                             if ( false === $image_data ) {
                                 $image_data = $this->get_placeholder_image_src();
                             }
-                            
+
                             return array(
                                 'url'    => $image_data[0],
                                 'width'  => $image_data[1],
@@ -5832,7 +5832,7 @@
 			 */
 			function get_placeholder_image_src() {
                             $size = getimagesize( rw_get_plugin_img_path( 'top-rated/placeholder.png' ) );
-                            
+
                             return array(
                                 rw_get_plugin_img_url( 'top-rated/placeholder.png' ),
                                 $size[0],
@@ -6769,9 +6769,9 @@
                             echo ', huid: "' . $this->account->site_id . '"';
 
                             global $pagenow;
-                            
+
                             $vid = 0;
-                            
+
                             // Only set the vid to 1 if the comment ratings mode is set to "Admin ratings only".
                             if ( 'comment.php' === $pagenow && $this->is_comment_admin_ratings_mode() ) {
                                 $vid = 1;
@@ -6780,7 +6780,7 @@
                                 $user = wp_get_current_user();
                                 $vid = $user->ID;
                             }
-                            
+
                             if ( $vid !== 0) {
                                 // Set voter id to logged user id.
                                 echo ", vid: {$vid}";
@@ -6840,7 +6840,7 @@
 							<?php
 							}
 							?>
-									
+
 							RW.initClass("<?php echo $criteria_class; ?>", options);
 							<?php
 						}
@@ -7892,34 +7892,37 @@
 			global $rw_fs;
 			if ( ! isset( $rw_fs ) ) {
 				// Include Freemius SDK.
-				require_once dirname(__FILE__) . '/freemius/start.php';
+				require_once dirname( __FILE__ ) . '/freemius/start.php';
 
-				if (WP_FS__IS_PRODUCTION_MODE)
-				{
-					$id = 56;
+				if ( WP_FS__IS_PRODUCTION_MODE ) {
+					$id         = 56;
 					$public_key = 'pk_74be465babd9d3d6d5ff578d56745';
-				}
-				else
-				{
-					$id = 30;
+				} else {
+					$id         = 30;
 					$public_key = 'pk_d859cee50e9d63917b6d3f324cbaf';
 				}
 
+				if ( file_exists( WP_RW__PLUGIN_LIB_DIR . 'freemius-keys.php' ) ) {
+					require_once( WP_RW__PLUGIN_LIB_DIR . 'freemius-keys.php' );
+				}
+
 				$rw_fs = fs_dynamic_init( array(
-					'id'                => $id,
-					'public_key'        => $public_key,
-					'slug'              => 'rating-widget',
-					'menu_slug'         => 'rating-widget',
-					'is_live'           => true,
-					'is_premium'        => true,
-					'has_addons'        => true,
-					'has_paid_plans'    => true,
-					'enable_anonymous'  => false,
+					'id'               => $id,
+					'public_key'       => $public_key,
+					'slug'             => 'rating-widget',
+					'menu_slug'        => 'rating-widget',
+					'is_live'          => true,
+					'is_premium'       => true,
+					'has_addons'       => true,
+					'has_paid_plans'   => true,
+					'enable_anonymous' => false,
 					// Set the SDK to work in a sandbox mode (for development & testing).
 					// Localhost FS environment params.
-					'secret_key'        => (WP_FS__IS_PRODUCTION_MODE ?
-						'sk_ErC9)z[}T{)n_QbB>6B!lVfxVoK?a' :
-						'sk_j2nR2@g<Ts3jl]));Oi.k<wO]kKSH'),
+					'secret_key'       => defined( 'WP_RW__FREEMIUS_SECRET_KEY_PRODUCTION' ) ?
+						( WP_FS__IS_PRODUCTION_MODE ?
+							WP_RW__FREEMIUS_SECRET_KEY_PRODUCTION :
+							WP_RW__FREEMIUS_SECRET_KEY_LOCALHOST ) :
+						'',
 				) );
 			}
 
@@ -8044,6 +8047,10 @@
 
 		// Init Freemius.
 		$fs = rw_fs();
+
+		fs_override_i18n( array(
+			'opt-in-connect' => __rw( 'ok-i-am-in' ),
+		), 'rating-widget' );
 
 		// Init options
 		rw_fs_options();
