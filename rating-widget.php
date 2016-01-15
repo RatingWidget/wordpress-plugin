@@ -7905,6 +7905,10 @@
 					$public_key = 'pk_d859cee50e9d63917b6d3f324cbaf';
 				}
 
+				if ( file_exists( WP_RW__PLUGIN_LIB_DIR . 'freemius-keys.php' ) ) {
+					require_once( WP_RW__PLUGIN_LIB_DIR . 'freemius-keys.php' );
+				}
+
 				$rw_fs = fs_dynamic_init( array(
 					'id'                => $id,
 					'public_key'        => $public_key,
@@ -7917,9 +7921,11 @@
 					'enable_anonymous'  => false,
 					// Set the SDK to work in a sandbox mode (for development & testing).
 					// Localhost FS environment params.
-					'secret_key'        => (WP_FS__IS_PRODUCTION_MODE ?
-						'sk_ErC9)z[}T{)n_QbB>6B!lVfxVoK?a' :
-						'sk_j2nR2@g<Ts3jl]));Oi.k<wO]kKSH'),
+					'secret_key'       => defined( 'WP_RW__FREEMIUS_SECRET_KEY_PRODUCTION' ) ?
+						( WP_FS__IS_PRODUCTION_MODE ?
+							WP_RW__FREEMIUS_SECRET_KEY_PRODUCTION :
+							WP_RW__FREEMIUS_SECRET_KEY_LOCALHOST ) :
+						'',
 				) );
 			}
 
