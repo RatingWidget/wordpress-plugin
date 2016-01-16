@@ -8048,9 +8048,11 @@
 		// Init Freemius.
 		$fs = rw_fs();
 
-		fs_override_i18n( array(
-			'opt-in-connect' => __rw( 'ok-i-am-in' ),
-		), 'rating-widget' );
+		if ( function_exists( 'fs_override_i18n' ) ) {
+			fs_override_i18n( array(
+				'opt-in-connect' => __rw( 'ok-i-am-in' ),
+			), 'rating-widget' );
+		}
 
 		// Init options
 		rw_fs_options();
