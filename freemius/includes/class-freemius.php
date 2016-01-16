@@ -887,12 +887,15 @@
 		/**
 		 * Check if Freemius should be turned on for the current plugin install.
 		 *
+		 * Note:
+		 *  $this->_is_on is updated in has_api_connectivity()
+		 *
 		 * @author Vova Feldman (@svovaf)
 		 * @since  1.0.9
 		 *
 		 * @return bool
 		 */
-		private function is_on() {
+		function is_on() {
 			self::$_static_logger->entrance();
 
 			if ( isset( $this->_is_on ) ) {
@@ -902,9 +905,10 @@
 			// If already installed or pending then sure it's on :)
 			if ( $this->is_registered() || $this->is_pending_activation() ) {
 				$this->_is_on = true;
-
-				return $this->_is_on;
+				return true;
 			}
+
+			return false;
 		}
 
 		/**
@@ -917,7 +921,7 @@
 		 *
 		 * @return bool
 		 */
-		private function has_api_connectivity( $flush = false ) {
+		function has_api_connectivity( $flush = false ) {
 			if ( ! $flush && isset( $this->_has_api_connection ) ) {
 				return $this->_has_api_connection;
 			}
@@ -941,7 +945,7 @@
 					       $version == $this->_storage->connectivity_test['version'] )
 					) {
 						$this->_has_api_connection = $this->_storage->connectivity_test['is_connected'];
-						$this->_is_on              = $this->_storage->connectivity_test['is_active'];
+						$this->_is_on              = $this->_storage->connectivity_test['is_active'] || (WP_FS__DEV_MODE && $this->_has_api_connection);
 
 						return $this->_has_api_connection;
 					}
@@ -984,7 +988,7 @@
 			);
 
 			$this->_has_api_connection = $is_connected;
-			$this->_is_on              = $is_active;
+			$this->_is_on              = $is_active || (WP_FS__DEV_MODE && $is_connected);
 
 			return $this->_has_api_connection;
 		}
@@ -4480,6 +4484,8 @@
 		 * @since  1.0.7
 		 */
 		function _install_with_new_user() {
+			$this->_logger->entrance();
+
 			if ( $this->is_registered() ) {
 				return;
 			}
@@ -4532,6 +4538,8 @@
 		 * @since  1.0.7
 		 */
 		function _install_with_current_user() {
+			$this->_logger->entrance();
+
 			if ( $this->is_registered() ) {
 				return;
 			}
