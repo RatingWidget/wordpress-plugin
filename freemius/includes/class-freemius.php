@@ -905,6 +905,7 @@
 			// If already installed or pending then sure it's on :)
 			if ( $this->is_registered() || $this->is_pending_activation() ) {
 				$this->_is_on = true;
+
 				return true;
 			}
 
@@ -937,7 +938,7 @@
 
 			if ( isset( $this->_storage->connectivity_test ) ) {
 				if ( $_SERVER['HTTP_HOST'] == $this->_storage->connectivity_test['host'] &&
-				     fs_get_ip() == $this->_storage->connectivity_test['server_ip']
+				     WP_FS__REMOTE_ADDR == $this->_storage->connectivity_test['server_ip']
 				) {
 					if ( ( $this->_storage->connectivity_test['is_connected'] &&
 					       $this->_storage->connectivity_test['is_active'] ) ||
@@ -945,7 +946,7 @@
 					       $version == $this->_storage->connectivity_test['version'] )
 					) {
 						$this->_has_api_connection = $this->_storage->connectivity_test['is_connected'];
-						$this->_is_on              = $this->_storage->connectivity_test['is_active'] || (WP_FS__DEV_MODE && $this->_has_api_connection);
+						$this->_is_on              = $this->_storage->connectivity_test['is_active'] || ( WP_FS__DEV_MODE && $this->_has_api_connection );
 
 						return $this->_has_api_connection;
 					}
@@ -980,7 +981,7 @@
 			$this->_storage->connectivity_test = array(
 				'is_connected' => $is_connected,
 				'host'         => $_SERVER['HTTP_HOST'],
-				'server_ip'    => fs_get_ip(),
+				'server_ip'    => WP_FS__REMOTE_ADDR,
 				'is_active'    => $is_active,
 				'timestamp'    => WP_FS__SCRIPT_START_TIME,
 				// Last version with connectivity attempt.
@@ -988,7 +989,7 @@
 			);
 
 			$this->_has_api_connection = $is_connected;
-			$this->_is_on              = $is_active || (WP_FS__DEV_MODE && $is_connected);
+			$this->_is_on              = $is_active || ( WP_FS__DEV_MODE && $is_connected );
 
 			return $this->_has_api_connection;
 		}
@@ -1385,7 +1386,7 @@
 				);
 			}
 
-			$server_ip = fs_get_ip();
+			$server_ip = WP_FS__REMOTE_ADDR;
 
 			// Generate the default email sections.
 			$sections = array(
@@ -1560,6 +1561,19 @@
 			$this->_permissions      = $this->_get_option( $plugin_info, 'permissions', array() );
 
 			if ( ! $this->is_registered() ) {
+				if ( ! WP_FS__IS_HTTP_REQUEST ) {
+					/**
+					 * If not registered and executed without HTTP context (e.g. CLI, Cronjob),
+					 * then don't start Freemius.
+					 *
+					 * @author Vova Feldman (@svovaf)
+					 * @since  1.1.6.3
+					 *
+					 * @link https://wordpress.org/support/topic/errors-in-the-freemius-class-when-running-in-wordpress-in-cli
+					 */
+					return;
+				}
+
 				if ( ! $this->has_api_connectivity() ) {
 					if ( is_admin() && $this->_admin_notices->has_sticky( 'failed_connect_api' ) ) {
 						if ( ! $this->_enable_anonymous ) {
@@ -7406,7 +7420,7 @@
 
 			// Add start trial button.
 			$message .= ' ' . sprintf(
-					'<a style="margin-left: 10px;" href="%s"><button class="button button-primary">%s &nbsp;&#10140;</button></a>',
+					'<a style="margin-left: 10px; vertical-align: super;" href="%s"><button class="button button-primary">%s &nbsp;&#10140;</button></a>',
 					$upgrade_url,
 					__fs( 'start-free-trial', $this->_slug )
 				);

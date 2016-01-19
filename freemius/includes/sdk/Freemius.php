@@ -230,7 +230,7 @@
 		 * @throws Freemius_Exception
 		 */
 		public function MakeRequest( $pCanonizedPath, $pMethod = 'GET', $params = array(), $ch = null ) {
-			if ( !FS_SDK__HAS_CURL ) {
+			if ( ! FS_SDK__HAS_CURL ) {
 				$this->ThrowNoCurlException();
 			}
 
@@ -324,8 +324,9 @@
 
 			curl_close( $ch );
 
-			if (empty($result))
+			if ( empty( $result ) ) {
 				return null;
+			}
 
 			$decoded = json_decode( $result );
 
