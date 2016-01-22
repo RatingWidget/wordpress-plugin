@@ -1,5 +1,16 @@
 <?php
 	/**
+	 * @package     Freemius
+	 * @copyright   Copyright (c) 2015, Freemius, Inc.
+	 * @license     http://opensource.org/licenses/gpl-2.0.php GNU Public License
+	 * @since       1.1.4
+	 */
+
+	if ( ! defined( 'ABSPATH' ) ) {
+		exit;
+	}
+
+	/**
 	 * All strings can now be overridden.
 	 *
 	 * For example, if we want to override:
@@ -53,6 +64,7 @@
 		'license-single-site'                      => __( 'Single Site License', 'freemius' ),
 		'license-unlimited'                        => __( 'Unlimited Licenses', 'freemius' ),
 		'license-x-sites'                          => __( 'Up to %s Sites', 'freemius' ),
+		'renew-license-now'                        => __( '%sRenew your license now%s to access version %s features and support.', 'freemius' ),
 		'x-plan'                                   => _x( '%s Plan', 'e.g. Professional Plan', 'freemius' ),
 		'you-are-step-away'                        => __( 'You are just one step away - %s', 'freemius' ),
 		'activate-x-now'                           => _x( 'Complete "%s" Activation Now', '%s - plugin name. As complete "Jetpack" activation now', 'freemius' ),
