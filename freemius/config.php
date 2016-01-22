@@ -39,7 +39,7 @@
 	 */
 	if ( ! defined( 'WP_FS__LOCALHOST_IP' ) ) {
 		// VVV default public network IP.
-		define( 'WP_FS__VVV_DEFAULT_PUBLIC_IP', '192.168.50.1' );
+		define( 'WP_FS__VVV_DEFAULT_PUBLIC_IP', '192.168.50.4' );
 
 //		define( 'WP_FS__LOCALHOST_IP', WP_FS__VVV_DEFAULT_PUBLIC_IP );
 	}
@@ -56,7 +56,9 @@
 	 *      THEREFORE, MAKE SURE THAT WHEN USING THIS PARAMETER,YOUR TESTING ENVIRONMENT'S
 	 *      CLOCK IS SYNCED.
 	 */
-	define( 'WP_FS__SKIP_EMAIL_ACTIVATION', false );
+	if ( ! defined( 'WP_FS__SKIP_EMAIL_ACTIVATION' ) ) {
+		define( 'WP_FS__SKIP_EMAIL_ACTIVATION', false );
+	}
 
 
 	/**
@@ -145,7 +147,7 @@
 	/**
 	 * Times in seconds
 	 */
-//	define( 'WP_FS__TIME_5_MIN_IN_SEC', 300 );
+	define( 'WP_FS__TIME_5_MIN_IN_SEC', 300 );
 	define( 'WP_FS__TIME_10_MIN_IN_SEC', 600 );
 //	define( 'WP_FS__TIME_15_MIN_IN_SEC', 900 );
 	define( 'WP_FS__TIME_24_HOURS_IN_SEC', 86400 );
@@ -153,8 +155,8 @@
 	/**
 	 * Debugging
 	 */
-	define( 'WP_FS__DEBUG_SDK', ! empty( $_GET['fs_dbg'] ) );
-	define( 'WP_FS__ECHO_DEBUG_SDK', ! empty( $_GET['fs_dbg_echo'] ) );
+	define( 'WP_FS__DEBUG_SDK', WP_FS__DEV_MODE && ! empty( $_GET['fs_dbg'] ) );
+	define( 'WP_FS__ECHO_DEBUG_SDK', WP_FS__DEV_MODE && ! empty( $_GET['fs_dbg_echo'] ) );
 	define( 'WP_FS__LOG_DATETIME_FORMAT', 'Y-n-d H:i:s' );
 
 	if ( WP_FS__ECHO_DEBUG_SDK ) {

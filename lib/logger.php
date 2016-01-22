@@ -12,16 +12,19 @@
 		public static function PowerOn() {
 			self::$_on = true;
 
-			$bt = debug_backtrace();
-			$caller = array_shift($bt);
-			self::$_start = strpos($caller['file'], '/plugins/rating-widget/') + strlen('/plugins/rating-widget');
+			$bt           = debug_backtrace();
+			$caller       = array_shift( $bt );
+			self::$_start = strpos( $caller['file'], '/plugins/rating-widget/' ) + strlen( '/plugins/rating-widget' );
 
 			self::$_logger = rw_fs()->get_logger();
 
-			self::$_logger->on();
+			if ( is_admin() ) {
+				self::$_logger->on();
+			}
 
-			if (WP_RW__LOG_DUMP)
+			if ( WP_RW__LOG_DUMP ) {
 				self::$_logger->echo_on();
+			}
 		}
 
 		public static function PowerOff() {
@@ -37,13 +40,14 @@
 				return;
 			}
 
-			self::$_logger->log($pId . ': ' . $pMessage, true);
+			self::$_logger->log( $pId . ': ' . $pMessage, true );
+
 			return;
 
-			$bt = debug_backtrace();
-			$caller = array_shift($bt);
+			$bt     = debug_backtrace();
+			$caller = array_shift( $bt );
 
-			$msg = date( WP_RW__DEFAULT_DATE_FORMAT . " " . WP_RW__DEFAULT_TIME_FORMAT . ":u" ) . ' - ' . substr($caller['file'], self::$_start) . ' ' . $caller['line'] . "  -  {$pId}:  {$pMessage}";
+			$msg = date( WP_RW__DEFAULT_DATE_FORMAT . " " . WP_RW__DEFAULT_TIME_FORMAT . ":u" ) . ' - ' . substr( $caller['file'], self::$_start ) . ' ' . $caller['line'] . "  -  {$pId}:  {$pMessage}";
 
 			self::$_log[] = $msg;
 
@@ -57,14 +61,15 @@
 				return;
 			}
 
-			self::$_logger->entrance('', true);
+			self::$_logger->entrance( '', true );
+
 			return;
 
-			$bt = debug_backtrace();
-			$caller = array_shift($bt);
+			$bt     = debug_backtrace();
+			$caller = array_shift( $bt );
 
-			$msg = date( WP_RW__DEFAULT_DATE_FORMAT . " " . WP_RW__DEFAULT_TIME_FORMAT . ":u" ). ' - ' . substr($caller['file'], self::$_start) . ' ' . $caller['line'] . "  -  {$pId} (Enterence)" .
-			       ( ( $pLogParams && is_array($pParams) && 0 < count($pParams) ) ? ":  " . var_export( $pParams, true ) : "" );
+			$msg = date( WP_RW__DEFAULT_DATE_FORMAT . " " . WP_RW__DEFAULT_TIME_FORMAT . ":u" ) . ' - ' . substr( $caller['file'], self::$_start ) . ' ' . $caller['line'] . "  -  {$pId} (Enterence)" .
+			       ( ( $pLogParams && is_array( $pParams ) && 0 < count( $pParams ) ) ? ":  " . var_export( $pParams, true ) : "" );
 
 			self::$_log[] = $msg;
 
@@ -78,13 +83,14 @@
 				return;
 			}
 
-			self::$_logger->departure('', true);
+			self::$_logger->departure( '', true );
+
 			return;
 
-			$bt = debug_backtrace();
-			$caller = array_shift($bt);
+			$bt     = debug_backtrace();
+			$caller = array_shift( $bt );
 
-			$msg = date( WP_RW__DEFAULT_DATE_FORMAT . " " . WP_RW__DEFAULT_TIME_FORMAT . ":u" ). ' - ' . substr($caller['file'], self::$_start) . ' ' . $caller['line'] . "  -  {$pId} (Departure):  " . var_export( $pRet, true );
+			$msg = date( WP_RW__DEFAULT_DATE_FORMAT . " " . WP_RW__DEFAULT_TIME_FORMAT . ":u" ) . ' - ' . substr( $caller['file'], self::$_start ) . ' ' . $caller['line'] . "  -  {$pId} (Departure):  " . var_export( $pRet, true );
 
 			self::$_log[] = $msg;
 
