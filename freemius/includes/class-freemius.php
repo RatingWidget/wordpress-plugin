@@ -2172,7 +2172,7 @@
 				$this->_storage->sync_timestamp = $sync_timestamp;
 			}
 
-			if ( true || ( defined( 'WP_FS__DEV_MODE' ) && WP_FS__DEV_MODE && fs_request_has( 'background_sync' ) ) ||
+			if ( ( defined( 'WP_FS__DEV_MODE' ) && WP_FS__DEV_MODE && fs_request_has( 'background_sync' ) ) ||
 			     ( $sync_timestamp <= time() - WP_FS__TIME_24_HOURS_IN_SEC )
 			) {
 
