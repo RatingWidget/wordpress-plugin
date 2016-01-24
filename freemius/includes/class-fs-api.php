@@ -70,7 +70,7 @@
 			$identifier = md5( $slug . $scope . $id . $public_key . ( is_string( $secret_key ) ? $secret_key : '' ) . json_encode( $is_sandbox ) );
 
 			if ( ! isset( self::$_instances[ $identifier ] ) ) {
-					self::_init();
+				self::_init();
 
 				self::$_instances[ $identifier ] = new FS_Api( $slug, $scope, $id, $public_key, $secret_key, $is_sandbox );
 			}
@@ -157,19 +157,13 @@
 			$this->_logger->entrance();
 
 			if ( self::is_temporary_down() ) {
-				$result = (object) array(
-					'error' => array(
-						'type'    => 'TemporaryDowntime',
-						'message' => 'API is temporary down.',
-						'code'    => 'temporary_downtime',
-						'http'    => 402
-					)
-				);
+				$result = $this->get_temporary_unavailable_error();
 			} else {
 				$result = $this->_api->Api( $path, $method, $params );
 
 				if ( null !== $result &&
 				     isset( $result->error ) &&
+				     isset( $result->error->code ) &&
 				     'request_expired' === $result->error->code
 				) {
 					if ( ! $retry ) {
@@ -186,7 +180,7 @@
 				}
 			}
 
-			if ( null !== $result && isset( $result->error ) ) {
+			if ( null !== $result && isset( $result->error ) && isset( $result->error->message ) ) {
 				// Log API errors.
 				$this->_logger->error( $result->error->message );
 			}
@@ -385,11 +379,11 @@
 				self::$_options->set_option( 'api_force_http', true, true );
 
 				$pong = is_null( $unique_anonymous_id ) ?
-				Freemius_Api::Ping() :
-				$this->_call( 'ping.json?' . http_build_query( array(
-						'uid'       => $unique_anonymous_id,
-						'is_update' => $is_update,
-					) ) );
+					Freemius_Api::Ping() :
+					$this->_call( 'ping.json?' . http_build_query( array(
+							'uid'       => $unique_anonymous_id,
+							'is_update' => $is_update,
+						) ) );
 
 				if ( ! $this->is_valid_ping( $pong ) ) {
 					self::$_options->set_option( 'api_force_http', false, true );
