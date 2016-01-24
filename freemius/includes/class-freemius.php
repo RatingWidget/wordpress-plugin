@@ -4452,10 +4452,12 @@
 		function setup_account( FS_User $user, FS_Site $site, $redirect = true ) {
 			$this->_user = $user;
 			$this->_site = $site;
+
+			$this->_sync_plans();
+
 			$this->_enrich_site_plan( false );
 
 			$this->_set_account( $user, $site );
-			$this->_sync_plans();
 
 			if ( $this->is_trial() ) {
 				// Store trial plan information.
@@ -5964,11 +5966,11 @@
 						 * Failed to ping API - blocked!
 						 *
 						 * @author Vova Feldman (@svovaf)
-						 * @since 1.1.6 Only show message related to one of the Freemius powered plugins. Once it will be resolved it will fix the issue for all plugins anyways. There's no point to scare users with multiple error messages.
+						 * @since  1.1.6 Only show message related to one of the Freemius powered plugins. Once it will be resolved it will fix the issue for all plugins anyways. There's no point to scare users with multiple error messages.
 						 */
 						$api = $this->get_api_site_scope();
 
-						if (!self::$_global_admin_notices->has_sticky('api_blocked')) {
+						if ( ! self::$_global_admin_notices->has_sticky( 'api_blocked' ) ) {
 							self::$_global_admin_notices->add(
 								sprintf(
 									__fs( 'server-blocking-access', $this->_slug ),
