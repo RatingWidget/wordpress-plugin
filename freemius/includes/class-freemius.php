@@ -950,8 +950,9 @@
 			}
 
 			if ( isset( $this->_storage->connectivity_test ) ) {
-				if ( $_SERVER['HTTP_HOST'] == $this->_storage->connectivity_test['host'] &&
-				     WP_FS__REMOTE_ADDR == $this->_storage->connectivity_test['server_ip']
+				if ( ! WP_FS__IS_HTTP_REQUEST ||
+				     ( $_SERVER['HTTP_HOST'] == $this->_storage->connectivity_test['host'] &&
+				       WP_FS__REMOTE_ADDR == $this->_storage->connectivity_test['server_ip'] )
 				) {
 					if ( ( $this->_storage->connectivity_test['is_connected'] &&
 					       $this->_storage->connectivity_test['is_active'] ) ||
