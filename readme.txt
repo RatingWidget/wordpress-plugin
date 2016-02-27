@@ -12,27 +12,32 @@ The most popular Five Star Review System on the web. User-friendly ratings for: 
 == Description ==
 
 #### Ratings for your:
-* Posts
-* Pages
-* Comments
-* [WooCommerce Products](https://rating-widget.com/blog/woocommerce-product-ratings/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org)
-* BuddyPress Users and Activities
-* [bbPress Forum Topics](https://rating-widget.com/blog/bbpress-buddypress-star-rating-plugin/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org), Replies and Users ([PROFESSIONAL plan](http://rating-widget.com/pricing/wordpress/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org))
-* Custom Post Types
-* Author Review
+* Post Ratings
+* Page Ratings
+* Comment Ratings & Reviews
+* [WooCommerce Product Ratings](https://rating-widget.com/blog/woocommerce-product-ratings/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org)
+* BuddyPress User and Activity Ratings
+* [bbPress Forum Ratings](https://rating-widget.com/blog/bbpress-buddypress-star-rating-plugin/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org), Replies and Users ([PROFESSIONAL plan](http://rating-widget.com/pricing/wordpress/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org))
+* Custom Post Type Ratings
+* Author Review Ratings
 
 [Test drive RatingWidget Now! (DEMO)](https://addendio.com/try-plugin/?slug=rating-widget "Test drive RatingWidget Now! (DEMO)")
 
 [youtube https://www.youtube.com/watch?v=rRGKd_P5Oa4]
 
+#### Looking for reviews?
+Every review starts with a simple star rating and we all know it! We are excited to announce that we launched our **Reviews Add-on** (pro add-on). With our awesome Reviews Add-on, you can now set up custom rules when to open a modal review box and capture a textual review from your voters. Like all our products, the Reviews Add-on works out of the box and requires zero configuration.
+
 The [Rating-Widget](http://rating-widget.com/wordpress-plugin/) **Star Ratings WordPress plugin** allows you to create and manage ratings from within your WordPress dashboard. You can embed thumb & star ratings into your posts, pages or comments. All Rating-Widget star ratings are fully customizable, cross-browser, support multi-language, CSS3 compliant. You can create unlimited thumb & star ratings and collect unlimited votes. The reviews editor allows you to fully customize your ratings and their placement on your blog's layout. You can also avail of the 'Top Rated' widget that will allow you to place the widget in your sidebar. This widget will show you the top rated posts, pages and comments.
 
 [youtube https://www.youtube.com/watch?v=xbo-dlXvB98]
 
-The plugin has [PRO VERSIONS](http://rating-widget.com/pricing/wordpress/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org) with [extra features](http://rating-widget.com/wordpress-plugin/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org).
+The free ratings plugin version is [feature-rich](http://rating-widget.com/wordpress-plugin/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org) and highly customizable. Having said that, we offer even more features in our [Premium Plugin](http://rating-widget.com/pricing/wordpress/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org) with [extra features](http://rating-widget.com/wordpress-plugin/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org).
+
+#### Plans:
 
 > #### FREE:
-> * Unlimited ratings
+> * Unlimited star & thumb ratings
 > * 1M pageviews / month
 > * RatingWidget branded
 
@@ -42,7 +47,7 @@ The plugin has [PRO VERSIONS](http://rating-widget.com/pricing/wordpress/?utm_me
 > * Power User Settings
 > * BuddyPress Ratings
 > * 50k PageViews / month
-> * 1,000 ratings
+> * 1,000 star & thumb ratings
 > * Unlimited votes
 > * Email Support & [Help Center](http://rating-widget.com/support/?utm_medium=link&utm_campaign=free&utm_source=wordpress.org)
 
@@ -59,7 +64,7 @@ The plugin has [PRO VERSIONS](http://rating-widget.com/pricing/wordpress/?utm_me
 > * WMPL Language Auto-Selection
 > * bbPress Forum Ratings
 > * 250k PageViews / month
-> * 3,000 ratings
+> * 3,000 star & thumb ratings
 > * Unlimited votes
 > * Priority Email Support & [Help Center](http://rating-widget.com/support/)
 
@@ -72,14 +77,20 @@ The plugin has [PRO VERSIONS](http://rating-widget.com/pricing/wordpress/?utm_me
 > * Data Export
 > * Mobile Optimized
 > * 1M PageViews / month
-> * 10,000 ratings
+> * 10,000 star & thumb ratings
 > * Unlimited votes
 > * Phone, Email & Chat Support
 
 
 Check out the pricing here: http://rating-widget.com/pricing/wordpress/
 
-Check our full features list: http://rating-widget.com/wordpress-plugin/
+#### Even more awesomeness!
+
+If you'd like to enrich the functionality of the ratings even beyond that - we got you covered! We are constantly developing more and more add-ons to answer different needs. Here are our most popular add-ons:
+
+* Tweets: Get more Twitter shares by asking your visitors to Tweet the post after submitting a vote.
+* Facebook Shares: Get more Facebook shares by asking your visitors to share the post after submitting a vote.
+* Reviews: Get valuable insights for your content & products by capturing a textual review from your visitors, right after they vote.
 
 ---
 
@@ -93,7 +104,7 @@ Check our full features list: http://rating-widget.com/wordpress-plugin/
 ---
  
 > #### Are you a designer?
-> Help us to enrich Rating-Widget's themes collection by adding more thumb & star ratings designs at - http://rating-widget.com/contribute-rating-design/
+> Help us to enrich Rating-Widget's star & thumb themes collection. Add more thumb & star ratings designs at - http://rating-widget.com/contribute-rating-design/
 
 ---
  
@@ -110,24 +121,34 @@ Check our full features list: http://rating-widget.com/wordpress-plugin/
 > #### DISCLAIMER:
 > For optimized user experience, upon activation, the plugin will make an API connectivity test. This API call is **anonymous** and will **NOT** share any identifiable information about your site or user.
 
+---
+
+> **Powered with ❤ by [Freemius Insights - Analytics for Plugin Developers](https://freemius.com/wordpress/insights/?utm_source=wordpress&utm_medium=link&utm_content=rating-widget&utm_campaign=insights)**
+
+---
+
+#### Tags
+reviews, review, rate, rating, ratings, 5 star, 5-star, five star, five-star, vote, votes, voting, star, stars, like, dislike, thumbs, rating widget, rating-widget, star rating, thumb rating, rating platform, rating system, rating-system, product rating, product reviews, post rating, post reviews, comment rating, comment reviews, woocommerce reviews, google, admin, administrator, review, reviews, rich-snippets, google rich snippets, google ratings, schema, schema.org, seo, SEO, structured data, ranking, thumb up, plugin, plugins, ajax, buddypress, bbpress, wordpress, meta, woocommerce, contest, competition, voting contest, testimonials, ranking, top rating, top ranking, 星级
+
+
 == Installation ==
 
 1. Upload the plugin to your blog.
 2. Accept the Terms of Use and the Privacy Policy.
-3. Done!
+3. Done! Your site is now spiced up with Rating-Widget's star & thumb ratings.
 
 == Screenshots ==
 
-1. Beautiful Page, Post & Comment Ratings
+1. Beautiful Page, Post & Comment star ratings
 2. WYSISYG User-Friendly Configuration
-3. Rich-Snippets Integration (* Professional Plan)
-4. In-Settings Live Preview! (Bonus: Multi-Criteria Ratings Support)
+3. Google 5-star ratings - Rich-Snippets Integration (* Professional Plan)
+4. In-Settings Live Preview! (Bonus: Multi-Criteria Star Ratings Support)
 5. Multi-Criteria Ratings
 6. Stunning Top-Rated Sidebar Widget
 7. Handful of AWESOME Features to Configure the Top-Rated Items
 8. Ratings Reports (* Professional Plan)
-9. WooCommerce Full Integration
-10. Mobile Optimized Experience
+9. WooCommerce Full Integration - Interactive Product Star Ratings
+10. Mobile Optimized Experience - Floating Star Activator
 11. bbPress Full Integration for Forum Topics/Replies & User Reputation
 12. BuddyPress Activity and User Ratings
 13. Per-Post/Page/Product Rating Customization to Show / Hide & Active / ReadOnly
@@ -150,7 +171,7 @@ Before you rush into adding another topic to the support forum, please read the 
 
 > **Problem: The WordPress plugin don’t work, where are my ratings?**
 >
-> **Solution:** Don’t panic – you are not alone! Your custom theme’s developer forgot to call `wp_footer()` in the footer template file (usually named footer.php). Our star ratings core JavasSript is loaded on this action hook. Once this fixed the ratings should appear.
+> **Solution:** Don’t panic – you are not alone! Your custom theme’s developer forgot to call `wp_footer()` in the footer template file (usually named footer.php). Our star ratings core JavasScript is loaded on this action hook. Once this fixed the ratings should appear.
 >
 > More info here - [http://codex.wordpress.org/Theme_Development#Plugin_API_Hooks](http://codex.wordpress.org/Theme_Development#Plugin_API_Hooks)
 
@@ -964,7 +985,3 @@ Update: Updated the FAQ section on the plugin's listing.
 
 = 1.0.1 =
 * New: Initial release
-
-== Custom Section Test ==
-
-{"msg": "This is a custom section."}
