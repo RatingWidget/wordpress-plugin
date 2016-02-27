@@ -7999,6 +7999,13 @@
 					'has_addons'       => true,
 					'has_paid_plans'   => true,
 					'enable_anonymous' => false,
+					'menu' => array(
+						'slug' => 'rating-widget',
+//						'account' => false,
+					),
+					'permissions' => array(
+						'newsletter' => true,
+					),
 					// Set the SDK to work in a sandbox mode (for development & testing).
 					// Localhost FS environment params.
 					'secret_key'       => defined( 'WP_RW__FREEMIUS_SECRET_KEY_PRODUCTION' ) ?
