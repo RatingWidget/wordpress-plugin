@@ -1701,6 +1701,17 @@
 					return;
 				}
 
+				if ( $this->is_cron() ) {
+					/**
+					 * If in activation mode, don't execute Freemius during wp crons
+					 * (wp crons have HTTP context - called as HTTP request).
+					 *
+					 * @author Vova Feldman (@svovaf)
+					 * @since  1.1.7.3
+					 */
+					return;
+				}
+
 				if ( $this->is_ajax() && ! $this->_admin_notices->has_sticky( 'failed_connect_api' ) ) {
 					/**
 					 * During activation, if running in AJAX mode, unless there's a sticky
