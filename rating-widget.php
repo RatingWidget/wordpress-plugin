@@ -336,12 +336,15 @@
 
 				$this->fs->add_plugin_action_link(
 					__rw( 'settings' ),
-					rw_get_admin_url()
+					rw_get_admin_url(),
+					false,
+					3
 				);
 				$this->fs->add_plugin_action_link(
 					__rw( 'blog' ),
 					rw_get_site_url( '/blog/' ),
-					true
+					true,
+					5
 				);
 
 				if ( $this->account->is_registered() ) {
