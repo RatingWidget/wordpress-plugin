@@ -292,7 +292,6 @@
 
 				// Don't log secure data.
 				if ( is_admin() ) {
-					RWLogger::Log( "WP_RW__SERVER_ADDR", WP_RW__SERVER_ADDR );
 					RWLogger::Log( "WP_RW__DEBUG", json_encode( WP_RW__DEBUG ) );
 				}
 			}
@@ -1532,7 +1531,7 @@
 			}
 
 			function ApiAccessBlockedNotice() {
-				$this->Notice( 'Oops... your server (IP ' . WP_RW__SERVER_ADDR . ') is blocking the access to our API, therefore your license can NOT be synced. <br>Please contact your host to enable remote access to: <ul><li><code><a href="' . RW_API__ADDRESS . '" target="_blank">' . RW_API__ADDRESS . '</a></code></li><li><code><a href="' . WP_RW__ADDRESS . '" target="_blank">' . WP_RW__ADDRESS . '</a></code></li><li><code><a href="' . WP_RW__SECURE_ADDRESS . '" target="_blank">' . WP_RW__SECURE_ADDRESS . '</a></code></li></ul>' );
+				$this->Notice( 'Oops... your server is blocking the access to our API, therefore your license can NOT be synced. <br>Please contact your host to enable remote access to: <ul><li><code><a href="' . RW_API__ADDRESS . '" target="_blank">' . RW_API__ADDRESS . '</a></code></li><li><code><a href="' . WP_RW__ADDRESS . '" target="_blank">' . WP_RW__ADDRESS . '</a></code></li><li><code><a href="' . WP_RW__SECURE_ADDRESS . '" target="_blank">' . WP_RW__SECURE_ADDRESS . '</a></code></li></ul>' );
 			}
 
 			function ApiUnauthorizedAccessNotice() {
@@ -2268,20 +2267,6 @@
 				if ( RWLogger::IsOn() ) {
 					$params = func_get_args();
 					RWLogger::LogEnterence( "GenerateToken", $params, true );
-				}
-
-				$ip = ( ! $pServerCall ) ? WP_RW__CLIENT_ADDR : WP_RW__SERVER_ADDR;
-
-				if ( $pServerCall ) {
-					if ( RWLogger::IsOn() ) {
-						RWLogger::Log( "ServerToken", "ServerToken" );
-						RWLogger::Log( "ServerIP", $ip );
-					}
-				} else {
-					if ( RWLogger::IsOn() ) {
-						RWLogger::Log( "ClientToken", "ClientToken" );
-						RWLogger::Log( "ClientIP", $ip );
-					}
 				}
 
 				$token = md5( $pTimestamp . $this->account->site_secret_key );
