@@ -7989,10 +7989,6 @@
 					$public_key = 'pk_d859cee50e9d63917b6d3f324cbaf';
 				}
 
-				if ( file_exists( WP_RW__PLUGIN_LIB_DIR . 'freemius-keys.php' ) ) {
-					require_once( WP_RW__PLUGIN_LIB_DIR . 'freemius-keys.php' );
-				}
-
 				$rw_fs = fs_dynamic_init( array(
 					'id'               => $id,
 					'public_key'       => $public_key,
