@@ -424,6 +424,36 @@
 		}
 
 		/**
+		 * Leverage backtrace to find caller plugin file path.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.0.6
+		 *
+		 * @return string
+		 *
+		 * @uses   fs_find_caller_plugin_file
+		 */
+		private function _find_caller_plugin_file() {
+			// Try to load the cached value of the file path.
+			if ( isset( $this->_storage->plugin_main_file ) ) {
+				if ( file_exists( $this->_storage->plugin_main_file->path ) ) {
+					return $this->_storage->plugin_main_file->path;
+				}
+			}
+
+			$plugin_file = fs_find_caller_plugin_file();
+
+			$this->_storage->plugin_main_file = (object) array(
+				'path' => fs_normalize_path( $plugin_file ),
+			);
+
+			return $plugin_file;
+		}
+
+
+		#region Deactivation Feedback Form ------------------------------------------------------------------
+
+		/**
 		 * Displays a confirmation and feedback dialog box when the user clicks on the "Deactivate" link on the plugins
 		 * page.
 		 *
@@ -626,32 +656,7 @@
 			exit;
 		}
 
-		/**
-		 * Leverage backtrace to find caller plugin file path.
-		 *
-		 * @author Vova Feldman (@svovaf)
-		 * @since  1.0.6
-		 *
-		 * @return string
-		 *
-		 * @uses   fs_find_caller_plugin_file
-		 */
-		private function _find_caller_plugin_file() {
-			// Try to load the cached value of the file path.
-			if ( isset( $this->_storage->plugin_main_file ) ) {
-				if ( file_exists( $this->_storage->plugin_main_file->path ) ) {
-					return $this->_storage->plugin_main_file->path;
-				}
-			}
-
-			$plugin_file = fs_find_caller_plugin_file();
-
-			$this->_storage->plugin_main_file = (object) array(
-				'path' => fs_normalize_path( $plugin_file ),
-			);
-
-			return $plugin_file;
-		}
+		#endregion Deactivation Feedback Form ------------------------------------------------------------------
 
 		#region Instance ------------------------------------------------------------------
 
@@ -797,6 +802,28 @@
 			);
 		}
 
+		/**
+		 * Get collection of all active plugins.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.0.9
+		 *
+		 * @return array[string]array
+		 */
+		private function get_active_plugins() {
+			self::require_plugin_essentials();
+
+			$active_plugin            = array();
+			$all_plugins              = get_plugins();
+			$active_plugins_basenames = get_option( 'active_plugins' );
+
+			foreach ( $active_plugins_basenames as $plugin_basename ) {
+				$active_plugin[ $plugin_basename ] = $all_plugins[ $plugin_basename ];
+			}
+
+			return $active_plugin;
+		}
+
 		private static $_statics_loaded = false;
 
 		/**
@@ -823,7 +850,7 @@
 
 			add_action( 'admin_menu', array( 'Freemius', 'add_debug_page' ) );
 
-			add_action("wp_ajax_fs_toggle_debug_mode", array( 'Freemius', '_toggle_debug_mode' ));
+			add_action( "wp_ajax_fs_toggle_debug_mode", array( 'Freemius', '_toggle_debug_mode' ) );
 
 			self::$_statics_loaded = true;
 		}
@@ -1291,28 +1318,6 @@
 		}
 
 		/**
-		 * Get collection of all active plugins.
-		 *
-		 * @author Vova Feldman (@svovaf)
-		 * @since  1.0.9
-		 *
-		 * @return array[string]array
-		 */
-		private function get_active_plugins() {
-			self::require_plugin_essentials();
-
-			$active_plugin            = array();
-			$all_plugins              = get_plugins();
-			$active_plugins_basenames = get_option( 'active_plugins' );
-
-			foreach ( $active_plugins_basenames as $plugin_basename ) {
-				$active_plugin[ $plugin_basename ] = $all_plugins[ $plugin_basename ];
-			}
-
-			return $active_plugin;
-		}
-
-		/**
 		 * Handle user request to resolve connectivity issue.
 		 * This method will send an email to Freemius API technical staff for resolution.
 		 * The email will contain server's info and installed plugins (might be caching issue).
@@ -1582,25 +1587,6 @@
 		}
 
 		/**
-		 * @param string[] $options
-		 * @param string   $key
-		 * @param mixed    $default
-		 *
-		 * @return bool
-		 */
-		private function _get_option( &$options, $key, $default = false ) {
-			return ! empty( $options[ $key ] ) ? $options[ $key ] : $default;
-		}
-
-		private function _get_bool_option( &$options, $key, $default = false ) {
-			return isset( $options[ $key ] ) && is_bool( $options[ $key ] ) ? $options[ $key ] : $default;
-		}
-
-		private function _get_numeric_option( &$options, $key, $default = false ) {
-			return isset( $options[ $key ] ) && is_numeric( $options[ $key ] ) ? $options[ $key ] : $default;
-		}
-
-		/**
 		 * Dynamic initiator, originally created to support initiation
 		 * with parent_id for add-ons.
 		 *
@@ -1614,114 +1600,10 @@
 		function dynamic_init( array $plugin_info ) {
 			$this->_logger->entrance();
 
-			$id          = $this->_get_numeric_option( $plugin_info, 'id', false );
-			$public_key  = $this->_get_option( $plugin_info, 'public_key', false );
-			$secret_key  = $this->_get_option( $plugin_info, 'secret_key', null );
-			$parent_id   = $this->_get_numeric_option( $plugin_info, 'parent_id', null );
-			$parent_name = $this->_get_option( $plugin_info, 'parent_name', null );
+			$this->parse_settings( $plugin_info );
 
-			if ( isset( $plugin_info['parent'] ) ) {
-				$parent_id = $this->_get_numeric_option( $plugin_info['parent'], 'id', null );
-//				$parent_slug       = $this->get_option( $plugin_info['parent'], 'slug', null );
-//				$parent_public_key = $this->get_option( $plugin_info['parent'], 'public_key', null );
-				$parent_name = $this->_get_option( $plugin_info['parent'], 'name', null );
-			}
-
-			if ( false === $id ) {
-				throw new Freemius_Exception( 'Plugin id parameter is not set.' );
-			}
-			if ( false === $public_key ) {
-				throw new Freemius_Exception( 'Plugin public_key parameter is not set.' );
-			}
-
-			$plugin = ( $this->_plugin instanceof FS_Plugin ) ?
-				$this->_plugin :
-				new FS_Plugin();
-
-			$plugin->update( array(
-				'id'               => $id,
-				'public_key'       => $public_key,
-				'slug'             => $this->_slug,
-				'parent_plugin_id' => $parent_id,
-				'version'          => $this->get_plugin_version(),
-				'title'            => $this->get_plugin_name(),
-				'file'             => $this->_plugin_basename,
-				'is_premium'       => $this->_get_bool_option( $plugin_info, 'is_premium', true ),
-				'is_live'          => $this->_get_bool_option( $plugin_info, 'is_live', true ),
-//				'secret_key' => $secret_key,
-			) );
-
-			if ( $plugin->is_updated() ) {
-				// Update plugin details.
-				$this->_plugin = FS_Plugin_Manager::instance( $this->_slug )->store( $plugin );
-			}
-			// Set the secret key after storing the plugin, we don't want to store the key in the storage.
-			$this->_plugin->secret_key = $secret_key;
-
-			if ( ! isset( $plugin_info['menu'] ) ) {
-				// Back compatibility to 1.1.2
-				$plugin_info['menu'] = array(
-					'slug' => isset( $plugin_info['menu_slug'] ) ?
-						$plugin_info['menu_slug'] :
-						$this->_slug
-				);
-			}
-
-			$this->_menu = FS_Admin_Menu_Manager::instance( $this->_slug );
-			$this->_menu->init( $plugin_info['menu'], $this->is_addon() );
-
-			$this->_has_addons       = $this->_get_bool_option( $plugin_info, 'has_addons', false );
-			$this->_has_paid_plans   = $this->_get_bool_option( $plugin_info, 'has_paid_plans', true );
-			$this->_is_org_compliant = $this->_get_bool_option( $plugin_info, 'is_org_compliant', true );
-			$this->_enable_anonymous = $this->_get_bool_option( $plugin_info, 'enable_anonymous', true );
-			$this->_permissions      = $this->_get_option( $plugin_info, 'permissions', array() );
-
-			if ( $this->is_activation_mode() ) {
-				if ( ! is_admin() ) {
-					/**
-					 * If in activation mode, don't execute Freemius outside of the
-					 * admin dashboard.
-					 *
-					 * @author Vova Feldman (@svovaf)
-					 * @since  1.1.7.3
-					 */
-					return;
-				}
-
-				if ( ! WP_FS__IS_HTTP_REQUEST ) {
-					/**
-					 * If in activation and executed without HTTP context (e.g. CLI, Cronjob),
-					 * then don't start Freemius.
-					 *
-					 * @author Vova Feldman (@svovaf)
-					 * @since  1.1.6.3
-					 *
-					 * @link   https://wordpress.org/support/topic/errors-in-the-freemius-class-when-running-in-wordpress-in-cli
-					 */
-					return;
-				}
-
-				if ( $this->is_cron() ) {
-					/**
-					 * If in activation mode, don't execute Freemius during wp crons
-					 * (wp crons have HTTP context - called as HTTP request).
-					 *
-					 * @author Vova Feldman (@svovaf)
-					 * @since  1.1.7.3
-					 */
-					return;
-				}
-
-				if ( $this->is_ajax() && ! $this->_admin_notices->has_sticky( 'failed_connect_api' ) ) {
-					/**
-					 * During activation, if running in AJAX mode, unless there's a sticky
-					 * connectivity issue notice, don't run Freemius.
-					 *
-					 * @author Vova Feldman (@svovaf)
-					 * @since  1.1.7.3
-					 */
-					return;
-				}
+			if ( $this->should_stop_execution() ) {
+				return;
 			}
 
 			if ( ! $this->is_registered() ) {
@@ -1785,10 +1667,14 @@
 				}
 			}
 
+			if ($this->is_registered()){
+				$this->hook_callback_to_install_sync();
+			}
+
 			if ( $this->is_addon() ) {
 				if ( $this->is_parent_plugin_installed() ) {
 					// Link to parent FS.
-					$this->_parent = self::get_instance_by_id( $parent_id );
+					$this->_parent = self::get_instance_by_id( $this->_plugin->parent_plugin_id );
 
 					// Get parent plugin reference.
 					$this->_parent_plugin = $this->_parent->get_plugin();
@@ -1803,8 +1689,14 @@
 
 				if ( $this->is_addon() ) {
 					if ( ! $this->is_parent_plugin_installed() ) {
+						$parent_name = $this->get_option( $plugin_info, 'parent_name', null );
+
+						if ( isset( $plugin_info['parent'] ) ) {
+							$parent_name = $this->get_option( $plugin_info['parent'], 'name', null );
+						}
+
 						$this->_admin_notices->add(
-							( is_string( $parent_name ) ?
+							( ! empty( $parent_name ) ?
 								sprintf( __fs( 'addon-x-cannot-run-without-y', $this->_slug ), $this->get_plugin_name(), $parent_name ) :
 								sprintf( __fs( 'addon-x-cannot-run-without-parent', $this->_slug ), $this->get_plugin_name() )
 							),
@@ -1890,14 +1782,170 @@
 		}
 
 		/**
+		 * Parse plugin's settings (as defined by the plugin dev).
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.1.7.3
+		 *
+		 * @param array $plugin_info
+		 *
+		 * @throws \Freemius_Exception
+		 */
+		private function parse_settings( &$plugin_info ) {
+			$this->_logger->entrance();
+
+			$id          = $this->get_numeric_option( $plugin_info, 'id', false );
+			$public_key  = $this->get_option( $plugin_info, 'public_key', false );
+			$secret_key  = $this->get_option( $plugin_info, 'secret_key', null );
+			$parent_id   = $this->get_numeric_option( $plugin_info, 'parent_id', null );
+			$parent_name = $this->get_option( $plugin_info, 'parent_name', null );
+
+			if ( isset( $plugin_info['parent'] ) ) {
+				$parent_id = $this->get_numeric_option( $plugin_info['parent'], 'id', null );
+//				$parent_slug       = $this->get_option( $plugin_info['parent'], 'slug', null );
+//				$parent_public_key = $this->get_option( $plugin_info['parent'], 'public_key', null );
+				$parent_name = $this->get_option( $plugin_info['parent'], 'name', null );
+			}
+
+			if ( false === $id ) {
+				throw new Freemius_Exception( 'Plugin id parameter is not set.' );
+			}
+			if ( false === $public_key ) {
+				throw new Freemius_Exception( 'Plugin public_key parameter is not set.' );
+			}
+
+			$plugin = ( $this->_plugin instanceof FS_Plugin ) ?
+				$this->_plugin :
+				new FS_Plugin();
+
+			$plugin->update( array(
+				'id'               => $id,
+				'public_key'       => $public_key,
+				'slug'             => $this->_slug,
+				'parent_plugin_id' => $parent_id,
+				'version'          => $this->get_plugin_version(),
+				'title'            => $this->get_plugin_name(),
+				'file'             => $this->_plugin_basename,
+				'is_premium'       => $this->get_bool_option( $plugin_info, 'is_premium', true ),
+				'is_live'          => $this->get_bool_option( $plugin_info, 'is_live', true ),
+//				'secret_key' => $secret_key,
+			) );
+
+			if ( $plugin->is_updated() ) {
+				// Update plugin details.
+				$this->_plugin = FS_Plugin_Manager::instance( $this->_slug )->store( $plugin );
+			}
+			// Set the secret key after storing the plugin, we don't want to store the key in the storage.
+			$this->_plugin->secret_key = $secret_key;
+
+			if ( ! isset( $plugin_info['menu'] ) ) {
+				// Back compatibility to 1.1.2
+				$plugin_info['menu'] = array(
+					'slug' => isset( $plugin_info['menu_slug'] ) ?
+						$plugin_info['menu_slug'] :
+						$this->_slug
+				);
+			}
+
+			$this->_menu = FS_Admin_Menu_Manager::instance( $this->_slug );
+			$this->_menu->init( $plugin_info['menu'], $this->is_addon() );
+
+			$this->_has_addons       = $this->get_bool_option( $plugin_info, 'has_addons', false );
+			$this->_has_paid_plans   = $this->get_bool_option( $plugin_info, 'has_paid_plans', true );
+			$this->_is_org_compliant = $this->get_bool_option( $plugin_info, 'is_org_compliant', true );
+			$this->_enable_anonymous = $this->get_bool_option( $plugin_info, 'enable_anonymous', true );
+			$this->_permissions      = $this->get_option( $plugin_info, 'permissions', array() );
+		}
+
+		/**
+		 * @param string[] $options
+		 * @param string   $key
+		 * @param mixed    $default
+		 *
+		 * @return bool
+		 */
+		private function get_option( &$options, $key, $default = false ) {
+			return ! empty( $options[ $key ] ) ? $options[ $key ] : $default;
+		}
+
+		private function get_bool_option( &$options, $key, $default = false ) {
+			return isset( $options[ $key ] ) && is_bool( $options[ $key ] ) ? $options[ $key ] : $default;
+		}
+
+		private function get_numeric_option( &$options, $key, $default = false ) {
+			return isset( $options[ $key ] ) && is_numeric( $options[ $key ] ) ? $options[ $key ] : $default;
+		}
+
+		/**
+		 * Gate keeper.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.1.7.3
+		 *
+		 * @return bool
+		 */
+		private function should_stop_execution() {
+			if ( $this->is_activation_mode() ) {
+				if ( ! is_admin() ) {
+					/**
+					 * If in activation mode, don't execute Freemius outside of the
+					 * admin dashboard.
+					 *
+					 * @author Vova Feldman (@svovaf)
+					 * @since  1.1.7.3
+					 */
+					return true;
+				}
+
+				if ( ! WP_FS__IS_HTTP_REQUEST ) {
+					/**
+					 * If in activation and executed without HTTP context (e.g. CLI, Cronjob),
+					 * then don't start Freemius.
+					 *
+					 * @author Vova Feldman (@svovaf)
+					 * @since  1.1.6.3
+					 *
+					 * @link   https://wordpress.org/support/topic/errors-in-the-freemius-class-when-running-in-wordpress-in-cli
+					 */
+					return true;
+				}
+
+				if ( $this->is_cron() ) {
+					/**
+					 * If in activation mode, don't execute Freemius during wp crons
+					 * (wp crons have HTTP context - called as HTTP request).
+					 *
+					 * @author Vova Feldman (@svovaf)
+					 * @since  1.1.7.3
+					 */
+					return true;
+				}
+
+				if ( $this->is_ajax() && ! $this->_admin_notices->has_sticky( 'failed_connect_api' ) ) {
+					/**
+					 * During activation, if running in AJAX mode, unless there's a sticky
+					 * connectivity issue notice, don't run Freemius.
+					 *
+					 * @author Vova Feldman (@svovaf)
+					 * @since  1.1.7.3
+					 */
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		/**
 		 * Handles plugin's code type change (free <--> premium).
 		 *
 		 * @author Vova Feldman (@svovaf)
 		 * @since  1.0.9
 		 */
 		function _plugin_code_type_changed() {
-			// Send code type changes event.
-			$this->sync_install();
+			// Schedule code type changes event.
+//			$this->sync_install();
+			$this->schedule_install_sync();
 
 			if ( $this->is_premium() ) {
 				// Activated premium code.
@@ -2415,10 +2463,127 @@
 		function last_sync_cron() {
 			$this->_logger->entrance();
 
-			return $this->_storage->get('sync_timestamp');
+			return $this->_storage->get( 'sync_timestamp' );
 		}
 
 		#endregion Daily Sync Cron ------------------------------------------------------------------
+
+		#region Async Install Sync ------------------------------------------------------------------
+
+		/**
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.1.7.3
+		 *
+		 * @return bool
+		 */
+		private function is_install_sync_scheduled() {
+			/**
+			 * @var object $cron_data
+			 */
+			$cron_data = $this->_storage->get( 'install_sync_cron', null );
+
+			return ( ! is_null( $cron_data ) && true === $cron_data->on );
+		}
+
+		/**
+		 * Instead of running blocking install sync event, execute non blocking scheduled wp-cron.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.1.7.3
+		 */
+		private function schedule_install_sync() {
+			$this->_logger->entrance();
+
+			$this->clear_install_sync_cron();
+
+			// Schedule immediate install sync.
+			wp_schedule_single_event(
+				WP_FS__SCRIPT_START_TIME,
+				$this->get_action_tag( 'install_sync' )
+			);
+
+			$this->_storage->store( 'install_sync_cron', (object) array(
+				'version'     => $this->get_plugin_version(),
+				'sdk_version' => $this->version,
+				'timestamp'   => WP_FS__SCRIPT_START_TIME,
+				'on'          => true,
+			) );
+		}
+
+		/**
+		 * Unix timestamp for previous install sync cron execution or false if never executed.
+		 *
+		 * @todo There's some very strange bug that $this->_storage->install_sync_timestamp value is not being updated. But for sure the sync event is working.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.1.7.3
+		 *
+		 * @return int|false
+		 */
+		function last_install_sync() {
+			$this->_logger->entrance();
+
+			return $this->_storage->get( 'install_sync_timestamp' );
+		}
+
+		/**
+		 * Unix timestamp for next install sync cron execution or false if not scheduled.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.1.7.3
+		 *
+		 * @return int|false
+		 */
+		function next_install_sync() {
+			$this->_logger->entrance();
+
+			if ( ! $this->is_install_sync_scheduled() ) {
+				return false;
+			}
+
+			return wp_next_scheduled( $this->get_action_tag( 'install_sync' ) );
+		}
+
+		/**
+		 * Add the actual install sync function to the cron job hook.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.1.7.3
+		 */
+		private function hook_callback_to_install_sync() {
+			$this->add_action( 'install_sync', array( &$this, '_run_sync_install' ) );
+		}
+
+		/**
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.1.7.3
+		 */
+		private function clear_install_sync_cron() {
+			$this->_logger->entrance();
+
+			if ( ! $this->is_install_sync_scheduled() ) {
+				return;
+			}
+
+			$this->_storage->remove( 'install_sync_cron' );
+
+			wp_clear_scheduled_hook( $this->get_action_tag( 'install_sync' ) );
+		}
+
+		/**
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.1.7.3
+		 */
+		public function _run_sync_install() {
+			$this->_logger->entrance();
+
+			// Update last install sync timestamp.
+			$this->_storage->install_sync_timestamp = time();
+
+			$this->sync_install( array(), true );
+		}
+
+		#endregion Async Install Sync ------------------------------------------------------------------
 
 		/**
 		 * Show a notice that activation is currently pending.
@@ -2742,8 +2907,9 @@
 			FS_Api::clear_cache();
 
 			if ( $this->is_registered() ) {
-				// Send re-activation event and sync.
-				$this->sync_install( array(), true );
+				// Schedule re-activation event and sync.
+//				$this->sync_install( array(), true );
+				$this->schedule_install_sync();
 
 				/**
 				 * @todo Work on automatic deactivation of the Free plugin version. It doesn't work since the slug of the free & premium versions is identical. Therefore, only one instance of Freemius is created and the activation hook of the premium version is not being added.
@@ -2829,10 +2995,11 @@
 
 			/**
 			 * IMPORTANT:
-			 *  Clear sync-cron must be executed before clearing all storage.
+			 *  Clear crons must be executed before clearing all storage.
 			 *  Otherwise, the cron will not be cleared.
 			 */
 			$this->clear_sync_cron();
+			$this->clear_install_sync_cron();
 
 			// Clear all storage data.
 			$this->_storage->clear_all( true, array(
@@ -2870,6 +3037,7 @@
 			}
 
 			$this->clear_sync_cron();
+			$this->clear_install_sync_cron();
 
 			if ( $this->is_registered() ) {
 				// Send deactivation event.
@@ -2978,18 +3146,14 @@
 		 * @since  1.0.4
 		 */
 		private function update_plugin_version_event() {
-			$this->_logger->entrance( 'slug = ' . $this->_slug );
+			$this->_logger->entrance();
 
-			// Send update event.
-			$site = $this->send_install_update( array(), true );
-
-			if ( false !== $site && ! $this->is_api_error( $site ) ) {
-				$this->_site       = new FS_Site( $site );
-				$this->_site->plan = $this->_get_plan_by_id( $site->plan_id );
+			if ( ! $this->is_registered() ) {
+				return;
 			}
 
-			$this->_site->version = $this->get_plugin_version();
-			$this->_store_site( true );
+			$this->schedule_install_sync();
+//			$this->sync_install( array(), true );
 		}
 
 		/**
@@ -3068,8 +3232,18 @@
 			}
 
 			if ( 0 < count( $params ) ) {
+				// Update last install sync timestamp.
+				$this->_storage->install_sync_timestamp = time();
+
 				// Send updated values to FS.
-				return $this->get_api_site_scope()->call( '/', 'put', $params );
+				$site = $this->get_api_site_scope()->call( '/', 'put', $params );
+
+				if ( ! $this->is_api_error( $site ) ) {
+					// I successfully sent install update, clear scheduled sync if exist.
+					$this->clear_install_sync_cron();
+				}
+
+				return $site;
 			}
 
 			return false;
@@ -6224,6 +6398,18 @@
 		}
 
 		/**
+		 * Check if user is a trial or have feature enabled license.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.1.7
+		 *
+		 * @return bool
+		 */
+		function can_use_premium_code() {
+			return $this->is_trial() || $this->has_features_enabled_license();
+		}
+
+		/**
 		 * Sync site's plan.
 		 *
 		 * @author Vova Feldman (@svovaf)
@@ -6391,7 +6577,11 @@
 				// Sync plans.
 				$this->_sync_plans();
 
-				if ( $this->has_paid_plan() ) {
+				if ( ! $this->has_paid_plan() ) {
+					$this->_site = $site;
+					$this->_enrich_site_plan( true );
+					$this->_store_site();
+				} else {
 					// Sync licenses.
 					$this->_sync_licenses();
 
