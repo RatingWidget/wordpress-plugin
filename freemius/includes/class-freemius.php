@@ -1172,7 +1172,8 @@
 
 			$message = false;
 			if ( is_object( $api_result ) &&
-			     isset( $api_result->error )
+			     isset( $api_result->error ) &&
+			     isset( $api_result->error->code )
 			) {
 				switch ( $api_result->error->code ) {
 					case 'curl_missing':
@@ -1626,6 +1627,8 @@
 						}
 
 						return;
+					} else {
+						$this->_admin_notices->remove_sticky( 'failed_connect_api' );
 					}
 				}
 
@@ -6568,97 +6571,100 @@
 						);
 					}
 				}
+
+				// No reason to continue with license sync while there are API issues.
+				return;
+			}
+
+			// Remove sticky API connectivity message.
+			self::$_global_admin_notices->remove_sticky( 'api_blocked' );
+
+			$site = new FS_Site( $site );
+
+			// Sync plans.
+			$this->_sync_plans();
+
+			if ( ! $this->has_paid_plan() ) {
+				$this->_site = $site;
+				$this->_enrich_site_plan( true );
+				$this->_store_site();
 			} else {
-				// Remove sticky API connectivity message.
-				self::$_global_admin_notices->remove_sticky( 'api_blocked' );
+				// Sync licenses.
+				$this->_sync_licenses();
 
-				$site = new FS_Site( $site );
+				// Check if plan / license changed.
+				if ( ! FS_Entity::equals( $site->plan, $this->_site->plan ) ||
+				     // Check if trial started.
+				     $site->trial_plan_id != $this->_site->trial_plan_id ||
+				     $site->trial_ends != $this->_site->trial_ends ||
+				     // Check if license changed.
+				     $site->license_id != $this->_site->license_id
+				) {
+					if ( $site->is_trial() && ( ! $this->_site->is_trial() || $site->trial_ends != $this->_site->trial_ends ) ) {
+						// New trial started.
+						$this->_site = $site;
+						$plan_change = 'trial_started';
 
-				// Sync plans.
-				$this->_sync_plans();
+						// Store trial plan information.
+						$this->_enrich_site_trial_plan( true );
 
-				if ( ! $this->has_paid_plan() ) {
-					$this->_site = $site;
-					$this->_enrich_site_plan( true );
-					$this->_store_site();
-				} else {
-					// Sync licenses.
-					$this->_sync_licenses();
+						// For trial with subscription use-case.
+						$new_license = is_null( $site->license_id ) ? null : $this->_get_license_by_id( $site->license_id );
 
-					// Check if plan / license changed.
-					if ( ! FS_Entity::equals( $site->plan, $this->_site->plan ) ||
-					     // Check if trial started.
-					     $site->trial_plan_id != $this->_site->trial_plan_id ||
-					     $site->trial_ends != $this->_site->trial_ends ||
-					     // Check if license changed.
-					     $site->license_id != $this->_site->license_id
-					) {
-						if ( $site->is_trial() && ( ! $this->_site->is_trial() || $site->trial_ends != $this->_site->trial_ends ) ) {
-							// New trial started.
+						if ( is_object( $new_license ) && ! $new_license->is_expired() ) {
 							$this->_site = $site;
-							$plan_change = 'trial_started';
+							$this->_update_site_license( $new_license );
+							$this->_store_licenses();
+							$this->_enrich_site_plan( true );
 
-							// Store trial plan information.
-							$this->_enrich_site_trial_plan( true );
-
-							// For trial with subscription use-case.
-							$new_license = is_null( $site->license_id ) ? null : $this->_get_license_by_id( $site->license_id );
-
-							if ( is_object( $new_license ) && ! $new_license->is_expired() ) {
-								$this->_site = $site;
-								$this->_update_site_license( $new_license );
-								$this->_store_licenses();
-								$this->_enrich_site_plan( true );
-
-								$this->_sync_site_subscription( $this->_license );
-							}
-						} else if ( $this->_site->is_trial() && ! $site->is_trial() && ! is_numeric( $site->license_id ) ) {
-							// Was in trial, but now trial expired and no license ID.
-							// New trial started.
-							$this->_site = $site;
-							$plan_change = 'trial_expired';
-
-							// Clear trial plan information.
-							$this->_storage->trial_plan = null;
-
-						} else {
-							$is_free = $this->is_free_plan();
-
-							// Make sure license exist and not expired.
-							$new_license = is_null( $site->license_id ) ? null : $this->_get_license_by_id( $site->license_id );
-
-							if ( $is_free && ( ( ! is_object( $new_license ) || $new_license->is_expired() ) ) ) {
-								// The license is expired, so ignore upgrade method.
-							} else {
-								// License changed.
-								$this->_site = $site;
-								$this->_update_site_license( $new_license );
-								$this->_store_licenses();
-								$this->_enrich_site_plan( true );
-
-								$plan_change = $is_free ?
-									'upgraded' :
-									( is_object( $new_license ) ?
-										'changed' :
-										'downgraded' );
-							}
-						}
-
-						// Store updated site info.
-						$this->_store_site();
-					} else {
-						if ( is_object( $this->_license ) && $this->_license->is_expired() ) {
-							if ( ! $this->has_features_enabled_license() ) {
-								$this->_deactivate_license();
-								$plan_change = 'downgraded';
-							} else {
-								$plan_change = 'expired';
-							}
-						}
-
-						if ( is_numeric( $site->license_id ) && is_object( $this->_license ) ) {
 							$this->_sync_site_subscription( $this->_license );
 						}
+					} else if ( $this->_site->is_trial() && ! $site->is_trial() && ! is_numeric( $site->license_id ) ) {
+						// Was in trial, but now trial expired and no license ID.
+						// New trial started.
+						$this->_site = $site;
+						$plan_change = 'trial_expired';
+
+						// Clear trial plan information.
+						$this->_storage->trial_plan = null;
+
+					} else {
+						$is_free = $this->is_free_plan();
+
+						// Make sure license exist and not expired.
+						$new_license = is_null( $site->license_id ) ? null : $this->_get_license_by_id( $site->license_id );
+
+						if ( $is_free && ( ( ! is_object( $new_license ) || $new_license->is_expired() ) ) ) {
+							// The license is expired, so ignore upgrade method.
+						} else {
+							// License changed.
+							$this->_site = $site;
+							$this->_update_site_license( $new_license );
+							$this->_store_licenses();
+							$this->_enrich_site_plan( true );
+
+							$plan_change = $is_free ?
+								'upgraded' :
+								( is_object( $new_license ) ?
+									'changed' :
+									'downgraded' );
+						}
+					}
+
+					// Store updated site info.
+					$this->_store_site();
+				} else {
+					if ( is_object( $this->_license ) && $this->_license->is_expired() ) {
+						if ( ! $this->has_features_enabled_license() ) {
+							$this->_deactivate_license();
+							$plan_change = 'downgraded';
+						} else {
+							$plan_change = 'expired';
+						}
+					}
+
+					if ( is_numeric( $site->license_id ) && is_object( $this->_license ) ) {
+						$this->_sync_site_subscription( $this->_license );
 					}
 				}
 			}
