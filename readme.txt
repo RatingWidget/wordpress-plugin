@@ -210,6 +210,12 @@ The RatingWidget Team
 
 == Change Log ==
 
+= 2.7.8.5 - 2016-02-29 =
+* Performance: Major performance optimization by significantly reducing the number of API calls and making them non-blocking using wp-cron mechanism.
+* Fix: Fixed some PHP notices for PHP 5.2 when running in WP debug mode.
+* Fix: CSS fixes to adjust to the new WP versions CSS.
+* Fix: Fixed title encoding issue in the star rating reports page.
+
 = 2.7.8.4 - 2016-01-24 =
 * Fix: Plugin slowdowns due to constant API requests on every pageview.
 
