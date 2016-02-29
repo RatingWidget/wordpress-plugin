@@ -18,7 +18,7 @@
 
 			self::$_logger = rw_fs()->get_logger();
 
-			if ( is_admin() ) {
+			if ( is_admin() || WP_RW__DEBUG ) {
 				self::$_logger->on();
 			}
 

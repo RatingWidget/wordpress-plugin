@@ -10,7 +10,7 @@
 
 	/* Localhost.
 	-----------------------------------------------------------------------------------------*/
-	define( 'WP_RW__LOCALHOST', ( substr($_SERVER['REMOTE_ADDR'], 0, 4) == '127.' || $_SERVER['REMOTE_ADDR'] == '::1') );
+	define( 'WP_RW__LOCALHOST', ( substr( $_SERVER['REMOTE_ADDR'], 0, 4 ) == '127.' || $_SERVER['REMOTE_ADDR'] == '::1' ) );
 
 	/* Plugin dir and url
 	-----------------------------------------------------------------------------------------*/
@@ -56,19 +56,24 @@
 	// To run your tests on a local machine, hardcode your IP here.
 	// To find your IP go to http://www.ip-adress.com/
 	if ( WP_RW__LOCALHOST ) {
-		define( 'WP_RW__SERVER_ADDR', '123.123.123.123' );
 		define( 'WP_RW__CLIENT_ADDR', '123.123.123.123' );
 	}
 
 	/* Uncomment for debug mode.
 	-----------------------------------------------------------------------------------------*/
-	define( 'WP_RW__DEBUG_PARAMS', false || ( ! empty( $_GET['rwdbge'] ) && 'true' === $_GET['rwdbge'] ) );
-	define( 'WP_RW__DEBUG', WP_RW__DEBUG_PARAMS || false || ( ! empty( $_GET['rwdbg'] ) && 'true' === $_GET['rwdbg'] ) );
+	if ( ! defined( 'WP_RW__DEBUG_PARAMS' ) ) {
+		define( 'WP_RW__DEBUG_PARAMS', false || ( ! empty( $_GET['rwdbge'] ) && 'true' === $_GET['rwdbge'] ) );
+	}
+	if ( ! defined( 'WP_RW__DEBUG' ) ) {
+		define( 'WP_RW__DEBUG', WP_RW__DEBUG_PARAMS || false || ( ! empty( $_GET['rwdbg'] ) && 'true' === $_GET['rwdbg'] ) );
+	}
 	define( 'WP_RW__SHOW_PHP_ERRORS', WP_RW__DEBUG );
-	define( 'WP_RW__LOCALHOST_SCRIPTS', WP_RW__DEBUG && false );
+	if ( ! defined( 'WP_RW__LOCALHOST_SCRIPTS' ) ) {
+		define( 'WP_RW__LOCALHOST_SCRIPTS', WP_RW__DEBUG && false );
+	}
 	define( 'WP_RW__CACHING_ON', ! WP_RW__DEBUG );
 	define( 'WP_RW__STAGING', false );
-	define( 'WP_RW__LOG_DUMP', WP_RW__DEBUG &&  ! empty( $_GET['rwdbge'] ));
+	define( 'WP_RW__LOG_DUMP', WP_RW__DEBUG && ! empty( $_GET['rwdbge'] ) );
 
 	// This gives all other plugins the chance to load before RatingWidget.
 //    define('WP_RW___LATE_LOAD', 999);
@@ -185,7 +190,7 @@
 	define( 'WP_RW__CUSTOM_SETTINGS', 'rw_custom_settings' );
 	define( 'WP_RW__MULTIRATING_SETTINGS', 'rw_multirating_settings' );
 	define( 'WP_RW__IS_ACCUMULATED_USER_RATING', 'rw_accumulated_user_rating' );
-	
+
 	/* Visibility Options
 	-----------------------------------------------------------------------------------------*/
 	define( 'WP_RW__VISIBILITY_ALL_VISIBLE', 0 );
@@ -235,7 +240,7 @@
 	define( 'WP_RW__TIME_30_DAYS_IN_SEC', 30 * WP_RW__TIME_24_HOURS_IN_SEC );
 	define( 'WP_RW__TIME_6_MONTHS_IN_SEC', 6 * WP_RW__TIME_30_DAYS_IN_SEC );
 	define( 'WP_RW__TIME_YEAR_IN_SEC', 365 * WP_RW__TIME_24_HOURS_IN_SEC );
-	define( 'WP_RW__TIME_ALL_TIME', -1 );
+	define( 'WP_RW__TIME_ALL_TIME', - 1 );
 
 	/* Local caching
 	-----------------------------------------------------------------------------------------*/
@@ -263,7 +268,7 @@
 		}
 	}
 
-	define('WP_RW__SCRIPT_URL', substr($_SERVER['REQUEST_URI'], 0, strpos($_SERVER['REQUEST_URI'], '?')));
+	define( 'WP_RW__SCRIPT_URL', substr( $_SERVER['REQUEST_URI'], 0, strpos( $_SERVER['REQUEST_URI'], '?' ) ) );
 
 	if ( ! defined( 'WP_RW__SECURE_DOMAIN' ) ) {
 		define( 'WP_RW__SECURE_DOMAIN', 'rating-widget.com' );
@@ -285,9 +290,6 @@
 
 	/* Server Address & Remote Address
 	-----------------------------------------------------------------------------------------*/
-	if ( ! defined( 'WP_RW__SERVER_ADDR' ) ) {
-		define( 'WP_RW__SERVER_ADDR', $_SERVER['SERVER_ADDR'] );
-	}
 	if ( ! defined( 'WP_RW__CLIENT_ADDR' ) ) {
 		define( 'WP_RW__CLIENT_ADDR', $_SERVER['REMOTE_ADDR'] );
 	}

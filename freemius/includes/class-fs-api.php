@@ -70,9 +70,7 @@
 			$identifier = md5( $slug . $scope . $id . $public_key . ( is_string( $secret_key ) ? $secret_key : '' ) . json_encode( $is_sandbox ) );
 
 			if ( ! isset( self::$_instances[ $identifier ] ) ) {
-				if ( 0 === count( self::$_instances ) ) {
-					self::_init();
-				}
+				self::_init();
 
 				self::$_instances[ $identifier ] = new FS_Api( $slug, $scope, $id, $public_key, $secret_key, $is_sandbox );
 			}
@@ -81,6 +79,10 @@
 		}
 
 		private static function _init() {
+			if ( isset( self::$_options ) ) {
+				return;
+			}
+
 			if ( ! class_exists( 'Freemius_Api' ) ) {
 				require_once( WP_FS__DIR_SDK . '/Freemius.php' );
 			}
@@ -152,22 +154,16 @@
 		 * @return array|mixed|string|void
 		 */
 		private function _call( $path, $method = 'GET', $params = array(), $retry = false ) {
-			$this->_logger->entrance();
+			$this->_logger->entrance( $method . ':' . $path );
 
 			if ( self::is_temporary_down() ) {
-				$result = (object) array(
-					'error' => array(
-						'type'    => 'TemporaryDowntime',
-						'message' => 'API is temporary down.',
-						'code'    => 'temporary_downtime',
-						'http'    => 402
-					)
-				);
+				$result = $this->get_temporary_unavailable_error();
 			} else {
 				$result = $this->_api->Api( $path, $method, $params );
 
 				if ( null !== $result &&
 				     isset( $result->error ) &&
+				     isset( $result->error->code ) &&
 				     'request_expired' === $result->error->code
 				) {
 					if ( ! $retry ) {
@@ -184,7 +180,7 @@
 				}
 			}
 
-			if ( null !== $result && isset( $result->error ) ) {
+			if ( null !== $result && isset( $result->error ) && isset( $result->error->message ) ) {
 				// Log API errors.
 				$this->_logger->error( $result->error->message );
 			}
@@ -225,7 +221,7 @@
 		 * @return stdClass|mixed
 		 */
 		function get( $path = '/', $flush = false, $expiration = WP_FS__TIME_24_HOURS_IN_SEC ) {
-			$this->_logger->entrance();
+			$this->_logger->entrance( $path );
 
 			$cache_key = $this->get_cache_key( $path );
 
@@ -280,10 +276,7 @@
 		 * @return bool True if successful connectivity to the API.
 		 */
 		static function test() {
-			if ( ! function_exists( 'curl_version' ) ) {
-				// cUrl extension is not active.
-				return false;
-			}
+			self::_init();
 
 			$cache_key = 'ping_test';
 
@@ -326,31 +319,105 @@
 		 * @return bool
 		 */
 		static function is_temporary_down() {
+			self::_init();
+
 			$test = self::$_cache->get_valid( 'ping_test', null );
 
 			return ( false === $test );
 		}
 
 		/**
-		 * Ping API for connectivity test, and return result object.
-		 *
 		 * @author Vova Feldman (@svovaf)
-		 * @since  1.0.9
-		 *
-		 * @param null|string $unique_anonymous_id
-		 * @param bool        $is_update False if new plugin installation.
+		 * @since  1.1.6
 		 *
 		 * @return object
 		 */
-		function ping( $unique_anonymous_id = null, $is_update = false ) {
+		private function get_temporary_unavailable_error() {
+			return (object) array(
+				'error' => array(
+					'type'    => 'TemporaryUnavailable',
+					'message' => 'API is temporary unavailable, please retry in ' . ( self::$_cache->get_record_expiration( 'ping_test' ) - WP_FS__SCRIPT_START_TIME ) . ' sec.',
+					'code'    => 'temporary_unavailable',
+					'http'    => 503
+				)
+			);
+		}
+
+		/**
+		 * Ping API for connectivity test, and return result object.
+		 *
+		 * @author   Vova Feldman (@svovaf)
+		 * @since    1.0.9
+		 *
+		 * @param null|string $unique_anonymous_id
+		 * @param array       $params
+		 *
+		 * @return object
+		 */
+		function ping( $unique_anonymous_id = null, $params = array() ) {
 			$this->_logger->entrance();
 
-			return is_null( $unique_anonymous_id ) ?
+			if ( self::is_temporary_down() ) {
+				return $this->get_temporary_unavailable_error();
+			}
+
+			$pong = is_null( $unique_anonymous_id ) ?
 				Freemius_Api::Ping() :
-				$this->_call( 'ping.json?' . http_build_query( array(
-						'uid'       => $unique_anonymous_id,
-						'is_update' => $is_update,
-					) ) );
+				$this->_call( 'ping.json?' . http_build_query( array_merge( $params, array(
+						'uid' => $unique_anonymous_id,
+					) ) ) );
+
+			if ( $this->is_valid_ping( $pong ) ) {
+				return $pong;
+			}
+
+			if ( self::should_try_with_http( $pong ) ) {
+				// Fallback to HTTP, since HTTPS fails.
+				Freemius_Api::SetHttp();
+
+				self::$_options->set_option( 'api_force_http', true, true );
+
+				$pong = is_null( $unique_anonymous_id ) ?
+					Freemius_Api::Ping() :
+					$this->_call( 'ping.json?' . http_build_query( array_merge( $params, array(
+							'uid' => $unique_anonymous_id,
+						) ) ) );
+
+				if ( ! $this->is_valid_ping( $pong ) ) {
+					self::$_options->set_option( 'api_force_http', false, true );
+				}
+			}
+
+			return $pong;
+		}
+
+		/**
+		 * Check if based on the API result we should try
+		 * to re-run the same request with HTTP instead of HTTPS.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.1.6
+		 *
+		 * @param $result
+		 *
+		 * @return bool
+		 */
+		private static function should_try_with_http( $result ) {
+			if ( ! Freemius_Api::IsHttps() ) {
+				return false;
+			}
+
+			return ( ! is_object( $result ) ||
+			         ! isset( $result->error ) ||
+			         ! isset( $result->error->code ) ||
+			         ! in_array( $result->error->code, array(
+				         'curl_missing',
+				         'cloudflare_ddos_protection',
+				         'maintenance_mode',
+				         'squid_cache_block',
+				         'too_many_requests',
+			         ) ) );
+
 		}
 
 		/**
@@ -378,7 +445,9 @@
 		 * @since  1.0.9
 		 */
 		static function clear_cache() {
+			self::_init();
+
 			self::$_cache = FS_Cache_Manager::get_manager( WP_FS__API_CACHE_OPTION_NAME );
-			self::$_cache->clear();
+			self::$_cache->clear( true );
 		}
 	}
