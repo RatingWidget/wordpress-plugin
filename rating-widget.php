@@ -4966,7 +4966,7 @@
 					$this->comment_align = $comment_align;
 
 					// Hook comment rating showup.
-					add_action( 'comment_text', array( &$this, 'AddCommentRating' ) );
+					add_filter( 'comment_text', array( &$this, 'AddCommentRating' ) );
 				}
 
 				$postType = get_post_type();
