@@ -1155,7 +1155,8 @@
 					RWLogger::Log( 'comment_urid', $comment_urid );
 				}
 
-				$request_params['urid'] = $comment_urid;
+				$request_params['urid']   = $comment_urid;
+				$request_params['rclass'] = 'comment';
 
 				// The "referer" header is important, otherwise we may get an invalid referer error.
 				$remote_request_param = array(
@@ -1171,75 +1172,36 @@
 					RWLogger::Log( 'failed_requests', json_encode( $failed_requests ) );
 				}
 
-				$rating_submitted = false;
-
-				if ( isset( $failed_requests[ $comment_id ] ) ) {
-					$request          = $failed_requests[ $comment_id ];
-					$rating_submitted = isset( $request['api_endpoint'] ) && ( false !== strpos( $request['api_endpoint'], 'rate.php' ) );
-				}
-
-				if ( $rating_submitted ) {
-					$request_errors = array();
-				} else {
-					// Step 1: Submit the rating's ID to the server so that it will be created.
-					$submit_rating_params = array_merge(
-						array(
-							'ids' => "[$comment_urid]"
-						),
-						$request_params
-					);
-
-					// Remove unneeded params
-					unset( $submit_rating_params['rate'] );
-					unset( $submit_rating_params['like'] );
-					unset( $submit_rating_params['urid'] );
-					unset( $submit_rating_params['vid'] );
-					unset( $submit_rating_params['voteID'] );
-
-					$rating_endpoint        = rw_get_js_url( 'api/rating/get.php' );
-					$rating_endpoint        = add_query_arg( $submit_rating_params, $rating_endpoint );
-					$submit_rating_response = wp_remote_get( $rating_endpoint, $remote_request_param );
-					$request_errors         = $this->comment_review_submission_errors( array(
-						'comment_id'     => $comment_id,
-						'request_params' => $request_params,
-						'api_endpoint'   => $rating_endpoint,
-						'api_response'   => $submit_rating_response
-					) );
-				}
-
 				$update_db_option = true;
 
-				if ( empty( $request_errors ) ) {
-					// Step 2: Submit the rating's vote data to the server.
-					$vote_endpoint        = rw_get_js_url( 'api/rating/rate.php' );
-					$vote_endpoint        = add_query_arg( $request_params, $vote_endpoint );
-					$submit_vote_response = wp_remote_get( $vote_endpoint, $remote_request_param );
+                                // Submit the rating's vote data to the server.
+                                $rate_endpoint = rw_get_js_url( 'api/rating/rate.php' );
+                                $rate_endpoint = add_query_arg( $request_params, $rate_endpoint );
+                                
+                                $api_response  = wp_remote_get( $rate_endpoint, $remote_request_param );
 
-					$request_errors = $this->comment_review_submission_errors( array(
-						'comment_id'     => $comment_id,
-						'request_params' => $request_params,
-						'api_endpoint'   => $vote_endpoint,
-						'api_response'   => $submit_vote_response
-					) );
+                                $request_errors = $this->comment_review_submission_errors( array(
+                                    'comment_id'     => $comment_id,
+                                    'request_params' => $request_params,
+                                    'api_endpoint'   => $rate_endpoint,
+                                    'api_response'   => $api_response
+                                ) );
 
-					// If there is no issue with the vote submission, remove the failed request information related to this comment from the database.
-					if ( empty( $request_errors ) ) {
-						if ( isset( $failed_requests[ $comment_id ] ) ) {
-							unset( $failed_requests[ $comment_id ] );
-						} else {
-							$update_db_option = false;
-						}
-					} else {
-						$failed_requests[ $comment_id ] = $request_errors;
-					}
-				} else {
-					$failed_requests[ $comment_id ] = $request_errors;
-				}
+                                // If there is no issue with the vote submission, remove the failed request information related to this comment from the database.
+                                if ( empty( $request_errors ) ) {
+                                    if ( isset( $failed_requests[ $comment_id ] ) ) {
+                                        unset( $failed_requests[ $comment_id ] );
+                                    } else {
+                                        $update_db_option = false;
+                                    }
+                                } else {
+                                    $failed_requests[ $comment_id ] = $request_errors;
+                                }
 
 				if ( $update_db_option ) {
-					$comment_review_mode_settings->failed_requests = $failed_requests;
-					$this->SetOption( WP_RW__DB_OPTION_COMMENT_REVIEW_MODE_SETTINGS, $comment_review_mode_settings );
-					$this->_options->store();
+                                    $comment_review_mode_settings->failed_requests = $failed_requests;
+                                    $this->SetOption( WP_RW__DB_OPTION_COMMENT_REVIEW_MODE_SETTINGS, $comment_review_mode_settings );
+                                    $this->_options->store();
 				}
 
 				RWLogger::LogDeparture( "set_comment_review_vote" );
@@ -4966,7 +4928,7 @@
 					$this->comment_align = $comment_align;
 
 					// Hook comment rating showup.
-					add_action( 'comment_text', array( &$this, 'AddCommentRating' ) );
+					add_filter( 'comment_text', array( &$this, 'AddCommentRating' ) );
 				}
 
 				$postType = get_post_type();
@@ -6809,7 +6771,7 @@
 
 				if ( $attach_js || $this->_TOP_RATED_WIDGET_LOADED ) {
 					?>
-					<!-- This site's ratings are powered by RatingWidget plugin v<?php echo WP_RW__VERSION ?> - https://rating-widget.com/wordpress-plugin/ -->
+					<!-- This site's ratings are powered by RatingWidget plugin v<?php echo WP_RW__VERSION . ' (' . ($this->fs->$this->is_premium() ? 'Premium' : 'Free') . ' version)' ?> - https://rating-widget.com/wordpress-plugin/ -->
 					<div class="rw-js-container">
 						<?php
 							if ( rw_fs()->has_installed_addons() ) {
