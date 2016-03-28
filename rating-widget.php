@@ -6809,7 +6809,7 @@
 
 				if ( $attach_js || $this->_TOP_RATED_WIDGET_LOADED ) {
 					?>
-					<!-- This site's ratings are powered by RatingWidget plugin v<?php echo WP_RW__VERSION ?> - https://rating-widget.com/wordpress-plugin/ -->
+					<!-- This site's ratings are powered by RatingWidget plugin v<?php echo WP_RW__VERSION . ' (' . ($this->fs->$this->is_premium() ? 'Premium' : 'Free') . ' version)' ?> - https://rating-widget.com/wordpress-plugin/ -->
 					<div class="rw-js-container">
 						<?php
 							if ( rw_fs()->has_installed_addons() ) {
