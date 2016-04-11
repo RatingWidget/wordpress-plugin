@@ -3364,9 +3364,14 @@
 		 *
 		 * @author Vova Feldman (@svovaf)
 		 * @since  1.1.8
+		 *
+		 * @return array|false
 		 */
 		private function get_plugins_data_for_api() {
-			$all_cached_plugins = self::$_accounts->get_option( 'all_plugins' );
+			// Alias.
+			$option_name = 'all_plugins';
+
+			$all_cached_plugins = self::$_accounts->get_option( $option_name );
 
 			if ( ! is_object( $all_cached_plugins ) ) {
 				$all_cached_plugins = (object) array(
@@ -3374,6 +3379,29 @@
 					'md5'       => '',
 					'plugins'   => array(),
 				);
+			}
+
+			$time = time();
+
+			if (!empty($all_cached_plugins->timestamp) &&
+			    ($time - $all_cached_plugins->timestamp) < WP_FS__TIME_5_MIN_IN_SEC
+			){
+				// Don't send plugin updates if last update was in the past 5 min.
+				return false;
+			}
+
+			// Write timestamp to lock the logic.
+			$all_cached_plugins->timestamp = $time;
+			self::$_accounts->set_option( $option_name, $all_cached_plugins, true );
+
+			// Reload options from DB.
+			self::$_accounts->load(true);
+			$all_cached_plugins = self::$_accounts->get_option( $option_name );
+
+			if ($time != $all_cached_plugins->timestamp)
+			{
+				// If timestamp is different, then another thread captured the lock.
+				return false;
 			}
 
 			// Check if there's a change in plugins.
@@ -3437,8 +3465,8 @@
 				}
 
 				$all_cached_plugins->md5       = md5( $plugins_signature );
-				$all_cached_plugins->timestamp = time();
-				self::$_accounts->set_option( 'all_plugins', $all_cached_plugins, true );
+				$all_cached_plugins->timestamp = $time;
+				self::$_accounts->set_option( $option_name, $all_cached_plugins, true );
 			}
 
 			return $plugins_update_data;
@@ -3454,9 +3482,14 @@
 		 *
 		 * @author Vova Feldman (@svovaf)
 		 * @since  1.1.8
+		 *         
+		 * @return array|false
 		 */
 		private function get_themes_data_for_api() {
-			$all_cached_themes = self::$_accounts->get_option( 'all_themes' );
+			// Alias.
+			$option_name = 'all_themes';
+
+			$all_cached_themes = self::$_accounts->get_option( $option_name );
 
 			if ( ! is_object( $all_cached_themes ) ) {
 				$all_cached_themes = (object) array(
@@ -3464,6 +3497,29 @@
 					'md5'       => '',
 					'themes'    => array(),
 				);
+			}
+
+			$time = time();
+
+			if (!empty($all_cached_themes->timestamp) &&
+			    ($time - $all_cached_themes->timestamp) < WP_FS__TIME_5_MIN_IN_SEC
+			){
+				// Don't send theme updates if last update was in the past 5 min.
+				return false;
+			}
+
+			// Write timestamp to lock the logic.
+			$all_cached_themes->timestamp = $time;
+			self::$_accounts->set_option( $option_name, $all_cached_themes, true );
+
+			// Reload options from DB.
+			self::$_accounts->load(true);
+			$all_cached_themes = self::$_accounts->get_option( $option_name );
+
+			if ($time != $all_cached_themes->timestamp)
+			{
+				// If timestamp is different, then another thread captured the lock.
+				return false;
 			}
 
 			// Get active theme.
@@ -3537,7 +3593,7 @@
 
 				$all_cached_themes->md5       = md5( $themes_signature );
 				$all_cached_themes->timestamp = time();
-				self::$_accounts->set_option( 'all_themes', $all_cached_themes, true );
+				self::$_accounts->set_option( $option_name, $all_cached_themes, true );
 			}
 
 			return $themes_update_data;
@@ -3649,6 +3705,8 @@
 			if ( 0 < count( $params ) ) {
 				// Update last install sync timestamp.
 				$this->_storage->install_sync_timestamp = time();
+
+				$params['uid'] = $this->get_anonymous_id();
 
 				// Send updated values to FS.
 				$site = $this->get_api_site_scope()->call( '/', 'put', $params );
