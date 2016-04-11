@@ -97,6 +97,12 @@
 		private $_enable_anonymous;
 
 		/**
+		 * @since 1.1.7.5
+		 * @var bool Hints the SDK if plugin should run in anonymous mode (only adds feedback form).
+		 */
+		private $_anonymous_mode;
+
+		/**
 		 * @since 1.0.8
 		 * @var bool Hints the SDK if the plugin has any paid plans.
 		 */
@@ -810,7 +816,7 @@
 		 *
 		 * @return array[string]array
 		 */
-		private function get_active_plugins() {
+		private static function get_active_plugins() {
 			self::require_plugin_essentials();
 
 			$active_plugin            = array();
@@ -822,6 +828,90 @@
 			}
 
 			return $active_plugin;
+		}
+		/**
+		 * Get collection of all plugins.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.1.8
+		 *
+		 * @return array Key is the plugin file path and the value is an array of the plugin data.
+		 */
+		private static function get_all_plugins() {
+			self::require_plugin_essentials();
+
+			$all_plugins              = get_plugins();
+			$active_plugins_basenames = get_option( 'active_plugins' );
+
+			foreach ( $all_plugins as $basename => &$data ) {
+				// By default set to inactive (next foreach update the active plugins).
+				$data['is_active'] = false;
+				// Enrich with plugin slug.
+				$data['slug'] = self::get_plugin_slug( $basename );
+			}
+
+			// Flag active plugins.
+			foreach ( $active_plugins_basenames as $basename ) {
+				if ( isset( $all_plugins[ $basename ] ) ) {
+					$all_plugins[ $basename ]['is_active'] = true;
+				}
+			}
+
+			return $all_plugins;
+		}
+
+
+		/**
+		 * Cached result of get_site_transient( 'update_plugins' )
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.1.8
+		 *
+		 * @var object
+		 */
+		private static $_plugins_info;
+		/**
+		 * Helper function to get specified plugin's slug.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.1.8
+		 *
+		 * @param $basename
+		 *
+		 * @return string
+		 */
+		private static function get_plugin_slug($basename) {
+			if ( ! isset( self::$_plugins_info ) ) {
+				self::$_plugins_info = get_site_transient( 'update_plugins' );
+			}
+
+			$slug = '';
+
+			if ( is_object( self::$_plugins_info ) ) {
+				if ( isset( self::$_plugins_info->no_update ) &&
+				     isset( self::$_plugins_info->no_update[ $basename ] ) &&
+				     ! empty( self::$_plugins_info->no_update[ $basename ]->slug )
+				) {
+					$slug = self::$_plugins_info->no_update[ $basename ]->slug;
+				} else if ( isset( self::$_plugins_info->response ) &&
+				            isset( self::$_plugins_info->response[ $basename ] ) &&
+				            ! empty( self::$_plugins_info->response[ $basename ]->slug )
+				) {
+					$slug = self::$_plugins_info->response[ $basename ]->slug;
+				}
+			}
+
+			if ( empty( $slug ) ) {
+				// Try to find slug from FS data.
+				$slug = self::find_slug_by_basename( $basename );
+			}
+
+			if ( empty( $slug ) ) {
+				// Fallback to plugin's folder name.
+				$slug = dirname( $basename );
+			}
+
+			return $slug;
 		}
 
 		private static $_statics_loaded = false;
@@ -1039,7 +1129,7 @@
 
 		/**
 		 * @author Vova Feldman (@svovaf)
-		 * @since  1.7.4
+		 * @since  1.1.7.4
 		 *
 		 * @return object|false
 		 */
@@ -1116,7 +1206,7 @@
 
 		/**
 		 * @author Vova Feldman (@svovaf)
-		 * @since  1.7.4
+		 * @since  1.1.7.4
 		 *
 		 * @param object $pong
 		 * @param bool   $is_connected
@@ -1173,7 +1263,7 @@
 
 		/**
 		 * @author Vova Feldman (@svovaf)
-		 * @since  1.7.4
+		 * @since  1.1.7.4
 		 *
 		 * @return \WP_User
 		 */
@@ -1468,7 +1558,7 @@
 		 * Handle connectivity test retry approved by the user.
 		 *
 		 * @author Vova Feldman (@svovaf)
-		 * @since  1.7.4
+		 * @since  1.1.7.4
 		 */
 		function _retry_connectivity_test() {
 			$this->_admin_notices->remove_sticky( 'failed_connect_api_first' );
@@ -1579,7 +1669,7 @@
 			// Retrieve the cURL version information so that we can get the version number below.
 			$curl_version_information = curl_version();
 
-			$active_plugin = $this->get_active_plugins();
+			$active_plugin = self::get_active_plugins();
 
 			// Generate the list of active plugins separated by new line. 
 			$active_plugin_string = '';
@@ -1724,6 +1814,11 @@
 							'failed_connect_api_first',
 							'failed_connect_api',
 						) );
+
+						if ( $this->_anonymous_mode ) {
+							// Simulate anonymous mode.
+							$this->_is_anonymous = true;
+						}
 					}
 				}
 
@@ -1952,6 +2047,7 @@
 			$this->_has_paid_plans   = $this->get_bool_option( $plugin_info, 'has_paid_plans', true );
 			$this->_is_org_compliant = $this->get_bool_option( $plugin_info, 'is_org_compliant', true );
 			$this->_enable_anonymous = $this->get_bool_option( $plugin_info, 'enable_anonymous', true );
+			$this->_anonymous_mode   = $this->get_bool_option( $plugin_info, 'anonymous_mode', false );
 			$this->_permissions      = $this->get_option( $plugin_info, 'permissions', array() );
 		}
 
@@ -3056,7 +3152,7 @@
 				$this->_storage->is_plugin_new_install = empty( $this->_storage->plugin_last_version );
 			}
 
-			if ( $this->has_api_connectivity( WP_FS__DEV_MODE ) ) {
+			if ( ! $this->_anonymous_mode && $this->has_api_connectivity( WP_FS__DEV_MODE ) ) {
 				// Store hint that the plugin was just activated to enable auto-redirection to settings.
 				add_option( "fs_{$this->_slug}_activated", true );
 			}
@@ -3259,16 +3355,230 @@
 		}
 
 		/**
+		 * Return a list of modified plugins since the last sync.
+		 *
+		 * Note:
+		 *  There's no point to store a plugins counter since even if the number of
+		 *  plugins didn't change, we still need to check if the versions are all the
+		 *  same and the activity state is similar.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.1.8
+		 */
+		private function get_plugins_data_for_api() {
+			$all_cached_plugins = self::$_accounts->get_option( 'all_plugins' );
+
+			if ( ! is_object( $all_cached_plugins ) ) {
+				$all_cached_plugins = (object) array(
+					'timestamp' => '',
+					'md5'       => '',
+					'plugins'   => array(),
+				);
+			}
+
+			// Check if there's a change in plugins.
+			$all_plugins = self::get_all_plugins();
+
+			// Check if plugins changed.
+			ksort( $all_plugins );
+
+			$plugins_signature = '';
+			foreach ( $all_plugins as $basename => $data ) {
+				$plugins_signature .= $data['slug'] . ',' .
+				                      $data['Version'] . ',' .
+				                      ( $data['is_active'] ? '1' : '0' ) . ';';
+			}
+
+			// Check if plugins status changed (version or active/inactive).
+			$plugins_changed = ( $all_cached_plugins->md5 !== md5( $plugins_signature ) );
+
+			$plugins_update_data = array();
+
+			if ( $plugins_changed ) {
+				// Change in plugins, report changes.
+
+				// Update existing plugins info.
+				foreach ( $all_cached_plugins->plugins as $basename => $data ) {
+					if ( ! isset( $all_plugins[ $basename ] ) ) {
+						// Plugin uninstalled.
+						$uninstalled_plugin_data                   = $data;
+						$uninstalled_plugin_data['is_active']      = false;
+						$uninstalled_plugin_data['is_uninstalled'] = true;
+						$plugins_update_data[]                     = $uninstalled_plugin_data;
+
+						unset( $all_plugins[ $basename ] );
+						unset( $all_cached_plugins->plugins[ $basename ] );
+					} else if ( $data['is_active'] !== $all_plugins[ $basename ]['is_active'] ||
+					            $data['version'] !== $all_plugins[ $basename ]['Version']
+					) {
+						// Plugin activated or deactivated, or version changed.
+						$all_cached_plugins->plugins[$basename]['is_active'] = $all_plugins[ $basename ]['is_active'];
+						$all_cached_plugins->plugins[$basename]['version']   = $all_plugins[ $basename ]['Version'];
+
+						$plugins_update_data[] = $all_cached_plugins->plugins[$basename];
+					}
+				}
+
+				// Find new plugins that weren't yet seen before.
+				foreach ( $all_plugins as $basename => $data ) {
+					if ( ! isset( $all_cached_plugins->plugins[ $basename ] ) ) {
+						// New plugin.
+						$new_plugin = array(
+							'slug'           => $data['slug'],
+							'version'        => $data['Version'],
+							'title'          => $data['Name'],
+							'is_active'      => $data['is_active'],
+							'is_uninstalled' => false,
+						);
+
+						$plugins_update_data[]                    = $new_plugin;
+						$all_cached_plugins->plugins[ $basename ] = $new_plugin;
+					}
+				}
+
+				$all_cached_plugins->md5       = md5( $plugins_signature );
+				$all_cached_plugins->timestamp = time();
+				self::$_accounts->set_option( 'all_plugins', $all_cached_plugins, true );
+			}
+
+			return $plugins_update_data;
+		}
+
+		/**
+		 * Return a list of modified themes since the last sync.
+		 *
+		 * Note:
+		 *  There's no point to store a themes counter since even if the number of
+		 *  themes didn't change, we still need to check if the versions are all the
+		 *  same and the activity state is similar.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.1.8
+		 */
+		private function get_themes_data_for_api() {
+			$all_cached_themes = self::$_accounts->get_option( 'all_themes' );
+
+			if ( ! is_object( $all_cached_themes ) ) {
+				$all_cached_themes = (object) array(
+					'timestamp' => '',
+					'md5'       => '',
+					'themes'    => array(),
+				);
+			}
+
+			// Get active theme.
+			$active_theme = wp_get_theme();
+
+			// Check if there's a change in themes.
+			$all_themes = wp_get_themes();
+
+			// Check if themes changed.
+			ksort( $all_themes );
+
+			$themes_signature = '';
+			foreach ( $all_themes as $slug => $data ) {
+				$is_active = ( $slug === $active_theme->stylesheet );
+				$themes_signature .= $slug . ',' .
+				                     $data->version . ',' .
+				                     ( $is_active ? '1' : '0' ) . ';';
+			}
+
+			// Check if themes status changed (version or active/inactive).
+			$themes_changed = ( $all_cached_themes->md5 !== md5( $themes_signature ) );
+
+			$themes_update_data = array();
+
+			if ( $themes_changed ) {
+				// Change in themes, report changes.
+
+				// Update existing themes info.
+				foreach ( $all_cached_themes->themes as $slug => $data ) {
+					$is_active = ( $slug === $active_theme->stylesheet );
+
+					if ( ! isset( $all_themes[ $slug ] ) ) {
+						// Plugin uninstalled.
+						$uninstalled_theme_data                   = $data;
+						$uninstalled_theme_data['is_active']      = false;
+						$uninstalled_theme_data['is_uninstalled'] = true;
+						$themes_update_data[]                     = $uninstalled_theme_data;
+
+						unset( $all_themes[ $slug ] );
+						unset( $all_cached_themes->themes[ $slug ] );
+					} else if ( $data['is_active'] !== $is_active ||
+					            $data['version'] !== $all_themes[ $slug ]->version
+					) {
+						// Plugin activated or deactivated, or version changed.
+
+						$all_cached_themes->themes[$slug]['is_active'] = $is_active;
+						$all_cached_themes->themes[$slug]['version']   = $all_themes[ $slug ]->version;
+
+						$themes_update_data[] = $all_cached_themes->themes[$slug];
+					}
+				}
+
+				// Find new themes that weren't yet seen before.
+				foreach ( $all_themes as $slug => $data ) {
+					if ( ! isset( $all_cached_themes->themes[ $slug ] ) ) {
+						$is_active = ( $slug === $active_theme->stylesheet );
+
+						// New plugin.
+						$new_plugin = array(
+							'slug'           => $slug,
+							'version'        => $data->version,
+							'title'          => $data->name,
+							'is_active'      => $is_active,
+							'is_uninstalled' => false,
+						);
+
+						$themes_update_data[]               = $new_plugin;
+						$all_cached_themes->themes[ $slug ] = $new_plugin;
+					}
+				}
+
+				$all_cached_themes->md5       = md5( $themes_signature );
+				$all_cached_themes->timestamp = time();
+				self::$_accounts->set_option( 'all_themes', $all_cached_themes, true );
+			}
+
+			return $themes_update_data;
+		}
+
+		/**
 		 * Update install details.
 		 *
 		 * @author Vova Feldman (@svovaf)
 		 * @since  1.1.2
 		 *
-		 * @param string[] string $override
+		 * @param string[] string           $override
+		 * @param bool     $include_plugins Since 1.1.8 by default include plugin changes.
+		 * @param bool     $include_themes  Since 1.1.8 by default include plugin changes.
 		 *
 		 * @return array
 		 */
-		private function get_install_data_for_api( $override = array() ) {
+		private function get_install_data_for_api(
+			array $override,
+			$include_plugins = true,
+			$include_themes = true
+		) {
+			/**
+			 * @since 1.1.8 Also send plugin updates.
+			 */
+			if ( $include_plugins && ! isset( $override['plugins'] ) ) {
+				$plugins = $this->get_plugins_data_for_api();
+				if ( ! empty( $plugins ) ) {
+					$override['plugins'] = $plugins;
+				}
+			}
+			/**
+			 * @since 1.1.8 Also send themes updates.
+			 */
+			if ( $include_themes && ! isset( $override['themes'] ) ) {
+				$themes = $this->get_themes_data_for_api();
+				if ( ! empty( $themes ) ) {
+					$override['themes'] = $themes;
+				}
+			}
+
 			return array_merge( array(
 				'version'                      => $this->get_plugin_version(),
 				'is_premium'                   => $this->is_premium(),
@@ -3290,7 +3600,7 @@
 		 * @author Vova Feldman (@svovaf)
 		 * @since  1.0.9
 		 *
-		 * @param string[] string $override
+		 * @param string[]string $override
 		 * @param bool     $flush
 		 *
 		 * @return false|object|string
@@ -3318,7 +3628,10 @@
 					} else {
 						$special[ $p ] = $v;
 
-						if ( isset( $override[ $p ] ) ) {
+						if ( isset( $override[ $p ] ) ||
+						     'plugins' === $p  ||
+						     'themes' === $p
+						) {
 							$special_override = true;
 						}
 					}
@@ -3327,7 +3640,7 @@
 				if ( $special_override || 0 < count( $params ) ) {
 					// Add special params only if has at least one
 					// standard param, or if explicitly requested to
-					// override a special param or a pram which is not exist
+					// override a special param or a param which is not exist
 					// in the install object.
 					$params = array_merge( $params, $special );
 				}
@@ -3839,30 +4152,34 @@
 		function get_addons() {
 			$this->_logger->entrance();
 
-			$addons = self::get_all_addons();
+			$all_addons = self::get_all_addons();
 
 			/**
 			 * @since 1.1.7.3 If not yet loaded, fetch data from the API.
 			 */
-			if ( ! is_array( $addons ) ||
-			     ! isset( $addons[ $this->_plugin->id ] ) ||
-			     ! is_array( $addons[ $this->_plugin->id ] ) ||
-			     empty( $addons[ $this->_plugin->id ] )
+			if ( ! is_array( $all_addons ) ||
+			     ! isset( $all_addons[ $this->_plugin->id ] ) ||
+			     ! is_array( $all_addons[ $this->_plugin->id ] ) ||
+			     empty( $all_addons[ $this->_plugin->id ] )
 			) {
 				if ( $this->_has_addons ) {
 					$addons = $this->_sync_addons();
+
+					if ( ! empty( $addons ) ) {
+						$all_addons = self::get_all_addons();
+					}
 				}
 			}
 
-			if ( ! is_array( $addons ) ||
-			     ! isset( $addons[ $this->_plugin->id ] ) ||
-			     ! is_array( $addons[ $this->_plugin->id ] ) ||
-			     empty( $addons[ $this->_plugin->id ] )
+			if ( ! is_array( $all_addons ) ||
+			     ! isset( $all_addons[ $this->_plugin->id ] ) ||
+			     ! is_array( $all_addons[ $this->_plugin->id ] ) ||
+			     empty( $all_addons[ $this->_plugin->id ] )
 			) {
 				return false;
 			}
 
-			return $addons[ $this->_plugin->id ];
+			return $all_addons[ $this->_plugin->id ];
 		}
 
 		/**
@@ -5472,7 +5789,7 @@
 				'post',
 				$this->get_install_data_for_api( array(
 					'uid' => $this->get_anonymous_id(),
-				) )
+				), false, false )
 			);
 
 			if ( isset( $install->error ) ) {
@@ -5516,7 +5833,7 @@
 				'post',
 				$this->get_install_data_for_api( array(
 					'uid' => $this->get_anonymous_id(),
-				) )
+				), false, false )
 			);
 
 			if ( isset( $addon_install->error ) ) {
@@ -5623,7 +5940,7 @@
 			foreach ( $this->_menu_items as $priority => $items ) {
 				foreach ( $items as $item ) {
 					if ( isset( $item['url'] ) ) {
-						if ( $page === $item['menu_slug'] ) {
+						if ( $page === strtolower( $item['menu_slug'] ) ) {
 							$this->_logger->log( 'Redirecting to ' . $item['url'] );
 
 							fs_redirect( $item['url'] );
@@ -5919,7 +6236,7 @@
 				return;
 			}
 
-			if ( $this->is_registered() || $this->is_anonymous() ) {
+			if ( ! $this->is_activation_mode() ) {
 				if ( $this->_menu->is_submenu_item_visible( 'support' ) ) {
 					$this->add_submenu_link_item(
 						$this->apply_filters( 'support_forum_submenu', __fs( 'support-forum', $this->_slug ) ),
@@ -8578,7 +8895,7 @@
 		 * Get the URL of the page that should be loaded right after the plugin activation.
 		 *
 		 * @author Vova Feldman (@svovaf)
-		 * @since  1.7.4
+		 * @since  1.1.7.4
 		 *
 		 * @return string
 		 */
