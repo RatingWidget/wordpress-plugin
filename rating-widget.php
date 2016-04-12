@@ -6771,7 +6771,7 @@
 
 				if ( $attach_js || $this->_TOP_RATED_WIDGET_LOADED ) {
 					?>
-					<!-- This site's ratings are powered by RatingWidget plugin v<?php echo WP_RW__VERSION . ' (' . ($this->fs->$this->is_premium() ? 'Premium' : 'Free') . ' version)' ?> - https://rating-widget.com/wordpress-plugin/ -->
+					<!-- This site's ratings are powered by RatingWidget plugin v<?php echo WP_RW__VERSION . ' (' . ($this->fs->is_premium() ? 'Premium' : 'Free') . ' version)' ?> - https://rating-widget.com/wordpress-plugin/ -->
 					<div class="rw-js-container">
 						<?php
 							if ( rw_fs()->has_installed_addons() ) {
@@ -6809,24 +6809,17 @@
                                 echo ", vid: {$vid}";
                             }
                     ?>,
-									source
-							:
-								"wordpress",
-									options
-							:
-								{
+									source: "wordpress",
+									options: {
 									<?php if ($this->fs->is_plan_or_trial__premium_only('professional')) :
 													if (defined('ICL_LANGUAGE_CODE') &&
 													isset($this->languages[ICL_LANGUAGE_CODE])) : ?>
 									lng: "<?php echo ICL_LANGUAGE_CODE; ?>"
 									<?php endif ?>
 									<?php endif ?>
-								}
-							,
+								},
 								identifyBy: "<?php echo $this->GetOption(WP_RW__IDENTIFY_BY) ?>"
-							}
-							)
-							;
+							});
 							<?php
 							foreach ($rw_settings as $rclass => $options)
 							{
