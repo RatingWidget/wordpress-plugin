@@ -6814,7 +6814,9 @@
 									<?php if ($this->fs->is_plan_or_trial__premium_only('professional')) :
 													if (defined('ICL_LANGUAGE_CODE') &&
 													isset($this->languages[ICL_LANGUAGE_CODE])) : ?>
-									lng: "<?php echo ICL_LANGUAGE_CODE; ?>"
+									lng: "<?php echo ICL_LANGUAGE_CODE ?>"
+									<?php elseif (function_exists('pll_current_language')) : ?>
+									lng: "<?php echo pll_current_language() ?>"
 									<?php endif ?>
 									<?php endif ?>
 								},
@@ -6840,7 +6842,7 @@
 							defaultRateCallbacks['<?php echo $rclass; ?>'] = {
 								'afterRate' : options.afterRate ? options.afterRate : false,
 								'beforeRate': options.beforeRate ? options.beforeRate : false
-							}
+							};
 
 							options.beforeRate = function (rating, score) {
 								var returnValue = true;
