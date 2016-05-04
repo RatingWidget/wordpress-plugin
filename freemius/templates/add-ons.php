@@ -30,6 +30,20 @@
 	<div id="fs_addons" class="wrap">
 		<h2><?php printf( __fs( 'add-ons-for-x', $slug ), $fs->get_plugin_name() ) ?></h2>
 
+		<h2 class="nav-tab-wrapper">
+			<?php if ( $has_addons ) : ?>
+				<a href="#" class="nav-tab nav-tab-active"
+				   data-type="fs-addon"><?php _efs( 'By Plugin Author', $slug ) ?></a>
+			<?php endif ?>
+			<a href="#"
+			   class="nav-tab<?php if ( ! $has_addons ) {
+				   echo ' nav-tab-active';
+			   } ?>"
+			   data-type="fs-3rd-party-addon"><?php _efs( 'Partner Add Ons (3rd party)', $slug ) ?></a>
+			<a href="#"
+			   class="nav-tab" data-type="all"><?php _efs( 'All Add Ons', $slug ) ?></a>
+		</h2>
+
 		<div id="poststuff">
 			<?php if ( ! $has_addons ) : ?>
 				<h3><?php printf(
@@ -38,7 +52,7 @@
 						__fs( 'add-ons-missing', $slug )
 					) ?></h3>
 			<?php endif ?>
-				<ul class="fs-cards-list">
+			<ul class="fs-cards-list">
 				<?php if ( $has_addons ) : ?>
 					<?php foreach ( $addons as $addon ) : ?>
 						<?php
@@ -110,7 +124,62 @@
 							</div>
 						</li>
 					<?php endforeach ?>
-			<?php endif ?>
+				<?php endif ?>
+				<?php
+					$response = wp_remote_get(
+						'https://api.envato.com/v1/discovery/search/search/item?term=contact%20form%207&site=codecanyon.net',
+						array(
+//								'method'  => 'POST',
+							'headers' => array(
+								'Authorization' => "Bearer oI9RoKuapSgznvfw1sVMZe2OMYs46znL"
+							),
+						)
+					);
+					if ( $response instanceof WP_Error ) {
+
+					} else {
+						$decoded = @json_decode( $response['body'] );
+
+						if ( ! empty( $decoded ) ) {
+							$external_addons = $decoded->matches;
+
+							foreach ( $external_addons as $addon ) {
+								?>
+								<li class="fs-card fs-3rd-party-addon" data-slug="<?php echo $addon->id ?>"
+									<?php if ( $has_addons ) {
+										echo ' style="display: none"';
+									} ?>>
+									<?php
+										printf( '<a href="%s" class="fs-overlay" target="_blank"></a>',
+											$addon->url
+										);
+									?>
+									<div class="fs-inner">
+										<ul>
+											<li class="fs-card-banner"
+											    style="background-image: url('<?php
+												    if ( isset( $addon->previews->icon_with_landscape_preview ) ) {
+													    echo $addon->previews->icon_with_landscape_preview->landscape_url;
+												    } else if ( isset( $addon->previews->icon_with_video_preview ) ) {
+													    echo $addon->previews->icon_with_video_preview->landscape_url;
+												    } else {
+													    echo '//dashboard.freemius.com/assets/img/marketing/blueprint-300x100.jpg';
+												    }
+											    ?>');"></li>
+											<li class="fs-title"><?php echo $addon->name ?></li>
+											<li class="fs-offer">
+									<span
+										class="fs-price"><?php echo ( 0 == $addon->price_cents ) ? __fs( 'free', $slug ) : '$' . number_format( $addon->price_cents / 100, 2 ) ?></span>
+											</li>
+											<li class="fs-description"><?php echo $addon->description ?></li>
+										</ul>
+									</div>
+								</li>
+							<?php
+							}
+						}
+					}
+				?>
 			</ul>
 		</div>
 	</div>
@@ -129,6 +198,25 @@
 
 			<?php else : ?>
 
+			$('.nav-tab-wrapper a.nav-tab').click(function () {
+				if ($(this).hasClass('nav-tab-active')) {
+					// Tab already selected.
+					return false;
+				}
+
+				$('.nav-tab-wrapper a.nav-tab').removeClass('nav-tab-active');
+				$(this).addClass('nav-tab-active');
+
+				var type_to_show = $(this).attr('data-type');
+				if ('all' === type_to_show) {
+					$('.fs-cards-list .fs-card').show();
+				} else {
+					$('.fs-cards-list .fs-card').hide();
+					$('.fs-cards-list .fs-card.' + type_to_show).show();
+				}
+
+				return false;
+			});
 
 			$('.fs-card.fs-addon').mouseover(function(){
 				$(this).find('.fs-cta .button').addClass('button-primary');
