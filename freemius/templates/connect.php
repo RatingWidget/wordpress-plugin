@@ -32,7 +32,7 @@
 	$freemius_site_url = $fs->has_paid_plan() ?
 		'https://freemius.com/wordpress/' :
 		// Insights platform information.
-		'https://freemius.com/wordpress/insights/';
+		'https://freemius.com/wordpress/usage-tracking/';
 ?>
 <div id="fs_connect" class="wrap<?php if ( ! $fs->enable_anonymous() || $is_pending_activation ) {
 	echo ' fs-anonymous-disabled';
@@ -121,24 +121,30 @@
 
 		// Set core permission list items.
 		$permissions = array(
-			'profile' => array(
+			'profile'        => array(
 				'icon-class' => 'dashicons dashicons-admin-users',
 				'label'      => __fs( 'permissions-profile' ),
 				'desc'       => __fs( 'permissions-profile_desc' ),
 				'priority'   => 5,
 			),
-			'site'    => array(
-				'icon-class' => 'dashicons dashicons-wordpress',
+			'site'           => array(
+				'icon-class' => 'dashicons dashicons-admin-settings',
 				'label'      => __fs( 'permissions-site' ),
 				'desc'       => __fs( 'permissions-site_desc' ),
 				'priority'   => 10,
 			),
-			'events'  => array(
+			'events'         => array(
 				'icon-class' => 'dashicons dashicons-admin-plugins',
 				'label'      => __fs( 'permissions-events' ),
 				'desc'       => __fs( 'permissions-events_desc' ),
 				'priority'   => 20,
 			),
+//			'plugins_themes' => array(
+//				'icon-class' => 'dashicons dashicons-admin-settings',
+//				'label'      => __fs( 'permissions-plugins_themes' ),
+//				'desc'       => __fs( 'permissions-plugins_themes_desc' ),
+//				'priority'   => 30,
+//			),
 		);
 
 		// Add newsletter permissions if enabled.
