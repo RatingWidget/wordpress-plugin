@@ -38,7 +38,7 @@
 						__fs( 'add-ons-missing', $slug )
 					) ?></h3>
 			<?php endif ?>
-				<ul class="fs-cards-list">
+			<ul class="fs-cards-list">
 				<?php if ( $has_addons ) : ?>
 					<?php foreach ( $addons as $addon ) : ?>
 						<?php
@@ -110,7 +110,7 @@
 							</div>
 						</li>
 					<?php endforeach ?>
-			<?php endif ?>
+				<?php endif ?>
 			</ul>
 		</div>
 	</div>
