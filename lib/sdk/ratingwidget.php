@@ -176,7 +176,8 @@
                 $opts[CURLOPT_RETURNTRANSFER] = true;
             }
 
-            $opts[CURLOPT_URL] = $this->GetUrl($pCanonizedPath);
+            $request_url = $this->GetUrl($pCanonizedPath);
+            $opts[CURLOPT_URL] = $request_url;
 //            $opts[CURLOPT_URL] = 'http://localhost:8080/api/?path=' . $pCanonizedPath;
             $opts[CURLOPT_CUSTOMREQUEST] = $pMethod;
 
@@ -187,7 +188,7 @@
             // for 2 seconds if the server does not support this header.
             $opts[CURLOPT_HTTPHEADER][] = 'Expect:';
 
-	        if ('https' === substr(strtolower($pCanonizedPath), 0, 5))
+	        if ('https' === substr(strtolower($request_url), 0, 5))
 	        {
 		        $opts[CURLOPT_SSL_VERIFYHOST] = false;
 		        $opts[CURLOPT_SSL_VERIFYPEER] = false;
