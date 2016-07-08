@@ -127,10 +127,11 @@
 
 					if ( RWLogger::IsOn() ) {
 						RWLogger::Log( 'WooCommerce_IsExtensionPage', 'is_product() = ' . json_encode( is_product() ) );
+						RWLogger::Log( 'WooCommerce_IsExtensionPage', 'is_product_category() = ' . json_encode( is_product_category() ) );
 						RWLogger::Log( 'WooCommerce_IsExtensionPage', 'is_shop() = ' . json_encode( is_shop() ) );
 					}
 
-					return $this->IsWooCommerce() && ( is_product() || is_shop() );
+					return $this->IsWooCommerce() && ( is_product() || is_product_category() || is_shop() );
 				}
 
 				function GetCurrentPageClass() {
