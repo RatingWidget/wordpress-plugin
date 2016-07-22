@@ -4935,7 +4935,7 @@
 
 				RWLogger::Log( "rw_before_loop_start", 'Post Type = ' . $postType );
 
-				if ( in_array( $postType, array( 'forum', 'topic', 'reply' ) ) ) {
+				if ( in_array( $postType, apply_filters( 'rw_exclude_post_types', array( 'forum', 'topic', 'reply' ) ) ) ) {
 					return;
 				}
 
