@@ -29,13 +29,13 @@
 
 	// Get site context secure params.
 	if ( $fs->is_registered() ) {
-		$site = $fs->get_site();
+		$site      = $fs->get_site();
 		$plugin_id = fs_request_get( 'plugin_id', $fs->get_id() );
 
-		if ($plugin_id != $fs->get_id()) {
+		if ( $plugin_id != $fs->get_id() ) {
 			if ( $fs->is_addon_activated( $plugin_id ) ) {
 				$fs_addon = Freemius::get_instance_by_id( $plugin_id );
-				$site = $fs_addon->get_site();
+				$site     = $fs_addon->get_site();
 			}
 		}
 
@@ -78,8 +78,7 @@
 		}
 	}
 
-	if ( $fs->is_payments_sandbox() )
-	{
+	if ( $fs->is_payments_sandbox() ) {
 		// Append plugin secure token for sandbox mode authentication.
 		$context_params['sandbox'] = FS_Security::instance()->get_secure_token(
 			$fs->get_plugin(),
@@ -95,13 +94,7 @@
 		}
 	}
 
-	$return_url = fs_nonce_url( $fs->_get_admin_page_url(
-		'account',
-		array(
-			'fs_action' => $slug . '_sync_license',
-			'plugin_id' => isset( $_GET['plugin_id'] ) ? $_GET['plugin_id'] : $fs->get_id()
-		)
-	), $slug . '_sync_license' );
+	$return_url = $fs->_get_sync_license_url( isset( $_GET['plugin_id'] ) ? $_GET['plugin_id'] : $fs->get_id() );
 
 	$query_params = array_merge( $context_params, $_GET, array(
 		// Current plugin version.
@@ -257,4 +250,12 @@
 			})(jQuery);
 		</script>
 	</div>
-<?php fs_require_template( 'powered-by.php' ) ?>
+<?php
+	$params = array(
+		'page'           => 'checkout',
+		'module_id'      => $fs->get_id(),
+		'module_slug'    => $slug,
+		'module_version' => $fs->get_plugin_version(),
+	);
+	fs_require_template( 'powered-by.php', $params );
+?>

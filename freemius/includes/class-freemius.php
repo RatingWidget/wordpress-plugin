@@ -495,6 +495,12 @@
 						add_action( 'admin_footer', array( &$this, '_add_deactivation_feedback_dialog_box' ) );
 					}
 				}
+
+				if ( ! $this->is_addon() ) {
+					if ( $this->is_registered() ) {
+						$this->add_filter( 'after_code_type_change', array( &$this, '_after_code_type_change' ) );
+					}
+				}
 			}
 		}
 
@@ -1006,7 +1012,7 @@
 		 * @author Vova Feldman (@svovaf)
 		 * @since  1.0.1
 		 */
-		private static function _load_required_static() {
+		static function _load_required_static() {
 			if ( self::$_statics_loaded ) {
 				return;
 			}
@@ -1108,6 +1114,7 @@
 			$users          = self::get_all_users();
 			$addons         = self::get_all_addons();
 			$account_addons = self::get_all_account_addons();
+			$licenses       = self::get_all_licenses();
 
 //			$plans    = self::get_all_plans();
 //			$licenses = self::get_all_licenses();
@@ -1117,6 +1124,7 @@
 				'users'          => $users,
 				'addons'         => $addons,
 				'account_addons' => $account_addons,
+				'licenses'       => $licenses,
 			);
 
 			fs_enqueue_local_style( 'fs_account', '/admin/debug.css' );
@@ -2077,22 +2085,24 @@
 
 			$this->do_action( 'initiated' );
 
+			if ( $this->_storage->prev_is_premium !== $this->_plugin->is_premium ) {
+				if ( isset( $this->_storage->prev_is_premium ) ) {
+					$this->apply_filters(
+						'after_code_type_change',
+						// New code type.
+						$this->_plugin->is_premium
+					);
+				} else {
+					// Set for code type for the first time.
+					$this->_storage->prev_is_premium = $this->_plugin->is_premium;
+				}
+			}
+
 			if ( ! $this->is_addon() ) {
 				if ( $this->is_registered() ) {
 					// Fix for upgrade from versions < 1.0.9.
 					if ( ! isset( $this->_storage->activation_timestamp ) ) {
 						$this->_storage->activation_timestamp = WP_FS__SCRIPT_START_TIME;
-					}
-					if ( $this->_storage->prev_is_premium !== $this->_plugin->is_premium ) {
-						if ( isset( $this->_storage->prev_is_premium ) ) {
-							add_action( is_admin() ? 'admin_init' : 'init', array(
-								&$this,
-								'_plugin_code_type_changed'
-							) );
-						} else {
-							// Set for code type for the first time.
-							$this->_storage->prev_is_premium = $this->_plugin->is_premium;
-						}
 					}
 
 					$this->do_action( 'after_init_plugin_registered' );
@@ -2312,12 +2322,34 @@
 		}
 
 		/**
+		 * Triggered after code type has changed.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.1.9.1
+		 */
+		function _after_code_type_change() {
+			$this->_logger->entrance();
+
+			/**
+			 * @since 1.1.9.1 Invalidate module's main file cache, otherwise, FS_Plugin_Updater will not to fetch updates.
+			 */
+			unset( $this->_storage->plugin_main_file );
+
+			add_action( is_admin() ? 'admin_init' : 'init', array(
+				&$this,
+				'_plugin_code_type_changed'
+			) );
+		}
+
+		/**
 		 * Handles plugin's code type change (free <--> premium).
 		 *
 		 * @author Vova Feldman (@svovaf)
 		 * @since  1.0.9
 		 */
 		function _plugin_code_type_changed() {
+			$this->_logger->entrance();
+
 			// Schedule code type changes event.
 //			$this->sync_install();
 			$this->schedule_install_sync();
@@ -2740,6 +2772,8 @@
 				// Sync add-ons collection.
 				$this->_sync_addons( true );
 			}
+
+			$this->do_action( 'after_sync_cron' );
 		}
 
 		/**
@@ -4857,7 +4891,7 @@
 				return false;
 			}
 
-			if ( ! is_array( $this->_licenses ) || 0 === count( $this->_licenses ) ) {
+			if ( ! $this->has_any_license() ) {
 				$this->_sync_licenses();
 			}
 
@@ -5430,6 +5464,30 @@
 			}
 		}
 
+		/**
+		 * Plugin's account page + sync license URL.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.1.9.1
+		 *
+		 * @param bool|number $plugin_id
+		 * @param bool|number $add_action_nonce
+		 *
+		 * @return string
+		 */
+		function _get_sync_license_url( $plugin_id = false, $add_action_nonce = true ) {
+			$params = array();
+
+			if ( is_numeric( $plugin_id ) ) {
+				$params['plugin_id'] = $plugin_id;
+			}
+
+			return $this->get_account_url(
+				$this->_slug . '_sync_license',
+				$params,
+				$add_action_nonce
+			);
+		}
 
 		/**
 		 * Plugin's account URL.
@@ -5454,6 +5512,25 @@
 			return ( $add_action_nonce && is_string( $action ) ) ?
 				wp_nonce_url( $this->_get_admin_page_url( 'account', $params ), $action ) :
 				$this->_get_admin_page_url( 'account', $params );
+		}
+
+		/**
+		 * @author  Vova Feldman (@svovaf)
+		 * @since   1.2.0
+		 *
+		 * @param string $tab
+		 * @param bool   $action
+		 * @param array  $params
+		 * @param bool   $add_action_nonce
+		 *
+		 * @return string
+		 *
+		 * @uses    get_account_url()
+		 */
+		function get_account_tab_url( $tab, $action = false, $params = array(), $add_action_nonce = true ) {
+			$params['tab'] = $tab;
+
+			return $this->get_account_url( $action, $params, $add_action_nonce );
 		}
 
 		/**
@@ -5821,7 +5898,7 @@
 		 * @param string|bool $email
 		 * @param string|bool $first
 		 * @param string|bool $last
-		 * @param string|bool $license_key
+		 * @param string|bool $license_secret_key
 		 *
 		 * @return bool Is successful opt-in (or set to pending).
 		 */
@@ -6000,13 +6077,7 @@
 			if ( is_numeric( $plugin_id ) ) {
 				if ( $plugin_id != $this->_plugin->id ) {
 					// Add-on was installed - sync license right after install.
-					if ( $redirect && fs_redirect( fs_nonce_url( $this->_get_admin_page_url(
-							'account',
-							array(
-								'fs_action' => $this->_slug . '_sync_license',
-								'plugin_id' => $plugin_id
-							)
-						), $this->_slug . '_sync_license' ) )
+					if ( $redirect && fs_redirect( $this->_get_sync_license_url( $plugin_id ) )
 					) {
 						exit();
 					}
@@ -7319,6 +7390,37 @@
 
 		/**
 		 * @author Vova Feldman (@svovaf)
+		 * @since  1.2.0
+		 * @uses   FS_Api
+		 *
+		 * @param number|bool $plugin_id
+		 *
+		 * @return FS_Payment[]|object
+		 */
+		function _fetch_payments( $plugin_id = false ) {
+			$this->_logger->entrance();
+
+			$api = $this->get_api_user_scope();
+
+			if ( ! is_numeric( $plugin_id ) ) {
+				$plugin_id = $this->_plugin->id;
+			}
+
+			$result = $api->get( "/plugins/{$plugin_id}/payments.json", true );
+
+			if ( ! isset( $result->error ) ) {
+				for ( $i = 0, $len = count( $result->payments ); $i < $len; $i ++ ) {
+					$result->payments[ $i ] = new FS_Payment( $result->payments[ $i ] );
+				}
+
+				$result = $result->payments;
+			}
+
+			return $result;
+		}
+
+		/**
+		 * @author Vova Feldman (@svovaf)
 		 * @since  1.0.4
 		 *
 		 * @param FS_Plugin_Plan $plan
@@ -7670,7 +7772,7 @@
 							null :
 							$this->_get_license_by_id( $site->license_id );
 
-						if ( $is_free && is_null( $new_license ) && $this->has_license() && $this->_license->is_cancelled ) {
+						if ( $is_free && is_null( $new_license ) && $this->has_any_license() && $this->_license->is_cancelled ) {
 							// License cancelled.
 							$this->_site = $site;
 							$this->_update_site_license( $new_license );
@@ -8386,6 +8488,24 @@
 		}
 
 		/**
+		 * Get payment invoice URL.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.2.0
+		 *
+		 * @param bool|number $payment_id
+		 *
+		 * @return string
+		 */
+		function _get_invoice_api_url( $payment_id = false ) {
+			$this->_logger->entrance();
+
+			return $this->get_api_user_scope()->get_signed_url(
+				"/payments/{$payment_id}/invoice.pdf"
+			);
+		}
+
+		/**
 		 * Get latest plugin download link.
 		 *
 		 * @author Vova Feldman (@svovaf)
@@ -8984,7 +9104,11 @@
 			$this->_logger->entrance();
 
 			$vars = array( 'slug' => $this->_slug );
-			fs_require_once_template( 'account.php', $vars );
+			if ( 'billing' === fs_request_get( 'tab' ) ) {
+				fs_require_once_template( 'billing.php', $vars );
+			} else {
+				fs_require_once_template( 'account.php', $vars );
+			}
 		}
 
 		/**
