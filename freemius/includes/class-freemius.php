@@ -658,6 +658,28 @@
 				);
 			}
 
+			$reason_dont_share_info = array(
+				'id'                => 9,
+				'text'              => __fs( 'reason-dont-like-to-share-my-information', $this->_slug ),
+				'input_type'        => '',
+				'input_placeholder' => ''
+			);
+
+			/**
+			 * If the current user has selected the "don't share data" reason in the deactivation feedback modal, inform the
+			 * user by showing additional message that he doesn't have to share data and can just choose to skip the opt-in
+			 * (the Skip button is included in the message to show). This message will only be shown if anonymous mode is
+			 * enabled and the user's account is currently not in pending activation state (similar to the way the Skip
+			 * button in the opt-in form is shown/hidden).
+			 */
+			if ( $this->is_enable_anonymous() && ! $this->is_pending_activation() ) {
+				$template_var = array(
+					'slug' => $this->_slug
+				);
+
+				$reason_dont_share_info['internal_message'] = fs_get_template( 'reason-dont-share-data-skip-option.php', $template_var );
+			}
+
 			$long_term_user_reasons[] = $reason_temporary_deactivation;
 			$long_term_user_reasons[] = $reason_other;
 
@@ -670,12 +692,7 @@
 						'input_type'        => '',
 						'input_placeholder' => ''
 					),
-					array(
-						'id'                => 9,
-						'text'              => __fs( 'reason-dont-like-to-share-my-information', $this->_slug ),
-						'input_type'        => '',
-						'input_placeholder' => ''
-					),
+					$reason_dont_share_info,
 					$reason_found_better_plugin,
 					$reason_temporary_deactivation,
 					$reason_other
@@ -4859,10 +4876,12 @@
 		 * @author Vova Feldman (@svovaf)
 		 * @since  1.0.6
 		 *
+		 * @param number|bool $site_license_id
+		 *
 		 * @return FS_Plugin_License[]|object
 		 */
-		function _sync_licenses() {
-			$licenses = $this->_fetch_licenses();
+		function _sync_licenses( $site_license_id = false ) {
+			$licenses = $this->_fetch_licenses( false, $site_license_id );
 			if ( ! $this->is_api_error( $licenses ) ) {
 				$this->_licenses = $licenses;
 				$this->_store_licenses();
@@ -5137,8 +5156,16 @@
 		function _add_license_activation_dialog_box() {
 			fs_enqueue_local_style( 'fs_license_action', '/admin/license-activation.css' );
 
+			if ( $this->is_addon() ) {
+				$sync_license_url = $this->get_parent_instance()->_get_sync_license_url( $this->_plugin->id, true );
+			} else {
+				$sync_license_url = $this->_get_sync_license_url( $this->_plugin->id, true );
+			}
+
 			$vars = array(
-				'slug' => $this->_slug
+				'slug'             => $this->_slug,
+				// Avoid having HTML entity like "&amp;" in the URL which breaks the redirection to the "Account" page.
+				'sync-license-url' => html_entity_decode( $sync_license_url )
 			);
 
 			fs_require_template( 'license-activation-modal.php', $vars );
@@ -5158,19 +5185,35 @@
 				exit;
 			}
 
+			$slug  = $_POST['slug'];
+			$fs    = ( ( $slug === $this->_slug ) ? $this : self::instance( $slug ) );
+			$error = false;
+
 			if ( $this->is_registered() ) {
-				$api = $this->get_api_site_scope();
-				$api->call( '/', 'put',
+				$api     = $fs->get_api_site_scope();
+				$install = $api->call( '/', 'put',
 					array(
 						'license_key' => $license_key
 					)
 				);
+
+				if ( isset( $install->error ) ) {
+					$error = $install->error->message;
+				}
 			} else {
 				$this->opt_in( false, false, false, $license_key );
 			}
 
-			// Print '1' for successful operation.
-			echo 1;
+			$result = array(
+				'success' => ( false === $error )
+			);
+
+			if ( false !== $error ) {
+				$result['error'] = $error;
+			}
+
+			echo json_encode( $result );
+
 			exit;
 		}
 
@@ -5471,7 +5514,7 @@
 		 * @since  1.1.9.1
 		 *
 		 * @param bool|number $plugin_id
-		 * @param bool|number $add_action_nonce
+		 * @param bool        $add_action_nonce
 		 *
 		 * @return string
 		 */
@@ -7363,10 +7406,11 @@
 		 * @uses   FS_Api
 		 *
 		 * @param number|bool $plugin_id
+		 * @param number|bool $site_license_id
 		 *
 		 * @return FS_Plugin_License[]|object
 		 */
-		private function _fetch_licenses( $plugin_id = false ) {
+		private function _fetch_licenses( $plugin_id = false, $site_license_id = false ) {
 			$this->_logger->entrance();
 
 			$api = $this->get_api_user_scope();
@@ -7377,12 +7421,43 @@
 
 			$result = $api->get( "/plugins/{$plugin_id}/licenses.json", true );
 
+			$is_site_license_synced = false;
+
 			if ( ! isset( $result->error ) ) {
 				for ( $i = 0, $len = count( $result->licenses ); $i < $len; $i ++ ) {
 					$result->licenses[ $i ] = new FS_Plugin_License( $result->licenses[ $i ] );
+
+					if ( ( ! $is_site_license_synced ) && is_numeric( $site_license_id ) ) {
+						$is_site_license_synced = ( $site_license_id == $result->licenses[ $i ]->id );
+					}
 				}
 
 				$result = $result->licenses;
+			}
+
+			if ( ! $is_site_license_synced ) {
+				$api = $this->get_api_site_scope();
+
+				if ( is_numeric( $site_license_id ) ) {
+					// Try to retrieve a foreign license that is linked to the install.
+					$api_result = $api->call( '/licenses.json' );
+
+					if ( ! isset( $api_result->error ) ) {
+						$licenses = $api_result->licenses;
+
+						if ( ! empty( $licenses ) ) {
+							$result[] = new FS_Plugin_License( $licenses[0] );
+						}
+					}
+				} else if ( is_object( $this->_license ) ) {
+					// Fetch foreign license by ID and license key.
+					$license = $api->get( "/licenses/{$this->_license->id}.json?license_key=" .
+					                      urlencode( $this->_license->secret_key ) );
+
+					if ( ! isset( $license->error ) ) {
+						$result[] = new FS_Plugin_License( $license );
+					}
+				}
 			}
 
 			return $result;
@@ -7412,7 +7487,6 @@
 				for ( $i = 0, $len = count( $result->payments ); $i < $len; $i ++ ) {
 					$result->payments[ $i ] = new FS_Payment( $result->payments[ $i ] );
 				}
-
 				$result = $result->payments;
 			}
 
@@ -7725,8 +7799,11 @@
 				$this->_enrich_site_plan( true );
 				$this->_store_site();
 			} else {
-				// Sync licenses.
-				$this->_sync_licenses();
+				/**
+				 * Sync licenses. Pass the site's license ID so that the foreign licenses will be fetched if the license
+				 * associated with that ID is not included in the user's licenses collection.
+				 */
+				$this->_sync_licenses( $site->license_id );
 
 				// Check if plan / license changed.
 				if ( ! FS_Entity::equals( $site->plan, $this->_site->plan ) ||
@@ -7984,8 +8061,14 @@
 				return;
 			}
 
+			if ( $this->_site->user_id != $premium_license->user_id ) {
+				$api_request_params = array( 'license_key' => $premium_license->secret_key );
+			} else {
+				$api_request_params = array();
+			}
+
 			$api     = $this->get_api_site_scope();
-			$license = $api->call( "/licenses/{$premium_license->id}.json", 'put' );
+			$license = $api->call( "/licenses/{$premium_license->id}.json", 'put', $api_request_params );
 
 			if ( $this->is_api_error( $license ) ) {
 				if ( ! $background ) {
@@ -9554,6 +9637,10 @@
 		 */
 		function _add_license_action_link() {
 			$this->_logger->entrance();
+
+			if ( $this->is_free_plan() && $this->is_addon() ) {
+				return;
+			}
 
 			$link_text = __fs( $this->is_free_plan() ? 'activate-license' : 'change-license', $this->_slug );
 

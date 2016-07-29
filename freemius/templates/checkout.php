@@ -29,13 +29,13 @@
 
 	// Get site context secure params.
 	if ( $fs->is_registered() ) {
-		$site      = $fs->get_site();
+		$site = $fs->get_site();
 		$plugin_id = fs_request_get( 'plugin_id', $fs->get_id() );
 
-		if ( $plugin_id != $fs->get_id() ) {
+		if ($plugin_id != $fs->get_id()) {
 			if ( $fs->is_addon_activated( $plugin_id ) ) {
 				$fs_addon = Freemius::get_instance_by_id( $plugin_id );
-				$site     = $fs_addon->get_site();
+				$site = $fs_addon->get_site();
 			}
 		}
 
@@ -78,7 +78,8 @@
 		}
 	}
 
-	if ( $fs->is_payments_sandbox() ) {
+	if ( $fs->is_payments_sandbox() )
+	{
 		// Append plugin secure token for sandbox mode authentication.
 		$context_params['sandbox'] = FS_Security::instance()->get_secure_token(
 			$fs->get_plugin(),
