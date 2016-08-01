@@ -4,7 +4,7 @@ Donate link: http://rating-widget.com/pricing/wordpress/
 Tags: rate, rating, ratings, vote, votes, voting, star, stars, like, dislike, thumbs, widget, widgets, star rating, thumb rating, rating platform, rating system, seo, post rating, comment rating, 5 star, five star, sidebar, comment, comments, post, posts, page, pages, google, admin, administrator, review, reviews, rich-snippets, plugin, plugins, ajax, buddypress, bbpress, social, javascript, js, wordpress, meta, woocommerce, jquery, contest, competition, voting contest, rtmedia
 Requires at least: 3.0
 Tested up to: 4.5.1
-Stable tag: 2.8.1
+Stable tag: 2.8.2
 License: GPLv2 or later
 
 The most popular Five Star Review System on the web. User-friendly ratings for: posts, pages, comments, WooCommerce, BuddyPress and bbPress forums.
@@ -209,6 +209,12 @@ If you didn't find a solution to your problem yet, check out our [WordPress Know
 The RatingWidget Team
 
 == Change Log ==
+
+= 2.8.2 - 2016-08-01 =
+* New: Add filter for altering the list of excluded custom post types for the rating widget display.
+* New: Show ratings on product category pages.
+* Fix: Fixed an HTTPS-related issue in RatingWidget SDK.
+* Update: Don't limit post title on top rated table.
 
 = 2.8.1 - 2016-05-04 =
 * Update: Tested plugin on WP 4.5.1.
