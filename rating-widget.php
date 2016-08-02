@@ -381,6 +381,7 @@
 				add_action( 'admin_head', array( &$this, "rw_admin_menu_icon_css" ) );
 
 //				add_action( 'admin_menu', array( &$this, "admin_menu" ) );
+
 				$this->fs->add_action( 'before_admin_menu_init', array( &$this, 'admin_menu' ) );
 
 				add_action( 'updated_post_meta', array( &$this, 'PurgePostFeaturedImageTransient' ), 10, 4 );
@@ -2671,7 +2672,9 @@
 					) );
 				}
 
-				$this->SetupMenuItems();
+				if ($this->fs->is_registered()) {
+					$this->SetupMenuItems();
+				}
 			}
 
 			/**
