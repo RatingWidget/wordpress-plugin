@@ -4184,7 +4184,17 @@
 			if ( ! isset( $this->_plugin_data ) ) {
 				self::require_plugin_essentials();
 
-				$this->_plugin_data = get_plugin_data( $this->_plugin_main_file_path );
+				/**
+				 * @author Vova Feldman (@svovaf)
+				 * @since 1.2.0 When using get_plugin_data() do NOT translate plugin data.
+				 *
+				 * @link https://github.com/Freemius/wordpress-sdk/issues/77
+				 */
+				$this->_plugin_data = get_plugin_data(
+					$this->_plugin_main_file_path,
+					false,
+					false
+				);
 			}
 
 			return $this->_plugin_data;
@@ -6451,6 +6461,8 @@
 			if ( ! $this->has_api_connectivity() && ! $this->is_enable_anonymous() ) {
 				$this->_menu->remove_menu_item();
 			} else {
+				$this->do_action( 'before_admin_menu_init' );
+
 				$this->add_menu_action();
 				$this->add_submenu_items();
 			}
@@ -6604,8 +6616,6 @@
 		 */
 		private function add_submenu_items() {
 			$this->_logger->entrance();
-
-			$this->do_action( 'before_admin_menu_init' );
 
 			if ( ! $this->is_addon() ) {
 				if ( ! $this->is_activation_mode() ) {

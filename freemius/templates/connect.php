@@ -49,6 +49,9 @@
 
 	$require_license_key = $is_premium_only ||
 	                       ( $is_freemium && $is_premium_code && fs_request_get_bool( 'require_license', true ) );
+
+	if ($is_pending_activation)
+		$require_license_key = false;
 ?>
 <div id="fs_connect"
      class="wrap<?php if ( ! $fs->is_enable_anonymous() || $is_pending_activation || $require_license_key ) {
@@ -311,12 +314,14 @@
 			 * @author Vova Feldman (@svovaf)
 			 * @since 1.1.9
 			 */
-			$licenseKeyInput.on('keyup', function () {
-				if ('' === $(this).val()) {
-					$primaryCta.attr('disabled', 'disabled');
-				} else {
-					$primaryCta.prop('disabled', false);
-				}
+			$licenseKeyInput.on('keyup paste delete cut', function () {
+				setTimeout(function() {
+					if ('' === $licenseKeyInput.val()) {
+						$primaryCta.attr('disabled', 'disabled');
+					} else {
+						$primaryCta.prop('disabled', false);
+					}
+				}, 100);
 			}).focus();
 		}
 
