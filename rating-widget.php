@@ -7945,17 +7945,9 @@
 				// Include Freemius SDK.
 				require_once dirname( __FILE__ ) . '/freemius/start.php';
 
-				if ( WP_FS__IS_PRODUCTION_MODE ) {
-					$id         = 56;
-					$public_key = 'pk_74be465babd9d3d6d5ff578d56745';
-				} else {
-					$id         = 30;
-					$public_key = 'pk_d859cee50e9d63917b6d3f324cbaf';
-				}
-
 				$rw_fs = fs_dynamic_init( array(
-					'id'               => $id,
-					'public_key'       => $public_key,
+					'id'               => WP_RW__FREEMIUS_ID,
+					'public_key'       => WP_RW__FREEMIUS_PUBLIC_KEY,
 					'slug'             => 'rating-widget',
 					'menu_slug'        => 'rating-widget',
 					'is_live'          => true,
