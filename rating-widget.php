@@ -2659,8 +2659,25 @@
 					$pageLoaderFunction
 				) );
 
-				// WP 2.7+
-				if ( function_exists( 'add_object_page' ) ) {
+				global $wp_version;
+				if ( version_compare( $wp_version, '4.5', '>=' ) ) {
+					// add_object_page is deprecated since version 4.5.
+					add_menu_page(
+						$title,
+						WP_RW__NAME,
+						'edit_posts',
+						WP_RW__ADMIN_MENU_SLUG,
+						array( &$this, $pageLoaderFunction ),
+						WP_RW__PLUGIN_URL . 'icon.png',
+						/**
+						 * According to https://developer.wordpress.org/reference/functions/add_menu_page/, 25 is the
+						 * position of the "Comments" menu and 59 is the position of the next default item. So 26 to 58 is
+						 * free by default. 25 works too but 26 seems clearer.
+						 */
+						26
+					);
+				} else if ( function_exists( 'add_object_page' ) ) {
+					// WP 2.7+
 					add_object_page( $title, WP_RW__NAME, 'edit_posts', WP_RW__ADMIN_MENU_SLUG, array(
 						&$this,
 						$pageLoaderFunction
