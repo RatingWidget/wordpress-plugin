@@ -300,3 +300,11 @@
 		define( 'RW_API__ADDRESS', 'http://api.rating-widget:8080' );
 	}
 
+	/* Freemius Keys
+	-----------------------------------------------------------------------------------------*/
+	if ( ! defined( 'WP_RW__FREEMIUS_ID' ) ) {
+		define( 'WP_RW__FREEMIUS_ID', '56' );
+	}
+	if ( ! defined( 'WP_RW__FREEMIUS_PUBLIC_KEY' ) ) {
+		define( 'WP_RW__FREEMIUS_PUBLIC_KEY', 'pk_74be465babd9d3d6d5ff578d56745' );
+	}

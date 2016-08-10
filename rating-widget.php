@@ -3,7 +3,7 @@
 	 * Plugin Name: Rating-Widget: Star Review System
 	 * Plugin URI:  http://rating-widget.com/wordpress-plugin/
 	 * Description: Create and manage Rating-Widget ratings in WordPress.
-	 * Version:     2.8.1
+	 * Version:     2.8.2
 	 * Author:      Rating-Widget
 	 * Author URI:  http://rating-widget.com/wordpress-plugin/
 	 * License:     GPLv2
@@ -381,6 +381,7 @@
 				add_action( 'admin_head', array( &$this, "rw_admin_menu_icon_css" ) );
 
 //				add_action( 'admin_menu', array( &$this, "admin_menu" ) );
+
 				$this->fs->add_action( 'before_admin_menu_init', array( &$this, 'admin_menu' ) );
 
 				add_action( 'updated_post_meta', array( &$this, 'PurgePostFeaturedImageTransient' ), 10, 4 );
@@ -2671,7 +2672,9 @@
 					) );
 				}
 
-				$this->SetupMenuItems();
+				if ($this->fs->is_registered()) {
+					$this->SetupMenuItems();
+				}
 			}
 
 			/**
@@ -7942,17 +7945,9 @@
 				// Include Freemius SDK.
 				require_once dirname( __FILE__ ) . '/freemius/start.php';
 
-				if ( WP_FS__IS_PRODUCTION_MODE ) {
-					$id         = 56;
-					$public_key = 'pk_74be465babd9d3d6d5ff578d56745';
-				} else {
-					$id         = 30;
-					$public_key = 'pk_d859cee50e9d63917b6d3f324cbaf';
-				}
-
 				$rw_fs = fs_dynamic_init( array(
-					'id'               => $id,
-					'public_key'       => $public_key,
+					'id'               => WP_RW__FREEMIUS_ID,
+					'public_key'       => WP_RW__FREEMIUS_PUBLIC_KEY,
 					'slug'             => 'rating-widget',
 					'menu_slug'        => 'rating-widget',
 					'is_live'          => true,
@@ -7966,14 +7961,7 @@
 					),
 					'permissions' => array(
 						'newsletter' => true,
-					),
-					// Set the SDK to work in a sandbox mode (for development & testing).
-					// Localhost FS environment params.
-					'secret_key'       => defined( 'WP_RW__FREEMIUS_SECRET_KEY_PRODUCTION' ) ?
-						( WP_FS__IS_PRODUCTION_MODE ?
-							WP_RW__FREEMIUS_SECRET_KEY_PRODUCTION :
-							WP_RW__FREEMIUS_SECRET_KEY_LOCALHOST ) :
-						'',
+					)
 				) );
 			}
 

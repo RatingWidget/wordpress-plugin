@@ -38,7 +38,7 @@
 						__fs( 'add-ons-missing', $slug )
 					) ?></h3>
 			<?php endif ?>
-				<ul class="fs-cards-list">
+			<ul class="fs-cards-list">
 				<?php if ( $has_addons ) : ?>
 					<?php foreach ( $addons as $addon ) : ?>
 						<?php
@@ -110,7 +110,7 @@
 							</div>
 						</li>
 					<?php endforeach ?>
-			<?php endif ?>
+				<?php endif ?>
 			</ul>
 		</div>
 	</div>
@@ -141,4 +141,12 @@
 			<?php endif ?>
 		})(jQuery);
 	</script>
-<?php fs_require_template( 'powered-by.php' ) ?>
+<?php
+	$params = array(
+		'page'           => 'addons',
+		'module_id'      => $fs->get_id(),
+		'module_slug'    => $slug,
+		'module_version' => $fs->get_plugin_version(),
+	);
+	fs_require_template( 'powered-by.php', $params );
+?>
