@@ -2022,33 +2022,33 @@
 				if ( $this->is_cron() ) {
 					$this->hook_callback_to_sync_cron();
 				} else if ( $this->is_user_in_admin() ) {
-				/**
-				 * Schedule daily data sync cron if:
-				 *
-				 *  1. User opted-in (for tracking).
-				 *  2. If plugin has add-ons (update add-ons data).
-				 *  3. If skipped, but later upgraded (opted-in via upgrade).
-				 *
-				 * @author Vova Feldman (@svovaf)
-				 * @since  1.1.7.3
-				 *
-				 */
-				if ( $this->is_registered() ||
-				     ( ! $this->is_activation_mode() && $this->_has_addons )
-				) {
+					/**
+					 * Schedule daily data sync cron if:
+					 *
+					 *  1. User opted-in (for tracking).
+					 *  2. If plugin has add-ons (update add-ons data).
+					 *  3. If skipped, but later upgraded (opted-in via upgrade).
+					 *
+					 * @author Vova Feldman (@svovaf)
+					 * @since  1.1.7.3
+					 *
+					 */
+					if ( $this->is_registered() ||
+					     ( ! $this->is_activation_mode() && $this->_has_addons )
+					) {
 
-					if ( ! $this->is_sync_cron_on() ) {
-						$this->schedule_sync_cron();
+						if ( ! $this->is_sync_cron_on() ) {
+							$this->schedule_sync_cron();
+						}
+					}
+
+					/**
+					 * Check if requested for manual blocking background sync.
+					 */
+					if ( fs_request_has( 'background_sync' ) ) {
+						$this->run_manual_sync();
 					}
 				}
-
-				/**
-				 * Check if requested for manual blocking background sync.
-				 */
-				if ( fs_request_has( 'background_sync' ) ) {
-					$this->run_manual_sync();
-				}
-			}
 			}
 
 			if ( $this->is_registered() ) {
@@ -2423,6 +2423,9 @@
 					__fs( 'woot', $this->_slug ) . '!'
 				);
 			} else {
+				// Remove sticky message related to premium code activation.
+				$this->_admin_notices->remove_sticky('premium_activated');
+
 				// Activated free code (after had the premium before).
 				$this->do_action( 'after_free_version_reactivation' );
 
@@ -2431,10 +2434,7 @@
 						sprintf(
 							__fs( 'you-have-x-license', $this->_slug ),
 							$this->_site->plan->title
-						) . ' ' . $this->_get_latest_download_link( sprintf(
-							__fs( 'download-x-version-now', $this->_slug ),
-							$this->_site->plan->title
-						) ),
+						) . $this->get_complete_upgrade_instructions(),
 						'plan_upgraded',
 						__fs( 'yee-haw', $this->_slug ) . '!'
 					);
@@ -6365,10 +6365,7 @@
 					sprintf(
 						__fs( 'activation-with-plan-x-message', $this->_slug ),
 						$this->_site->plan->title
-					) . ' ' . $this->_get_latest_download_link( sprintf(
-						__fs( 'download-latest-x-version', $this->_slug ),
-						$this->_site->plan->title
-					) ),
+					) . $this->get_complete_upgrade_instructions(),
 					'plan_upgraded',
 					__fs( 'yee-haw', $this->_slug ) . '!'
 				);
@@ -8188,11 +8185,7 @@
 							sprintf(
 								__fs( 'plan-upgraded-message', $this->_slug ),
 								'<i>' . $this->get_plugin_name() . '</i>'
-							) . ( $this->is_premium() ? '' : ' ' . $this->_get_latest_download_link( sprintf(
-									__fs( 'download-latest-x-version', $this->_slug ),
-									$this->_site->plan->title
-								) )
-							),
+							) . $this->get_complete_upgrade_instructions(),
 							'plan_upgraded',
 							__fs( 'yee-haw', $this->_slug ) . '!'
 						);
@@ -8254,10 +8247,7 @@
 							sprintf(
 								__fs( 'trial-started-message', $this->_slug ),
 								'<i>' . $this->get_plugin_name() . '</i>'
-							) . ( $this->is_premium() ? '' : ' ' . $this->_get_latest_download_link( sprintf(
-									__fs( 'download-latest-x-version', $this->_slug ),
-									$this->_storage->trial_plan->title
-								) ) ),
+							) . $this->get_complete_upgrade_instructions($this->_storage->trial_plan->title),
 							'trial_started',
 							__fs( 'yee-haw', $this->_slug ) . '!'
 						);
@@ -8362,10 +8352,7 @@
 			if ( ! $background ) {
 				$this->_admin_notices->add_sticky(
 					__fs( 'license-activated-message', $this->_slug ) .
-					( $this->is_premium() ? '' : ' ' . $this->_get_latest_download_link( sprintf(
-							__fs( 'download-latest-x-version', $this->_slug ),
-							$this->_site->plan->title
-						) ) ),
+					$this->get_complete_upgrade_instructions(),
 					'license_activated',
 					__fs( 'yee-haw', $this->_slug ) . '!'
 				);
@@ -10059,6 +10046,41 @@
 		 */
 		function add_sticky_admin_message( $message, $id, $title = '', $type = 'success' ) {
 			$this->_admin_notices->add_sticky( $message, $id, $title, $type );
+		}
+
+		/**
+		 * Helper function that returns the final steps for the upgrade completion.
+		 *
+		 * If the module is already running the premium code, returns an empty string.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.2.1
+		 *
+		 * @param string $plan_title
+		 *
+		 * @return string
+		 */
+		private function get_complete_upgrade_instructions($plan_title = '') {
+			if ( $this->is_premium() ) {
+				return '';
+			}
+
+			if ( empty( $plan_title ) ) {
+				$plan_title = $this->_site->plan->title;
+			}
+
+			return sprintf(
+				' %s: <ol><li>%s.</li><li>%s.</li><li>%s (<a href="%s" target="_blank">%s</a>).</li></ol>',
+				__fs( 'follow-steps-to-complete-upgrade', $this->_slug ),
+				$this->_get_latest_download_link( sprintf(
+					__fs( 'download-latest-x-version', $this->_slug ),
+					$plan_title
+				) ),
+				__fs( 'deactivate-free-version', $this->_slug ),
+				__fs( 'upload-and-activate', $this->_slug ),
+				'//bit.ly/upload-wp-plugin',
+				__fs( 'howto-upload-activate', $this->_slug )
+			);
 		}
 
 		/* Plugin Auto-Updates (@since 1.0.4)
