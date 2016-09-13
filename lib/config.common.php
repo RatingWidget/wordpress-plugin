@@ -261,8 +261,8 @@
 			define( 'WP_RW__DOMAIN', 'localhost:8080' );
 		} else if ( defined( 'WP_RW__STAGING' ) && true === WP_RW__STAGING ) {
 			define( 'WP_RW__DOMAIN', 'staging.rating-widget.com' );
-		} else if ( WP_RW__LOCALHOST && WP_RW__DEBUG ) {
-			define( 'WP_RW__DOMAIN', $_SERVER['HTTP_HOST'] );
+//		} else if ( WP_RW__LOCALHOST && WP_RW__DEBUG ) {
+//			define( 'WP_RW__DOMAIN', $_SERVER['HTTP_HOST'] );
 		} else {
 			define( 'WP_RW__DOMAIN', 'rating-widget.com' );
 		}
