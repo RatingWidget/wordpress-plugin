@@ -35,8 +35,6 @@
 		$after_license_activation_url = $fs->get_account_url();
 	}
 
-
-
 	$cant_find_license_key_text = __fs( 'cant-find-license-key', $slug );
 	$message_above_input_field  = __fs( 'activate-license-message', $slug );
 	$message_below_input_field  = '';
