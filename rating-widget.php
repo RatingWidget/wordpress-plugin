@@ -3819,7 +3819,7 @@
 							?>
 							<tbody>
 						<tr>
-							<td colspan="6"><?php __erw( 'no-votes' ) ?></td>
+							<td colspan="6"><?php _erw( 'no-votes' ) ?></td>
 						</tr>
 							</tbody><?php
 						} else {
