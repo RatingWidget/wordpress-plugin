@@ -6027,14 +6027,33 @@
 						}
 
 						$connection = null;
-						if ( ! $connection = mysql_connect( BBDB_HOST, BBDB_USER, BBDB_PASSWORD, true ) ) {
-							return false;
+						if (version_compare('5.3', phpversion(), '<='))
+						{
+							/**
+							 * This code was never tested because I doubt it's used at all in the
+							 * new bbPress versions. The addition is to support PHP 7.0 which
+							 * deprecated mysql in favor of mysqli.
+							 *
+							 * @author Vova Feldman
+							 */
+							if ( ! $connection = mysqli_connect( BBDB_HOST, BBDB_USER, BBDB_PASSWORD, BBDB_NAME ) ) {
+								return false;
+							}
+
+							$results = mysqli_query( $connection, "SELECT * FROM {$bb_table_prefix}posts WHERE topic_id={$item_id} AND post_position=1" );
+							$post    = mysqli_fetch_object( $results );
 						}
-						if ( ! mysql_selectdb( BBDB_NAME, $connection ) ) {
-							return false;
+						else {
+							if ( ! $connection = mysql_connect( BBDB_HOST, BBDB_USER, BBDB_PASSWORD, true ) ) {
+								return false;
+							}
+							if ( ! mysql_selectdb( BBDB_NAME, $connection ) ) {
+								return false;
+							}
+
+							$results = mysql_query( "SELECT * FROM {$bb_table_prefix}posts WHERE topic_id={$item_id} AND post_position=1", $connection );
+							$post    = mysql_fetch_object( $results );
 						}
-						$results = mysql_query( "SELECT * FROM {$bb_table_prefix}posts WHERE topic_id={$item_id} AND post_position=1", $connection );
-						$post    = mysql_fetch_object( $results );
 					}
 
 					if ( ! isset( $post->post_id ) && empty( $post->post_id ) ) {
