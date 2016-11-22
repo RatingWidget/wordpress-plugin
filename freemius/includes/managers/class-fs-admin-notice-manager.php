@@ -279,6 +279,8 @@
 		 * @param bool   $all_admin
 		 */
 		function add_sticky( $message, $id, $title = '', $type = 'success', $all_admin = false ) {
+			$message = fs_apply_filter($this->_slug, "sticky_message_{$id}", $message);
+
 			$this->add( $message, $title, $type, true, $all_admin, $id );
 		}
 
