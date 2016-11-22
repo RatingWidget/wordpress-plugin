@@ -2069,7 +2069,7 @@
 					),
 					WP_RW__IS_ACCUMULATED_USER_RATING                  => true,
 					WP_RW__IDENTIFY_BY                                 => 'laccount',
-					WP_RW__FLASH_DEPENDENCY                            => true,
+					WP_RW__FLASH_DEPENDENCY                            => false,
 					WP_RW__SHOW_ON_MOBILE                              => true,
 					WP_RW__SHOW_ON_ARCHIVE                             => true,
 					WP_RW__SHOW_ON_CATEGORY                            => true,
@@ -6955,7 +6955,7 @@
 							RW_Advanced_Options = {
 								blockFlash: !(<?php
                         $flash = $this->GetOption(WP_RW__FLASH_DEPENDENCY, true);
-                        echo in_array($flash, array('true', 'false')) ? $flash : ((false === $flash) ? 'false' : 'true');
+                        echo in_array($flash, array('true', 'false')) ? $flash : ((true === $flash) ? 'true' : 'false');
                     ?>)
 							};
 
