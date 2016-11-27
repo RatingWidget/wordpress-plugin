@@ -57,6 +57,7 @@
 		'show'                          => _x( 'Show', 'verb', 'freemius' ),
 		'hide'                          => _x( 'Hide', 'verb', 'freemius' ),
 		'edit'                          => _x( 'Edit', 'verb', 'freemius' ),
+		'update'                        => _x( 'Update', 'verb', 'freemius' ),
 		'date'                          => __( 'Date', 'freemius' ),
 		'amount'                        => __( 'Amount', 'freemius' ),
 		'invoice'                       => __( 'Invoice', 'freemius' ),
@@ -75,6 +76,7 @@
 		'new'                           => __( 'New', 'freemius' ),
 		'free'                          => __( 'Free', 'freemius' ),
 		'trial'                         => _x( 'Trial', 'as trial plan', 'freemius' ),
+		'start-trial'                   => _x( 'Start Trial', 'as starting a trial plan', 'freemius' ),
 		'purchase'                      => _x( 'Purchase', 'verb', 'freemius' ),
 		'purchase-license'              => __( 'Purchase License', 'freemius' ),
 		'buy'                           => _x( 'Buy', 'verb', 'freemius' ),
@@ -184,8 +186,7 @@
 			'freemius' ),
 		'deactivation-modal-button-confirm'        => __( 'Yes - Deactivate', 'freemius' ),
 		'deactivation-modal-button-submit'         => __( 'Submit & Deactivate', 'freemius' ),
-		'deactivation-modal-button-cancel'         => _x( 'Cancel',
-			'the text of the cancel button of the plugin deactivation dialog box.', 'freemius' ),
+		'cancel'                                   => __( 'Cancel', 'freemius' ),
 		'reason-no-longer-needed'                  => __( 'I no longer need the plugin', 'freemius' ),
 		'reason-found-a-better-plugin'             => __( 'I found a better plugin', 'freemius' ),
 		'reason-needed-for-a-short-period'         => __( 'I only needed the plugin for a short period', 'freemius' ),
@@ -223,8 +224,9 @@
 			'freemius' ),
 		'connect-message_on-update'                => __( 'Please help us improve %1$s! If you opt-in, some data about your usage of %1$s will be sent to %4$s. If you skip this, that\'s okay! %1$s will still work just fine.',
 			'freemius' ),
-		'pending-activation-message'               => __( 'You should receive an activation email for %s to your mailbox at %s. Please make sure you click the activation button in that email to complete the install.',
-			'freemius' ),
+		'pending-activation-message'               => __( 'You should receive an activation email for %s to your mailbox at %s. Please make sure you click the activation button in that email to %s.', 'freemius' ),
+		'complete-the-install'                     => __( 'complete the install', 'freemius' ),
+		'start-the-trial'                          => __( 'start the trial', 'freemius' ),
 		'thanks-for-purchasing'                    => __( 'Thanks for purchasing %s! To get started, please enter your license key:',
 			'freemius' ),
 		'license-sync-disclaimer'                  => __( 'The plugin will be periodically sending data to %s to check for plugin updates and verify the validity of your license.',
@@ -393,6 +395,8 @@
 		'trial-x-promotion-message'                => __( 'How do you like %s so far? Test all our %s premium features with a %d-day free trial.',
 			'freemius' ),
 		'start-free-trial'                         => _x( 'Start free trial', 'call to action', 'freemius' ),
+		'starting-trial'                           => __( 'Starting trial', 'freemius' ),
+		'please-wait'                              => __( 'Please wait', 'freemius' ),
 		'trial-cancel-failure-message'             => __( 'Seems like we are having some temporary issue with your trial cancellation. Please try again in few minutes.',
 			'freemius' ),
 		'trial-utilized'                           => __( 'You already utilized a trial before.', 'freemius' ),
@@ -479,13 +483,17 @@
 		'free-addon-not-deployed'                  => __( 'Add-on must be deployed to WordPress.org or Freemius.',
 			'freemius' ),
 		'paid-addon-not-deployed'                  => __( 'Paid add-on must be deployed to Freemius.', 'freemius' ),
+		#--------------------------------------------------------------------------------
 		#region Add-On Licensing
+		#--------------------------------------------------------------------------------
 		'addon-no-license-message'                 => __( '%s is a premium only add-on. You have to purchase a license first before activating the plugin.',
 			'freemius' ),
 		'addon-trial-cancelled-message'            => __( '%s free trial was successfully cancelled. Since the add-on is premium only it was automatically deactivated. If you like to use it in the future, you\'ll have to purchase a license.',
 			'freemius' ),
-		#endregion Add-On Licensing
+		#endregion
+		#--------------------------------------------------------------------------------
 		#region Billing Cycles
+		#--------------------------------------------------------------------------------
 		'monthly'                                  => _x( 'Monthly', 'as every month', 'freemius' ),
 		'mo'                                       => _x( 'mo', 'as monthly period', 'freemius' ),
 		'annual'                                   => _x( 'Annual', 'as once a year', 'freemius' ),
@@ -498,4 +506,28 @@
 		'save-x'                                   => _x( 'Save %s', 'as a discount of $5 or 10%', 'freemius' ),
 		#endregion Billing Cycles
 		'view-details'                             => __( 'View details', 'freemius' ),
+		#--------------------------------------------------------------------------------
+		#region Trial
+		#--------------------------------------------------------------------------------
+		'approve-start-trial'                      => _x( 'Approve & Start Trial', 'button label', 'freemius' ),
+		/* translators: %1$s: Number of trial days; %2$s: Plan name; */
+		'start-trial-prompt-header'                => __( 'You are just a click away from starting your %1$s-day free trial of the %2$s plan.', 'freemius' ),
+		/* translators: %s: Link to freemius.com */
+		'start-trial-prompt-message'               => __( 'All we need is your approval to share your email and non-sensitive site information, and allow the plugin periodically send data to %s to check for version updates and verify the validity of your trial.', 'freemius' ),
+
+		#endregion
+		#--------------------------------------------------------------------------------
+		#region Billing Details
+		#--------------------------------------------------------------------------------
+		'business-name'                            => __( 'Business name', 'freemius' ),
+		'tax-vat-id'                               => __( 'Tax / VAT ID', 'freemius' ),
+		'address-line-n'                           => __( 'Address Line %d', 'freemius' ),
+		'country'                                  => __( 'Country', 'freemius' ),
+		'select-country'                           => __( 'Select Country', 'freemius' ),
+		'city'                                     => __( 'City', 'freemius' ),
+		'town'                                     => __( 'Town', 'freemius' ),
+		'state'                                    => __( 'State', 'freemius' ),
+		'province'                                 => __( 'Province', 'freemius' ),
+		'zip-postal-code'                          => __( 'ZIP / Postal Code', 'freemius' ),
+		#endregion
 	);
