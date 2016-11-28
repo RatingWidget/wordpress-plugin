@@ -518,6 +518,18 @@
 
 			add_action( 'admin_init', array( &$this, '_add_trial_notice' ) );
 			add_action( 'admin_init', array( &$this, '_enqueue_common_css' ) );
+
+			/**
+			 * Handle request to reset anonymous mode for `get_reconnect_url()`.
+			 *
+			 * @author Vova Feldman (@svovaf)
+			 * @since 1.2.1.5
+			 */
+			if ( fs_request_is_action( 'reset_anonymous_mode' ) &&
+			     $this->_slug === fs_request_get( 'fs_slug' )
+			) {
+				add_action( 'admin_init', array( &$this, 'connect_again' ) );
+			}
 		}
 
 		/**
@@ -2508,7 +2520,7 @@
 				$parent_id = $this->get_numeric_option( $plugin_info['parent'], 'id', null );
 //				$parent_slug       = $this->get_option( $plugin_info['parent'], 'slug', null );
 //				$parent_public_key = $this->get_option( $plugin_info['parent'], 'public_key', null );
-				$parent_name = $this->get_option( $plugin_info['parent'], 'name', null );
+//				$parent_name = $this->get_option( $plugin_info['parent'], 'name', null );
 			}
 
 			if ( false === $id ) {
@@ -4378,8 +4390,6 @@
 		 *
 		 * @param string[] string $override
 		 * @param bool     $flush
-		 *
-		 * @return false|object|string
 		 */
 		private function sync_install( $override = array(), $flush = false ) {
 			$this->_logger->entrance();
@@ -4904,7 +4914,7 @@
 		 * @author Vova Feldman (@svovaf)
 		 * @since  1.0.6
 		 *
-		 * @return FS_Plugin[]|false
+		 * @return array<number,FS_Plugin[]>|false
 		 */
 		private static function get_all_addons() {
 			$addons = self::$_accounts->get_option( 'addons', array() );
@@ -5146,10 +5156,12 @@
 		 * @author Vova Feldman (@svovaf)
 		 * @since  1.0.9
 		 *
-		 * @return FS_Plugin_Plan
+		 * @return FS_Plugin_Plan|false
 		 */
 		function get_plan() {
-			return is_object( $this->_site->plan ) ? $this->_site->plan : false;
+			return is_object( $this->_site->plan ) ?
+				$this->_site->plan :
+				false;
 		}
 
 		/**
@@ -5297,7 +5309,7 @@
 		 * @author Vova Feldman (@svovaf)
 		 * @since  1.0.5
 		 *
-		 * @return FS_Plugin_License
+		 * @return FS_Plugin_License|false
 		 */
 		function _get_available_premium_license() {
 			$this->_logger->entrance();
@@ -5343,7 +5355,7 @@
 		 *
 		 * @param number $id
 		 *
-		 * @return FS_Plugin_Plan
+		 * @return FS_Plugin_Plan|false
 		 */
 		function _get_plan_by_id( $id ) {
 			$this->_logger->entrance();
@@ -5416,7 +5428,7 @@
 		 *
 		 * @param number $id
 		 *
-		 * @return FS_Plugin_License
+		 * @return FS_Plugin_License|false
 		 */
 		function _get_license_by_id( $id ) {
 			$this->_logger->entrance();
@@ -6309,10 +6321,6 @@
 				$params['fs_action'] = $action;
 			}
 
-			if ($this->is_addon() && empty($params['plugin_id'])){
-
-			}
-
 			self::require_pluggable_essentials();
 
 			return ( $add_action_nonce && is_string( $action ) ) ?
@@ -6585,7 +6593,7 @@
 				// Load plans.
 				$this->_plans = $plans[ $this->_slug ];
 				if ( ! is_array( $this->_plans ) || empty( $this->_plans ) ) {
-					$this->_sync_plans( true );
+					$this->_sync_plans();
 				} else {
 					for ( $i = 0, $len = count( $this->_plans ); $i < $len; $i ++ ) {
 						if ( $this->_plans[ $i ] instanceof FS_Plugin_Plan ) {
@@ -7346,8 +7354,6 @@
 		/**
 		 * @author Vova Feldman (@svovaf)
 		 * @since  1.0.1
-		 *
-		 * @return string
 		 */
 		function _redirect_on_clicked_menu_link() {
 			$this->_logger->entrance();
@@ -9939,6 +9945,21 @@
 		}
 
 		/**
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.2.1.5
+		 *
+		 * @param array $params
+		 *
+		 * @return string
+		 */
+		function get_reconnect_url( $params = array() ) {
+			$params['fs_action'] = 'reset_anonymous_mode';
+			$params['fs_slug']   = $this->_slug;
+
+			return $this->apply_filters( 'connect_url', $this->_get_admin_page_url( '', $params ) );
+		}
+
+		/**
 		 * Get the URL of the page that should be loaded after the user connect or skip in the opt-in screen.
 		 *
 		 * @author Vova Feldman (@svovaf)
@@ -10531,6 +10552,8 @@
 			if ( $this->_admin_notices->has_sticky( 'trial_promotion' ) ) {
 				add_action( 'admin_footer', array( &$this, '_fix_start_trial_menu_item_url' ) );
 
+				$this->_menu->add_counter_to_menu_item();
+
 				return false;
 			}
 
@@ -11118,8 +11141,6 @@
 		 *
 		 * @author Vova Feldman (@svovaf)
 		 * @since  1.0.9
-		 *
-		 * @return bool
 		 */
 		function set_sdk_upgrade_complete() {
 			$this->_storage->sdk_upgrade_mode = false;
