@@ -118,7 +118,7 @@
 		 * @since 1.2.1.5
 		 * @var int Hints the SDK if the plugin offers a trial period. If negative, no trial, if zero - has a trial but without a specified period, if positive - the number of trial days.
 		 */
-		private $_trial_days = -1;
+		private $_trial_days = - 1;
 
 		/**
 		 * @since 1.2.1.5
@@ -525,7 +525,7 @@
 			 * Handle request to reset anonymous mode for `get_reconnect_url()`.
 			 *
 			 * @author Vova Feldman (@svovaf)
-			 * @since 1.2.1.5
+			 * @since  1.2.1.5
 			 */
 			if ( fs_request_is_action( 'reset_anonymous_mode' ) &&
 			     $this->_slug === fs_request_get( 'fs_slug' )
@@ -562,11 +562,15 @@
 				return;
 			}
 
+			$plugin_main_file = clone $this->_storage->plugin_main_file;
+
 			// Store cached path (2nd layer cache).
-			$this->_storage->plugin_main_file->prev_path = $this->_storage->plugin_main_file->path;
+			$plugin_main_file->prev_path = $plugin_main_file->path;
 
 			// Clear cached path.
-			unset( $this->_storage->plugin_main_file->path );
+			unset( $plugin_main_file->path );
+
+			$this->_storage->plugin_main_file = $plugin_main_file;
 		}
 
 		/**
@@ -2339,7 +2343,7 @@
 		/**
 		 * @author Leo Fajardo (@leorw)
 		 *
-		 * @since 1.2.1.5
+		 * @since  1.2.1.5
 		 */
 		function _stop_tracking_callback() {
 			$result = $this->stop_tracking();
@@ -2980,8 +2984,8 @@
 					$this->_parent->_admin_notices->add_sticky(
 						sprintf(
 							__fs( ( $is_after_trial_cancel ?
-									'addon-trial-cancelled-message' :
-									'addon-no-license-message' ),
+								'addon-trial-cancelled-message' :
+								'addon-no-license-message' ),
 								$this->_parent->_slug
 							),
 							'<b>' . $this->_plugin->title . '</b>'
@@ -3565,11 +3569,11 @@
 				jQuery(document).ready(function ($) {
 					if ('undefined' !== typeof(jQuery().pointer)) {
 
-						var element = <?php echo $this->apply_filters('optin_pointer_element', '$("#non_existing_element");') ?>;
+						var element = <?php echo $this->apply_filters( 'optin_pointer_element', '$("#non_existing_element");' ) ?>;
 
 						if (element.length > 0) {
 							var optin = $(element).pointer($.extend(true, {}, {
-								content     : <?php echo json_encode($pointer_content) ?>,
+								content     : <?php echo json_encode( $pointer_content ) ?>,
 								position    : {
 									edge : 'left',
 									align: 'center'
@@ -3579,10 +3583,10 @@
 									return '';
 								},
 								pointerWidth: 482
-							}, <?php echo $this->apply_filters('optin_pointer_options_json', '{}') ?>));
+							}, <?php echo $this->apply_filters( 'optin_pointer_options_json', '{}' ) ?>));
 
 							<?php
-							echo $this->apply_filters('optin_pointer_execute', "
+							echo $this->apply_filters( 'optin_pointer_execute', "
 
 							optin.pointer('open');
 
@@ -3591,12 +3595,12 @@
 								.parents('.wp-pointer.wp-pointer-top')
 								.addClass('fs-opt-in-pointer');
 
-							", 'element', 'optin') ?>
+							", 'element', 'optin' ) ?>
 						}
 					}
 				});
 				// ]]></script>
-		<?php
+			<?php
 		}
 
 		/**
@@ -3752,7 +3756,7 @@
 				$this->schedule_install_sync();
 
 				$is_premium_version_activation = ( current_filter() !== ( 'activate_' . $this->_free_plugin_basename ) );
-				
+
 				// 1. If running in the activation of the FREE module, get the basename of the PREMIUM.
 				// 2. If running in the activation of the PREMIUM module, get the basename of the FREE.
 				$other_version_basename = $is_premium_version_activation ?
@@ -3763,14 +3767,14 @@
 				 * If the other module version is activate, deactivate it.
 				 *
 				 * @author Leo Fajardo (@leorw)
-				 * @since 1.2.2
+				 * @since  1.2.2
 				 */
 				if ( is_plugin_active( $other_version_basename ) ) {
 					deactivate_plugins( $other_version_basename );
 				}
 
 				// If activating the premium module version, add an admin noitce to congratulate for an upgrade completion.
-				if ( $is_premium_version_activation ) {					
+				if ( $is_premium_version_activation ) {
 					$this->_admin_notices->add(
 						sprintf( __fs( 'successful-version-upgrade-message', $this->_slug ), sprintf( '<b>%s</b>', $this->_plugin->title ) ),
 						__fs( 'woot', $this->_slug ) . '!'
@@ -4384,8 +4388,6 @@
 				if ( ! $this->is_api_error( $site ) ) {
 					// I successfully sent install update, clear scheduled sync if exist.
 					$this->clear_install_sync_cron();
-				} else {
-					$this->_logger->api_error( $site );
 				}
 
 				return $site;
@@ -4414,8 +4416,6 @@
 			}
 
 			if ( $this->is_api_error( $site ) ) {
-				$this->_logger->api_error( $site );
-
 				// Failed to sync, don't update locally.
 				return;
 			}
@@ -4481,13 +4481,9 @@
 
 			$result = $this->get_api_site_scope()->call( 'events.json', 'post', $event );
 
-			if ( $this->is_api_error( $result ) ) {
-				$this->_logger->api_error( $result );
-
-				return false;
-			}
-
-			return $result;
+			return $this->is_api_error( $result ) ?
+				false :
+				$result;
 		}
 
 		/**
@@ -4622,7 +4618,7 @@
 		 */
 		private static function require_plugin_essentials() {
 			if ( ! function_exists( 'get_plugins' ) ) {
-				self::$_static_logger->log('Including wp-admin/includes/plugin.php...');
+				self::$_static_logger->log( 'Including wp-admin/includes/plugin.php...' );
 
 				require_once( ABSPATH . 'wp-admin/includes/plugin.php' );
 			}
@@ -4982,7 +4978,7 @@
 		 * @return bool
 		 */
 		function is_tracking_allowed() {
-			return ( is_object($this->_site) && true !== $this->_site->is_disconnected );
+			return ( is_object( $this->_site ) && true !== $this->_site->is_disconnected );
 		}
 
 		/**
@@ -5362,8 +5358,6 @@
 			if ( ! $this->is_api_error( $plans ) ) {
 				$this->_plans = $plans;
 				$this->_store_plans();
-			} else {
-				$this->_logger->api_error( $plans );
 			}
 
 			$this->do_action( 'after_plans_sync', $plans );
@@ -5434,8 +5428,6 @@
 			if ( ! $this->is_api_error( $licenses ) ) {
 				$this->_licenses = $licenses;
 				$this->_store_licenses();
-			} else {
-				$this->_logger->api_error( $licenses );
 			}
 
 			// Update current license.
@@ -5679,7 +5671,7 @@
 			if ( ! $this->is_registered() ) {
 				/**
 				 * @author Vova Feldman(@svovaf)
-				 * @since 1.2.1.5
+				 * @since  1.2.1.5
 				 *
 				 * Allow setting a trial from the SDK without calling the API.
 				 * But, if the user did opt-in, continue using the real data from the API.
@@ -5855,8 +5847,6 @@
 			) ) );
 
 			if ( $this->is_api_error( $result ) ) {
-				$this->_logger->api_error( $result );
-
 				$this->shoot_ajax_failure();
 			}
 
@@ -5891,9 +5881,7 @@
 				$trial_data['plan_id']
 			);
 
-			if ( is_object($next_page) && $this->is_api_error( $next_page ) ) {
-				$this->_logger->api_error( $next_page );
-
+			if ( is_object( $next_page ) && $this->is_api_error( $next_page ) ) {
 				$this->shoot_ajax_failure(
 					isset( $next_page->error ) ?
 						$next_page->error->message :
@@ -6894,8 +6882,6 @@
 			}
 
 			if ( $this->is_api_error( $decoded ) ) {
-				$this->_logger->api_error( $decoded );
-
 				if ( ! empty( $params['license_key'] ) ) {
 					// Pass the fully entered license key to the failure handler.
 					$params['license_key'] = $license_key;
@@ -7238,8 +7224,6 @@
 			);
 
 			if ( $this->is_api_error( $install ) ) {
-				$this->_logger->api_error( $install );
-
 				if ( ! empty( $args['license_key'] ) ) {
 					// Pass full the fully entered license key to the failure handler.
 					$args['license_key'] = $license_key;
@@ -7578,8 +7562,8 @@
 					// to support add-ons checkout but don't add the submenu item.
 					// || (isset( $_GET['page'] ) && $this->_menu->get_slug( 'pricing' ) == $_GET['page']);
 
-					$pricing_cta_slug  = 'upgrade';
-					$pricing_class     = 'upgrade-mode';
+					$pricing_cta_slug = 'upgrade';
+					$pricing_class    = 'upgrade-mode';
 					if ( $show_pricing ) {
 						if ( $this->_admin_notices->has_sticky( 'trial_promotion' ) &&
 						     ! $this->is_paying_or_trial()
@@ -7647,7 +7631,7 @@
 						$item_template,
 						$this->_slug,
 						$item['menu_slug'],
-						!empty($item['class']) ? $item['class'] : '',
+						! empty( $item['class'] ) ? $item['class'] : '',
 						$item['menu_title']
 					);
 
@@ -8480,8 +8464,6 @@
 				}
 
 				$result = $result->plans;
-			} else {
-				$this->_logger->api_error( $result );
 			}
 
 			return $result;
@@ -8594,8 +8576,6 @@
 				require_once WP_FS__DIR_INCLUDES . '/entities/class-fs-billing.php';
 
 				$billing = new FS_Billing( $billing );
-			} else {
-				$this->_logger->api_error( $billing );
 			}
 
 			return $billing;
@@ -8875,8 +8855,6 @@
 			$plan_change = 'none';
 
 			if ( $this->is_api_error( $site ) ) {
-				$this->_logger->api_error( $site );
-
 				// Show API messages only if not background sync or if paying customer.
 				if ( ! $background || $this->is_paying() ) {
 					// Try to ping API to see if not blocked.
@@ -9194,8 +9172,6 @@
 			$license = $api->call( "/licenses/{$premium_license->id}.json", 'put', $api_request_params );
 
 			if ( $this->is_api_error( $license ) ) {
-				$this->_logger->api_error( $license );
-
 				if ( ! $background ) {
 					$this->_admin_notices->add( sprintf(
 						'%s %s',
@@ -9222,8 +9198,6 @@
 			$site = $this->get_api_site_scope()->get( '/', true );
 			if ( ! $this->is_api_error( $site ) ) {
 				$this->_site = new FS_Site( $site );
-			} else {
-				$this->_logger->api_error( $site );
 			}
 			$this->_update_site_license( $premium_license );
 			$this->_enrich_site_plan( false );
@@ -9322,7 +9296,7 @@
 
 			$plan_downgraded = false;
 			$plan            = false;
-			if ( ! $this->is_api_error($site) ) {
+			if ( ! $this->is_api_error( $site ) ) {
 				$prev_plan_id = $this->_site->plan->id;
 
 				// Update new site plan id.
@@ -9336,7 +9310,7 @@
 				                   ( is_object( $subscription ) && ! isset( $subscription->error ) && ! $subscription->is_active() );
 			} else {
 				// handle different error cases.
-				$this->_logger->api_error( $site );
+
 			}
 
 			if ( $plan_downgraded ) {
@@ -9446,8 +9420,6 @@
 					'error'
 				);
 
-				$this->_logger->api_error( $plan );
-
 				return false;
 			}
 
@@ -9503,7 +9475,7 @@
 				$trial_cancelled = ( $prev_trial_ends != $site->trial_ends );
 			} else {
 				// handle different error cases.
-				$this->_logger->api_error( $site );
+
 			}
 
 			if ( $trial_cancelled ) {
@@ -9801,10 +9773,7 @@
 			$result = $api->get( '/addons.json?enriched=true', $flush );
 
 			$addons = array();
-
-			if ( $this->is_api_error( $result ) ) {
-				$this->_logger->api_error( $result );
-			} else {
+			if ( ! $this->is_api_error( $result ) ) {
 				for ( $i = 0, $len = count( $result->plugins ); $i < $len; $i ++ ) {
 					$addons[ $i ] = new FS_Plugin( $result->plugins[ $i ] );
 				}
@@ -9860,8 +9829,7 @@
 		 * @return bool Is API result contains an error.
 		 */
 		private function is_api_error( $result ) {
-			return ( is_object( $result ) && isset( $result->error ) ) ||
-			       is_string( $result );
+			return FS_Api::is_api_error( $result );
 		}
 
 		/**
@@ -9887,13 +9855,7 @@
 				),
 			) );
 
-			if ( $this->is_api_error( $result ) ) {
-				$this->_logger->api_error( $result );
-
-				return false;
-			}
-
-			return true;
+			return ! $this->is_api_error( $result );
 		}
 
 		/**
@@ -10304,7 +10266,7 @@
 			if ( $this->has_paid_plan() &&
 			     ! $this->has_any_license() &&
 			     ! $this->is_sync_executed() &&
-				 $this->is_tracking_allowed()
+			     $this->is_tracking_allowed()
 			) {
 				/**
 				 * If no licenses found and no sync job was executed during the last 24 hours,
@@ -10590,8 +10552,7 @@
 		 * @author Vova Feldman (@svovaf)
 		 * @since  1.2.1.5
 		 */
-		function _fix_start_trial_menu_item_url()
-		{
+		function _fix_start_trial_menu_item_url() {
 			$template_args = array( 'slug' => $this->_slug );
 			fs_require_template( 'add-trial-to-pricing.php', $template_args );
 		}
@@ -10617,7 +10578,7 @@
 			if ( $this->_admin_notices->has_sticky( 'trial_promotion' ) ) {
 				add_action( 'admin_footer', array( &$this, '_fix_start_trial_menu_item_url' ) );
 
-				$this->_menu->add_counter_to_menu_item(1, 'fs-trial');
+				$this->_menu->add_counter_to_menu_item( 1, 'fs-trial' );
 
 				return false;
 			}
@@ -10649,7 +10610,7 @@
 				}
 			}
 
-			if ($this->is_activation_mode() || $this->is_pending_activation()) {
+			if ( $this->is_activation_mode() || $this->is_pending_activation() ) {
 				// If not yet opted-in/skipped, or pending activation, don't show trial.
 				return false;
 			}
