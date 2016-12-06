@@ -462,6 +462,8 @@
 		 * @since  1.0.9
 		 */
 		private function _register_hooks() {
+			$this->_logger->entrance();
+
 			if ( is_admin() ) {
 				$plugin_dir = dirname( $this->_plugin_dir_path ) . '/';
 
@@ -2346,6 +2348,8 @@
 				$this->shoot_ajax_success();
 			}
 
+			$this->_logger->api_error( $result );
+
 			$this->shoot_ajax_failure(
 				__fs( 'unexpected-api-error', $this->_slug ) .
 				( $this->is_api_error( $result ) && isset( $result->error ) ?
@@ -2364,6 +2368,8 @@
 			if ( true === $result ) {
 				$this->shoot_ajax_success();
 			}
+
+			$this->_logger->api_error( $result );
 
 			$this->shoot_ajax_failure(
 				__fs( 'unexpected-api-error', $this->_slug ) .
@@ -2410,6 +2416,8 @@
 			     ! isset( $result->is_disconnected ) ||
 			     ! $result->is_disconnected
 			) {
+				$this->_logger->api_error( $result );
+
 				return $result;
 			}
 
@@ -2458,6 +2466,8 @@
 			     ! isset( $result->is_disconnected ) ||
 			     $result->is_disconnected
 			) {
+				$this->_logger->api_error( $result );
+
 				return $result;
 			}
 
@@ -4374,6 +4384,8 @@
 				if ( ! $this->is_api_error( $site ) ) {
 					// I successfully sent install update, clear scheduled sync if exist.
 					$this->clear_install_sync_cron();
+				} else {
+					$this->_logger->api_error( $site );
 				}
 
 				return $site;
@@ -4402,6 +4414,8 @@
 			}
 
 			if ( $this->is_api_error( $site ) ) {
+				$this->_logger->api_error( $site );
+
 				// Failed to sync, don't update locally.
 				return;
 			}
@@ -4467,9 +4481,13 @@
 
 			$result = $this->get_api_site_scope()->call( 'events.json', 'post', $event );
 
-			return $this->is_api_error( $result ) ?
-				false :
-				$result;
+			if ( $this->is_api_error( $result ) ) {
+				$this->_logger->api_error( $result );
+
+				return false;
+			}
+
+			return $result;
 		}
 
 		/**
@@ -4604,6 +4622,8 @@
 		 */
 		private static function require_plugin_essentials() {
 			if ( ! function_exists( 'get_plugins' ) ) {
+				self::$_static_logger->log('Including wp-admin/includes/plugin.php...');
+
 				require_once( ABSPATH . 'wp-admin/includes/plugin.php' );
 			}
 		}
@@ -5342,6 +5362,8 @@
 			if ( ! $this->is_api_error( $plans ) ) {
 				$this->_plans = $plans;
 				$this->_store_plans();
+			} else {
+				$this->_logger->api_error( $plans );
 			}
 
 			$this->do_action( 'after_plans_sync', $plans );
@@ -5412,6 +5434,8 @@
 			if ( ! $this->is_api_error( $licenses ) ) {
 				$this->_licenses = $licenses;
 				$this->_store_licenses();
+			} else {
+				$this->_logger->api_error( $licenses );
 			}
 
 			// Update current license.
@@ -5831,6 +5855,8 @@
 			) ) );
 
 			if ( $this->is_api_error( $result ) ) {
+				$this->_logger->api_error( $result );
+
 				$this->shoot_ajax_failure();
 			}
 
@@ -5866,6 +5892,8 @@
 			);
 
 			if ( is_object($next_page) && $this->is_api_error( $next_page ) ) {
+				$this->_logger->api_error( $next_page );
+
 				$this->shoot_ajax_failure(
 					isset( $next_page->error ) ?
 						$next_page->error->message :
@@ -6866,6 +6894,8 @@
 			}
 
 			if ( $this->is_api_error( $decoded ) ) {
+				$this->_logger->api_error( $decoded );
+
 				if ( ! empty( $params['license_key'] ) ) {
 					// Pass the fully entered license key to the failure handler.
 					$params['license_key'] = $license_key;
@@ -7208,6 +7238,8 @@
 			);
 
 			if ( $this->is_api_error( $install ) ) {
+				$this->_logger->api_error( $install );
+
 				if ( ! empty( $args['license_key'] ) ) {
 					// Pass full the fully entered license key to the failure handler.
 					$args['license_key'] = $license_key;
@@ -8083,6 +8115,12 @@
 		private function _store_site( $store = true ) {
 			$this->_logger->entrance();
 
+			if ( empty( $this->_site->id ) ) {
+				$this->_logger->error( "Empty install ID, can't store site." );
+
+				return;
+			}
+
 			$encrypted_site       = clone $this->_site;
 			$encrypted_site->plan = $this->_encrypt_entity( $this->_site->plan );
 
@@ -8153,6 +8191,12 @@
 		 */
 		private function _store_user( $store = true ) {
 			$this->_logger->entrance();
+
+			if ( empty( $this->_user->id ) ) {
+				$this->_logger->error( "Empty user ID, can't store user." );
+
+				return;
+			}
 
 			$users                     = self::get_all_users();
 			$users[ $this->_user->id ] = $this->_user;
@@ -8436,6 +8480,8 @@
 				}
 
 				$result = $result->plans;
+			} else {
+				$this->_logger->api_error( $result );
 			}
 
 			return $result;
@@ -8548,6 +8594,8 @@
 				require_once WP_FS__DIR_INCLUDES . '/entities/class-fs-billing.php';
 
 				$billing = new FS_Billing( $billing );
+			} else {
+				$this->_logger->api_error( $billing );
 			}
 
 			return $billing;
@@ -8827,6 +8875,8 @@
 			$plan_change = 'none';
 
 			if ( $this->is_api_error( $site ) ) {
+				$this->_logger->api_error( $site );
+
 				// Show API messages only if not background sync or if paying customer.
 				if ( ! $background || $this->is_paying() ) {
 					// Try to ping API to see if not blocked.
@@ -9144,18 +9194,20 @@
 			$license = $api->call( "/licenses/{$premium_license->id}.json", 'put', $api_request_params );
 
 			if ( $this->is_api_error( $license ) ) {
+				$this->_logger->api_error( $license );
+
 				if ( ! $background ) {
 					$this->_admin_notices->add( sprintf(
-							'%s %s',
-							__fs( 'license-activation-failed-message', $this->_slug ),
-							( is_object( $license ) && isset( $license->error ) ?
-								$license->error->message :
-								sprintf( '%s<br><code>%s</code>',
-									__fs( 'server-error-message', $this->_slug ),
-									var_export( $license, true )
-								)
+						'%s %s',
+						__fs( 'license-activation-failed-message', $this->_slug ),
+						( is_object( $license ) && isset( $license->error ) ?
+							$license->error->message :
+							sprintf( '%s<br><code>%s</code>',
+								__fs( 'server-error-message', $this->_slug ),
+								var_export( $license, true )
 							)
-						),
+						)
+					),
 						__fs( 'hmm', $this->_slug ) . '...',
 						'error'
 					);
@@ -9170,6 +9222,8 @@
 			$site = $this->get_api_site_scope()->get( '/', true );
 			if ( ! $this->is_api_error( $site ) ) {
 				$this->_site = new FS_Site( $site );
+			} else {
+				$this->_logger->api_error( $site );
 			}
 			$this->_update_site_license( $premium_license );
 			$this->_enrich_site_plan( false );
@@ -9268,7 +9322,7 @@
 
 			$plan_downgraded = false;
 			$plan            = false;
-			if ( ! isset( $site->error ) ) {
+			if ( ! $this->is_api_error($site) ) {
 				$prev_plan_id = $this->_site->plan->id;
 
 				// Update new site plan id.
@@ -9282,7 +9336,7 @@
 				                   ( is_object( $subscription ) && ! isset( $subscription->error ) && ! $subscription->is_active() );
 			} else {
 				// handle different error cases.
-
+				$this->_logger->api_error( $site );
 			}
 
 			if ( $plan_downgraded ) {
@@ -9392,6 +9446,8 @@
 					'error'
 				);
 
+				$this->_logger->api_error( $plan );
+
 				return false;
 			}
 
@@ -9447,7 +9503,7 @@
 				$trial_cancelled = ( $prev_trial_ends != $site->trial_ends );
 			} else {
 				// handle different error cases.
-
+				$this->_logger->api_error( $site );
 			}
 
 			if ( $trial_cancelled ) {
@@ -9745,7 +9801,10 @@
 			$result = $api->get( '/addons.json?enriched=true', $flush );
 
 			$addons = array();
-			if ( ! $this->is_api_error( $result ) ) {
+
+			if ( $this->is_api_error( $result ) ) {
+				$this->_logger->api_error( $result );
+			} else {
 				for ( $i = 0, $len = count( $result->plugins ); $i < $len; $i ++ ) {
 					$addons[ $i ] = new FS_Plugin( $result->plugins[ $i ] );
 				}
@@ -9828,7 +9887,13 @@
 				),
 			) );
 
-			return ! $this->is_api_error( $result );
+			if ( $this->is_api_error( $result ) ) {
+				$this->_logger->api_error( $result );
+
+				return false;
+			}
+
+			return true;
 		}
 
 		/**
@@ -10552,7 +10617,7 @@
 			if ( $this->_admin_notices->has_sticky( 'trial_promotion' ) ) {
 				add_action( 'admin_footer', array( &$this, '_fix_start_trial_menu_item_url' ) );
 
-				$this->_menu->add_counter_to_menu_item();
+				$this->_menu->add_counter_to_menu_item(1, 'fs-trial');
 
 				return false;
 			}
