@@ -312,11 +312,8 @@
 				CURLOPT_RETURNTRANSFER => true,
 				CURLOPT_TIMEOUT        => 60,
 				CURLOPT_USERAGENT      => FS_SDK__USER_AGENT,
+				CURLOPT_HTTPHEADER     => array(),
 			);
-
-			if ( ! isset( $opts[ CURLOPT_HTTPHEADER ] ) || ! is_array( $opts[ CURLOPT_HTTPHEADER ] ) ) {
-				$opts[ CURLOPT_HTTPHEADER ] = array();
-			}
 
 			if ( 'POST' === $pMethod || 'PUT' === $pMethod ) {
 				if ( is_array( $pParams ) && 0 < count( $pParams ) ) {
@@ -328,7 +325,7 @@
 				$opts[ CURLOPT_RETURNTRANSFER ] = true;
 			}
 
-			$request_url = Freemius_Api::GetUrl( $pCanonizedPath, $pIsSandbox );
+			$request_url = self::GetUrl( $pCanonizedPath, $pIsSandbox );
 
 			$opts[ CURLOPT_URL ]           = $request_url;
 			$opts[ CURLOPT_CUSTOMREQUEST ] = $pMethod;

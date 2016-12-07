@@ -3,7 +3,7 @@
 	 * Plugin Name: Rating-Widget: Star Review System
 	 * Plugin URI:  http://rating-widget.com/wordpress-plugin/
 	 * Description: Create and manage Rating-Widget ratings in WordPress.
-	 * Version:     2.8.3
+	 * Version:     2.8.4
 	 * Author:      Rating-Widget
 	 * Author URI:  http://rating-widget.com/wordpress-plugin/
 	 * License:     GPLv2
@@ -2069,7 +2069,7 @@
 					),
 					WP_RW__IS_ACCUMULATED_USER_RATING                  => true,
 					WP_RW__IDENTIFY_BY                                 => 'laccount',
-					WP_RW__FLASH_DEPENDENCY                            => true,
+					WP_RW__FLASH_DEPENDENCY                            => false,
 					WP_RW__SHOW_ON_MOBILE                              => true,
 					WP_RW__SHOW_ON_ARCHIVE                             => true,
 					WP_RW__SHOW_ON_CATEGORY                            => true,
@@ -3819,7 +3819,7 @@
 							?>
 							<tbody>
 						<tr>
-							<td colspan="6"><?php __erw( 'no-votes' ) ?></td>
+							<td colspan="6"><?php _erw( 'no-votes' ) ?></td>
 						</tr>
 							</tbody><?php
 						} else {
@@ -6027,14 +6027,33 @@
 						}
 
 						$connection = null;
-						if ( ! $connection = mysql_connect( BBDB_HOST, BBDB_USER, BBDB_PASSWORD, true ) ) {
-							return false;
+						if (version_compare('5.3', phpversion(), '<='))
+						{
+							/**
+							 * This code was never tested because I doubt it's used at all in the
+							 * new bbPress versions. The addition is to support PHP 7.0 which
+							 * deprecated mysql in favor of mysqli.
+							 *
+							 * @author Vova Feldman
+							 */
+							if ( ! $connection = mysqli_connect( BBDB_HOST, BBDB_USER, BBDB_PASSWORD, BBDB_NAME ) ) {
+								return false;
+							}
+
+							$results = mysqli_query( $connection, "SELECT * FROM {$bb_table_prefix}posts WHERE topic_id={$item_id} AND post_position=1" );
+							$post    = mysqli_fetch_object( $results );
 						}
-						if ( ! mysql_selectdb( BBDB_NAME, $connection ) ) {
-							return false;
+						else {
+							if ( ! $connection = mysql_connect( BBDB_HOST, BBDB_USER, BBDB_PASSWORD, true ) ) {
+								return false;
+							}
+							if ( ! mysql_selectdb( BBDB_NAME, $connection ) ) {
+								return false;
+							}
+
+							$results = mysql_query( "SELECT * FROM {$bb_table_prefix}posts WHERE topic_id={$item_id} AND post_position=1", $connection );
+							$post    = mysql_fetch_object( $results );
 						}
-						$results = mysql_query( "SELECT * FROM {$bb_table_prefix}posts WHERE topic_id={$item_id} AND post_position=1", $connection );
-						$post    = mysql_fetch_object( $results );
 					}
 
 					if ( ! isset( $post->post_id ) && empty( $post->post_id ) ) {
@@ -6936,7 +6955,7 @@
 							RW_Advanced_Options = {
 								blockFlash: !(<?php
                         $flash = $this->GetOption(WP_RW__FLASH_DEPENDENCY, true);
-                        echo in_array($flash, array('true', 'false')) ? $flash : ((false === $flash) ? 'false' : 'true');
+                        echo in_array($flash, array('true', 'false')) ? $flash : ((true === $flash) ? 'true' : 'false');
                     ?>)
 							};
 

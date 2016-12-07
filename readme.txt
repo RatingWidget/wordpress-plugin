@@ -4,7 +4,7 @@ Donate link: http://rating-widget.com/pricing/wordpress/
 Tags: rate, rating, ratings, vote, votes, voting, star, stars, like, dislike, thumbs, widget, widgets, star rating, thumb rating, rating platform, rating system, seo, post rating, comment rating, 5 star, five star, sidebar, comment, comments, post, posts, page, pages, google, admin, administrator, review, reviews, rich-snippets, plugin, plugins, ajax, buddypress, bbpress, social, javascript, js, wordpress, meta, woocommerce, jquery, contest, competition, voting contest, rtmedia
 Requires at least: 3.0
 Tested up to: 4.6
-Stable tag: 2.8.3
+Stable tag: 2.8.4
 License: GPLv2 or later
 
 The most popular Five Star Review System on the web. User-friendly ratings for: posts, pages, comments, WooCommerce, BuddyPress and bbPress forums.
@@ -209,6 +209,11 @@ If you didn't find a solution to your problem yet, check out our [WordPress Know
 The RatingWidget Team
 
 == Change Log ==
+
+= 2.8.4 - 2016-11-12 =
+* Fix: Adjusted bbPress legacy logic to work with mysqli instead of mysql for PHP 7.
+* Fix: Updated Freemius version (bunch of bug fixes).
+* Update: From now Flash cookie voter identification will be disabled by default since browsers like FireFox are starting to stop supporting flash.
 
 = 2.8.3 - 2016-09-13 =
 * Fix: Fixed some logic in license activation.
