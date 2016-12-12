@@ -3,7 +3,7 @@
 
 	if (class_exists('RatingWidgetPlugin') && !class_exists('RW_WooCommerce')) :
 
-		if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) ) ) :
+		if ( is_plugin_active( 'woocommerce/woocommerce.php' ) ) :
 
 			define('WP_RW__WOOCOMMERCE_SLUG', 'woocommerce');
 			define( 'WP_RW__WOOCOMMERCE_PRODUCTS_OPTIONS', 'rw_woocommerce_products_options' );
