@@ -109,6 +109,18 @@
 		private $_is_premium_only;
 
 		/**
+		 * @since 1.2.1.6
+		 * @var bool Hints the SDK if plugin have premium code version at all.
+		 */
+		private $_has_premium_version;
+
+		/**
+		 * @since 1.2.1.6
+		 * @var bool Hints the SDK if plugin should ignore pending mode by simulating a skip.
+		 */
+		private $_ignore_pending_mode;
+
+		/**
 		 * @since 1.0.8
 		 * @var bool Hints the SDK if the plugin has any paid plans.
 		 */
@@ -579,24 +591,28 @@
 		 * @since  1.0.9
 		 */
 		private function _register_account_hooks() {
-			if ( is_admin() ) {
-				// If user is paying or in trial and have the free version installed,
-				// assume that the deactivation is for the upgrade process.
-				if ( ! $this->is_paying_or_trial() || $this->is_premium() ) {
-					$this->add_ajax_action(
-						'submit_uninstall_reason',
-						array( &$this, '_submit_uninstall_reason_action' )
-					);
+			if ( ! is_admin() ) {
+				return;
+			}
 
-					if ( $this->is_plugins_page() ) {
-						add_action( 'admin_footer', array( &$this, '_add_deactivation_feedback_dialog_box' ) );
-					}
-				}
+			/**
+			 * Always show the deactivation feedback form since we added
+			 * automatic free version deactivation upon premium code activation.
+			 *
+			 * @since 1.2.1.6
+			 */
+			$this->add_ajax_action(
+				'submit_uninstall_reason',
+				array( &$this, '_submit_uninstall_reason_action' )
+			);
 
-				if ( ! $this->is_addon() ) {
-					if ( $this->is_registered() ) {
-						$this->add_filter( 'after_code_type_change', array( &$this, '_after_code_type_change' ) );
-					}
+			if ( $this->is_plugins_page() ) {
+				add_action( 'admin_footer', array( &$this, '_add_deactivation_feedback_dialog_box' ) );
+			}
+
+			if ( ! $this->is_addon() ) {
+				if ( $this->is_registered() ) {
+					$this->add_filter( 'after_code_type_change', array( &$this, '_after_code_type_change' ) );
 				}
 			}
 		}
@@ -2290,16 +2306,27 @@
 					}
 				}
 
-				if ( $this->is_premium() ) {
-					new FS_Plugin_Updater( $this );
-				}
-
 //				if ( $this->is_registered() ||
 //				     $this->is_anonymous() ||
 //				     $this->is_pending_activation()
 //				) {
 //					$this->_init_admin();
 //				}
+			}
+
+			/**
+			 * Should be called outside `$this->is_user_in_admin()` scope
+			 * because the updater has some logic that needs to be executed
+			 * during AJAX calls.
+			 *
+			 * Currently we need to hook to the `http_request_host_is_external` filter.
+			 * In the future, there might be additional logic added.
+			 *
+			 * @author Vova Feldman
+			 * @since 1.2.1.6
+			 */
+			if ( $this->is_premium() && $this->has_release_on_freemius() ) {
+				new FS_Plugin_Updater( $this );
 			}
 
 			$this->do_action( 'initiated' );
@@ -2581,10 +2608,12 @@
 			$this->_menu = FS_Admin_Menu_Manager::instance( $this->_slug );
 			$this->_menu->init( $plugin_info['menu'], $this->is_addon() );
 
-			$this->_has_addons       = $this->get_bool_option( $plugin_info, 'has_addons', false );
-			$this->_has_paid_plans   = $this->get_bool_option( $plugin_info, 'has_paid_plans', true );
-			$this->_is_org_compliant = $this->get_bool_option( $plugin_info, 'is_org_compliant', true );
-			$this->_is_premium_only  = $this->get_bool_option( $plugin_info, 'is_premium_only', false );
+			$this->_has_addons          = $this->get_bool_option( $plugin_info, 'has_addons', false );
+			$this->_has_paid_plans      = $this->get_bool_option( $plugin_info, 'has_paid_plans', true );
+			$this->_has_premium_version = $this->get_bool_option( $plugin_info, 'has_premium_version', $this->_has_paid_plans );
+			$this->_ignore_pending_mode = $this->get_bool_option( $plugin_info, 'ignore_pending_mode', false );
+			$this->_is_org_compliant    = $this->get_bool_option( $plugin_info, 'is_org_compliant', true );
+			$this->_is_premium_only     = $this->get_bool_option( $plugin_info, 'is_premium_only', false );
 			if ( $this->_is_premium_only ) {
 				// If premium only plugin, disable anonymous mode.
 				$this->_enable_anonymous = false;
@@ -3157,7 +3186,7 @@
 
 					if ( $this->is_paying() ) {
 						// Check for premium plugin updates.
-						$this->_check_updates( true );
+						$this->check_updates( true );
 					}
 				} else {
 					// Sync install (only if something changed locally).
@@ -5027,7 +5056,7 @@
 				return false;
 			}
 
-			$addons = $this->_sync_addons( $flush );
+			$addons = $this->sync_addons( $flush );
 
 			return ( ! is_array( $addons ) || empty( $addons ) ) ?
 				false :
@@ -5913,7 +5942,7 @@
 			$result = $api->call( '/licenses/resend.json', 'post',
 				array(
 					'email'        => $email_address,
-					'is_localhost' => WP_FS__IS_LOCALHOST
+					'url'          => home_url(),
 				)
 			);
 
@@ -6132,6 +6161,22 @@
 		 */
 		function is_only_premium() {
 			return $this->_is_premium_only;
+		}
+
+		/**
+		 * Check if module has a premium code version.
+		 *
+		 * Serviceware module might be freemium without any
+		 * premium code version, where the paid features
+		 * are all part of the service.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.2.1.6
+		 *
+		 * @return bool
+		 */
+		function has_premium_version() {
+			return $this->_has_premium_version;
 		}
 
 		/**
@@ -6963,25 +7008,27 @@
 				}
 			}
 
-			if ( $this->is_paying_or_trial() && ! $this->is_premium() ) {
-				if ( $this->is_paying() ) {
-					$this->_admin_notices->add_sticky(
-						sprintf(
-							__fs( 'activation-with-plan-x-message', $this->_slug ),
-							$this->_site->plan->title
-						) . $this->get_complete_upgrade_instructions(),
-						'plan_upgraded',
-						__fs( 'yee-haw', $this->_slug ) . '!'
-					);
-				} else {
-					$this->_admin_notices->add_sticky(
-						sprintf(
-							__fs( 'trial-started-message', $this->_slug ),
-							'<i>' . $this->get_plugin_name() . '</i>'
-						) . $this->get_complete_upgrade_instructions( $this->_storage->trial_plan->title ),
-						'trial_started',
-						__fs( 'yee-haw', $this->_slug ) . '!'
-					);
+			if ( $this->is_paying_or_trial() ) {
+				if (! $this->is_premium() || !$this->has_premium_version()) {
+					if ( $this->is_paying() ) {
+						$this->_admin_notices->add_sticky(
+							sprintf(
+								__fs( 'activation-with-plan-x-message', $this->_slug ),
+								$this->_site->plan->title
+							) . $this->get_complete_upgrade_instructions(),
+							'plan_upgraded',
+							__fs( 'yee-haw', $this->_slug ) . '!'
+						);
+					} else {
+						$this->_admin_notices->add_sticky(
+							sprintf(
+								__fs( 'trial-started-message', $this->_slug ),
+								'<i>' . $this->get_plugin_name() . '</i>'
+							) . $this->get_complete_upgrade_instructions( $this->_storage->trial_plan->title ),
+							'trial_started',
+							__fs( 'yee-haw', $this->_slug ) . '!'
+						);
+					}
 				}
 
 				$this->_admin_notices->remove_sticky( array(
@@ -7122,10 +7169,21 @@
 			$license_key = false,
 			$is_pending_trial = false
 		) {
-			// Install must be activated via email since
-			// user with the same email already exist.
-			$this->_storage->is_pending_activation = true;
-			$this->_add_pending_activation_notice( $email, $is_pending_trial );
+			if ( $this->_ignore_pending_mode ) {
+				/**
+				 * If explicitly asked to ignore pending mode, set to anonymous mode
+				 * if require confirmation before finalizing the opt-in.
+				 *
+				 * @author Vova Feldman
+				 * @since 1.2.1.6
+				 */
+				$this->skip_connection();
+			} else {
+				// Install must be activated via email since
+				// user with the same email already exist.
+				$this->_storage->is_pending_activation = true;
+				$this->_add_pending_activation_notice( $email, $is_pending_trial );
+			}
 
 			if ( ! empty( $license_key ) ) {
 				$this->_storage->pending_license_key = $license_key;
@@ -8679,7 +8737,7 @@
 				$plugin_id = $this->_plugin->id;
 			}
 
-			$this->_check_updates( true, $plugin_id, $flush );
+			$this->check_updates( true, $plugin_id, $flush );
 			$updates = $this->get_all_updates();
 
 			return isset( $updates[ $plugin_id ] ) && is_object( $updates[ $plugin_id ] ) ? $updates[ $plugin_id ] : false;
@@ -8829,7 +8887,7 @@
 								sprintf(
 									__fs( 'addon-successfully-upgraded-message', $this->_slug ),
 									$addon->title
-								) . ' ' . $this->_get_latest_download_link(
+								) . ' ' . $this->get_latest_download_link(
 									__fs( 'download-latest-version', $this->_slug ),
 									$addon_id
 								)
@@ -8837,7 +8895,7 @@
 								sprintf(
 									__fs( 'addon-successfully-purchased-message', $this->_slug ),
 									$addon->title
-								) . ' ' . $this->_get_latest_download_link(
+								) . ' ' . $this->get_latest_download_link(
 									__fs( 'download-latest-version', $this->_slug ),
 									$addon_id
 								),
@@ -9026,22 +9084,24 @@
 								$this->_storage->trial_plan :
 								$this->_site->plan;
 
-							$this->_admin_notices->add(
-								sprintf(
-									__fs( 'plan-did-not-change-message', $this->_slug ),
-									'<i><b>' . $plan->title . ( $this->is_trial() ? ' ' . __fs( 'trial', $this->_slug ) : '' ) . '</b></i>'
-								) . ' ' . sprintf(
-									'<a href="%s">%s</a>',
-									$this->contact_url(
-										'bug',
-										sprintf( __fs( 'plan-did-not-change-email-message', $this->_slug ),
-											strtoupper( $plan->name )
-										)
+							if ( $plan->is_free() ) {
+								$this->_admin_notices->add(
+									sprintf(
+										__fs( 'plan-did-not-change-message', $this->_slug ),
+										'<i><b>' . $plan->title . ( $this->is_trial() ? ' ' . __fs( 'trial', $this->_slug ) : '' ) . '</b></i>'
+									) . ' ' . sprintf(
+										'<a href="%s">%s</a>',
+										$this->contact_url(
+											'bug',
+											sprintf( __fs( 'plan-did-not-change-email-message', $this->_slug ),
+												strtoupper( $plan->name )
+											)
+										),
+										__fs( 'contact-us-here', $this->_slug )
 									),
-									__fs( 'contact-us-here', $this->_slug )
-								),
-								__fs( 'hmm', $this->_slug ) . '...'
-							);
+									__fs( 'hmm', $this->_slug ) . '...'
+								);
+							}
 						}
 						break;
 					case 'upgraded':
@@ -9631,10 +9691,10 @@
 		 * @uses   FS_Api
 		 * @uses   wp_redirect()
 		 */
-		private function _download_latest_directly( $plugin_id = false ) {
+		private function download_latest_directly( $plugin_id = false ) {
 			$this->_logger->entrance();
 
-			wp_redirect( $this->_get_latest_download_api_url( $plugin_id ) );
+			wp_redirect( $this->get_latest_download_api_url( $plugin_id ) );
 		}
 
 		/**
@@ -9647,7 +9707,7 @@
 		 *
 		 * @return string
 		 */
-		private function _get_latest_download_api_url( $plugin_id = false ) {
+		private function get_latest_download_api_url( $plugin_id = false ) {
 			$this->_logger->entrance();
 
 			return $this->get_api_site_scope()->get_signed_url(
@@ -9684,7 +9744,7 @@
 		 *
 		 * @return string
 		 */
-		private function _get_latest_download_link( $label, $plugin_id = false ) {
+		private function get_latest_download_link( $label, $plugin_id = false ) {
 			return sprintf(
 				'<a target="_blank" href="%s">%s</a>',
 				$this->_get_latest_download_local_url( $plugin_id ),
@@ -9726,7 +9786,7 @@
 		 * @param bool|number $plugin_id
 		 * @param bool        $flush      Since 1.1.7.3
 		 */
-		private function _check_updates( $background = false, $plugin_id = false, $flush = true ) {
+		private function check_updates( $background = false, $plugin_id = false, $flush = true ) {
 			$this->_logger->entrance();
 
 			// Check if there's a newer version for download.
@@ -9770,7 +9830,7 @@
 		 *
 		 * @uses   FS_Api
 		 */
-		private function _sync_addons( $flush = false ) {
+		private function sync_addons( $flush = false ) {
 			$this->_logger->entrance();
 
 			$api = $this->get_api_site_or_plugin_scope();
@@ -9814,7 +9874,7 @@
 		 *
 		 * @return object
 		 */
-		private function _update_email( $new_email ) {
+		private function update_email( $new_email ) {
 			$this->_logger->entrance();
 
 
@@ -10156,7 +10216,7 @@
 
 				case 'check_updates':
 					check_admin_referer( $action );
-					$this->_check_updates();
+					$this->check_updates();
 
 					return;
 
@@ -10194,7 +10254,7 @@
 					check_admin_referer( 'update_email' );
 
 					$new_email = fs_request_get( 'fs_email_' . $this->_slug, '' );
-					$result    = $this->_update_email( $new_email );
+					$result    = $this->update_email( $new_email );
 
 					if ( isset( $result->error ) ) {
 						switch ( $result->error->code ) {
@@ -10268,7 +10328,7 @@
 					return;
 
 				case 'download_latest':
-					$this->_download_latest_directly( $plugin_id );
+					$this->download_latest_directly( $plugin_id );
 
 					return;
 
@@ -10374,7 +10434,15 @@
 			$this->_logger->entrance();
 
 			$vars = array( 'slug' => $this->_slug );
-			fs_require_once_template( 'connect.php', $vars );
+
+			/**
+			 * Added filter to the template to allow developers wrapping the template
+			 * in custom HTML (e.g. within a wizard).
+			 *
+			 * @author Vova Feldman (@svovaf)
+			 * @since 1.2.1.6
+			 */
+			echo $this->apply_filters( 'templates/connect.php', fs_get_template( 'connect.php', $vars ) );
 		}
 
 		/**
@@ -11130,7 +11198,7 @@
 		 * @return string
 		 */
 		private function get_complete_upgrade_instructions( $plan_title = '' ) {
-			if ( $this->is_premium() ) {
+			if ( ! $this->has_premium_version() || $this->is_premium() ) {
 				return '';
 			}
 
@@ -11146,7 +11214,7 @@
 			return sprintf(
 				' %s: <ol><li>%s.</li>%s<li>%s (<a href="%s" target="_blank">%s</a>).</li></ol>',
 				__fs( 'follow-steps-to-complete-upgrade', $this->_slug ),
-				$this->_get_latest_download_link( sprintf(
+				$this->get_latest_download_link( sprintf(
 					__fs( 'download-latest-x-version', $this->_slug ),
 					$plan_title
 				) ),
