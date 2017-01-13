@@ -7173,16 +7173,16 @@
 				/**
 				 * If explicitly asked to ignore pending mode, set to anonymous mode
 				 * if require confirmation before finalizing the opt-in.
-				 *
+				 * 
 				 * @author Vova Feldman
 				 * @since 1.2.1.6
 				 */
 				$this->skip_connection();
 			} else {
-				// Install must be activated via email since
-				// user with the same email already exist.
-				$this->_storage->is_pending_activation = true;
-				$this->_add_pending_activation_notice( $email, $is_pending_trial );
+			// Install must be activated via email since
+			// user with the same email already exist.
+			$this->_storage->is_pending_activation = true;
+			$this->_add_pending_activation_notice( $email, $is_pending_trial );
 			}
 
 			if ( ! empty( $license_key ) ) {
@@ -9085,23 +9085,23 @@
 								$this->_site->plan;
 
 							if ( $plan->is_free() ) {
-								$this->_admin_notices->add(
-									sprintf(
-										__fs( 'plan-did-not-change-message', $this->_slug ),
-										'<i><b>' . $plan->title . ( $this->is_trial() ? ' ' . __fs( 'trial', $this->_slug ) : '' ) . '</b></i>'
-									) . ' ' . sprintf(
-										'<a href="%s">%s</a>',
-										$this->contact_url(
-											'bug',
-											sprintf( __fs( 'plan-did-not-change-email-message', $this->_slug ),
-												strtoupper( $plan->name )
-											)
-										),
-										__fs( 'contact-us-here', $this->_slug )
+							$this->_admin_notices->add(
+								sprintf(
+									__fs( 'plan-did-not-change-message', $this->_slug ),
+									'<i><b>' . $plan->title . ( $this->is_trial() ? ' ' . __fs( 'trial', $this->_slug ) : '' ) . '</b></i>'
+								) . ' ' . sprintf(
+									'<a href="%s">%s</a>',
+									$this->contact_url(
+										'bug',
+										sprintf( __fs( 'plan-did-not-change-email-message', $this->_slug ),
+											strtoupper( $plan->name )
+										)
 									),
-									__fs( 'hmm', $this->_slug ) . '...'
-								);
-							}
+									__fs( 'contact-us-here', $this->_slug )
+								),
+								__fs( 'hmm', $this->_slug ) . '...'
+							);
+						}
 						}
 						break;
 					case 'upgraded':
@@ -9631,11 +9631,20 @@
 				$is_premium = self::get_instance_by_id( $addon_id )->_can_download_premium();
 			}
 
-			return // If add-on, then append add-on ID.
-				( $is_addon ? "/addons/$addon_id" : '' ) .
-				'/updates/latest.' . $type .
-				// If add-on and not yet activated, try to fetch based on server licensing.
-				( is_bool( $is_premium ) ? '?is_premium=' . json_encode( $is_premium ) : '' );
+			// If add-on, then append add-on ID.
+			$endpoint = ( $is_addon ? "/addons/$addon_id" : '' ) .
+				'/updates/latest.' . $type;
+
+			// If add-on and not yet activated, try to fetch based on server licensing.
+			if ( is_bool( $is_premium ) ) {
+				$endpoint = add_query_arg( 'is_premium', json_encode( $is_premium ), $endpoint );
+			}
+
+			if ( $this->has_secret_key() ) {
+				$endpoint = add_query_arg( 'type', 'all', $endpoint );
+			}
+
+			return $endpoint;
 		}
 
 		/**
