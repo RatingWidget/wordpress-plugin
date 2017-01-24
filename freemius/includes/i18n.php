@@ -307,6 +307,19 @@
 		'sync-data-from-server'                    => __( 'Sync Data From Server', 'freemius' ),
 		'scheduled-crons'                          => __( 'Scheduled Crons', 'freemius' ),
 		'plugins-themes-sync'                      => __( 'Plugins & Themes Sync', 'freemius' ),
+		'licenses'                                 => __( 'Licenses', 'freemius' ),
+		'debug-log'                                => __( 'Debug Log', 'freemius' ),
+		'all'                                      => __( 'All', 'freemius' ),
+		'file'                                     => __( 'File', 'freemius' ),
+		'function'                                 => __( 'Function', 'freemius' ),
+		'process-id'                               => __( 'Process ID', 'freemius' ),
+		'logger'                                   => __( 'Logger', 'freemius' ),
+		'message'                                  => __( 'Message', 'freemius' ),
+		'download'                                 => __( 'Download', 'freemius' ),
+		'filter'                                   => __( 'Filter', 'freemius' ),
+		'type'                                     => __( 'Type', 'freemius' ),
+		'all-types'                                 => __( 'All Types', 'freemius' ),
+		'all-requests'                             => __( 'All Requests', 'freemius' ),
 		#endregion Debug
 
 		#region Expressions
