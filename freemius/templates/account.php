@@ -144,6 +144,8 @@
 	<div class="inside">
 	<table id="fs_account_details" cellspacing="0" class="fs-key-value-table">
 	<?php
+		$hide_user_details = $fs->apply_filters( 'hide_user_details', false );
+
 		$profile   = array();
 		$profile[] = array(
 			'id'    => 'user_name',
@@ -215,11 +217,13 @@
 				);
 
 				if ( is_object( $license ) ) {
-					$profile[] = array(
-						'id'    => 'license_key',
-						'title' => __fs( 'License Key', $slug ),
-						'value' => $license->secret_key,
-					);
+					if ( ! $hide_user_details ) {
+						$profile[] = array(
+							'id'    => 'license_key',
+							'title' => __fs( 'License Key', $slug ),
+							'value' => $license->secret_key,
+						);
+					}
 				}
 			}
 		}

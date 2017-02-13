@@ -1269,6 +1269,8 @@
 
 			$title = sprintf( '%s [v.%s]', __fs( 'freemius-debug' ), WP_FS__SDK_VERSION );
 
+			$hook = null;
+
 			if ( WP_FS__DEV_MODE ) {
 				// Add top-level debug menu item.
 				$hook = add_menu_page(
@@ -1279,18 +1281,22 @@
 					array( 'Freemius', '_debug_page_render' )
 				);
 			} else {
-				// Add hidden debug page.
-				$hook = add_submenu_page(
-					null,
-					$title,
-					$title,
-					'manage_options',
-					'freemius',
-					array( 'Freemius', '_debug_page_render' )
-				);
+				if ( 'freemius' === fs_request_get( 'page' ) ) {
+					// Add hidden debug page.
+					$hook = add_submenu_page(
+						null,
+						$title,
+						$title,
+						'manage_options',
+						'freemius',
+						array( 'Freemius', '_debug_page_render' )
+					);
+				}
 			}
 
-			add_action( "load-$hook", array( 'Freemius', '_debug_page_actions' ) );
+			if ( ! empty( $hook ) ) {
+				add_action( "load-$hook", array( 'Freemius', '_debug_page_actions' ) );
+			}
 		}
 
 		/**
@@ -6382,7 +6388,7 @@
 				}
 			}
 
-			if ( ! $this->_menu->is_top_level() ) {
+			if ( $this->_menu->has_menu_slug() && ! $this->_menu->is_top_level() ) {
 				$parent_slug = $this->_menu->get_parent_slug();
 				$menu_file   = ( false !== strpos( $parent_slug, '.php' ) ) ?
 					$parent_slug :
@@ -6406,8 +6412,18 @@
 					return add_query_arg( $params, admin_url( $this->_menu->get_raw_slug(), 'admin' ) );
 				}
 			} else {
+				/**
+				 * @author Vova Feldman
+				 * @since 1.2.1.6
+				 *
+				 * If module doesn't have a settings page, create one for the opt-in screen.
+				 */
+				$menu_slug = $this->_menu->has_menu_slug() ?
+					$this->_menu->get_slug( $page ) :
+					$this->_slug;
+
 				return add_query_arg( array_merge( $params, array(
-					'page' => $this->_menu->get_slug( $page ),
+					'page' => $menu_slug,
 				) ), admin_url( 'admin.php', 'admin' ) );
 			}
 		}
@@ -7529,7 +7545,17 @@
 
 			$hook = false;
 
-			if ( $this->_menu->is_top_level() ) {
+			if ( ! $this->_menu->has_menu_slug() ) {
+				// Add the opt-in page without a menu item.
+				$hook = add_submenu_page(
+					null,
+					$this->get_plugin_name(),
+					$this->get_plugin_name(),
+					'manage_options',
+					$this->_slug,
+					array( &$this, '_connect_page_render' )
+				);
+			} else if ( $this->_menu->is_top_level() ) {
 				$hook = $this->_menu->override_menu_item( array( &$this, '_connect_page_render' ) );
 
 				if ( false === $hook ) {
@@ -10564,12 +10590,21 @@
 		function _account_page_render() {
 			$this->_logger->entrance();
 
-			$vars = array( 'slug' => $this->_slug );
+			$template = 'account.php';
 			if ( 'billing' === fs_request_get( 'tab' ) ) {
-				fs_require_once_template( 'billing.php', $vars );
-			} else {
-				fs_require_once_template( 'account.php', $vars );
+				$template = 'billing.php';
 			}
+
+			$vars = array( 'slug' => $this->_slug );
+
+			/**
+			 * Added filter to the template to allow developers wrapping the template
+			 * in custom HTML (e.g. within a wizard/tabs).
+			 *
+			 * @author Vova Feldman (@svovaf)
+			 * @since 1.2.1.6
+			 */
+			echo $this->apply_filters( "templates/{$template}", fs_get_template( $template, $vars ) );
 		}
 
 		/**
@@ -10585,7 +10620,7 @@
 
 			/**
 			 * Added filter to the template to allow developers wrapping the template
-			 * in custom HTML (e.g. within a wizard).
+			 * in custom HTML (e.g. within a wizard/tabs).
 			 *
 			 * @author Vova Feldman (@svovaf)
 			 * @since 1.2.1.6
