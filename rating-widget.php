@@ -5634,7 +5634,8 @@
 							/*$schema_root = 'itemscope itemtype="http://schema.org/Product"';
 							$schema_title_prop = 'itemprop="name"';
 							*/
-							if ( false === strpos( $pElementClass, 'product' ) ) {
+                            $is_article_markup = ( false === strpos( $pElementClass, 'product' ) );
+                            if ( $is_article_markup ) {
 								if ( ! $type_wrapper_available ) {
 									$rating_html = '<div itemscope itemtype="http://schema.org/Article">' . $rating_html;
 								}
@@ -5736,7 +5737,7 @@
         <meta itemprop="ratingCount" content="' . $data['votes'] . '" />
     </div>';
 
-							if ( ! $type_wrapper_available ) {
+							if ( $is_article_markup && ! $type_wrapper_available ) {
 								$rating_html .= '</div>';
 							}
 						}
