@@ -8075,7 +8075,7 @@
 		 *
 		 * @return string
 		 */
-		private function get_ajax_action_tag_static( $tag, $slug = '' ) {
+		private static function get_ajax_action_tag_static( $tag, $slug = '' ) {
 			return 'wp_ajax_' . self::get_action_tag_static( $tag, $slug );
 		}
 
