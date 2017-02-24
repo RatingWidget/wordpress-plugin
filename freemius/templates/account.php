@@ -298,7 +298,7 @@
 										<a class="button activate-license-trigger <?php echo $slug ?>" href="#"><?php fs_esc_html_e( 'activate-license', $slug ) ?></a>
 										<?php endif ?>
 										<input type="submit" class="button"
-										       value="<?php echo esc_html( __fs( 'sync-license', $slug ) ) ?>">
+										       value="<?php fs_esc_attr_e( 'sync-license', $slug ) ?>">
 										<input type="hidden" name="fs_action"
 										       value="<?php echo $slug ?>_sync_license">
 										<?php wp_nonce_field( $slug . '_sync_license' ) ?>
@@ -314,7 +314,7 @@
 						<?php if ( $fs->has_premium_version() ) : ?>
 							<?php if ( $fs->is_premium() ) : ?>
 								<label
-									class="fs-tag fs-<?php echo $fs->can_use_premium_code() ? 'success' : 'warn' ?>"><?php echo esc_html( __fs( 'premium-version' ) ) ?></label>
+									class="fs-tag fs-<?php echo $fs->can_use_premium_code() ? 'success' : 'warn' ?>"><?php fs_esc_html_e( 'premium-version', $slug ) ?></label>
 							<?php elseif ( $fs->can_use_premium_code() ) : ?>
 								<label class="fs-tag fs-warn"><?php fs_esc_html_e( 'free-version', $slug ) ?></label>
 							<?php endif ?>
