@@ -1282,21 +1282,21 @@
 				);
 			} else {
 				if ( 'freemius' === fs_request_get( 'page' ) ) {
-					// Add hidden debug page.
-					$hook = add_submenu_page(
-						null,
-						$title,
-						$title,
-						'manage_options',
-						'freemius',
-						array( 'Freemius', '_debug_page_render' )
-					);
-				}
+				// Add hidden debug page.
+				$hook = add_submenu_page(
+					null,
+					$title,
+					$title,
+					'manage_options',
+					'freemius',
+					array( 'Freemius', '_debug_page_render' )
+				);
+			}
 			}
 
 			if ( ! empty( $hook ) ) {
-				add_action( "load-$hook", array( 'Freemius', '_debug_page_actions' ) );
-			}
+			add_action( "load-$hook", array( 'Freemius', '_debug_page_actions' ) );
+		}
 		}
 
 		/**
@@ -3814,7 +3814,7 @@
 				$is_premium_version_activation = ( current_filter() !== ( 'activate_' . $this->_free_plugin_basename ) );
 
 				if ( $is_premium_version_activation ) {
-					$this->reconnect_locally();
+				$this->reconnect_locally();
 				}
 
 				$this->_logger->info('Activating ' . ($is_premium_version_activation ? 'premium' : 'free') . ' plugin version.');
@@ -7136,7 +7136,13 @@
 			$next_page = '';
 
 			if ( is_numeric( $plugin_id ) ) {
-				if ( $plugin_id != $this->_plugin->id ) {
+                /**
+                 * @author Leo Fajardo
+                 * @since  1.2.1.6
+                 *
+                 * Also sync the license after an anonymous user subscribes.
+                 */
+                if ( $this->is_anonymous() || $plugin_id != $this->_plugin->id ) {
 					// Add-on was installed - sync license right after install.
 					$next_page = $this->_get_sync_license_url( $plugin_id );
 				}

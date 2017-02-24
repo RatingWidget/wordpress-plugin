@@ -35,7 +35,7 @@
 	$is_paid_trial          = $fs->is_paid_trial();
 	$show_upgrade           = ( $fs->has_paid_plan() && ! $is_paying && ! $is_paid_trial );
 
-	if ( $show_upgrade ) {
+	if ( $fs->has_paid_plan() ) {
 		$fs->_add_license_activation_dialog_box();
 	}
 ?>
