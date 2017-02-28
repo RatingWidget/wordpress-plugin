@@ -144,7 +144,7 @@
 	<div class="inside">
 	<table id="fs_account_details" cellspacing="0" class="fs-key-value-table">
 	<?php
-		$hide_user_details = $fs->apply_filters( 'hide_user_details', false );
+		$hide_license_key = $fs->apply_filters( 'hide_license_key', false );
 
 		$profile   = array();
 		$profile[] = array(
@@ -217,7 +217,7 @@
 				);
 
 				if ( is_object( $license ) ) {
-					if ( ! $hide_user_details ) {
+					if ( ! $hide_license_key ) {
 						$profile[] = array(
 							'id'    => 'license_key',
 							'title' => __fs( 'License Key', $slug ),
