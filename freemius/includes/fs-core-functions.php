@@ -34,29 +34,29 @@
 
 		function fs_include_template( $path, &$params = null ) {
 			$VARS = &$params;
-			include( fs_get_template_path( $path ) );
+			include fs_get_template_path( $path );
 		}
 
 		function fs_include_once_template( $path, &$params = null ) {
 			$VARS = &$params;
-			include_once( fs_get_template_path( $path ) );
+			include_once fs_get_template_path( $path );
 		}
 
 		function fs_require_template( $path, &$params = null ) {
 			$VARS = &$params;
-			require( fs_get_template_path( $path ) );
+			require fs_get_template_path( $path );
 		}
 
 		function fs_require_once_template( $path, &$params = null ) {
 			$VARS = &$params;
-			require_once( fs_get_template_path( $path ) );
+			require_once fs_get_template_path( $path );
 		}
 
 		function fs_get_template( $path, &$params = null ) {
 			ob_start();
 
 			$VARS = &$params;
-			require( fs_get_template_path( $path ) );
+			require fs_get_template_path( $path );
 
 			return ob_get_clean();
 		}
@@ -528,7 +528,7 @@
 	 * @param string $key
 	 * @param string $slug
 	 */
-	function fs_esc_attr_e($key, $slug) {
+	function fs_esc_attr_echo($key, $slug) {
 		echo esc_attr( __fs( $key, $slug ) );
 	}
 
@@ -552,7 +552,7 @@
 	 * @param string $key
 	 * @param string $slug
 	 */
-	function fs_esc_js_e($key, $slug) {
+	function fs_esc_js_echo($key, $slug) {
 		echo esc_js( __fs( $key, $slug ) );
 	}
 
@@ -563,7 +563,7 @@
 	 * @param string $key
 	 * @param string $slug
 	 */
-	function fs_json_encode_e($key, $slug) {
+	function fs_json_encode_echo($key, $slug) {
 		echo json_encode( __fs( $key, $slug ) );
 	}
 
@@ -587,7 +587,7 @@
 	 * @param string $key
 	 * @param string $slug
 	 */
-	function fs_esc_html_e($key, $slug) {
+	function fs_esc_html_echo($key, $slug) {
 		echo esc_html( __fs( $key, $slug ) );
 	}
 

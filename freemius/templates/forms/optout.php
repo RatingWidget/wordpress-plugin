@@ -25,7 +25,15 @@
 	// @todo Change 'plugin' with module type when migrating with 1.2.2 (themes version).
     $opt_out_message_appreciation     = sprintf( __fs( 'opt-out-message-appreciation', $slug ), 'plugin' );
     $opt_out_message_usage_tracking   = sprintf( __fs( 'opt-out-message-usage-tracking', $slug ), $plugin_title );
-    $opt_out_message_clicking_opt_out = sprintf( __fs( 'opt-out-message-clicking-opt-out', $slug ), $plugin_title, '<a href="http://freemius.com" target="_blank">freemius.com</a>' );
+    $opt_out_message_clicking_opt_out = sprintf(
+    	__fs( 'opt-out-message-clicking-opt-out', $slug ),
+	    $plugin_title,
+	    sprintf(
+		    '<a href="%s" target="_blank">%s</a>',
+		    'https://freemius.com',
+		    'freemius.com'
+	    )
+    );
 
 	$admin_notice_params = array(
 		'id'      => '',
@@ -152,20 +160,20 @@ HTML;
 				},
 				beforeSend: function() {
 					if ( 'opt-in' == action ) {
-						$actionLink.text( <?php fs_json_encode_e( 'opting-in', $slug ) ?> )
+						$actionLink.text( <?php fs_json_encode_echo( 'opting-in', $slug ) ?> )
 					} else {
-						$optOutButton.text( <?php fs_json_encode_e( 'opting-out', $slug ) ?> );
+						$optOutButton.text( <?php fs_json_encode_echo( 'opting-out', $slug ) ?> );
 					}
 				},
 				success: function( resultObj ) {
 					if ( resultObj.success ) {
 						if ( 'allow_tracking' == action ) {
 							action = 'stop_tracking';
-							$actionLink.text( <?php fs_json_encode_e( 'opt-out', $slug ) ?> );
+							$actionLink.text( <?php fs_json_encode_echo( 'opt-out', $slug ) ?> );
 							showOptInAppreciationMessageAndScrollToTop();
 						} else {
 							action = 'allow_tracking';
-							$actionLink.text( <?php fs_json_encode_e( 'opt-in', $slug ) ?> );
+							$actionLink.text( <?php fs_json_encode_echo( 'opt-in', $slug ) ?> );
 							closeModal();
 
 							if ( $adminNotice.length > 0 ) {
