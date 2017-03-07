@@ -3850,7 +3850,7 @@
 					deactivate_plugins( $other_version_basename );
 				}
 
-				// If activating the premium module version, add an admin noitce to congratulate for an upgrade completion.
+				// If activating the premium module version, add an admin notice to congratulate for an upgrade completion.
 				if ( $is_premium_version_activation ) {
 					$this->_admin_notices->add(
 						sprintf( __fs( 'successful-version-upgrade-message', $this->_slug ), sprintf( '<b>%s</b>', $this->_plugin->title ) ),
@@ -10688,7 +10688,15 @@
 			$this->_logger->entrance();
 
 			$vars = array( 'slug' => $this->_slug );
-			fs_require_once_template( 'add-ons.php', $vars );
+
+			/**
+			 * Added filter to the template to allow developers wrapping the template
+			 * in custom HTML (e.g. within a wizard/tabs).
+			 *
+			 * @author Vova Feldman (@svovaf)
+			 * @since  1.2.1.6
+			 */
+			echo $this->apply_filters( 'templates/add-ons.php', fs_get_template( 'add-ons.php', $vars ) );
 		}
 
 		/* Pricing & Upgrade
