@@ -5,6 +5,7 @@ Tags: rate, rating, ratings, vote, votes, voting, star, stars, like, dislike, th
 Requires at least: 3.0
 Tested up to: 4.7
 Stable tag: 2.8.6
+Stable tag: 2.8.7
 License: GPLv2 or later
 
 The most popular Five Star Review System on the web. User-friendly ratings for: posts, pages, comments, WooCommerce, BuddyPress and bbPress forums.
@@ -201,6 +202,12 @@ You can contact us regarding paid customization requests here:
 [http://rating-widget.com/contact/](http://rating-widget.com/contact/?platform=wordpress&subject=customization&utm_medium=link&utm_campaign=free&utm_source=wordpress.org)
 
 == Change Log ==
+
+= 2.8.7 - 2017-04-20 =
+* Optimization: Removed the screenshots from the plugin to lighten the zip size.
+* Readme: Tweaked the FAQ section to show up nicely in the new directory.
+* Readme: Moved the location of the video to show above the fold.
+* Update: Updated version of Freemius with bug fixes and full translation to Japanese.
 
 = 2.8.6 - 2017-03-07 =
 * Fix: Fixed an unclosed div tag related to the Rich Snippets markup.
