@@ -11,6 +11,10 @@ The most popular Five Star Review System on the web. User-friendly ratings for: 
 
 == Description ==
 
+The most popular Five Star Review System on the web. User-friendly ratings for: posts, pages, comments, WooCommerce, BuddyPress and bbPress forums.
+
+[youtube https://www.youtube.com/watch?v=rRGKd_P5Oa4]
+
 #### Ratings for your:
 * Post Ratings
 * Page Ratings
@@ -22,8 +26,6 @@ The most popular Five Star Review System on the web. User-friendly ratings for: 
 * Author Review Ratings
 
 [Test drive RatingWidget Now! (DEMO)](https://addendio.com/try-plugin/?slug=rating-widget "Test drive RatingWidget Now! (DEMO)")
-
-[youtube https://www.youtube.com/watch?v=rRGKd_P5Oa4]
 
 #### Looking for reviews?
 Every review starts with a simple star rating and we all know it! We are excited to announce that we launched our **Reviews Add-on** (pro add-on). With our awesome Reviews Add-on, you can now set up custom rules when to open a modal review box and capture a textual review from your voters. Like all our products, the Reviews Add-on works out of the box and requires zero configuration.
