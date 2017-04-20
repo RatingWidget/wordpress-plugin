@@ -15,7 +15,7 @@
 	 *
 	 * @var string
 	 */
-	$this_sdk_version = '1.2.1.6';
+	$this_sdk_version = '1.2.1.7';
 
 	#region SDK Selection Logic --------------------------------------------------------------------
 
@@ -34,14 +34,56 @@
 	$this_sdk_relative_path = plugin_basename( dirname( __FILE__ ) );
 
 	if ( ! isset( $fs_active_plugins ) ) {
-		// Require SDK essentials.
-		require_once dirname( __FILE__ ) . '/includes/fs-essential-functions.php';
+		if ( ! function_exists( '__fs' ) ) {
+			// Require SDK essentials.
+			require_once dirname( __FILE__ ) . '/includes/fs-essential-functions.php';
+		}
 
 		// Load all Freemius powered active plugins.
 		$fs_active_plugins = get_option( 'fs_active_plugins', new stdClass() );
 
 		if ( ! isset( $fs_active_plugins->plugins ) ) {
 			$fs_active_plugins->plugins = array();
+		}
+	}
+
+	if ( empty( $fs_active_plugins->abspath ) ) {
+		/**
+		 * Store the WP install absolute path reference to identify environment change
+		 * while replicating the storage.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.2.1.7
+		 */
+		$fs_active_plugins->abspath = ABSPATH;
+	} else {
+		if ( ABSPATH !== $fs_active_plugins->abspath ) {
+			/**
+			 * WordPress path has changed, cleanup the SDK references cache.
+			 * This resolves issues triggered when spinning a staging environments
+			 * while replicating the database.
+			 *
+			 * @author Vova Feldman (@svovaf)
+			 * @since  1.2.1.7
+			 */
+			$fs_active_plugins->abspath = ABSPATH;
+			$fs_active_plugins->plugins = array();
+			unset( $fs_active_plugins->newest );
+		} else {
+			/**
+			 * Make sure SDK references are still valid. This resolves
+			 * issues when users hard delete modules via FTP.
+			 *
+			 * @author Vova Feldman (@svovaf)
+			 * @since  1.2.1.7
+			 */
+			foreach ( $fs_active_plugins->plugins as $sdk_path => &$data ) {
+				if ( ! file_exists( WP_PLUGIN_DIR . '/' . $sdk_path ) ) {
+					unset( $fs_active_plugins->plugins[ $sdk_path ] );
+				}
+
+				update_option( 'fs_active_plugins', $fs_active_plugins );
+			}
 		}
 	}
 
@@ -290,7 +332,7 @@
 		}
 
 		/**
-		 * @param array<string,string> $module Plugin or Theme details.
+		 * @param array <string,string> $module Plugin or Theme details.
 		 *
 		 * @return Freemius
 		 * @throws Freemius_Exception

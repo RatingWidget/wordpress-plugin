@@ -527,6 +527,11 @@
 			$this->add_ajax_action( 'update_billing', array( &$this, '_update_billing_ajax_action' ) );
 			$this->add_ajax_action( 'start_trial', array( &$this, '_start_trial_ajax_action' ) );
 
+			$this->add_ajax_action( 'install_premium_version', array(
+				&$this,
+				'_install_premium_version_ajax_action'
+			) );
+
 			$this->add_action( 'after_plans_sync', array( &$this, '_check_for_trial_plans' ) );
 
 			$this->add_action( 'sdk_version_update', array( &$this, '_data_migration' ), WP_FS__DEFAULT_PRIORITY, 2 );
@@ -671,7 +676,8 @@
 			 * Only the original instantiator that calls dynamic_init can modify the module's path.
 			 */
 			// Find caller module.
-			$plugin_file = fs_find_caller_plugin_file();
+			$file_and_type = $this->get_caller_main_file_and_type();
+			$plugin_file   = $file_and_type->path;
 
 			$this->_storage->plugin_main_file = (object) array(
 				'path' => fs_normalize_path( $plugin_file ),
@@ -680,6 +686,86 @@
 			return $plugin_file;
 		}
 
+		/**
+		 * Identifies the caller path.
+		 *
+		 * @todo (Vova) When merging this branch with the theme's one, use the theme's one instead of this one.
+		 *
+		 * @author      Leo Fajardo (@leorw)
+		 * @since       1.2.2
+		 *
+		 * @author      Vova Feldman (@svovaf)
+		 * @since       1.2.2.3 Find the earliest module in the call stack that calls to the SDK. This fix is for cases
+		 *              when add-ons are relying on loading the SDK from the parent module, and also allows themes
+		 *              including the SDK an internal file instead of directly from functions.php.
+		 * @since       1.2.1.7 Knows how to handle cases when an add-on includes the parent module logic.
+		 */
+		private function get_caller_main_file_and_type() {
+			self::require_plugin_essentials();
+
+			$all_plugins       = get_plugins();
+			$all_plugins_paths = array();
+
+			// Get active plugin's main files real full names (might be symlinks).
+			foreach ( $all_plugins as $relative_path => &$data ) {
+				$all_plugins_paths[] = fs_normalize_path( realpath( WP_PLUGIN_DIR . '/' . $relative_path ) );
+			}
+
+			$caller_file_candidate = false;
+			$caller_map            = array();
+			$module_type           = WP_FS__MODULE_TYPE_PLUGIN;
+
+			for ( $i = 1, $bt = debug_backtrace(), $len = count( $bt ); $i < $len; $i ++ ) {
+				if ( empty( $bt[ $i ]['file'] ) ) {
+					continue;
+				}
+
+				if ( $i > 1 && ! empty( $bt[ $i - 1 ]['file'] ) && $bt[ $i ]['file'] === $bt[ $i - 1 ]['file'] ) {
+					// If file same as the prev file in the stack, skip it.
+					continue;
+				}
+
+				if ( ! empty( $bt[ $i ]['function'] ) && in_array( $bt[ $i ]['function'], array(
+						'do_action',
+						'apply_filter',
+						'require_once',
+						'require',
+						'include_once',
+						'include'
+					) )
+				) {
+					// Ignore call stack hooks and files inclusion.
+					continue;
+				}
+
+				$caller_file_path = fs_normalize_path( $bt[ $i ]['file'] );
+				$caller_file_hash = md5( $caller_file_path );
+
+				if ( ! isset( $caller_map[ $caller_file_hash ] ) ) {
+					foreach ( $all_plugins_paths as $plugin_path ) {
+						if ( false !== strpos( $caller_file_path, fs_normalize_path( dirname( $plugin_path ) . '/' ) ) ) {
+							$caller_map[ $caller_file_hash ] = fs_normalize_path( $plugin_path );
+							break;
+						}
+					}
+				}
+
+				if ( isset( $caller_map[ $caller_file_hash ] ) ) {
+					$module_type           = WP_FS__MODULE_TYPE_PLUGIN;
+					$caller_file_candidate = $caller_map[ $caller_file_hash ];
+				}
+			}
+
+			if ( empty( $caller_file_candidate ) ) {
+				// Throw an error to the developer in case of some edge case dev environment.
+				wp_die( __fs( 'failed-finding-main-path' ), __fs( 'error' ), array( 'back_link' => true ) );
+			}
+
+			return (object) array(
+				'module_type' => $module_type,
+				'path'        => $caller_file_candidate
+			);
+		}
 
 		#----------------------------------------------------------------------------------
 		#region Deactivation Feedback Form
@@ -1219,6 +1305,10 @@
 
 			self::add_ajax_action_static( 'get_debug_log', array( 'Freemius', '_get_debug_log' ) );
 
+			self::add_ajax_action_static( 'get_db_option', array( 'Freemius', '_get_db_option' ) );
+
+			self::add_ajax_action_static( 'set_db_option', array( 'Freemius', '_set_db_option' ) );
+
 			add_action( 'plugins_loaded', array( 'Freemius', '_load_textdomain' ), 1 );
 
 			self::$_statics_loaded = true;
@@ -1304,11 +1394,13 @@
 		 * @since  1.1.7.3
 		 */
 		static function _toggle_debug_mode() {
-			if ( fs_request_is_post() && in_array( $_POST['is_on'], array( 0, 1 ) ) ) {
-				update_option( 'fs_debug_mode', $_POST['is_on'] );
+			$is_on = fs_request_get( 'is_on', false, 'post' );
+
+			if ( fs_request_is_post() && in_array( $is_on, array( 0, 1 ) ) ) {
+				update_option( 'fs_debug_mode', $is_on );
 
 				// Turn on/off storage logging.
-				FS_Logger::_set_storage_logging( ( 1 == $_POST['is_on'] ) );
+				FS_Logger::_set_storage_logging( ( 1 == $is_on ) );
 			}
 
 			exit;
@@ -1320,13 +1412,53 @@
 		 */
 		static function _get_debug_log() {
 			$logs = FS_Logger::load_db_logs(
-				! empty( $_POST['filters'] ) ? $_POST['filters'] : false,
+				fs_request_get( 'filters', false, 'post' ),
 				! empty( $_POST['limit'] ) && is_numeric( $_POST['limit'] ) ? $_POST['limit'] : 200,
 				! empty( $_POST['offset'] ) && is_numeric( $_POST['offset'] ) ? $_POST['offset'] : 0
 			);
 
 			self::shoot_ajax_success( $logs );
 		}
+
+		/**
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.2.1.7
+		 */
+		static function _get_db_option() {
+			$option_name = fs_request_get( 'option_name' );
+
+			$value = get_option( $option_name );
+
+			$result = array(
+				'name' => $option_name,
+			);
+
+			if ( false !== $value ) {
+				if ( ! is_string( $value ) ) {
+					$value = json_encode( $value );
+				}
+
+				$result['value'] = $value;
+			}
+
+			self::shoot_ajax_success( $result );
+		}
+
+		/**
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.2.1.7
+		 */
+		static function _set_db_option() {
+			$option_name  = fs_request_get( 'option_name' );
+			$option_value = fs_request_get( 'option_value' );
+
+			if ( ! empty( $option_value ) ) {
+				update_option( $option_name, $option_value );
+			}
+
+			self::shoot_ajax_success();
+		}
+
 
 		/**
 		 * @author Vova Feldman (@svovaf)
@@ -1358,7 +1490,7 @@
 				check_admin_referer( 'download_logs' );
 
 				$download_url = FS_Logger::download_db_logs(
-					! empty( $_POST['filters'] ) ? $_POST['filters'] : false
+					fs_request_get( 'filters', false, 'post' )
 				);
 
 				if ( false === $download_url ) {
@@ -1676,6 +1808,49 @@
 		}
 
 		/**
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.2.1.7
+		 *
+		 * @param string $email
+		 *
+		 * @return bool
+		 */
+		static function is_valid_email( $email ) {
+			if ( false === filter_var( $email, FILTER_VALIDATE_EMAIL ) ) {
+				return false;
+			}
+
+			$parts = explode( '@', $email );
+
+			if ( 2 !== count( $parts ) || empty( $parts[1] ) ) {
+				return false;
+			}
+
+			$blacklist = array(
+				'admin.',
+				'webmaster.',
+				'localhost.',
+				'dev.',
+				'development.',
+				'test.',
+				'stage.',
+				'staging.',
+			);
+
+			// Make sure domain is not one of the blacklisted.
+			foreach ( $blacklist as $invalid ) {
+				if ( 0 === strpos( $parts[1], $invalid ) ) {
+					return false;
+				}
+			}
+
+			// Get the UTF encoded domain name.
+			$domain = idn_to_ascii( $parts[1] ) . '.';
+
+			return ( checkdnsrr( $domain, 'MX' ) || checkdnsrr( $domain, 'A' ) );
+		}
+
+		/**
 		 * Generate API connectivity issue message.
 		 *
 		 * @author Vova Feldman (@svovaf)
@@ -1705,9 +1880,35 @@
 			) {
 				switch ( $api_result->error->code ) {
 					case 'curl_missing':
+						$missing_methods = '';
+						if ( is_array( $api_result->missing_methods ) &&
+						     ! empty( $api_result->missing_methods )
+						) {
+							foreach ( $api_result->missing_methods as $m ) {
+								if ( 'curl_version' === $m ) {
+									continue;
+								}
+
+								if ( ! empty( $missing_methods ) ) {
+									$missing_methods .= ', ';
+								}
+
+								$missing_methods .= sprintf( '<code>%s</code>', $m );
+							}
+
+							if ( ! empty( $missing_methods ) ) {
+								$missing_methods = sprintf(
+									'<br><br><b>%s</b> %s',
+									__fs( 'curl-disabled-methods', $this->_slug ),
+									$missing_methods
+								);
+							}
+						}
+
 						$message = sprintf(
 							__fs( 'x-requires-access-to-api', $this->_slug ) . ' ' .
 							__fs( 'curl-missing-message', $this->_slug ) . ' ' .
+							$missing_methods .
 							' %s',
 							'<b>' . $this->get_plugin_name() . '</b>',
 							sprintf(
@@ -2641,7 +2842,7 @@
 			// Set the secret key after storing the plugin, we don't want to store the key in the storage.
 			$this->_plugin->secret_key = $secret_key;
 
-			if (! isset( $plugin_info['menu'] )) {
+			if ( ! isset( $plugin_info['menu'] ) ) {
 				$plugin_info['menu'] = array();
 
 				if ( ! empty( $this->_storage->sdk_last_version ) &&
@@ -2875,11 +3076,24 @@
 		 * @since  1.0.6
 		 *
 		 * @param string|number $slug_or_id
+		 * @param bool|null     $is_premium Since 1.2.1.7 can check for specified add-on version.
 		 *
 		 * @return bool
 		 */
-		function is_addon_activated( $slug_or_id ) {
-			return self::has_instance( $slug_or_id );
+		function is_addon_activated( $slug_or_id, $is_premium = null ) {
+			$is_activated = self::has_instance( $slug_or_id );
+
+			if ( ! $is_activated ) {
+				return false;
+			}
+
+			if ( is_bool( $is_premium ) ) {
+				// Check if the specified code version is activate.
+				$addon        = $this->get_addon_instance( $slug_or_id );
+				$is_activated = ( $is_premium === $addon->is_premium() );
+			}
+
+			return $is_activated;
 		}
 
 		/**
@@ -3892,7 +4106,10 @@
 				$this->_storage->is_plugin_new_install = empty( $this->_storage->plugin_last_version );
 			}
 
-			if ( ! $this->_anonymous_mode && $this->has_api_connectivity( WP_FS__DEV_MODE ) ) {
+			if ( ! $this->_anonymous_mode &&
+			     $this->has_api_connectivity( WP_FS__DEV_MODE ) &&
+			     ! $this->_isAutoInstall
+			) {
 				// Store hint that the plugin was just activated to enable auto-redirection to settings.
 				add_option( "fs_{$this->_slug}_activated", true );
 			}
@@ -4644,8 +4861,8 @@
 		 *
 		 * @return string
 		 */
-		private function premium_plugin_basename() {
-			return preg_replace( '/\//', '-premium/', $this->_free_plugin_basename, 1 );
+		function premium_plugin_basename() {
+			return "{$this->_slug}-premium/" . basename( $this->_free_plugin_basename );
 		}
 
 		/**
@@ -4757,6 +4974,16 @@
 
 		/**
 		 * @author Vova Feldman (@svovaf)
+		 * @since  1.2.1.7
+		 *
+		 * @return string Plugin slug.
+		 */
+		function get_target_folder_name() {
+			return $this->_slug . ( $this->can_use_premium_code() ? '-premium' : '' );
+		}
+
+		/**
+		 * @author Vova Feldman (@svovaf)
 		 * @since  1.0.1
 		 *
 		 * @return number Plugin ID.
@@ -4864,6 +5091,20 @@
 			$this->_logger->departure( 'Version = ' . $plugin_data['Version'] );
 
 			return $this->apply_filters( 'plugin_version', $plugin_data['Version'] );
+		}
+
+		/**
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.2.1.7
+		 *
+		 * @return string
+		 */
+		function get_plugin_title() {
+			$this->_logger->entrance();
+
+			$title = $this->_plugin->title;
+
+			return $this->apply_filters( 'plugin_title', $title );
 		}
 
 		/**
@@ -5040,7 +5281,13 @@
 		}
 
 		/**
-		 * Check if user is registered.
+		 * Check if user has connected his account (opted-in).
+		 *
+		 * Note:
+		 *      If the user opted-in and opted-out on a later stage,
+		 *      this will still return true. If you want to check if the
+		 *      user is currently opted-in, use:
+		 *          `$fs->is_registered() && $fs->is_tracking_allowed()`
 		 *
 		 * @author Vova Feldman (@svovaf)
 		 * @since  1.0.1
@@ -5683,6 +5930,27 @@
 		}
 
 		/**
+		 * Check if module has only one plan.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.2.1.7
+		 *
+		 * @return bool
+		 */
+		function is_single_plan() {
+			$this->_logger->entrance();
+
+			if ( ! $this->is_registered() ||
+			     ! is_array( $this->_plans ) ||
+			     0 === count( $this->_plans )
+			) {
+				return true;
+			}
+
+			return ( 1 === count( $this->_plans ) );
+		}
+
+		/**
 		 * Check if plan based on trial. If not in trial mode, should return false.
 		 *
 		 * @since  1.0.9
@@ -5863,7 +6131,7 @@
 				exit;
 			}
 
-			$slug      = $_POST['slug'];
+			$slug      = fs_request_get( 'slug', '', 'post' );
 			$fs        = ( ( $slug === $this->_slug ) ? $this : self::instance( $slug ) );
 			$error     = false;
 			$next_page = false;
@@ -5946,6 +6214,8 @@
 		 * @since  1.2.1.5
 		 */
 		function _start_trial_ajax_action() {
+			$this->_logger->entrance();
+
 			check_ajax_referer( $this->get_action_tag( 'start_trial' ), 'security' );
 
 			if ( ! current_user_can( 'activate_plugins' ) ) {
@@ -5982,11 +6252,10 @@
 		 * @since  1.2.0
 		 */
 		function _resend_license_key_ajax_action() {
-			if ( ! isset( $_POST['email'] ) ) {
-				exit;
-			}
+			$this->_logger->entrance();
 
-			$email_address = trim( $_POST['email'] );
+			$email_address = sanitize_email( trim( fs_request_get( 'email', '', 'post' ) ) );
+
 			if ( empty( $email_address ) ) {
 				exit;
 			}
@@ -6453,12 +6722,11 @@
 		 *
 		 * @param bool|number $plugin_id
 		 * @param bool        $add_action_nonce
+		 * @param array       $params
 		 *
 		 * @return string
 		 */
-		function _get_sync_license_url( $plugin_id = false, $add_action_nonce = true ) {
-			$params = array();
-
+		function _get_sync_license_url( $plugin_id = false, $add_action_nonce = true, $params = array() ) {
 			if ( is_numeric( $plugin_id ) ) {
 				$params['plugin_id'] = $plugin_id;
 			}
@@ -7071,10 +7339,16 @@
 		 * @param FS_User $user
 		 * @param FS_Site $site
 		 * @param bool    $redirect
+		 * @param bool    $auto_install Since 1.2.1.7 If `true` and setting up an account with a valid license, will redirect (or return a URL) to the account page with a special parameter to trigger the auto installation processes.
 		 *
 		 * @return string If redirect is `false`, returns the next page the user should be redirected to.
 		 */
-		function setup_account( FS_User $user, FS_Site $site, $redirect = true ) {
+		function setup_account(
+			FS_User $user,
+			FS_Site $site,
+			$redirect = true,
+			$auto_install = false
+		) {
 			$this->_user = $user;
 			$this->_site = $site;
 
@@ -7152,6 +7426,11 @@
 
 			$next_page = '';
 
+			$extra = array();
+			if ( $auto_install ) {
+				$extra['auto_install'] = 'true';
+			}
+
 			if ( is_numeric( $plugin_id ) ) {
 				/**
 				 * @author Leo Fajardo
@@ -7161,7 +7440,7 @@
 				 */
 				if ( $this->is_anonymous() || $plugin_id != $this->_plugin->id ) {
 					// Add-on was installed - sync license right after install.
-					$next_page = $this->_get_sync_license_url( $plugin_id );
+					$next_page = $this->_get_sync_license_url( $plugin_id, true, $extra );
 				}
 			} else {
 				/**
@@ -7175,7 +7454,7 @@
 				// Reload the page with the keys.
 				$next_page = $this->is_anonymous() ?
 					// If user previously skipped, redirect to account page.
-					$this->get_account_url() :
+					$this->get_account_url( false, $extra ) :
 					$this->get_after_activation_url( 'after_connect_url' );
 			}
 
@@ -7209,7 +7488,9 @@
 						fs_request_get( 'user_secret_key' ),
 						fs_request_get( 'install_id' ),
 						fs_request_get( 'install_public_key' ),
-						fs_request_get( 'install_secret_key' )
+						fs_request_get( 'install_secret_key' ),
+						true,
+						fs_request_get_bool( 'auto_install' )
 					);
 				} else if ( fs_request_has( 'pending_activation' ) ) {
 					$this->set_pending_confirmation( fs_request_get( 'user_email' ), true );
@@ -7230,6 +7511,7 @@
 		 * @param string $install_public_key
 		 * @param string $install_secret_key
 		 * @param bool   $redirect
+		 * @param bool   $auto_install Since 1.2.1.7 If `true` and setting up an account with a valid license, will redirect (or return a URL) to the account page with a special parameter to trigger the auto installation processes.
 		 *
 		 * @return string If redirect is `false`, returns the next page the user should be redirected to.
 		 */
@@ -7240,7 +7522,8 @@
 			$install_id,
 			$install_public_key,
 			$install_secret_key,
-			$redirect = true
+			$redirect = true,
+			$auto_install = false
 		) {
 			$user             = new FS_User();
 			$user->id         = $user_id;
@@ -7262,7 +7545,12 @@
 			$site        = new FS_Site( $site_result );
 			$this->_site = $site;
 
-			return $this->setup_account( $this->_user, $this->_site, $redirect );
+			return $this->setup_account(
+				$this->_user,
+				$this->_site,
+				$redirect,
+				$auto_install
+			);
 		}
 
 		/**
@@ -7733,7 +8021,14 @@
 						);
 					}
 
-					$show_pricing = ( $this->has_paid_plan() && $this->_menu->is_submenu_item_visible( 'pricing' ) );
+					$show_pricing = (
+						// Has at least one paid plan.
+						$this->has_paid_plan() &&
+						// Didn't ask to hide the pricing page.
+						$this->_menu->is_submenu_item_visible( 'pricing' ) &&
+						// Don't have a valid active license or has more than one plan.
+						( ! $this->is_paying() || ! $this->is_single_plan() )
+					);
 					// If user don't have paid plans, add pricing page
 					// to support add-ons checkout but don't add the submenu item.
 					// || (isset( $_GET['page'] ) && $this->_menu->get_slug( 'pricing' ) == $_GET['page']);
@@ -7755,7 +8050,7 @@
 
 					// Add upgrade/pricing page.
 					$this->add_submenu_item(
-						__fs( $pricing_cta_slug, $this->_slug ) . '&nbsp;&nbsp;&#x27a4;',
+						__fs( $pricing_cta_slug, $this->_slug ) . '&nbsp;&nbsp;' . ( is_rtl() ? '&#x2190;' : '&#x27a4;' ),
 						array( &$this, '_pricing_page_render' ),
 						$this->get_plugin_name() . ' &ndash; ' . __fs( 'pricing', $this->_slug ),
 						'manage_options',
@@ -10294,6 +10589,14 @@
 		 * @return string
 		 */
 		private function get_activation_url( $params = array() ) {
+			if ( $this->is_addon() ) {
+				/**
+				 * @author Vova Feldman (@svovaf)
+				 * @since  1.2.1.7 Add-on's activation is the parent's module activation.
+				 */
+				return $this->get_parent_instance()->get_activation_url( $params );
+			}
+
 			return $this->apply_filters( 'connect_url', $this->_get_admin_page_url( '', $params ) );
 		}
 
@@ -11353,15 +11656,12 @@
 			}
 
 			if ( ! empty( $deactivate_link ) ) {
-				if ( ! $this->is_paying_or_trial() || $this->is_premium() ) {
-					/*
-					 * This HTML element is used to identify the correct plugin when attaching an event to its Deactivate link.
-					 *
-					 * If user is paying or in trial and have the free version installed,
-					 * assume that the deactivation is for the upgrade process, so this is not needed.
-					 */
-					$deactivate_link .= '<i class="fs-slug" data-slug="' . $this->_slug . '"></i>';
-				}
+				/**
+				 * This HTML element is used to identify the correct plugin when attaching an event to its Deactivate link.
+				 *
+				 * @since 1.2.1.6 Always show the deactivation feedback form since we added automatic free version deactivation upon premium code activation.
+				 */
+				$deactivate_link .= '<i class="fs-slug" data-slug="' . $this->_slug . '"></i>';
 
 				// Append deactivation link.
 				$before_deactivate['deactivate'] = $deactivate_link;
@@ -11490,6 +11790,19 @@
 			return $update;
 		}
 
+		/**
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.2.1.7
+		 *
+		 * @param string $key
+		 *
+		 * @return string
+		 */
+		function get_text($key)
+		{
+			return __fs($key, $this->_slug);
+		}
+
 		#----------------------------------------------------------------------------------
 		#region Versioning
 		#----------------------------------------------------------------------------------
@@ -11537,8 +11850,6 @@
 		 *
 		 * @author Vova Feldman (@svovaf)
 		 * @since  1.0.9
-		 *
-		 * @return bool
 		 */
 		function set_plugin_upgrade_complete() {
 			$this->_storage->plugin_upgrade_mode = false;
@@ -11562,6 +11873,166 @@
 		 */
 		function is_permission_requested( $permission ) {
 			return isset( $this->_permissions[ $permission ] ) && ( true === $this->_permissions[ $permission ] );
+		}
+
+		#endregion
+
+		#----------------------------------------------------------------------------------
+		#region Auto Activation
+		#----------------------------------------------------------------------------------
+
+		/**
+		 * Hints the SDK if running an auto-installation.
+		 *
+		 * @var bool
+		 */
+		private $_isAutoInstall = false;
+
+		/**
+		 * After upgrade callback to install and auto activate a plugin.
+		 * This code will only be executed on explicit request from the user,
+		 * following the practice Jetpack are using with their theme installations.
+		 *
+		 * @link   https://make.wordpress.org/plugins/2017/03/16/clarification-of-guideline-8-executable-code-and-installs/
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.2.1.7
+		 */
+		function _install_premium_version_ajax_action() {
+			$this->_logger->entrance();
+
+			if ( ! $this->is_registered() ) {
+				// Not registered.
+				self::shoot_ajax_failure( array(
+					'message' => $this->get_text('auto-install-error-not-opted-in'),
+					'code'    => 'premium_installed',
+				) );
+			}
+
+			$plugin_id = fs_request_get( 'plugin_id', $this->get_id() );
+
+			if ( ! FS_Plugin::is_valid_id( $plugin_id ) ) {
+				// Invalid ID.
+				self::shoot_ajax_failure( array(
+					'message' => $this->get_text('auto-install-error-invalid-id'),
+					'code'    => 'invalid_module_id',
+				) );
+			}
+
+			if ( $plugin_id == $this->get_id() ) {
+				if ( $this->is_premium() ) {
+					// Already using the premium code version.
+					self::shoot_ajax_failure( array(
+						'message' => $this->get_text('auto-install-error-premium-activated'),
+						'code'    => 'premium_installed',
+					) );
+				}
+				if ( ! $this->can_use_premium_code() ) {
+					// Don't have access to the premium code.
+					self::shoot_ajax_failure( array(
+						'message' => $this->get_text( 'auto-install-error-invalid-license'),
+						'code'    => 'invalid_license',
+					) );
+				}
+				if ( ! $this->has_release_on_freemius() ) {
+					// Plugin is a serviceware, no premium code version.
+					self::shoot_ajax_failure( array(
+						'message' => $this->get_text('auto-install-error-serviceware'),
+						'code'    => 'premium_version_missing',
+					) );
+				}
+			} else {
+				$addon = $this->get_addon( $plugin_id );
+
+				if ( ! is_object( $addon ) ) {
+					// Invalid add-on ID.
+					self::shoot_ajax_failure( array(
+						'message' => $this->get_text('auto-install-error-invalid-id'),
+						'code'    => 'invalid_module_id',
+					) );
+				}
+
+				if ( $this->is_addon_activated( $plugin_id, true ) ) {
+					// Premium add-on version is already activated.
+					self::shoot_ajax_failure( array(
+						'message' => $this->get_text('auto-install-error-premium-addon-activated'),
+						'code'    => 'premium_installed',
+					) );
+				}
+			}
+
+			$this->_isAutoInstall = true;
+
+			// Try to install and activate.
+			$updater = new FS_Plugin_Updater( $this );
+			$result  = $updater->install_and_activate_plugin( $plugin_id );
+
+			if ( is_array($result) && !empty($result['message']) ) {
+				self::shoot_ajax_failure( array(
+					'message' => $result['message'],
+					'code'    => $result['code'],
+				) );
+			}
+
+			self::shoot_ajax_success( $result );
+		}
+
+		/**
+		 * Displays module activation dialog box after a successful upgrade
+		 * where the user explicitly requested to auto download and install
+		 * the premium version.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.2.1.7
+		 */
+		function _add_auto_installation_dialog_box() {
+			$this->_logger->entrance();
+
+			if ( ! $this->is_registered() ) {
+				// Not registered.
+				return;
+			}
+
+			$plugin_id = fs_request_get( 'plugin_id', $this->get_id() );
+
+			if ( ! FS_Plugin::is_valid_id( $plugin_id ) ) {
+				// Invalid module ID.
+				return;
+			}
+
+			if ( $plugin_id == $this->get_id() ) {
+				if ( $this->is_premium() ) {
+					// Already using the premium code version.
+					return;
+				}
+				if ( ! $this->can_use_premium_code() ) {
+					// Don't have access to the premium code.
+					return;
+				}
+				if ( ! $this->has_release_on_freemius() ) {
+					// Plugin is a serviceware, no premium code version.
+					return;
+				}
+			} else {
+				$addon = $this->get_addon( $plugin_id );
+
+				if ( ! is_object( $addon ) ) {
+					// Invalid add-on ID.
+					return;
+				}
+
+				if ( $this->is_addon_activated( $plugin_id, true ) ) {
+					// Premium add-on version is already activated.
+					return;
+				}
+			}
+
+			$vars = array(
+				'id'   => $plugin_id,
+				'slug' => $this->_slug,
+			);
+
+			fs_require_template( 'auto-installation.php', $vars );
 		}
 
 		#endregion
