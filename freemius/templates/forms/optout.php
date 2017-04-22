@@ -12,6 +12,7 @@
 
 	/**
 	 * @var array $VARS
+	 * @var Freemius $fs
 	 */
 	$slug = $VARS['slug'];
 	$fs   = freemius( $slug );
@@ -71,7 +72,7 @@ HTML;
 				+ '		</div>'
 				+ '		<div class="fs-modal-footer">'
 				+ '			<button class="button button-secondary button-opt-out" tabindex="1"><?php echo esc_js($opt_out_button_text) ?></button>'
-				+ '			<button class="button button-primary button-close" tabindex="2"><?php echo esc_js( __fs( 'opt-out-cancel', $slug ) ) ?></button>'
+				+ '			<button class="button button-primary button-close" tabindex="2"><?php fs_esc_js_echo( 'opt-out-cancel', $slug ) ?></button>'
 				+ '		</div>'
 				+ '	</div>'
 				+ '</div>',
@@ -80,7 +81,7 @@ HTML;
 			action               = '<?php echo $action ?>',
 			optOutActionTag      = '<?php echo $fs->get_action_tag( 'stop_tracking' ) ?>',
 			optInActionTag       = '<?php echo $fs->get_action_tag( 'allow_tracking' ) ?>',
-			$actionLink          = $( 'span.opt-in-or-opt-out.<?php echo $VARS['slug'] ?> a' ),
+			$actionLink          = $( 'span.opt-in-or-opt-out.<?php echo $slug ?> a' ),
 			$optOutButton        = $modal.find( '.button-opt-out' ),
 			$optOutErrorMessage  = $modal.find( '.opt-out-error-message' ),
 			pluginSlug           = '<?php echo $slug ?>';
@@ -134,7 +135,7 @@ HTML;
 
 		function resetOptOutButton() {
 			enableOptOutButton();
-			$optOutButton.text( <?php echo json_encode($opt_out_button_text) ?> );
+			$optOutButton.text( <?php echo json_encode( $opt_out_button_text ) ?> );
 		}
 
 		function resetModal() {
@@ -160,7 +161,7 @@ HTML;
 				},
 				beforeSend: function() {
 					if ( 'opt-in' == action ) {
-						$actionLink.text( <?php fs_json_encode_echo( 'opting-in', $slug ) ?> )
+						$actionLink.text( <?php fs_json_encode_echo( 'opting-in', $slug ) ?> );
 					} else {
 						$optOutButton.text( <?php fs_json_encode_echo( 'opting-out', $slug ) ?> );
 					}

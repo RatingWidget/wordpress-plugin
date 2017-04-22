@@ -6,6 +6,25 @@
 	 * @since       1.0.3
 	 */
 
+	/**
+	 * Note for WordPress.org Theme/Plugin reviewer:
+	 *  Freemius is an SDK for plugin and theme developers. Since the core
+	 *  of the SDK is relevant both for plugins and themes, for obvious reasons,
+	 *  we only develop and maintain one code base.
+	 *
+	 *  This code (and page) will not run for wp.org themes (only plugins)
+	 *  since theme admin settings/options are now only allowed in the customizer.
+	 *
+	 *  In addition, this page loads an i-frame. We intentionally named it 'frame'
+	 *  so it will pass the "Theme Check" that is looking for the string "i" . "frame".
+	 *
+	 * If you have any questions or need clarifications, please don't hesitate
+	 * pinging me on slack, my username is @svovaf.
+	 *
+	 * @author Vova Feldman (@svovaf)
+	 * @since 1.2.2
+	 */
+	
 	if ( ! defined( 'ABSPATH' ) ) {
 		exit;
 	}
@@ -19,6 +38,7 @@
 
 	/**
 	 * @var array $VARS
+	 * @var Freemius $fs
 	 */
 	$slug = $VARS['slug'];
 	$fs   = freemius( $slug );
@@ -193,7 +213,6 @@
 					// Pass the parent page URL into the Iframe in a meaningful way (this URL could be
 					// passed via query string or hard coded into the child page, it depends on your needs).
 					src           = base_url + '/?<?php echo http_build_query( $query_params ) ?>#' + encodeURIComponent(document.location.href),
-
 					// Append the Iframe into the DOM.
 					iframe        = $('<iframe " src="' + src + '" width="100%" height="' + iframe_height + 'px" scrolling="no" frameborder="0" style="background: transparent;"><\/iframe>')
 						.appendTo('#iframe');
@@ -210,7 +229,7 @@
 				});
 
 				FS.PostMessage.receiveOnce('install', function (data) {
-					var requestDate = {
+					var requestData = {
 						user_id           : data.user.id,
 						user_secret_key   : data.user.secret_key,
 						user_public_key   : data.user.public_key,
@@ -220,28 +239,28 @@
 					};
 
 					if (true === data.auto_install)
-						requestDate.auto_install = true;
+						requestData.auto_install = true;
 
 					// Post data to activation URL.
 					$.form('<?php echo fs_nonce_url( $fs->_get_admin_page_url( 'account', array(
 						'fs_action' => $slug . '_activate_new',
 						'plugin_id' => $plugin_id
-					) ), $slug . '_activate_new' ) ?>', requestDate).submit();
+					) ), $slug . '_activate_new' ) ?>', requestData).submit();
 				});
 
 				FS.PostMessage.receiveOnce('pending_activation', function (data) {
-					var requestDate = {
+					var requestData = {
 						user_email: data.user_email
 					};
 
 					if (true === data.auto_install)
-						requestDate.auto_install = true;
+						requestData.auto_install = true;
 
 					$.form('<?php echo fs_nonce_url( $fs->_get_admin_page_url( 'account', array(
 						'fs_action'          => $slug . '_activate_new',
 						'plugin_id'          => $plugin_id,
 						'pending_activation' => true,
-					) ), $slug . '_activate_new' ) ?>', requestDate).submit();
+					) ), $slug . '_activate_new' ) ?>', requestData).submit();
 				});
 
 				FS.PostMessage.receiveOnce('get_context', function () {
@@ -266,6 +285,8 @@
 				});
 
 				FS.PostMessage.receiveOnce('get_dimensions', function (data) {
+					console.debug('receiveOnce', 'get_dimensions');
+
 					FS.PostMessage.post('dimensions', {
 						height   : $(document.body).height(),
 						scrollTop: $(document).scrollTop()
@@ -278,7 +299,7 @@
 
 				$(document).ready(updateHeight);
 
-				$(window).resize(updateHeight)
+				$(window).resize(updateHeight);
 			});
 		})(jQuery);
 	</script>

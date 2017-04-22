@@ -11,10 +11,12 @@
 	}
 
 	/**
-	 * @var array $VARS
+	 * @var array    $VARS
+	 * @var Freemius $fs
 	 */
-	$slug                  = $VARS['slug'];
-	$fs                    = freemius( $slug );
+	$slug = $VARS['slug'];
+	$fs   = freemius( $slug );
+
 	$is_pending_activation = $fs->is_pending_activation();
 	$is_premium_only       = $fs->is_only_premium();
 	$has_paid_plans        = $fs->has_paid_plan();
@@ -38,10 +40,10 @@
 
 	$freemius_site_www = 'https://freemius.com';
 
-	$freemius_site_url = $freemius_site_www . '/' . ($fs->has_paid_plan() ?
-		'wordpress/' :
-		// Insights platform information.
-		'wordpress/usage-tracking/');
+	$freemius_site_url = $freemius_site_www . '/' . ( $fs->has_paid_plan() ?
+			'wordpress/' :
+			// Insights platform information.
+			'wordpress/usage-tracking/' );
 
 	$freemius_site_url .= '?' . http_build_query( array(
 			'id'   => $fs->get_id(),
@@ -184,26 +186,26 @@
 		$permissions = array(
 			'profile' => array(
 				'icon-class' => 'dashicons dashicons-admin-users',
-				'label'      => __fs( 'permissions-profile' ),
-				'desc'       => __fs( 'permissions-profile_desc' ),
+				'label'      => $fs->get_text( 'permissions-profile' ),
+				'desc'       => $fs->get_text( 'permissions-profile_desc' ),
 				'priority'   => 5,
 			),
 			'site'    => array(
 				'icon-class' => 'dashicons dashicons-admin-settings',
-				'label'      => __fs( 'permissions-site' ),
-				'desc'       => __fs( 'permissions-site_desc' ),
+				'label'      => $fs->get_text( 'permissions-site' ),
+				'desc'       => $fs->get_text( 'permissions-site_desc' ),
 				'priority'   => 10,
 			),
-			'notices'  => array(
+			'notices' => array(
 				'icon-class' => 'dashicons dashicons-testimonial',
-				'label'      => __fs( 'permissions-admin-notices' ),
-				'desc'       => __fs( 'permissions-newsletter_desc' ),
+				'label'      => $fs->get_text( 'permissions-admin-notices' ),
+				'desc'       => $fs->get_text( 'permissions-newsletter_desc' ),
 				'priority'   => 13,
 			),
 			'events'  => array(
 				'icon-class' => 'dashicons dashicons-admin-plugins',
-				'label'      => __fs( 'permissions-events' ),
-				'desc'       => __fs( 'permissions-events_desc' ),
+				'label'      => $fs->get_text( 'permissions-events' ),
+				'desc'       => $fs->get_text( 'permissions-events_desc' ),
 				'priority'   => 20,
 			),
 //			'plugins_themes' => array(
@@ -218,8 +220,8 @@
 		if ( $fs->is_permission_requested( 'newsletter' ) ) {
 			$permissions['newsletter'] = array(
 				'icon-class' => 'dashicons dashicons-email-alt',
-				'label'      => __fs( 'permissions-newsletter' ),
-				'desc'       => __fs( 'permissions-newsletter_desc' ),
+				'label'      => $fs->get_text( 'permissions-newsletter' ),
+				'desc'       => $fs->get_text( 'permissions-newsletter_desc' ),
 				'priority'   => 15,
 			);
 		}
@@ -233,7 +235,7 @@
 		if ( ! empty( $permissions ) ) : ?>
 			<div class="fs-permissions">
 				<?php if ( $require_license_key ) : ?>
-					<p class="fs-license-sync-disclaimer"><?php printf( __fs( 'license-sync-disclaimer', $slug ), $freemius_link ) ?></p>
+					<p class="fs-license-sync-disclaimer"><?php printf( fs_esc_html( 'license-sync-disclaimer', $slug ), $freemius_link ) ?></p>
 				<?php endif ?>
 				<a class="fs-trigger" href="#" tabindex="1"><?php _efs( 'what-permissions', $slug ) ?></a>
 				<ul><?php
@@ -274,12 +276,12 @@
 </div>
 <script type="text/javascript">
 	(function ($) {
-		var $primaryCta = $('.fs-actions .button.button-primary'),
-		    $form = $('.fs-actions form'),
+		var $primaryCta       = $('.fs-actions .button.button-primary'),
+		    $form             = $('.fs-actions form'),
 		    requireLicenseKey = <?php echo $require_license_key ? 'true' : 'false' ?>,
-		    hasContextUser = <?php echo $activate_with_current_user ? 'true' : 'false' ?>,
+		    hasContextUser    = <?php echo $activate_with_current_user ? 'true' : 'false' ?>,
 		    $licenseSecret,
-		    $licenseKeyInput = $('#fs_license_key');
+		    $licenseKeyInput  = $('#fs_license_key');
 
 		$('.fs-actions .button').on('click', function () {
 			// Set loading mode.
@@ -313,9 +315,9 @@
 						url    : ajaxurl,
 						method : 'POST',
 						data   : {
-							action     : 'fs_activate_license_<?php echo $slug ?>',
-							slug       : '<?php echo $slug ?>',
-							license_key: $licenseKeyInput.val()
+							action     : '<?php echo $fs->get_action_tag( 'activate_license' ) ?>',
+							license_key: $licenseKeyInput.val(),
+							slug       : '<?php echo $slug ?>'
 						},
 						success: function (result) {
 							var resultObj = $.parseJSON(result);
@@ -328,7 +330,7 @@
 
 								// Reset loading mode.
 								$primaryCta.removeClass('fs-loading').css({'cursor': 'auto'});
-								$primaryCta.html(<?php echo json_encode(__fs( $button_label, $slug )) ?>);
+								$primaryCta.html(<?php echo json_encode( __fs( $button_label, $slug ) ) ?>);
 								$primaryCta.prop('disabled', false);
 								$(document.body).css({'cursor': 'auto'});
 							}
@@ -353,7 +355,7 @@
 
 		$primaryCta.on('click', function () {
 			$(this).addClass('fs-loading');
-			$(this).html(<?php echo json_encode(__fs( $is_pending_activation ? 'sending-email' : 'activating' , $slug )) ?> +'...');
+			$(this).html(<?php echo json_encode( __fs( $is_pending_activation ? 'sending-email' : 'activating', $slug ) ) ?> +'...');
 		});
 
 		$('.fs-permissions .fs-trigger').on('click', function () {
@@ -399,9 +401,21 @@
 		 * @author Vova Feldman (@svovaf)
 		 * @since 1.1.9
 		 */
-		var $connectLicenseModeTrigger = $('#fs_connect .fs-freemium-licensing a');
+		var
+			$connectLicenseModeTrigger = $('#fs_connect .fs-freemium-licensing a'),
+			href                       = window.location.href;
+
+		if (href.indexOf('?') > 0) {
+			href += '&';
+		} else {
+			href += '?';
+		}
+
 		if ($connectLicenseModeTrigger.length > 0) {
-			$connectLicenseModeTrigger.attr('href', window.location.href + '&require_license=' + $connectLicenseModeTrigger.attr('data-require-license'))
+			$connectLicenseModeTrigger.attr(
+				'href',
+				href + 'require_license=' + $connectLicenseModeTrigger.attr('data-require-license')
+			);
 		}
 	})(jQuery);
 </script>
