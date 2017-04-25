@@ -343,8 +343,35 @@
 		 *
 		 * @return bool
 		 */
-		private function has_settings_menu() {
+		function has_settings_menu() {
+			/**
+			 * At the moment the wp.org require to show the opt-in in
+			 * the themes page. Therefore, if the theme is .org compliant,
+			 * treat it as if it doesn't have a menu item.
+			 */
+			if ( $this->is_theme() && $this->is_org_repo_compliant() ) {
+				return false;
+			}
+
 			return $this->_menu->has_menu();
+		}
+
+		/**
+		 * Checks whether this a submenu item is visible.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.2.2.6
+		 *
+		 * @param string $slug
+		 *
+		 * @return bool
+		 */
+		function is_submenu_item_visible( $slug ) {
+			if ( ! $this->has_settings_menu() ) {
+				return false;
+			}
+
+			return $this->_menu->is_submenu_item_visible( $slug );
 		}
 
 		/**
@@ -1003,6 +1030,8 @@
 		 * @since  1.1.2
 		 */
 		function _submit_uninstall_reason_action() {
+			$this->_logger->entrance();
+
 			$this->check_ajax_referer( 'activate_license' );
 
 			$reason_id = fs_request_get( 'reason_id' );
@@ -1184,6 +1213,68 @@
 				( ! $this->is_enable_anonymous() ||
 				  ( ! $this->is_anonymous() && ! $this->is_pending_activation() ) )
 			);
+		}
+
+		/**
+		 * Check if current page is the opt-in/pending-activation page.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.2.1.7
+		 *
+		 * @return bool
+		 */
+		function is_activation_page() {
+			if ( $this->_menu->is_main_settings_page() ) {
+				return true;
+			}
+
+			if ( ! $this->is_activation_mode() ) {
+				return false;
+			}
+
+			// Check if current page is matching the activation page.
+			return $this->is_matching_url( $_SERVER['REQUEST_URI'], $this->get_activation_url() );
+		}
+
+		/**
+		 * Check if URL path's are matching and that all querystring
+		 * arguments of the $sub_url exist in the $url with the same values.
+		 *
+		 * WARNING:
+		 *  1. This method doesn't check if the sub/domain are matching.
+		 *  2. Ignore case sensitivity.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.2.1.7
+		 *
+		 * @param string $url
+		 * @param string $sub_url
+		 *
+		 * @return bool
+		 */
+		private function is_matching_url( $url, $sub_url ) {
+			$url     = strtolower( $url );
+			$sub_url = strtolower( $sub_url );
+
+			if ( parse_url( $sub_url, PHP_URL_PATH ) !== parse_url( $url, PHP_URL_PATH ) ) {
+				// Different path - DO NOT OVERRIDE PAGE.
+				return false;
+			}
+
+			$url_params = array();
+			parse_str( parse_url( $url, PHP_URL_QUERY ), $url_params );
+
+			$sub_url_params = array();
+			parse_str( parse_url( $sub_url, PHP_URL_QUERY ), $sub_url_params );
+
+			foreach ( $sub_url_params as $key => $val ) {
+				if ( ! isset( $url_params[ $key ] ) || $val != $url_params[ $key ] ) {
+					// Not matching query string - DO NOT OVERRIDE PAGE.
+					return false;
+				}
+			}
+
+			return true;
 		}
 
 		/**
@@ -2629,6 +2720,8 @@
 		 * @since  1.2.1.5
 		 */
 		function _stop_tracking_callback() {
+			$this->_logger->entrance();
+
 			$this->check_ajax_referer( 'stop_tracking' );
 
 			$result = $this->stop_tracking();
@@ -2652,6 +2745,8 @@
 		 * @since  1.2.1.5
 		 */
 		function _allow_tracking_callback() {
+			$this->_logger->entrance();
+
 			$this->check_ajax_referer( 'allow_tracking' );
 
 			$result = $this->allow_tracking();
@@ -6143,6 +6238,8 @@
 		 * @since  1.1.9
 		 */
 		function _activate_license_ajax_action() {
+			$this->_logger->entrance();
+
 			$this->check_ajax_referer( 'activate_license' );
 
 			$license_key = trim( fs_request_get( 'license_key' ) );
@@ -6206,6 +6303,8 @@
 		 * @since  1.2.1.5
 		 */
 		function _update_billing_ajax_action() {
+			$this->_logger->entrance();
+
 			$this->check_ajax_referer( 'update_billing' );
 
 			if ( ! $this->is_user_admin() ) {
@@ -6328,10 +6427,24 @@
 		 *
 		 * @return bool
 		 */
-		private function is_plugins_page() {
+		function is_plugins_page() {
 			global $pagenow;
 
 			return ( 'plugins.php' === $pagenow );
+		}
+
+		/**
+		 * Helper method to check if user in the themes page.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.2.2.6
+		 *
+		 * @return bool
+		 */
+		function is_themes_page() {
+			global $pagenow;
+
+			return ( 'themes.php' === $pagenow );
 		}
 
 		#----------------------------------------------------------------------------------
@@ -6510,6 +6623,18 @@
 		 */
 		function is_only_premium() {
 			return $this->_is_premium_only;
+		}
+
+		/**
+		 * Checks if the plugin's type is "plugin". The other type is "theme".
+		 *
+		 * @author Leo Fajardo (@leorw)
+		 * @since  1.2.2
+		 *
+		 * @return bool
+		 */
+		function is_plugin() {
+			return true;
 		}
 
 		/**
@@ -6699,13 +6824,34 @@
 				}
 			}
 
-			if ( empty( $page ) && ! $this->has_settings_menu() ) {
-				return add_query_arg(
-					$params,
-					admin_url( 'plugins.php' )
-				);
+			$page_param = $this->_menu->get_slug( $page );
+
+			if ( ! $this->has_settings_menu() ) {
+				if ( ! empty( $page ) ) {
+					// Module doesn't have a setting page, but since the request is for
+					// a specific Freemius page, use the admin.php path.
+					return add_query_arg( array_merge( $params, array(
+						'page' => $page_param,
+					) ), admin_url( 'admin.php', 'admin' ) );
+				} else {
+					if ( $this->is_activation_mode() ) {
+						/**
+						 * @author Vova Feldman
+						 * @since  1.2.1.6
+						 *
+						 * If plugin doesn't have a settings page, create one for the opt-in screen.
+						 */
+						return add_query_arg( array_merge( $params, array(
+							'page' => $this->_slug,
+						) ), admin_url( 'admin.php', 'admin' ) );
+					} else {
+						// Plugin without a settings page.
+						return admin_url( 'plugins.php' );
+					}
+				}
 			}
 
+			// Module has a submenu settings page.
 			if ( ! $this->_menu->is_top_level() ) {
 				$parent_slug = $this->_menu->get_parent_slug();
 				$menu_file   = ( false !== strpos( $parent_slug, '.php' ) ) ?
@@ -6713,37 +6859,32 @@
 					'admin.php';
 
 				return add_query_arg( array_merge( $params, array(
-					'page' => $this->_menu->get_slug( $page ),
+					'page' => $page_param,
 				) ), admin_url( $menu_file, 'admin' ) );
 			}
 
+			// Module has a top level CPT settings page.
 			if ( $this->_menu->is_cpt() ) {
 				if ( empty( $page ) && $this->is_activation_mode() ) {
 					return add_query_arg( array_merge( $params, array(
-						'page' => $this->_menu->get_slug()
+						'page' => $page_param
 					) ), admin_url( 'admin.php', 'admin' ) );
 				} else {
 					if ( ! empty( $page ) ) {
-						$params['page'] = $this->_menu->get_slug( $page );
+						$params['page'] = $page_param;
 					}
 
-					return add_query_arg( $params, admin_url( $this->_menu->get_raw_slug(), 'admin' ) );
+					return add_query_arg(
+						$params,
+						admin_url( $this->_menu->get_raw_slug(), 'admin' )
+					);
 				}
-			} else {
-				/**
-				 * @author Vova Feldman
-				 * @since  1.2.1.6
-				 *
-				 * If module doesn't have a settings page, create one for the opt-in screen.
-				 */
-				$menu_slug = $this->_menu->has_menu_slug() ?
-					$this->_menu->get_slug( $page ) :
-					$this->_slug;
-
-				return add_query_arg( array_merge( $params, array(
-					'page' => $menu_slug,
-				) ), admin_url( 'admin.php', 'admin' ) );
 			}
+
+			// Module has a custom top level settings page.
+			return add_query_arg( array_merge( $params, array(
+				'page' => $page_param,
+			) ), admin_url( 'admin.php', 'admin' ) );
 		}
 
 		/**
@@ -6898,12 +7039,13 @@
 			 * For more details, look at the function `Base64UrlDecode()`
 			 * in `./sdk/FreemiusBase.php`.
 			 *
-			 * @todo Remove this hack once the base64 error is removed from the Theme Check.
+			 * @todo   Remove this hack once the base64 error is removed from the Theme Check.
 			 *
 			 * @author Vova Feldman (@svovaf)
-			 * @since 1.2.2
+			 * @since  1.2.2
 			 */
 			$fn = 'base64' . '_encode';
+
 			return $fn( $str );
 		}
 
@@ -6921,12 +7063,13 @@
 			 * For more details, look at the function `Base64UrlDecode()`
 			 * in `./sdk/FreemiusBase.php`.
 			 *
-			 * @todo Remove this hack once the base64 error is removed from the Theme Check.
+			 * @todo   Remove this hack once the base64 error is removed from the Theme Check.
 			 *
 			 * @author Vova Feldman (@svovaf)
-			 * @since 1.2.2
+			 * @since  1.2.2
 			 */
 			$fn = 'base64' . '_decode';
+
 			return $fn( $str );
 		}
 
@@ -7401,7 +7544,9 @@
 		 * @param FS_User $user
 		 * @param FS_Site $site
 		 * @param bool    $redirect
-		 * @param bool    $auto_install Since 1.2.1.7 If `true` and setting up an account with a valid license, will redirect (or return a URL) to the account page with a special parameter to trigger the auto installation processes.
+		 * @param bool    $auto_install Since 1.2.1.7 If `true` and setting up an account with a valid license, will
+		 *                              redirect (or return a URL) to the account page with a special parameter to
+		 *                              trigger the auto installation processes.
 		 *
 		 * @return string If redirect is `false`, returns the next page the user should be redirected to.
 		 */
@@ -7573,7 +7718,9 @@
 		 * @param string $install_public_key
 		 * @param string $install_secret_key
 		 * @param bool   $redirect
-		 * @param bool   $auto_install Since 1.2.1.7 If `true` and setting up an account with a valid license, will redirect (or return a URL) to the account page with a special parameter to trigger the auto installation processes.
+		 * @param bool   $auto_install Since 1.2.1.7 If `true` and setting up an account with a valid license, will
+		 *                             redirect (or return a URL) to the account page with a special parameter to
+		 *                             trigger the auto installation processes.
 		 *
 		 * @return string If redirect is `false`, returns the next page the user should be redirected to.
 		 */
@@ -7947,27 +8094,8 @@
 				$menus = array( $this->_menu->get_parent_slug() );
 
 				if ( $this->_menu->is_override_exact() ) {
-					// Make sure the current page is matching the activation page.
-					$activation_url = strtolower( $this->get_activation_url() );
-					$request_url    = strtolower( $_SERVER['REQUEST_URI'] );
-
-					if ( parse_url( $activation_url, PHP_URL_PATH ) !== parse_url( $request_url, PHP_URL_PATH ) ) {
-						// Different path - DO NOT OVERRIDE PAGE.
+					if ( ! $this->is_matching_url( $_SERVER['REQUEST_URI'], $this->get_activation_url() ) ) {
 						return;
-					}
-
-					$activation_url_params = array();
-					parse_str( parse_url( $activation_url, PHP_URL_QUERY ), $activation_url_params );
-
-					$request_url_params = array();
-					parse_str( parse_url( $request_url, PHP_URL_QUERY ), $request_url_params );
-
-
-					foreach ( $activation_url_params as $key => $val ) {
-						if ( ! isset( $request_url_params[ $key ] ) || $val != $request_url_params[ $key ] ) {
-							// Not matching query string - DO NOT OVERRIDE PAGE.
-							return;
-						}
 					}
 				}
 
@@ -7985,7 +8113,7 @@
 				}
 			}
 
-			if ( $this->_menu->is_main_settings_page() ) {
+			if ( $this->is_activation_page() ) {
 				// Clean admin page from distracting content.
 				self::_clean_admin_content_section();
 			}
@@ -8056,7 +8184,7 @@
 							'account',
 							array( &$this, '_account_page_load' ),
 							WP_FS__DEFAULT_PRIORITY,
-							$this->_menu->is_submenu_item_visible( 'account' )
+							$this->is_submenu_item_visible( 'account' )
 						);
 					}
 
@@ -8069,7 +8197,7 @@
 						'contact',
 						'Freemius::_clean_admin_content_section',
 						WP_FS__DEFAULT_PRIORITY,
-						$this->_menu->is_submenu_item_visible( 'contact' )
+						$this->is_submenu_item_visible( 'contact' )
 					);
 
 					if ( $this->has_addons() ) {
@@ -8081,7 +8209,7 @@
 							'addons',
 							array( &$this, '_addons_page_load' ),
 							WP_FS__LOWEST_PRIORITY - 1,
-							$this->_menu->is_submenu_item_visible( 'addons' )
+							$this->is_submenu_item_visible( 'addons' )
 						);
 					}
 
@@ -8089,7 +8217,7 @@
 						// Has at least one paid plan.
 						$this->has_paid_plan() &&
 						// Didn't ask to hide the pricing page.
-						$this->_menu->is_submenu_item_visible( 'pricing' ) &&
+						$this->is_submenu_item_visible( 'pricing' ) &&
 						// Don't have a valid active license or has more than one plan.
 						( ! $this->is_paying() || ! $this->is_single_plan() )
 					);
@@ -8281,7 +8409,7 @@
 			}
 
 			if ( ! $this->is_activation_mode() ) {
-				if ( $this->_menu->is_submenu_item_visible( 'support' ) ) {
+				if ( $this->is_submenu_item_visible( 'support' ) ) {
 					$this->add_submenu_link_item(
 						$this->apply_filters( 'support_forum_submenu', $this->get_text( 'support-forum' ) ),
 						$this->apply_filters( 'support_forum_url', 'https://wordpress.org/support/plugin/' . $this->_slug ),
@@ -8945,7 +9073,7 @@
 				$this->_user->last  = $user->last;
 				$this->_user->email = $user->email;
 
-				$is_menu_item_account_visible = $this->_menu->is_submenu_item_visible( 'account' );
+				$is_menu_item_account_visible = $this->is_submenu_item_visible( 'account' );
 
 				if ( $user->is_verified &&
 				     ( ! isset( $this->_user->is_verified ) || false === $this->_user->is_verified )
@@ -11914,8 +12042,7 @@
 		 *
 		 * @return string
 		 */
-		function get_text( $key )
-		{
+		function get_text( $key ) {
 			return fs_text( $key, $this->_slug );
 		}
 
@@ -12022,7 +12149,7 @@
 			if ( ! $this->is_registered() ) {
 				// Not registered.
 				self::shoot_ajax_failure( array(
-					'message' => $this->get_text('auto-install-error-not-opted-in'),
+					'message' => $this->get_text( 'auto-install-error-not-opted-in' ),
 					'code'    => 'premium_installed',
 				) );
 			}
@@ -12032,7 +12159,7 @@
 			if ( ! FS_Plugin::is_valid_id( $plugin_id ) ) {
 				// Invalid ID.
 				self::shoot_ajax_failure( array(
-					'message' => $this->get_text('auto-install-error-invalid-id'),
+					'message' => $this->get_text( 'auto-install-error-invalid-id' ),
 					'code'    => 'invalid_module_id',
 				) );
 			}
@@ -12041,21 +12168,21 @@
 				if ( $this->is_premium() ) {
 					// Already using the premium code version.
 					self::shoot_ajax_failure( array(
-						'message' => $this->get_text('auto-install-error-premium-activated'),
+						'message' => $this->get_text( 'auto-install-error-premium-activated' ),
 						'code'    => 'premium_installed',
 					) );
 				}
 				if ( ! $this->can_use_premium_code() ) {
 					// Don't have access to the premium code.
 					self::shoot_ajax_failure( array(
-						'message' => $this->get_text( 'auto-install-error-invalid-license'),
+						'message' => $this->get_text( 'auto-install-error-invalid-license' ),
 						'code'    => 'invalid_license',
 					) );
 				}
 				if ( ! $this->has_release_on_freemius() ) {
 					// Plugin is a serviceware, no premium code version.
 					self::shoot_ajax_failure( array(
-						'message' => $this->get_text('auto-install-error-serviceware'),
+						'message' => $this->get_text( 'auto-install-error-serviceware' ),
 						'code'    => 'premium_version_missing',
 					) );
 				}
@@ -12065,7 +12192,7 @@
 				if ( ! is_object( $addon ) ) {
 					// Invalid add-on ID.
 					self::shoot_ajax_failure( array(
-						'message' => $this->get_text('auto-install-error-invalid-id'),
+						'message' => $this->get_text( 'auto-install-error-invalid-id' ),
 						'code'    => 'invalid_module_id',
 					) );
 				}
@@ -12073,7 +12200,7 @@
 				if ( $this->is_addon_activated( $plugin_id, true ) ) {
 					// Premium add-on version is already activated.
 					self::shoot_ajax_failure( array(
-						'message' => $this->get_text('auto-install-error-premium-addon-activated'),
+						'message' => $this->get_text( 'auto-install-error-premium-addon-activated' ),
 						'code'    => 'premium_installed',
 					) );
 				}
@@ -12085,7 +12212,7 @@
 			$updater = new FS_Plugin_Updater( $this );
 			$result  = $updater->install_and_activate_plugin( $plugin_id );
 
-			if ( is_array($result) && !empty($result['message']) ) {
+			if ( is_array( $result ) && ! empty( $result['message'] ) ) {
 				self::shoot_ajax_failure( array(
 					'message' => $result['message'],
 					'code'    => $result['code'],
