@@ -52,7 +52,7 @@
 
 			$file = '';
 			$line = '';
-			if ( headers_sent($file, $line) ) {
+			if ( headers_sent( $file, $line ) ) {
 				if ( WP_FS__DEBUG_SDK && class_exists( 'FS_Admin_Notice_Manager' ) ) {
 					$notices = FS_Admin_Notice_Manager::instance( 'global' );
 
@@ -153,7 +153,7 @@
 		 * Retrieve a translated text by key.
 		 *
 		 * @author Vova Feldman (@svovaf)
-		 * @since  1.1.4
+		 * @since  1.2.1.7
 		 *
 		 * @param string $key
 		 * @param string $slug
@@ -162,7 +162,7 @@
 		 *
 		 * @global       $fs_text , $fs_text_overrides
 		 */
-		function __fs( $key, $slug = 'freemius' ) {
+		function fs_text( $key, $slug = 'freemius' ) {
 			global $fs_text,
 			       $fs_module_info_text,
 			       $fs_text_overrides;
@@ -198,18 +198,54 @@
 		}
 
 		/**
-		 * Display a translated text by key.
+		 * Retrieve a translated text by key.
+		 *
+		 * @deprecated Use `fs_text()` instead since methods starting with `__` trigger warnings in Php 7.
+		 *
+		 * @author     Vova Feldman (@svovaf)
+		 * @since      1.1.4
+		 *
+		 * @param string $key
+		 * @param string $slug
+		 *
+		 * @return string
+		 *
+		 * @global       $fs_text , $fs_text_overrides
+		 */
+		function __fs( $key, $slug = 'freemius' ) {
+			return fs_text( $key, $slug );
+		}
+
+		/**
+		 * Output a translated text by key.
 		 *
 		 * @author Vova Feldman (@svovaf)
-		 * @since  1.1.4
+		 * @since  1.2.1.7
+		 *
+		 * @param string $key
+		 * @param string $slug
+		 */
+		function fs_echo( $key, $slug = 'freemius' ) {
+			echo fs_text( $key, $slug );
+		}
+
+		/**
+		 * Output a translated text by key.
+		 *
+		 * @deprecated Use `fs_echo()` instead for consistency with `fs_text()`.
+		 *
+		 * @author     Vova Feldman (@svovaf)
+		 * @since      1.1.4
 		 *
 		 * @param string $key
 		 * @param string $slug
 		 */
 		function _efs( $key, $slug = 'freemius' ) {
-			echo __fs( $key, $slug );
+			fs_echo( $key, $slug );
 		}
+	}
 
+	if ( ! function_exists( 'fs_override_i18n' ) ) {
 		/**
 		 * Override default i18n text phrases.
 		 *
@@ -292,6 +328,10 @@
 
 		$plugin_file = null;
 		for ( $i = 1, $bt = debug_backtrace(), $len = count( $bt ); $i < $len; $i ++ ) {
+			if ( empty( $bt[ $i ]['file'] ) ) {
+				continue;
+			}
+
 			if ( in_array( fs_normalize_path( $bt[ $i ]['file'] ), $all_plugins_paths ) ) {
 				$plugin_file = $bt[ $i ]['file'];
 				break;
@@ -300,7 +340,7 @@
 
 		if ( is_null( $plugin_file ) ) {
 			// Throw an error to the developer in case of some edge case dev environment.
-			wp_die( __fs( 'failed-finding-main-path' ), __fs( 'error' ), array( 'back_link' => true ) );
+			wp_die( fs_text( 'failed-finding-main-path' ), fs_text( 'error' ), array( 'back_link' => true ) );
 		}
 
 		return $plugin_file;
