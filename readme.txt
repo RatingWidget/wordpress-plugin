@@ -202,7 +202,7 @@ You can contact us regarding paid customization requests here:
 
 == Change Log ==
 
-= 2.8.7 - 2017-04-20 =
+= 2.8.7 - 2017-04-28 =
 * Optimization: Removed the screenshots from the plugin to lighten the zip size.
 * Readme: Tweaked the FAQ section to show up nicely in the new directory.
 * Readme: Moved the location of the video to show above the fold.
