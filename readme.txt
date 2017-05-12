@@ -4,8 +4,7 @@ Donate link: http://rating-widget.com/pricing/wordpress/
 Tags: rate, rating, ratings, vote, votes, voting, star, stars, like, dislike, thumbs, widget, widgets, star rating, thumb rating, rating platform, rating system, seo, post rating, comment rating, 5 star, five star, sidebar, comment, comments, post, posts, page, pages, google, admin, administrator, review, reviews, rich-snippets, plugin, plugins, ajax, buddypress, bbpress, social, javascript, js, wordpress, meta, woocommerce, jquery, contest, competition, voting contest, rtmedia
 Requires at least: 3.0
 Tested up to: 4.7
-Stable tag: 2.8.6
-Stable tag: 2.8.7
+Stable tag: 2.8.7.1
 License: GPLv2 or later
 
 The most popular Five Star Review System on the web. User-friendly ratings for: posts, pages, comments, WooCommerce, BuddyPress and bbPress forums.
@@ -203,7 +202,10 @@ You can contact us regarding paid customization requests here:
 
 == Change Log ==
 
-= 2.8.7 - 2017-04-20 =
+= 2.8.7.1 - 2017-05-10 =
+* Fix: Translation method dependency fix.
+
+= 2.8.7 - 2017-04-28 =
 * Optimization: Removed the screenshots from the plugin to lighten the zip size.
 * Readme: Tweaked the FAQ section to show up nicely in the new directory.
 * Readme: Moved the location of the video to show above the fold.
