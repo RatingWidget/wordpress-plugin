@@ -5728,14 +5728,19 @@
 								}
 							}
 
-//						$title = mb_convert_to_utf8(trim($pTitle));
-							$rating_html .= '
-    <div itemprop="aggregateRating" itemscope itemtype="http://schema.org/AggregateRating">
-        <meta itemprop="worstRating" content="0" />
-        <meta itemprop="bestRating" content="5" />
-        <meta itemprop="ratingValue" content="' . $data['rate'] . '" />
-        <meta itemprop="ratingCount" content="' . $data['votes'] . '" />
-    </div>';
+                            if ( ! $is_article_markup &&
+                                defined( 'WOOCOMMERCE_VERSION' ) &&
+                                version_compare( WOOCOMMERCE_VERSION, '3.0', '>=' ) ) {
+                                add_filter( 'woocommerce_structured_data_product', array( &$this, 'enrich_structured_data_product' ), 10, 2 );
+                            } else {
+                                $rating_html .= '
+                                    <div itemprop="aggregateRating" itemscope itemtype="http://schema.org/AggregateRating">
+                                        <meta itemprop="worstRating" content="0" />
+                                        <meta itemprop="bestRating" content="5" />
+                                        <meta itemprop="ratingValue" content="' . $data['rate'] . '" />
+                                        <meta itemprop="ratingCount" content="' . $data['votes'] . '" />
+                                    </div>';
+                            }
 
 							if ( $is_article_markup && ! $type_wrapper_available ) {
 								$rating_html .= '</div>';
@@ -5745,6 +5750,27 @@
 				}
 
 				return $rating_html;
+			}
+
+            /**
+             * @author Leo Fajardo (@leorw)
+             *
+             * @param array      $markup
+             * @param WC_Product $product
+             */
+			function enrich_structured_data_product( $markup, $product ) {
+                $urid = $this->get_rating_id_by_element( $product->id, 'product' );
+                $data = $this->GetRatingDataByRatingID( $urid, 2 );
+
+                $markup['aggregateRating'] = array(
+                    '@type'       => 'AggregateRating',
+                    'worstRating' => 0,
+                    'bestRating'  => 5,
+                    'ratingValue' => $data['rate'],
+                    'ratingCount' => $data['votes'],
+                );
+
+                return $markup;
 			}
 
 			/**
