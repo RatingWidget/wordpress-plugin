@@ -2721,8 +2721,18 @@
 				'api'      => array(
 					'title' => 'API Subdomain',
 					'rows'  => array(
-						'dns' => array( 'DNS_CNAME', var_export( @dns_get_record( $api_domain, DNS_CNAME ), true ) ),
-						'ip'  => array( 'IP', @gethostbyname( $api_domain ) ),
+						'dns' => array(
+							'DNS_CNAME',
+							function_exists( 'dns_get_record' ) ?
+								var_export( dns_get_record( $api_domain, DNS_CNAME ), true ) :
+								'dns_get_record() disabled/blocked'
+						),
+						'ip'  => array(
+							'IP',
+							function_exists( 'gethostbyname' ) ?
+								gethostbyname( $api_domain ) :
+								'gethostbyname() disabled/blocked'
+						),
 					),
 				),
 				'site'     => array(
@@ -6821,7 +6831,7 @@
 		function _add_optout_dialog() {
 			if ( $this->is_theme() ) {
 				$vars = null;
-				fs_require_once_template( '/js/jquery.content-change.php', $params );
+				fs_require_once_template( '/js/jquery.content-change.php', $vars );
 			}
 
 			$vars = array( 'id' => $this->_module_id );
@@ -7530,17 +7540,16 @@
 
 			$page_param = $this->_menu->get_slug( $page );
 
-            if ( empty($page) ) {
-                if ( $this->is_free_wp_org_theme() ||
-                    ( $this->is_theme() && ! $this->has_settings_menu() ) ) {
-                    // Theme without a settings page (or wp.org theme).
+            if ( empty( $page ) &&
+                $this->is_theme() &&
+                // Show the opt-in as an overlay for free wp.org themes or themes without any settings page.
+                ( $this->is_free_wp_org_theme() || ! $this->has_settings_menu() ) ) {
                     $params[ $this->get_unique_affix() . '_show_optin' ] = 'true';
 
                     return add_query_arg(
                         $params,
                         admin_url( 'themes.php' )
                     );
-                }
             }
 
 			if ( ! $this->has_settings_menu() ) {
@@ -13343,7 +13352,7 @@
 		}
 
 		/**
-		 * Check if module's settings page has any tabs.
+		 * Check if module's original settings page has any tabs.
 		 *
 		 * @author Vova Feldman (@svovaf)
 		 * @since  1.2.2.7
@@ -13371,6 +13380,40 @@
 		}
 
 		/**
+		 * Check if page should include tabs.
+		 *
+		 * @author Vova Feldman (@svovaf)
+		 * @since  1.2.2.7
+		 *
+		 * @return bool
+		 */
+		private function should_page_include_tabs()
+		{
+			if ( ! $this->has_settings_menu() ) {
+				// Don't add tabs if no settings at all.
+				return false;
+			}
+
+			if ( ! $this->is_theme() ) {
+				// Only add tabs to themes for now.
+				return false;
+			}
+
+			if ( ! $this->is_theme_settings_page() ) {
+				// Only add tabs if browsing one of the theme's setting pages.
+				return false;
+			}
+
+			if ( $this->is_admin_page( 'pricing' ) && fs_request_get_bool( 'checkout' ) ) {
+				// Don't add tabs on checkout page, we want to reduce distractions
+				// as much as possible.
+				return false;
+			}
+
+			return true;
+		}
+
+		/**
 		 * Add the tabs HTML before the setting's page content and
 		 * enqueue any required stylesheets.
 		 *
@@ -13382,7 +13425,7 @@
 		function _add_tabs_before_content() {
 			$this->_logger->entrance();
 
-			if ( ! $this->is_theme() || ! $this->has_tabs() ) {
+			if ( ! $this->should_page_include_tabs() ) {
 				return false;
 			}
 
@@ -13416,7 +13459,7 @@
 		function _add_tabs_after_content() {
 			$this->_logger->entrance();
 
-			if ( ! $this->is_theme() || ! $this->has_tabs() ) {
+			if ( ! $this->should_page_include_tabs() ) {
 				return false;
 			}
 
@@ -13437,21 +13480,7 @@
 		function _add_freemius_tabs() {
 			$this->_logger->entrance();
 
-			if ( ! $this->has_settings_menu() ) {
-				// Don't add tabs if no settings at all.
-				return;
-			}
-
-			if ( ! $this->is_theme_settings_page() ) {
-				// Only add tabs if browsing one of the theme's setting pages.
-				return;
-			}
-
-			if ( $this->is_admin_page( 'account' ) ) {
-                return;
-            } else if ( $this->is_admin_page( 'pricing' ) && fs_request_get_bool( 'checkout' ) ) {
-				// Don't add tabs on checkout page, we want to reduce distractions
-				// as much as possible.
+			if ( ! $this->should_page_include_tabs() ) {
 				return;
 			}
 
