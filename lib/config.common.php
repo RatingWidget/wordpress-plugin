@@ -10,7 +10,9 @@
 
 	/* Localhost.
 	-----------------------------------------------------------------------------------------*/
-	define( 'WP_RW__LOCALHOST', ( substr( $_SERVER['REMOTE_ADDR'], 0, 4 ) == '127.' || $_SERVER['REMOTE_ADDR'] == '::1' ) );
+	if ( ! defined( 'WP_RW__LOCALHOST' ) ) {
+		define( 'WP_RW__LOCALHOST', ( substr( $_SERVER['REMOTE_ADDR'], 0, 4 ) == '127.' || $_SERVER['REMOTE_ADDR'] == '::1' ) );
+	}
 
 	/* Plugin dir and url
 	-----------------------------------------------------------------------------------------*/
