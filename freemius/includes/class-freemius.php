@@ -2399,7 +2399,7 @@
 									sprintf(
 										$this->get_text( 'squid-sysadmin-desc' ),
 										// We use a filter since the plugin might require additional API connectivity.
-										'<b>' . implode( ', ', $this->apply_filters( 'api_domains', array( 'api.freemius.com' ) ) ) . '</b>',
+										'<b>' . implode( ', ', $this->apply_filters( 'api_domains', array( 'api.freemius.com', 'wp.freemius.com' ) ) ) . '</b>',
 										$this->_module_type
 									)
 								),
@@ -2827,15 +2827,15 @@
 
 			$this->parse_settings( $plugin_info );
 
-			if ( $this->should_stop_execution() ) {
-				return;
-			}
-
             if ( ! self::is_ajax() ) {
                 if ( ! $this->is_addon() || $this->is_only_premium() ) {
                     add_action( 'admin_menu', array( &$this, '_prepare_admin_menu' ), WP_FS__LOWEST_PRIORITY );
                 }
             }
+
+            if ( $this->should_stop_execution() ) {
+				return;
+			}
 
 			if ( ! $this->is_registered() ) {
 				if ( $this->is_anonymous() ) {
