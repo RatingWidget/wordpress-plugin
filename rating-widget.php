@@ -2772,10 +2772,10 @@
 				);
 
 				// Affiliation application page.
-				$submenu[] = array(
-					'menu_title' => __rw( 'affiliation' ),
-					'function'   => 'affiliation_settings_page_render',
-				);
+//				$submenu[] = array(
+//					'menu_title' => __rw( 'affiliation' ),
+//					'function'   => 'affiliation_settings_page_render',
+//				);
 
 				/*
 				// Add Ons page
@@ -3710,7 +3710,7 @@
 						<script type="text/javascript">
 							jQuery.datepicker.setDefaults({
 								dateFormat: "yy-mm-dd"
-							})
+							});
 
 							jQuery("#rw_date_from").datepicker({
 								maxDate : 0,
@@ -8034,7 +8034,8 @@
 					),
 					'permissions' => array(
 						'newsletter' => true,
-					)
+					),
+					'has_affiliation' => true,
 				) );
 			}
 
