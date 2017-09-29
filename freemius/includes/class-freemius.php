@@ -912,7 +912,16 @@
 				$store_option = true;
 			}
 
-			if ( ! isset( $id_slug_type_path_map[ $module_id ]['path'] ) ) {
+			if ( ! isset( $id_slug_type_path_map[ $module_id ]['path'] ) ||
+			     /**
+			      * This verification is for cases when suddenly the same module
+			      * is installed but with a different folder name.
+			      *
+			      * @author Vova Feldman (@svovaf)
+			      * @since 1.2.3
+			      */
+			     ! file_exists( $id_slug_type_path_map[ $module_id ]['path'] )
+			) {
 				$caller_main_file_and_type = $this->get_caller_main_file_and_type();
 
 				$id_slug_type_path_map[ $module_id ]['type'] = $caller_main_file_and_type->module_type;
@@ -3251,10 +3260,24 @@
 			}
 
 			if ( false === $id ) {
-				throw new Freemius_Exception( 'Plugin id parameter is not set.' );
+				throw new Freemius_Exception( array(
+					'error' => array(
+						'type'    => 'ParameterNotSet',
+						'message' => 'Plugin id parameter is not set.',
+						'code'    => 'plugin_id_not_set',
+						'http'    => 500,
+					)
+				) );
 			}
 			if ( false === $public_key ) {
-				throw new Freemius_Exception( 'Plugin public_key parameter is not set.' );
+				throw new Freemius_Exception( array(
+					'error' => array(
+						'type'    => 'ParameterNotSet',
+						'message' => 'Plugin public_key parameter is not set.',
+						'code'    => 'plugin_public_key_not_set',
+						'http'    => 500,
+					)
+				) );
 			}
 
 			$plugin = ( $this->_plugin instanceof FS_Plugin ) ?
@@ -3481,11 +3504,13 @@
 					'license_activated',
 				) );
 
-				$this->_admin_notices->add_sticky(
-					sprintf( $this->get_text( 'premium-activated-message' ), $this->_module_type ),
-					'premium_activated',
-					$this->get_text( 'woot' ) . '!'
-				);
+				if ( ! $this->is_only_premium() ) {
+                    $this->_admin_notices->add_sticky(
+                        sprintf( $this->get_text( 'premium-activated-message' ), $this->_module_type ),
+                        'premium_activated',
+                        $this->get_text( 'woot' ) . '!'
+                    );
+                }
 			} else {
 				// Remove sticky message related to premium code activation.
 				$this->_admin_notices->remove_sticky( 'premium_activated' );
@@ -5786,7 +5811,7 @@
 					$this->get_text( 'theme' ) );
 
 			if ( $lowercase ) {
-				$label = strtolower( $lowercase );
+				$label = strtolower( $label );
 			}
 
 			return $label;
@@ -6907,13 +6932,13 @@
 				if ( isset( $install->error ) ) {
 					$error = $install->error->message;
 				} else {
-					$parent_fs = $fs->is_addon() ?
-						$fs->get_parent_instance() :
-						$fs;
+                    $fs->_sync_license( true );
 
-					$next_page = $parent_fs->_get_sync_license_url( $fs->get_id(), true );
+                    $next_page = $fs->is_addon() ?
+                        $fs->get_parent_instance()->get_account_url() :
+                        $fs->get_account_url();
 
-					$fs->reconnect_locally();
+                    $fs->reconnect_locally();
 				}
 			} else {
 				$next_page = $fs->opt_in( false, false, false, $license_key );
@@ -7572,7 +7597,10 @@
 						) ), admin_url( 'admin.php', 'admin' ) );
 					} else {
 						// Plugin without a settings page.
-						return admin_url( 'plugins.php' );
+                        return add_query_arg(
+                            $params,
+                            admin_url( 'plugins.php' )
+                        );
 					}
 				}
 			}
@@ -8346,7 +8374,7 @@
 
 			$this->_admin_notices->remove_sticky( 'connect_account' );
 
-			if ( $this->is_pending_activation() ) {
+			if ( $this->is_pending_activation() || ! $this->has_settings_menu() ) {
 				// Remove pending activation sticky notice (if still exist).
 				$this->_admin_notices->remove_sticky( 'activation_pending' );
 
@@ -8362,7 +8390,7 @@
 			}
 
 			if ( $this->is_paying_or_trial() ) {
-				if ( ! $this->is_premium() || ! $this->has_premium_version() ) {
+				if ( ! $this->is_premium() || ! $this->has_premium_version() || ! $this->has_settings_menu() ) {
 					if ( $this->is_paying() ) {
 						$this->_admin_notices->add_sticky(
 							sprintf(
@@ -8671,7 +8699,19 @@
 				);
 
 				if ( $redirect ) {
-					fs_redirect( $this->get_activation_url( array( 'error' => $install->error->message ) ) );
+                    /**
+                     * We set the user before getting the user scope API handler, so the user became temporarily
+                     * registered (`is_registered() = true`). Since the API returned an error and we will redirect,
+                     * we have to set the user to `null`, otherwise, the user will be redirected to the wrong
+                     * activation page based on the return value of `is_registered()`. In addition, in case the
+                     * context plugin doesn't have a settings menu and the default page is the `Plugins` page,
+                     * misleading plugin activation errors will be shown on the `Plugins` page.
+                     *
+                     * @author Leo Fajardo (@leorw)
+                     */
+                    $this->_user = null;
+
+                    fs_redirect( $this->get_activation_url( array( 'error' => $install->error->message ) ) );
 				}
 
 				return $install;
@@ -8777,6 +8817,14 @@
 
 				return;
 			}
+
+            $parent_fs->_admin_notices->remove_sticky( 'connect_account' );
+
+            if ( $parent_fs->is_pending_activation() ) {
+                $parent_fs->_admin_notices->remove_sticky( 'activation_pending' );
+
+                unset( $parent_fs->_storage->is_pending_activation );
+            }
 
 			// First of all, set site info - otherwise we won't
 			// be able to invoke API calls.
@@ -8970,9 +9018,9 @@
 
 			if ( false !== $hook ) {
 				if ( fs_request_is_action( $this->get_unique_affix() . '_activate_existing' ) ) {
-					add_action( "load-$hook", array( &$this, '_install_with_current_user' ) );
+                    $this->_install_with_current_user();
 				} else if ( fs_request_is_action( $this->get_unique_affix() . '_activate_new' ) ) {
-					add_action( "load-$hook", array( &$this, '_install_with_new_user' ) );
+                    $this->_install_with_new_user();
 				}
 			}
 		}
@@ -11926,6 +11974,14 @@
 
 					if ( $plugin_id == $this->get_id() ) {
 						$this->_deactivate_license();
+
+                        if ( $this->is_only_premium() ) {
+                            // Clear user and site.
+                            $this->_site = null;
+                            $this->_user = null;
+
+                            fs_redirect( $this->get_activation_url() );
+                        }
 					} else {
 						if ( $this->is_addon_activated( $plugin_id ) ) {
 							$fs_addon = self::get_instance_by_id( $plugin_id );
@@ -12138,11 +12194,7 @@
 			$this->_logger->entrance();
 
 			$template = 'account.php';
-			if ( 'billing' === fs_request_get( 'tab' ) ) {
-				$template = 'billing.php';
-			}
-
-			$vars = array( 'id' => $this->_module_id );
+			$vars     = array( 'id' => $this->_module_id );
 
 			/**
 			 * Added filter to the template to allow developers wrapping the template
@@ -13396,6 +13448,11 @@
 
 			if ( ! $this->is_theme() ) {
 				// Only add tabs to themes for now.
+				return false;
+			}
+
+			if ( ! $this->has_paid_plan() && ! $this->has_addons() ) {
+				// Only add tabs to monetizing themes.
 				return false;
 			}
 
