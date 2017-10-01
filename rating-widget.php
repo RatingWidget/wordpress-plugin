@@ -3,7 +3,7 @@
 	 * Plugin Name: Rating-Widget: Star Review System
 	 * Plugin URI:  http://rating-widget.com/wordpress-plugin/
 	 * Description: Create and manage Rating-Widget ratings in WordPress.
-	 * Version:     2.8.7.1
+	 * Version:     2.8.9
 	 * Author:      Rating-Widget
 	 * Author URI:  http://rating-widget.com/wordpress-plugin/
 	 * License:     GPLv2
@@ -2772,10 +2772,10 @@
 				);
 
 				// Affiliation application page.
-				$submenu[] = array(
-					'menu_title' => __rw( 'affiliation' ),
-					'function'   => 'affiliation_settings_page_render',
-				);
+//				$submenu[] = array(
+//					'menu_title' => __rw( 'affiliation' ),
+//					'function'   => 'affiliation_settings_page_render',
+//				);
 
 				/*
 				// Add Ons page
@@ -3710,7 +3710,7 @@
 						<script type="text/javascript">
 							jQuery.datepicker.setDefaults({
 								dateFormat: "yy-mm-dd"
-							})
+							});
 
 							jQuery("#rw_date_from").datepicker({
 								maxDate : 0,
@@ -4012,7 +4012,11 @@
 				// Get show on mobile flag.
 				$rw_show_on_mobile = $this->GetOption( WP_RW__SHOW_ON_MOBILE );
 
-				if ( isset( $_POST[ $rw_form_hidden_field_name ] ) && $_POST[ $rw_form_hidden_field_name ] == 'Y' ) {
+				if ( isset( $_POST[ $rw_form_hidden_field_name ] ) &&
+				     $_POST[ $rw_form_hidden_field_name ] == 'Y'  &&
+				     !empty($_POST['rw_advanced_settings_nonce']) &&
+				     wp_verify_nonce( $_POST['rw_advanced_settings_nonce'], basename( WP_RW__PLUGIN_FILE_FULL ) )
+				) {
 					$this->settings->SetSaveMode();
 
 					// Save advanced settings.
@@ -4473,7 +4477,11 @@
 
 				// See if the user has posted us some information
 				// If they did, this hidden field will be set to 'Y'
-				if ( isset( $_POST[ $rw_form_hidden_field_name ] ) && $_POST[ $rw_form_hidden_field_name ] == 'Y' ) {
+				if ( isset( $_POST[ $rw_form_hidden_field_name ] ) &&
+				     $_POST[ $rw_form_hidden_field_name ] == 'Y' &&
+				     !empty($_POST['rw_settings_nonce']) &&
+				     wp_verify_nonce( $_POST['rw_settings_nonce'], basename( WP_RW__PLUGIN_FILE_FULL ) )
+				) {
 					// Set settings into save mode.
 					$this->settings->SetSaveMode();
 
@@ -4782,6 +4790,8 @@
 					</h2>
 
 					<form method="post" action="">
+						<input type="hidden" name="rw_settings_nonce"
+						       value="<?php echo wp_create_nonce( basename( WP_RW__PLUGIN_FILE_FULL ) ) ?>"/>
 						<div id="poststuff">
 							<div id="rw_wp_set">
 								<?php rw_require_once_view( 'preview.php' ); ?>
@@ -8024,7 +8034,8 @@
 					),
 					'permissions' => array(
 						'newsletter' => true,
-					)
+					),
+					'has_affiliation' => true,
 				) );
 			}
 
