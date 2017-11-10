@@ -8035,7 +8035,7 @@
 					'permissions' => array(
 						'newsletter' => true,
 					),
-					'has_affiliation' => true,
+					'has_affiliation'   => 'selected'
 				) );
 			}
 
