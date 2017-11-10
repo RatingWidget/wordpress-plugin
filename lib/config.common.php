@@ -64,10 +64,10 @@
 	/* Uncomment for debug mode.
 	-----------------------------------------------------------------------------------------*/
 	if ( ! defined( 'WP_RW__DEBUG_PARAMS' ) ) {
-		define( 'WP_RW__DEBUG_PARAMS', false || ( ! empty( $_GET['rwdbge'] ) && 'true' === $_GET['rwdbge'] ) );
+		define( 'WP_RW__DEBUG_PARAMS', false );
 	}
 	if ( ! defined( 'WP_RW__DEBUG' ) ) {
-		define( 'WP_RW__DEBUG', WP_RW__DEBUG_PARAMS || false || ( ! empty( $_GET['rwdbg'] ) && 'true' === $_GET['rwdbg'] ) );
+		define( 'WP_RW__DEBUG', WP_RW__DEBUG_PARAMS );
 	}
 	define( 'WP_RW__SHOW_PHP_ERRORS', WP_RW__DEBUG );
 	if ( ! defined( 'WP_RW__LOCALHOST_SCRIPTS' ) ) {
@@ -75,7 +75,7 @@
 	}
 	define( 'WP_RW__CACHING_ON', ! WP_RW__DEBUG );
 	define( 'WP_RW__STAGING', false );
-	define( 'WP_RW__LOG_DUMP', WP_RW__DEBUG && ! empty( $_GET['rwdbge'] ) );
+	define( 'WP_RW__LOG_DUMP', WP_RW__DEBUG );
 
 	// This gives all other plugins the chance to load before RatingWidget.
 //    define('WP_RW___LATE_LOAD', 999);
