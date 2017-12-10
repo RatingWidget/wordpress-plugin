@@ -1,3 +1,7 @@
 /lib/freemius-keys.php
 *.po
 ISSUE_TEMPLATE.md
+node_modules/
+npm-debug.log
+freemius/package-lock.json
+package-lock.json
