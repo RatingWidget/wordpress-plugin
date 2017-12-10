@@ -4,6 +4,8 @@
 	 * @copyright   Copyright (c) 2015, Freemius, Inc.
 	 * @license     https://www.gnu.org/licenses/gpl-3.0.html GNU General Public License Version 3
 	 * @since       1.1.4
+     *
+     * @deprecated  This file is no longer in use. It's still in the project for backward compatibility.
 	 */
 
 	if ( ! defined( 'ABSPATH' ) ) {
@@ -29,7 +31,7 @@
 	 *      my_freemius->override_i18n( array(
 	 *          'opt-in-connect' => __( "Yes - I'm in!", '{your-text_domain}' ),
 	 *          'skip'           => __( 'Not today', '{your-text_domain}' ),
-	 *      );
+	 *      ) );
 	 */
 	global $fs_text;
 
@@ -95,6 +97,7 @@
 		'optin-x-now'                   => _fs_text( 'Opt in to make "%s" Better!' ),
 		'error'                         => _fs_text( 'Error' ),
 		'failed-finding-main-path'      => _fs_text( 'Freemius SDK couldn\'t find the plugin\'s main file. Please contact sdk@freemius.com with the current error.' ),
+        'learn-more'                    => _fs_text( 'Learn more' ),
 
 		#region Affiliation
         'affiliation'                        => _fs_text( 'Affiliation' ),
@@ -107,6 +110,7 @@
         'affiliate-account-suspended'        => _fs_text( 'Your affiliation account was temporarily suspended.' ),
         'affiliate-account-blocked'          => _fs_text( 'Due to violation of our affiliation terms, we decided to temporarily block your affiliation account. If you have any questions, please contact support.' ),
         'become-an-ambassador'               => _fs_text( 'Like the %s? Become our ambassador and earn cash ;-)' ),
+        'become-an-ambassador-admin-notice'  => _fs_text( 'Hey there, did you know that %s has an affiliate program? If you like the %s you can become our ambassador and earn some cash!' ),
         'refer-new-customers'                => _fs_text( 'Refer new customers to our %s and earn %s commission on each successful sale you refer!' ),
         'program-summary'                    => _fs_text( 'Program Summary' ),
         'commission-on-new-license-purchase' => _fs_text( '%s commission when a customer purchases a new license.' ),
