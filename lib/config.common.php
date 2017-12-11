@@ -75,7 +75,7 @@
 	}
 	define( 'WP_RW__CACHING_ON', ! WP_RW__DEBUG );
 	define( 'WP_RW__STAGING', false );
-	define( 'WP_RW__LOG_DUMP', WP_RW__DEBUG );
+    define( 'WP_RW__LOG_DUMP', WP_RW__DEBUG && ! empty( $_GET['rwdbge'] ) );
 
 	// This gives all other plugins the chance to load before RatingWidget.
 //    define('WP_RW___LATE_LOAD', 999);
