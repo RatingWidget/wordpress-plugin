@@ -13800,7 +13800,7 @@
 				) );
 			}
 
-			$plugin_id = fs_request_get( 'module_id', $this->get_id() );
+			$plugin_id = fs_request_get( 'target_module_id', $this->get_id() );
 
 			if ( ! FS_Plugin::is_valid_id( $plugin_id ) ) {
 				// Invalid ID.
@@ -13919,8 +13919,9 @@
 			}
 
 			$vars = array(
-				'id'   => $plugin_id,
-				'slug' => $this->_slug,
+				'id'               => $this->_module_id,
+				'target_module_id' => $plugin_id,
+				'slug'             => $this->_slug,
 			);
 
 			fs_require_template( 'auto-installation.php', $vars );
