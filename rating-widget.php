@@ -351,6 +351,7 @@
 					add_action( 'wp_ajax_rw-affiliate-apply', array( &$this, 'send_affiliate_application' ) );
 					add_action( 'wp_ajax_rw-addon-request', array( &$this, 'send_addon_request' ) );
 					add_action( 'admin_init', array( &$this, 'register_admin_page_hooks' ) );
+					add_action( 'admin_init', array( &$this, 'prevent_referrer_policy_override' ), 9 );
 					add_action( 'admin_menu', array( &$this, 'AddPostMetaBox' ) ); // Metabox for posts/pages
 					add_action( 'admin_menu', array(
 						&$this,
@@ -836,6 +837,52 @@
 					add_action( 'wp_dashboard_setup', array( &$this, 'add_dashboard_widgets' ) );
 				}
 			}
+
+            /**
+             * The referrer should not be prevented from being sent from admin pages that have a rating, otherwise, the
+             * rating will not work well.
+             *
+             * @author Leo Fajardo (@leorw)
+             * @since  2.9.0.1
+             *
+             * @return string
+             */
+			function prevent_referrer_policy_override() {
+			    if ( false === has_action( 'admin_init', 'wp_admin_headers' ) ) {
+			        return;
+                }
+
+                if ( $this->_inDashboard ) {
+                    $page = strtolower( $_GET['page'] );
+
+                    $is_settings_page_with_rating = (
+                        $page === $this->GetMenuSlug() ||
+                        $page === $this->GetMenuSlug( 'woocommerce' ) ||
+                        $page === $this->GetMenuSlug( 'bbpress' ) ||
+                        $page === $this->GetMenuSlug( 'buddypress' )
+                    );
+
+                    if ( ! $is_settings_page_with_rating ) {
+                        return;
+                    }
+                } else {
+                    global $pagenow;
+
+                    if (
+                        ! $this->admin_page_has_editor() &&
+                        ! ( 'comment.php' === $pagenow && ! $this->is_comment_review_mode() )
+                    ) {
+                        return;
+                    }
+                }
+
+                /**
+                 * The `wp_admin_headers` function overrides the referrer policy so that the referrer is not sent from
+                 * WP admin pages. This causes an issue with the ratings on the admin pages, so do not execute it on
+                 * admin pages that have ratings.
+                 */
+                remove_action( 'admin_init', 'wp_admin_headers' );
+            }
 
 			/**
 			 * For TinyMCE 3 and below. Generates the HTML content for the TinyMCE dialog box.
