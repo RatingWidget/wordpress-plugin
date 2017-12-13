@@ -351,7 +351,7 @@
 					add_action( 'wp_ajax_rw-affiliate-apply', array( &$this, 'send_affiliate_application' ) );
 					add_action( 'wp_ajax_rw-addon-request', array( &$this, 'send_addon_request' ) );
 					add_action( 'admin_init', array( &$this, 'register_admin_page_hooks' ) );
-					add_action( 'admin_init', array( &$this, 'prevent_referrer_policy_override' ), 9 );
+                    add_action( 'admin_init', array( &$this, 'prevent_referrer_policy_override' ), 9 );
 					add_action( 'admin_menu', array( &$this, 'AddPostMetaBox' ) ); // Metabox for posts/pages
 					add_action( 'admin_menu', array(
 						&$this,
@@ -847,9 +847,9 @@
              *
              * @return string
              */
-			function prevent_referrer_policy_override() {
-			    if ( false === has_action( 'admin_init', 'wp_admin_headers' ) ) {
-			        return;
+            function prevent_referrer_policy_override() {
+                if ( false === has_action( 'admin_init', 'wp_admin_headers' ) ) {
+                    return;
                 }
 
                 if ( $this->_inDashboard ) {
