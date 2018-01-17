@@ -4,7 +4,7 @@ Donate link: http://rating-widget.com/pricing/wordpress/
 Tags: rate, rating, ratings, vote, votes, voting, star, stars, like, dislike, thumbs, widget, widgets, star rating, thumb rating, rating platform, rating system, seo, post rating, comment rating, 5 star, five star, sidebar, comment, comments, post, posts, page, pages, google, admin, administrator, review, reviews, rich-snippets, plugin, plugins, ajax, buddypress, bbpress, social, javascript, js, wordpress, meta, woocommerce, jquery, contest, competition, voting contest, rtmedia
 Requires at least: 3.0
 Tested up to: 4.9
-Stable tag: 2.9.0.1
+Stable tag: 2.9.1
 License: GPLv2 or later
 
 The most popular Five Star Review System on the web. User-friendly ratings for: posts, pages, comments, WooCommerce, BuddyPress and bbPress forums.
@@ -201,6 +201,10 @@ You can contact us regarding paid customization requests here:
 [http://rating-widget.com/contact/](http://rating-widget.com/contact/?platform=wordpress&subject=customization&utm_medium=link&utm_campaign=free&utm_source=wordpress.org)
 
 == Change Log ==
+
+= 2.9.1 - 2018-01-17 =
+* Fix: Fixed API server clock syncing.
+* Update: Updated version of Freemius with bug fixes.
 
 = 2.9.0.1 - 2017-12-13 =
 * Fix: Fixed the referrer policy for admin pages that have a rating.

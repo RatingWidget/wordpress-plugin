@@ -163,10 +163,10 @@
 				return false;
 
 			// Update API clock's diff.
-			$this->_api->SetClockDiff(self::$_clock_diff);
+			$this->_api->SetClockDiff($new_clock_diff);
 
 			// Store new clock diff in storage.
-			self::$_options->set_option('api_clock_diff', self::$_clock_diff, true);
+			self::$_options->set_option('api_clock_diff', $new_clock_diff, true);
 
 			return $new_clock_diff;
 		}
