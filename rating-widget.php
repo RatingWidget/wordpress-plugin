@@ -4943,7 +4943,9 @@
 
 				// Store options if in save mode.
 				if ( $this->settings->IsSaveMode() ) {
-					$this->_options->store();
+                    $this->SetOption( $rw_current_settings["options"], $rw_options );
+
+                    $this->_options->store();
 				}
 			}
 
