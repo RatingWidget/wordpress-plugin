@@ -11,12 +11,13 @@
 	}
 
 	/**
-	 * @var array $VARS
+	 * @var array    $VARS
+	 * @var Freemius $fs
 	 */
-	$slug      = $VARS['slug'];
+    $slug      = $VARS['slug'];
     $plugin_id = $VARS['target_module_id'];
 
-	$fs = freemius( $VARS['id'] );
+    $fs = freemius( $VARS['id'] );
 
 	$action = $fs->is_tracking_allowed() ?
 		'stop_tracking' :

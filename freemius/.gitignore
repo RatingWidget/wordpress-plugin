@@ -7,3 +7,5 @@ assets/img/*.*
 node_modules
 transifex-config.json
 *.orig
+npm-debug.log
+package-lock.json
