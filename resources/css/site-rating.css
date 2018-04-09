@@ -155,3 +155,8 @@
 .rw-top-rated-page.rtl .rw-wp-ui-top-rated-list-item-thumbnail {
 	margin-right: 10px;
 }
+
+/* DUMMY ACTIVITY RATINGS */
+.rw-ui-container[data-urid='dummy-activity-update'], .rw-ui-container[data-urid='dummy-activity-comment'] {
+    display: none;
+}
