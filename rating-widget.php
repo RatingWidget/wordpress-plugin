@@ -6902,7 +6902,7 @@
                             $urid = "dummy-{$rclass}";
 
                             echo $this->GetRatingHtml( $urid, $rclass, false );
-                            self::$ratings[ $urid ] = $data;
+                            self::$ratings[ $urid ] = array();
                         }
                     }
 
@@ -7009,12 +7009,13 @@
 
 					foreach (self::$ratings as $urid => $data)
 					{
-						if ((is_string($data["title"]) && !empty($data["title"])) ||
+					    if ( 0 === strpos( $urid, 'dummy-activity-' ) ) {
+                            echo "RW.initRating('{$urid}', {});";
+                        } else if (
+                            (is_string($data["title"]) && !empty($data["title"])) ||
 						    (is_string($data["permalink"]) && !empty($data["permalink"])) ||
-						    isset($data["img"]) ||
-                            0 === strpos( $urid, 'dummy-activity-' )
-                        )
-						{
+						    isset($data["img"])
+                        ) {
 							$properties = array();
 							if (is_string($data["title"]) && !empty($data["title"]))
 								{$properties[] = 'title: ' . json_encode(esc_js($data["title"]));}
