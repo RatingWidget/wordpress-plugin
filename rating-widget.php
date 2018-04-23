@@ -6246,6 +6246,11 @@
 				// Find current comment.
 				while ( ! $this->current_comment->children || false === current( $this->current_comment->children ) ) {
 					$this->current_comment = $this->current_comment->parent;
+
+                    if ( ! is_object( $this->current_comment ) || ! isset( $this->current_comment->children) || ! is_array( $this->current_comment->children ) ) {
+                        return $comment_content;
+                    }
+                    
 					next( $this->current_comment->children );
 				}
 
