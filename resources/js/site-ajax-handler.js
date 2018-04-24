@@ -7,7 +7,7 @@
 		var cookie = getParameterByName(queryStr, 'cookie');
 
 		// Check if BuddyPress is inserting new status update or comment
-		if (action && cookie && 0 === cookie.indexOf('bp-activity')) {
+		if (action && cookie && cookie.indexOf('bp-activity') >=0) {
 			if ('post_update' == action || 'new_activity_comment' == action) {
 				// Wait for BuddyPress' post success callback to finish executing
 				// then render the new rating
@@ -18,7 +18,7 @@
 						if ($('#activity-stream').length) {
 							// Retrieve the container of the new status update's rating
 							var containerId = $(request.responseText).attr('id');
-							container = $('#' + containerId).find('.activity-meta:first').get(0);
+							container = $('#' + containerId).find('.activity-content:first').get(0);
 						}
 					} else {
 						// Retrieve the container of the new comment's rating

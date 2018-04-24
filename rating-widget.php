@@ -3,7 +3,7 @@
 	 * Plugin Name: Rating-Widget: Star Review System
 	 * Plugin URI:  http://rating-widget.com/wordpress-plugin/
 	 * Description: Create and manage Rating-Widget ratings in WordPress.
-	 * Version:     2.9.4
+	 * Version:     2.9.5
 	 * Author:      Rating-Widget
 	 * Author URI:  http://rating-widget.com/wordpress-plugin/
 	 * License:     GPLv2
@@ -6246,6 +6246,11 @@
 				// Find current comment.
 				while ( ! $this->current_comment->children || false === current( $this->current_comment->children ) ) {
 					$this->current_comment = $this->current_comment->parent;
+
+                    if ( ! is_object( $this->current_comment ) || ! isset( $this->current_comment->children) || ! is_array( $this->current_comment->children ) ) {
+                        return $comment_content;
+                    }
+                    
 					next( $this->current_comment->children );
 				}
 
@@ -6866,36 +6871,47 @@
 
 				$is_bp_activity_component = function_exists( 'bp_is_activity_component' ) && bp_is_activity_component();
 
-				if ( ! $attach_js ) {
-					// Necessary for rendering newly inserted activity ratings
-					// when the are no status updates or comments yet
-					if ( $is_bp_activity_component ) {
-						$bp_rclasses = array( 'activity-update', 'activity-comment' );
+				$add_dummy_activity_rating_by_class = array();
 
-						foreach ( $bp_rclasses as $rclass ) {
-							if ( isset( $rw_settings[ $rclass ] ) && ! isset( $rw_settings[ $rclass ]["enabled"] ) ) {
-								if ( RWLogger::IsOn() ) {
-									RWLogger::Log( 'rw_attach_rating_js', 'Class = ' . $rclass . ';' );
-								}
+                // Necessary for rendering newly inserted activity ratings
+                // when the are no status updates or comments yet
+                if ( $is_bp_activity_component ) {
+                    $bp_rclasses = array( 'activity-update', 'activity-comment' );
 
-								$rw_settings[ $rclass ]["enabled"] = true;
+                    foreach ( $bp_rclasses as $rclass ) {
+                        if ( isset( $rw_settings[ $rclass ] ) && ! isset( $rw_settings[ $rclass ]["enabled"] ) ) {
+                            if ( RWLogger::IsOn() ) {
+                                RWLogger::Log( 'rw_attach_rating_js', 'Class = ' . $rclass . ';' );
+                            }
 
-								// Get rating class settings.
-								$rw_settings[ $rclass ]["options"] = $this->GetOption( $rw_settings[ $rclass ]["options"] );
+                            $rw_settings[ $rclass ]["enabled"] = true;
 
-								if ( WP_RW__AVAILABILITY_DISABLED === $this->rw_validate_availability( $rclass ) ) {
-									// Disable ratings (set them to be readOnly).
-									$rw_settings[ $rclass ]["options"]->readOnly = true;
-								}
+                            // Get rating class settings.
+                            $rw_settings[ $rclass ]["options"] = $this->GetOption( $rw_settings[ $rclass ]["options"] );
 
-								$attach_js = true;
-							}
-						}
-					}
-				}
+                            if ( WP_RW__AVAILABILITY_DISABLED === $this->rw_validate_availability( $rclass ) ) {
+                                // Disable ratings (set them to be readOnly).
+                                $rw_settings[ $rclass ]["options"]->readOnly = true;
+                            }
+
+                            $add_dummy_activity_rating_by_class[ $rclass ] = true;
+
+                            $attach_js = true;
+                        }
+                    }
+                }
 
 				if ( $attach_js || $this->_TOP_RATED_WIDGET_LOADED ) {
-					?>
+                    if ( ! empty( $add_dummy_activity_rating_by_class ) ) {
+                        foreach ( array_keys( $add_dummy_activity_rating_by_class ) as $rclass ) {
+                            $urid = "dummy-{$rclass}";
+
+                            echo $this->GetRatingHtml( $urid, $rclass, false );
+                            self::$ratings[ $urid ] = array();
+                        }
+                    }
+
+                    ?>
 					<!-- This site's ratings are powered by RatingWidget plugin v<?php echo WP_RW__VERSION . ' (' . ($this->fs->is_premium() ? 'Premium' : 'Free') . ' version)' ?> - https://rating-widget.com/wordpress-plugin/ -->
 					<div class="rw-js-container">
 						<?php
@@ -6998,10 +7014,13 @@
 
 					foreach (self::$ratings as $urid => $data)
 					{
-						if ((is_string($data["title"]) && !empty($data["title"])) ||
-						(is_string($data["permalink"]) && !empty($data["permalink"])) ||
-						isset($data["img"]))
-						{
+					    if ( 0 === strpos( $urid, 'dummy-activity-' ) ) {
+                            echo "RW.initRating('{$urid}', {});";
+                        } else if (
+                            (is_string($data["title"]) && !empty($data["title"])) ||
+						    (is_string($data["permalink"]) && !empty($data["permalink"])) ||
+						    isset($data["img"])
+                        ) {
 							$properties = array();
 							if (is_string($data["title"]) && !empty($data["title"]))
 								{$properties[] = 'title: ' . json_encode(esc_js($data["title"]));}

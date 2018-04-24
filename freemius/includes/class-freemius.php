@@ -1373,7 +1373,7 @@
 
             add_action( 'admin_init', array( &$this, '_add_trial_notice' ) );
             add_action( 'admin_init', array( &$this, '_add_affiliate_program_notice' ) );
-            add_action( 'admin_init', array( &$this, '_enqueue_common_css' ) );
+            add_action( 'admin_enqueue_scripts', array( &$this, '_enqueue_common_css' ) );
 
             /**
              * Handle request to reset anonymous mode for `get_reconnect_url()`.
@@ -2623,10 +2623,12 @@
 
             self::$_global_admin_notices = FS_Admin_Notices::instance( 'global' );
 
-            add_action( ( fs_is_network_admin() ? 'network_' : '' ) . 'admin_menu', array(
-                'Freemius',
-                '_add_debug_section'
-            ) );
+            if ( ! WP_FS__DEMO_MODE ) {
+                add_action( ( fs_is_network_admin() ? 'network_' : '' ) . 'admin_menu', array(
+                    'Freemius',
+                    '_add_debug_section'
+                ) );
+            }
 
             add_action( "wp_ajax_fs_toggle_debug_mode", array( 'Freemius', '_toggle_debug_mode' ) );
 
@@ -9040,7 +9042,7 @@
         function is_trial() {
             $this->_logger->entrance();
 
-            if ( ! $this->is_registered() ) {
+            if ( ! $this->is_registered() || ! is_object( $this->_site ) ) {
                 return false;
             }
 
@@ -9199,7 +9201,7 @@
          *
          * @return bool
          */
-        private function has_any_license() {
+        function has_any_license() {
             return is_array( $this->_licenses ) && ( 0 < count( $this->_licenses ) );
         }
 
@@ -13365,6 +13367,8 @@
 
                 $this->do_action( 'after_account_connection', $user, $first_install );
             } else {
+                $this->_store_user();
+
                 // Map site addresses to their blog IDs.
                 $address_to_blog_map = $this->get_address_to_blog_map();
 
@@ -14555,7 +14559,7 @@
                     );
                 }
 
-                if ( $this->is_registered() ) {
+                if ( ! WP_FS__DEMO_MODE && $this->is_registered() ) {
                     $show_account = (
                         $this->is_submenu_item_visible( 'account' ) &&
                         /**
@@ -14602,36 +14606,38 @@
                     );
                 }
 
-                $show_pricing = (
-                    $this->is_submenu_item_visible( 'pricing' ) &&
-                    $this->is_pricing_page_visible()
-                );
+                if ( ! WP_FS__DEMO_MODE ) {
+                    $show_pricing = (
+                        $this->is_submenu_item_visible( 'pricing' ) &&
+                        $this->is_pricing_page_visible()
+                    );
 
-                $pricing_cta_text = $this->get_pricing_cta_label();
-                $pricing_class    = 'upgrade-mode';
-                if ( $show_pricing ) {
-                    if ( $this->is_in_trial_promotion() &&
-                         ! $this->is_paying_or_trial()
-                    ) {
-                        // If running a trial promotion, modify the pricing to load the trial.
-                        $pricing_class = 'trial-mode';
-                    } else if ( $this->is_paying() ) {
-                        $pricing_class = '';
+                    $pricing_cta_text = $this->get_pricing_cta_label();
+                    $pricing_class    = 'upgrade-mode';
+                    if ( $show_pricing ) {
+                        if ( $this->is_in_trial_promotion() &&
+                             ! $this->is_paying_or_trial()
+                        ) {
+                            // If running a trial promotion, modify the pricing to load the trial.
+                            $pricing_class = 'trial-mode';
+                        } else if ( $this->is_paying() ) {
+                            $pricing_class = '';
+                        }
                     }
-                }
 
-                // Add upgrade/pricing page.
-                $this->add_submenu_item(
-                    $pricing_cta_text . '&nbsp;&nbsp;' . ( is_rtl() ? '&#x2190;' : '&#x27a4;' ),
-                    array( &$this, '_pricing_page_render' ),
-                    $this->get_plugin_name() . ' &ndash; ' . $this->get_text_x_inline( 'Pricing', 'noun', 'pricing' ),
-                    'manage_options',
-                    'pricing',
-                    'Freemius::_clean_admin_content_section',
-                    WP_FS__LOWEST_PRIORITY,
-                    $show_pricing,
-                    $pricing_class
-                );
+                    // Add upgrade/pricing page.
+                    $this->add_submenu_item(
+                        $pricing_cta_text . '&nbsp;&nbsp;' . ( is_rtl() ? '&#x2190;' : '&#x27a4;' ),
+                        array( &$this, '_pricing_page_render' ),
+                        $this->get_plugin_name() . ' &ndash; ' . $this->get_text_x_inline( 'Pricing', 'noun', 'pricing' ),
+                        'manage_options',
+                        'pricing',
+                        'Freemius::_clean_admin_content_section',
+                        WP_FS__LOWEST_PRIORITY,
+                        $show_pricing,
+                        $pricing_class
+                    );
+                }
             }
 
             if ( 0 < count( $this->_menu_items ) ) {
