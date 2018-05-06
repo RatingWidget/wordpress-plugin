@@ -3998,7 +3998,7 @@
 				if ( $this->fs->is_plan_or_trial__premium_only( 'professional' ) ) {
 					if ( isset( $_GET["urid"] ) && is_numeric( $_GET["urid"] ) ) {
 						$this->rw_rating_report_page__premium_only();
-					} else if ( isset( $_GET["ip"] ) || isset( $_GET["vid"] ) || isset( $_GET["pcid"] ) ) {
+					} else if ( isset( $_GET["ip_hash"] ) || isset( $_GET["vid"] ) || isset( $_GET["pcid"] ) ) {
 						$this->rw_explicit_report_page__premium_only();
 					} else {
 						$this->rw_general_report_page__premium_only();
