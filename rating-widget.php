@@ -3457,7 +3457,7 @@
 							});
 							jQuery("#rw_date_to").datepicker("setDate", "<?php echo $date_to;?>");
 						</script>
-						<span><?php _erw( 'order-by' ) ?>:</span>
+						<span><?php _erw( 'orderby' ) ?>:</span>
 						<select id="rw_orderby">
 							<?php
 								$select = array(
@@ -3776,7 +3776,7 @@
 							});
 							jQuery("#rw_date_to").datepicker("setDate", "<?php echo $date_to;?>");
 						</script>
-						<span><?php _erw( 'order-by' ) ?>:</span>
+						<span><?php _erw( 'orderby' ) ?>:</span>
 						<select id="rw_orderby">
 							<?php
 								$select = array(
