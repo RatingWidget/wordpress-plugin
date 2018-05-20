@@ -3326,9 +3326,9 @@
 						"label"      => "PC Id",
 						"validation" => create_function( '$val', 'return (RatingWidgetPlugin::_isValidPCId($val));' ),
 					),
-					"ip"   => array(
-						"label"      => "IP",
-						"validation" => create_function( '$val', 'return (1 === preg_match("/^([1-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(\.([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){3}$/", $val));' ),
+					"ip_hash"        => array(
+						"label"      => 'Anonymized IP',
+						"validation" => create_function( '$val', 'return (1 === preg_match("/^[a-f0-9]{32}$/", $val));' ),
 					),
 				);
 
@@ -3457,7 +3457,7 @@
 							});
 							jQuery("#rw_date_to").datepicker("setDate", "<?php echo $date_to;?>");
 						</script>
-						<span><?php _erw( 'order-by' ) ?>:</span>
+						<span><?php _erw( 'orderby' ) ?>:</span>
 						<select id="rw_orderby">
 							<?php
 								$select = array(
@@ -3467,7 +3467,7 @@
 									"rate"    => __rw( 'rate-noun' ),
 									"vid"     => __rw( 'user-id' ),
 									"pcid"    => __rw( 'device-id' ),
-									"ip"      => __rw( 'ip' ),
+									'ip_hash' => __rw( 'anonymized-ip' ),
 								);
 								foreach ( $select as $value => $option ) {
 									$selected = '';
@@ -3542,7 +3542,7 @@
 								<th scope="col" class="manage-column"><?php _erw( 'rating-id' ) ?></th>
 								<th scope="col" class="manage-column"><?php _erw( 'user-id' ) ?></th>
 								<th scope="col" class="manage-column"><?php _erw( 'device-id' ) ?></th>
-								<th scope="col" class="manage-column"><?php _erw( 'ip' ) ?></th>
+								<th scope="col" class="manage-column"><?php _erw( 'anonymized-ip' ) ?></th>
 								<th scope="col" class="manage-column"><?php _erw( 'date' ) ?></th>
 								<th scope="col" class="manage-column"><?php _erw( 'rate-noun' ) ?></th>
 							</tr>
@@ -3584,9 +3584,9 @@
 										</td>
 										<td>
 											<a href="<?php
-												$query_string = self::_getAddFilterQueryString( $_SERVER["QUERY_STRING"], "ip", $vote->ip );
+												$query_string = self::_getAddFilterQueryString( $_SERVER["QUERY_STRING"], 'ip_hash', $vote->ip_hash );
 												echo WP_RW__SCRIPT_URL . "?" . $query_string;
-											?>"><?php echo $vote->ip; ?></a>
+											?>"><?php echo $vote->ip_hash; ?></a>
 										</td>
 										<td><?php echo $vote->updated; ?></td>
 										<td>
@@ -3684,9 +3684,9 @@
 						"label"      => "PC Id",
 						"validation" => create_function( '$val', 'return (RatingWidgetPlugin::_isValidPCId($val));' ),
 					),
-					"ip"   => array(
-						"label"      => "IP",
-						"validation" => create_function( '$val', 'return (1 === preg_match("/^([1-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(\.([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){3}$/", $val));' ),
+					"ip_hash"        => array(
+						"label"      => 'Anonymized IP',
+                        "validation" => create_function( '$val', 'return (1 === preg_match("/^[a-f0-9]{32}$/", $val));' ),
 					),
 				);
 
@@ -3776,7 +3776,7 @@
 							});
 							jQuery("#rw_date_to").datepicker("setDate", "<?php echo $date_to;?>");
 						</script>
-						<span><?php _erw( 'order-by' ) ?>:</span>
+						<span><?php _erw( 'orderby' ) ?>:</span>
 						<select id="rw_orderby">
 							<?php
 								$select = array(
@@ -3786,7 +3786,7 @@
 									"rate"    => __rw( 'rate-noun' ),
 									"vid"     => __rw( 'user-id' ),
 									"pcid"    => __rw( 'device-id' ),
-									"ip"      => __rw( 'ip' ),
+									'ip_hash' => __rw( 'anonymized-ip' ),
 								);
 								foreach ( $select as $value => $option ) {
 									$selected = '';
@@ -3875,7 +3875,7 @@
 							<tr>
 								<th scope="col" class="manage-column"><?php _erw( 'user-id' ) ?></th>
 								<th scope="col" class="manage-column"><?php _erw( 'device-id' ) ?></th>
-								<th scope="col" class="manage-column"><?php _erw( 'ip' ) ?></th>
+								<th scope="col" class="manage-column"><?php _erw( 'anonymized-ip' ) ?></th>
 								<th scope="col" class="manage-column"><?php _erw( 'date' ) ?></th>
 								<th scope="col" class="manage-column"><?php _erw( 'rate-noun' ) ?></th>
 							</tr>
@@ -3911,9 +3911,9 @@
 										</td>
 										<td>
 											<a href="<?php
-												$query_string = self::_getAddFilterQueryString( $_SERVER["QUERY_STRING"], "ip", $vote->ip );
+												$query_string = self::_getAddFilterQueryString( $_SERVER["QUERY_STRING"], 'ip_hash', $vote->ip_hash );
 												echo WP_RW__SCRIPT_URL . "?" . $query_string;
-											?>"><?php echo $vote->ip; ?></a>
+											?>"><?php echo $vote->ip_hash; ?></a>
 										<td><?php echo $vote->updated; ?></td>
 										<td>
 											<?php
@@ -3998,7 +3998,7 @@
 				if ( $this->fs->is_plan_or_trial__premium_only( 'professional' ) ) {
 					if ( isset( $_GET["urid"] ) && is_numeric( $_GET["urid"] ) ) {
 						$this->rw_rating_report_page__premium_only();
-					} else if ( isset( $_GET["ip"] ) || isset( $_GET["vid"] ) || isset( $_GET["pcid"] ) ) {
+					} else if ( isset( $_GET["ip_hash"] ) || isset( $_GET["vid"] ) || isset( $_GET["pcid"] ) ) {
 						$this->rw_explicit_report_page__premium_only();
 					} else {
 						$this->rw_general_report_page__premium_only();

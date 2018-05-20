@@ -168,7 +168,7 @@
 		'rating-id'                                   => __( 'Rating ID', 'rating-widget' ),
 		'user-id'                                     => __( 'User ID', 'rating-widget' ),
 		'device-id'                                   => __( 'Device ID', 'rating-widget' ),
-		'ip'                                          => _x( 'IP', 'as IP address', 'rating-widget' ),
+		'anonymized-ip'                               => __( 'Anonymized IP', 'rating-widget' ),
 		'start-date'                                  => __( 'Start Date', 'rating-widget' ),
 		'last-updated'                                => __( 'Last Update', 'rating-widget' ),
 		'created'                                     => __( 'Created', 'rating-widget' ),
