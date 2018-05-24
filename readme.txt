@@ -202,6 +202,9 @@ You can contact us regarding paid customization requests here:
 
 == Change Log ==
 
+= 2.9.5 - 2018-05-25 =
+* Major update: The plugin is now fully GDPR ready!
+
 = 2.9.5 - 2018-04-24 =
 * Update: Updated version of Freemius with bug fixes.
 * Fix: Fixed the rendering of newly inserted BuddyPress activity ratings when there are no status updates or comments yet.
