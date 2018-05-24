@@ -8226,6 +8226,7 @@
 
 		add_filter( 'fs_api_domains_rating-widget', 'rw_fs_add_api_domain' );
 
+		if (true) {
 		// Init Freemius.
 		$fs = rw_fs();
 
@@ -8234,6 +8235,8 @@
 				'opt-in-connect' => __rw( 'ok-i-am-in' ),
 			), 'rating-widget' );
 		}
+
+			$fs->add_filter( 'handle_gdpr_admin_notice', '__return_true' );
 
 		// Init options
 		rw_fs_options();
@@ -8289,6 +8292,6 @@
 //		}
 
 		do_action( 'ratingwidget_loaded' );
-
+		}
 		#endregion Plugin Initialization ------------------------------------------------------------------
 	}
