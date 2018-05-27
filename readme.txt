@@ -11,7 +11,7 @@ The most popular Five Star Review System on the web. User-friendly ratings for: 
 
 == Description ==
 
-The most popular Five Star Review System on the web. User-friendly ratings for: posts, pages, comments, WooCommerce, BuddyPress and bbPress forums.
+The most popular, GDPR compliant, Five Star Review System on the web. User-friendly ratings for: posts, pages, comments, WooCommerce, BuddyPress and bbPress forums.
 
 [youtube https://www.youtube.com/watch?v=rRGKd_P5Oa4]
 
@@ -26,6 +26,13 @@ The most popular Five Star Review System on the web. User-friendly ratings for: 
 * Author Review Ratings
 
 [Test drive RatingWidget Now! (DEMO)](https://addendio.com/try-plugin/?slug=rating-widget "Test drive RatingWidget Now! (DEMO)")
+
+#### GDPR
+* We introduced two helper client-side methods: `RW.optIn()` and `RW.optOut()`. You can leverage those with your cookies consent opt-in/out logic.
+* We are no longer storing IPs. Instead, we store anonymized IPs - a non-personal data. Therefore, we are no longer storing any personal data of EU visitors unless they opt-in.
+* Device ID cookies are no longer created for EU visitors  unless you manually integrate a cookies consent on your site and they opt-in via the `RW.optIn()` method.
+* You'll need to add a section to your cookies policy (or privacy policy), mentioning that you're using the RatingWidget service and add an opt-out button which will call `RW.optOut()` to opt-out any visitor from cookies. You can use the following paragraph:
+ > We use [RatingWidget](https://rating-widget.com) as a feedback mechanism for our visitors, providing them with an easy way to cast their opinion. The service is using cookies to avoid duplicate votes from the same device. Here's a link to [RatingWidget's privacy policy](https://rating-widget.com/privacy/). You can opt-out from their voter tracking cookies by clicking the <b>Opt out</b> button on their privacy page.
 
 #### Looking for reviews?
 Every review starts with a simple star rating and we all know it! We are excited to announce that we launched our **Reviews Add-on** (pro add-on). With our awesome Reviews Add-on, you can now set up custom rules when to open a modal review box and capture a textual review from your voters. Like all our products, the Reviews Add-on works out of the box and requires zero configuration.
@@ -202,7 +209,7 @@ You can contact us regarding paid customization requests here:
 
 == Change Log ==
 
-= 2.9.5 - 2018-05-25 =
+= 2.9.5 - 2018-05-27 =
 * Major update: The plugin is now fully GDPR ready!
 
 = 2.9.5 - 2018-04-24 =
