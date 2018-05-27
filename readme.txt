@@ -31,6 +31,7 @@ The most popular, GDPR compliant, Five Star Review System on the web. User-frien
 * We introduced two helper client-side methods: `RW.optIn()` and `RW.optOut()`. You can leverage those with your cookies consent opt-in/out logic.
 * We are no longer storing IPs. Instead, we store anonymized IPs - a non-personal data. Therefore, we are no longer storing any personal data of EU visitors unless they opt-in.
 * Device ID cookies are no longer created for EU visitors  unless you manually integrate a cookies consent on your site and they opt-in via the `RW.optIn()` method.
+* The identification method for an opted-out visitor is based on their anonymized IP by default.
 * You'll need to add a section to your cookies policy (or privacy policy), mentioning that you're using the RatingWidget service and add an opt-out button which will call `RW.optOut()` to opt-out any visitor from cookies. You can use the following paragraph:
  > We use [RatingWidget](https://rating-widget.com) as a feedback mechanism for our visitors, providing them with an easy way to cast their opinion. The service is using cookies to avoid duplicate votes from the same device. Here's a link to [RatingWidget's privacy policy](https://rating-widget.com/privacy/). You can opt-out from their voter tracking cookies by clicking the <b>Opt out</b> button on their privacy page.
 
