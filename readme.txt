@@ -210,7 +210,7 @@ You can contact us regarding paid customization requests here:
 
 == Change Log ==
 
-= 3.0.1 - 2018-08-17 =
+= 3.0.1 - 2018-08-19 =
 * Fix: Fixed the download link for the premium version on the "Account" section.
 
 = 3.0.0 - 2018-05-27 =
