@@ -177,304 +177,302 @@
 				);
 				$toprated_data->itemGroups = array();
 
-				if ( count( $rw_ret_obj->data ) > 0 ) {
-					foreach ( $rw_ret_obj->data as $type => $ratings ) {
-						if ( is_array( $ratings ) && count( $ratings ) > 0 ) {
-							$item_group            = new stdClass();
-							$item_group->type      = $type;
-							$item_group->title     = $instance["{$type}_title"];
-							$item_group->showTitle = ( 1 === $instance["show_{$type}_title"] && '' !== trim( $item_group->title ) );
-							if ( is_numeric( $instance["{$type}_style"] ) ) {
-								switch ( $instance["{$type}_style"] ) {
-									case 0:
-										$instance["{$type}_style"] = 'legacy';
-										break;
-									case 1:
-									default:
-										$instance["{$type}_style"] = 'thumbs';
-										break;
-								}
+                foreach ( $rw_ret_obj->data as $type => $ratings ) {
+                    if ( is_array( $ratings ) && count( $ratings ) > 0 ) {
+                        $item_group            = new stdClass();
+                        $item_group->type      = $type;
+                        $item_group->title     = $instance["{$type}_title"];
+                        $item_group->showTitle = ( 1 === $instance["show_{$type}_title"] && '' !== trim( $item_group->title ) );
+                        if ( is_numeric( $instance["{$type}_style"] ) ) {
+                            switch ( $instance["{$type}_style"] ) {
+                                case 0:
+                                    $instance["{$type}_style"] = 'legacy';
+                                    break;
+                                case 1:
+                                default:
+                                    $instance["{$type}_style"] = 'thumbs';
+                                    break;
+                            }
 
-							}
-							$item_group->style = $instance["{$type}_style"];
+                        }
+                        $item_group->style = $instance["{$type}_style"];
 
-							$item_group->options = array(
-								'title' => array( 'maxLen' => $titleMaxLength )
-							);
-							$item_group->items   = array();
+                        $item_group->options = array(
+                            'title' => array( 'maxLen' => $titleMaxLength )
+                        );
+                        $item_group->items   = array();
 
-							$has_thumb = ( strtolower( $instance["{$type}_style"] ) !== 'legacy' );
+                        $has_thumb = ( strtolower( $instance["{$type}_style"] ) !== 'legacy' );
 
-							$thumb_width  = 160;
-							$thumb_height = 100;
-							if ( $has_thumb ) {
-								switch ( $instance["{$type}_style"] ) {
-									case '2':
-									case 'compact_thumbs':
-										$thumb_width  = 50;
-										$thumb_height = 40;
-										break;
-									case '1':
-									case 'thumbs':
-									default:
-										$thumb_width  = 160;
-										$thumb_height = 100;
-										break;
-								}
-								$item_group->options['thumb'] = array(
-									'width'  => $thumb_width,
-									'height' => $thumb_height,
-								);
-							}
+                        $thumb_width  = 160;
+                        $thumb_height = 100;
+                        if ( $has_thumb ) {
+                            switch ( $instance["{$type}_style"] ) {
+                                case '2':
+                                case 'compact_thumbs':
+                                    $thumb_width  = 50;
+                                    $thumb_height = 40;
+                                    break;
+                                case '1':
+                                case 'thumbs':
+                                default:
+                                    $thumb_width  = 160;
+                                    $thumb_height = 100;
+                                    break;
+                            }
+                            $item_group->options['thumb'] = array(
+                                'width'  => $thumb_width,
+                                'height' => $thumb_height,
+                            );
+                        }
 
-							$cell = 0;
-							foreach ( $ratings as $rating ) {
-								$urid                = $rating->urid;
-								$rclass              = $types[ $type ]["rclass"];
-								$rclasses[ $rclass ] = true;
+                        $cell = 0;
+                        foreach ( $ratings as $rating ) {
+                            $urid                = $rating->urid;
+                            $rclass              = $types[ $type ]["rclass"];
+                            $rclasses[ $rclass ] = true;
 
-								$extension_type = false;
+                            $extension_type = false;
 
-								if ( RWLogger::IsOn() ) {
-									RWLogger::Log( 'HANDLED_ITEM', 'Urid = ' . $urid . '; Class = ' . $rclass . ';' );
-								}
+                            if ( RWLogger::IsOn() ) {
+                                RWLogger::Log( 'HANDLED_ITEM', 'Urid = ' . $urid . '; Class = ' . $rclass . ';' );
+                            }
 
-								if ( 'posts' === $type ||
-								     'pages' === $type
-								) {
-									$post   = null;
-									$id     = RatingWidgetPlugin::Urid2PostId( $urid );
-									$status = @get_post_status( $id );
-									if ( false === $status ) {
-										if ( RWLogger::IsOn() ) {
-											RWLogger::Log( 'POST_NOT_EXIST', $id );
-										}
+                            if ( 'posts' === $type ||
+                                 'pages' === $type
+                            ) {
+                                $post   = null;
+                                $id     = RatingWidgetPlugin::Urid2PostId( $urid );
+                                $status = @get_post_status( $id );
+                                if ( false === $status ) {
+                                    if ( RWLogger::IsOn() ) {
+                                        RWLogger::Log( 'POST_NOT_EXIST', $id );
+                                    }
 
-										// Post not exist.
-										continue;
-									} else if ( 'publish' !== $status && 'private' !== $status ) {
-										if ( RWLogger::IsOn() ) {
-											RWLogger::Log( 'POST_NOT_VISIBLE', 'status = ' . $status );
-										}
+                                    // Post not exist.
+                                    continue;
+                                } else if ( 'publish' !== $status && 'private' !== $status ) {
+                                    if ( RWLogger::IsOn() ) {
+                                        RWLogger::Log( 'POST_NOT_VISIBLE', 'status = ' . $status );
+                                    }
 
-										// Post not yet published.
-										continue;
-									} else if ( 'private' === $status && ! is_user_logged_in() ) {
-										if ( RWLogger::IsOn() ) {
-											RWLogger::Log( 'RatingWidgetPlugin_TopRatedWidget::widget', 'POST_PRIVATE && USER_LOGGED_OUT' );
-										}
+                                    // Post not yet published.
+                                    continue;
+                                } else if ( 'private' === $status && ! is_user_logged_in() ) {
+                                    if ( RWLogger::IsOn() ) {
+                                        RWLogger::Log( 'RatingWidgetPlugin_TopRatedWidget::widget', 'POST_PRIVATE && USER_LOGGED_OUT' );
+                                    }
 
-										// Private post but user is not logged in.
-										continue;
-									}
+                                    // Private post but user is not logged in.
+                                    continue;
+                                }
 
-									$post      = @get_post( $id );
-									$title     = trim( strip_tags( $post->post_title ) );
-									$permalink = get_permalink( $post->ID );
-								} else if ( 'comments' === $type ) {
-									$comment = null;
-									$id      = RatingWidgetPlugin::Urid2CommentId( $urid );
-									$status  = @wp_get_comment_status( $id );
-									if ( false === $status ) {
-										if ( RWLogger::IsOn() ) {
-											RWLogger::Log( 'COMMENT_NOT_EXIST', $id );
-										}
+                                $post      = @get_post( $id );
+                                $title     = trim( strip_tags( $post->post_title ) );
+                                $permalink = get_permalink( $post->ID );
+                            } else if ( 'comments' === $type ) {
+                                $comment = null;
+                                $id      = RatingWidgetPlugin::Urid2CommentId( $urid );
+                                $status  = @wp_get_comment_status( $id );
+                                if ( false === $status ) {
+                                    if ( RWLogger::IsOn() ) {
+                                        RWLogger::Log( 'COMMENT_NOT_EXIST', $id );
+                                    }
 
-										// Comment not exist.
-										continue;
-									} else if ( 'approved' !== $status ) {
-										if ( RWLogger::IsOn() ) {
-											RWLogger::Log( 'COMMENT_NOT_VISIBLE', 'status = ' . $status );
-										}
+                                    // Comment not exist.
+                                    continue;
+                                } else if ( 'approved' !== $status ) {
+                                    if ( RWLogger::IsOn() ) {
+                                        RWLogger::Log( 'COMMENT_NOT_VISIBLE', 'status = ' . $status );
+                                    }
 
-										// Comment not approved.
-										continue;
-									}
+                                    // Comment not approved.
+                                    continue;
+                                }
 
-									$comment   = @get_comment( $id );
-									$title     = trim( strip_tags( $comment->comment_content ) );
-									$permalink = get_permalink( $comment->comment_post_ID ) . '#comment-' . $comment->comment_ID;
-								} else if ( 'activity_updates' === $type ||
-								            'activity_comments' === $type
-								) {
-									$id       = RatingWidgetPlugin::Urid2ActivityId( $urid );
-									$activity = new bp_activity_activity( $id );
+                                $comment   = @get_comment( $id );
+                                $title     = trim( strip_tags( $comment->comment_content ) );
+                                $permalink = get_permalink( $comment->comment_post_ID ) . '#comment-' . $comment->comment_ID;
+                            } else if ( 'activity_updates' === $type ||
+                                        'activity_comments' === $type
+                            ) {
+                                $id       = RatingWidgetPlugin::Urid2ActivityId( $urid );
+                                $activity = new bp_activity_activity( $id );
 
-									if ( ! is_object( $activity ) ) {
-										if ( RWLogger::IsOn() ) {
-											RWLogger::Log( 'BP_ACTIVITY_NOT_EXIST', $id );
-										}
+                                if ( ! is_object( $activity ) ) {
+                                    if ( RWLogger::IsOn() ) {
+                                        RWLogger::Log( 'BP_ACTIVITY_NOT_EXIST', $id );
+                                    }
 
-										// Activity not exist.
-										continue;
-									} else if ( ! empty( $activity->is_spam ) ) {
-										if ( RWLogger::IsOn() ) {
-											RWLogger::Log( 'BP_ACTIVITY_NOT_VISIBLE (SPAM or TRASH)' );
-										}
+                                    // Activity not exist.
+                                    continue;
+                                } else if ( ! empty( $activity->is_spam ) ) {
+                                    if ( RWLogger::IsOn() ) {
+                                        RWLogger::Log( 'BP_ACTIVITY_NOT_VISIBLE (SPAM or TRASH)' );
+                                    }
 
-										// Activity marked as SPAM or TRASH.
-										continue;
-									} else if ( ! empty( $activity->hide_sitewide ) ) {
-										if ( RWLogger::IsOn() ) {
-											RWLogger::Log( 'BP_ACTIVITY_HIDE_SITEWIDE' );
-										}
+                                    // Activity marked as SPAM or TRASH.
+                                    continue;
+                                } else if ( ! empty( $activity->hide_sitewide ) ) {
+                                    if ( RWLogger::IsOn() ) {
+                                        RWLogger::Log( 'BP_ACTIVITY_HIDE_SITEWIDE' );
+                                    }
 
-										// Activity marked as hidden in site.
-										continue;
-									}
+                                    // Activity marked as hidden in site.
+                                    continue;
+                                }
 
-									$title     = trim( strip_tags( $activity->content ) );
-									$permalink = bp_activity_get_permalink( $id );
-								} else if ( 'users' === $type ) {
-									$id = RatingWidgetPlugin::Urid2UserId( $urid );
+                                $title     = trim( strip_tags( $activity->content ) );
+                                $permalink = bp_activity_get_permalink( $id );
+                            } else if ( 'users' === $type ) {
+                                $id = RatingWidgetPlugin::Urid2UserId( $urid );
 
-									if ( $bpInstalled ) {
-										$title     = trim( strip_tags( bp_core_get_user_displayname( $id ) ) );
-										$permalink = bp_core_get_user_domain( $id );
-									} else if ( $bbInstalled ) {
-										$title     = trim( strip_tags( bbp_get_user_display_name( $id ) ) );
-										$permalink = bbp_get_user_profile_url( $id );
-									} else {
-										continue;
-									}
-								} else if ( 'forum_posts' === $type || 'forum_replies' === $type ) {
-									$id = RatingWidgetPlugin::Urid2ForumPostId( $urid );
-									if ( function_exists( 'bp_forums_get_post' ) ) {
-										$forum_post = @bp_forums_get_post( $id );
+                                if ( $bpInstalled ) {
+                                    $title     = trim( strip_tags( bp_core_get_user_displayname( $id ) ) );
+                                    $permalink = bp_core_get_user_domain( $id );
+                                } else if ( $bbInstalled ) {
+                                    $title     = trim( strip_tags( bbp_get_user_display_name( $id ) ) );
+                                    $permalink = bbp_get_user_profile_url( $id );
+                                } else {
+                                    continue;
+                                }
+                            } else if ( 'forum_posts' === $type || 'forum_replies' === $type ) {
+                                $id = RatingWidgetPlugin::Urid2ForumPostId( $urid );
+                                if ( function_exists( 'bp_forums_get_post' ) ) {
+                                    $forum_post = @bp_forums_get_post( $id );
 
-										if ( ! is_object( $forum_post ) ) {
-											continue;
-										}
+                                    if ( ! is_object( $forum_post ) ) {
+                                        continue;
+                                    }
 
-										$title     = trim( strip_tags( $forum_post->post_text ) );
-										$page      = bb_get_page_number( $forum_post->post_position );
-										$permalink = get_topic_link( $id, $page ) . "#post-{$id}";
-									} else if ( function_exists( 'bbp_get_reply_id' ) ) {
-										$forum_item = bbp_get_topic( $id );
+                                    $title     = trim( strip_tags( $forum_post->post_text ) );
+                                    $page      = bb_get_page_number( $forum_post->post_position );
+                                    $permalink = get_topic_link( $id, $page ) . "#post-{$id}";
+                                } else if ( function_exists( 'bbp_get_reply_id' ) ) {
+                                    $forum_item = bbp_get_topic( $id );
 
-										if ( is_object( $forum_item ) ) {
-											$is_topic = true;
-										} else {
-											$is_topic = false;
+                                    if ( is_object( $forum_item ) ) {
+                                        $is_topic = true;
+                                    } else {
+                                        $is_topic = false;
 
-											$forum_item = bbp_get_reply( $id );
+                                        $forum_item = bbp_get_reply( $id );
 
-											if ( ! is_object( $forum_item ) ) {
-												if ( RWLogger::IsOn() ) {
-													RWLogger::Log( 'BBP_FORUM_ITEM_NOT_EXIST', $id );
-												}
+                                        if ( ! is_object( $forum_item ) ) {
+                                            if ( RWLogger::IsOn() ) {
+                                                RWLogger::Log( 'BBP_FORUM_ITEM_NOT_EXIST', $id );
+                                            }
 
-												// Invalid id (no topic nor reply).
-												continue;
-											}
+                                            // Invalid id (no topic nor reply).
+                                            continue;
+                                        }
 
-											if ( RWLogger::IsOn() ) {
-												RWLogger::Log( 'BBP_IS_TOPIC_REPLY', ( $is_topic ? 'FALSE' : 'TRUE' ) );
-											}
-										}
+                                        if ( RWLogger::IsOn() ) {
+                                            RWLogger::Log( 'BBP_IS_TOPIC_REPLY', ( $is_topic ? 'FALSE' : 'TRUE' ) );
+                                        }
+                                    }
 
-										// Visible statueses: Public or Closed.
-										$visible_statuses = array(
-											bbp_get_public_status_id(),
-											bbp_get_closed_status_id()
-										);
+                                    // Visible statueses: Public or Closed.
+                                    $visible_statuses = array(
+                                        bbp_get_public_status_id(),
+                                        bbp_get_closed_status_id()
+                                    );
 
-										if ( ! in_array( $forum_item->post_status, $visible_statuses ) ) {
-											if ( RWLogger::IsOn() ) {
-												RWLogger::Log( 'BBP_FORUM_ITEM_HIDDEN', $forum_item->post_status );
-											}
+                                    if ( ! in_array( $forum_item->post_status, $visible_statuses ) ) {
+                                        if ( RWLogger::IsOn() ) {
+                                            RWLogger::Log( 'BBP_FORUM_ITEM_HIDDEN', $forum_item->post_status );
+                                        }
 
-											// Item is not public nor closed.
-											continue;
-										}
+                                        // Item is not public nor closed.
+                                        continue;
+                                    }
 
-										$is_reply = ( ! $is_topic );
+                                    $is_reply = ( ! $is_topic );
 
-										if ( $is_reply ) {
-											// Get parent topic.
-											$forum_item = bbp_get_topic( $forum_item->post_parent );
+                                    if ( $is_reply ) {
+                                        // Get parent topic.
+                                        $forum_item = bbp_get_topic( $forum_item->post_parent );
 
-											if ( ! in_array( $forum_item->post_status, $visible_statuses ) ) {
-												if ( RWLogger::IsOn() ) {
-													RWLogger::Log( 'BBP_PARENT_FORUM_TOPIC_IS_HIDDEN', 'TRUE' );
-												}
+                                        if ( ! in_array( $forum_item->post_status, $visible_statuses ) ) {
+                                            if ( RWLogger::IsOn() ) {
+                                                RWLogger::Log( 'BBP_PARENT_FORUM_TOPIC_IS_HIDDEN', 'TRUE' );
+                                            }
 
-												// Parent topic is not public nor closed.
-												continue;
-											}
-										}
+                                            // Parent topic is not public nor closed.
+                                            continue;
+                                        }
+                                    }
 
-										$title     = trim( strip_tags( $forum_item->post_title ) );
-										$permalink = get_permalink( $forum_item->ID );
-									} else {
-										continue;
-									}
-								} else {
-									$found_handler = false;
+                                    $title     = trim( strip_tags( $forum_item->post_title ) );
+                                    $permalink = get_permalink( $forum_item->ID );
+                                } else {
+                                    continue;
+                                }
+                            } else {
+                                $found_handler = false;
 
-									$extensions = ratingwidget()->GetExtensions();
-									foreach ( $extensions as $ext ) {
-										$result = $ext->GetElementInfoByRating( $type, $rating );
-										if ( false !== $result ) {
-											$found_handler = true;
-											break;
-										}
-									}
+                                $extensions = ratingwidget()->GetExtensions();
+                                foreach ( $extensions as $ext ) {
+                                    $result = $ext->GetElementInfoByRating( $type, $rating );
+                                    if ( false !== $result ) {
+                                        $found_handler = true;
+                                        break;
+                                    }
+                                }
 
-									if ( $found_handler ) {
-										$id             = $result['id'];
-										$title          = $result['title'];
-										$permalink      = $result['permalink'];
-										$img            = rw_get_thumb_url( $result['img'], $thumb_width, $thumb_height, $result['permalink'] );
-										$extension_type = true;
-									} else {
-										continue;
-									}
-								}
+                                if ( $found_handler ) {
+                                    $id             = $result['id'];
+                                    $title          = $result['title'];
+                                    $permalink      = $result['permalink'];
+                                    $img            = rw_get_thumb_url( $result['img'], $thumb_width, $thumb_height, $result['permalink'] );
+                                    $extension_type = true;
+                                } else {
+                                    continue;
+                                }
+                            }
 
-								$queued = ratingwidget()->QueueRatingData( $urid, "", "", $rclass );
+                            $queued = ratingwidget()->QueueRatingData( $urid, "", "", $rclass );
 
-								// Override rating class in case the same rating has already been queued with a different rclass.
-								$rclass = $queued['rclass'];
+                            // Override rating class in case the same rating has already been queued with a different rclass.
+                            $rclass = $queued['rclass'];
 
-								$short = ( mb_strlen( $title ) > $titleMaxLength ) ? trim( mb_substr( $title, 0, $titleMaxLength ) ) . "..." : $title;
+                            $short = ( mb_strlen( $title ) > $titleMaxLength ) ? trim( mb_substr( $title, 0, $titleMaxLength ) ) . "..." : $title;
 
-								$item = array(
-									'site'   => array(
-										'id'     => rw_account()->site_id,
-										'domain' => $_SERVER['HTTP_HOST'],
-									),
-									'page'   => array(
-										'externalID' => $id,
-										'url'        => $permalink,
-										'title'      => $short,
-									),
-									'rating' => array(
-										'localID' => $urid,
-										'options' => array(
-											'rclass' => $rclass,
-										),
-									),
-								);
+                            $item = array(
+                                'site'   => array(
+                                    'id'     => rw_account()->site_id,
+                                    'domain' => $_SERVER['HTTP_HOST'],
+                                ),
+                                'page'   => array(
+                                    'externalID' => $id,
+                                    'url'        => $permalink,
+                                    'title'      => $short,
+                                ),
+                                'rating' => array(
+                                    'localID' => $urid,
+                                    'options' => array(
+                                        'rclass' => $rclass,
+                                    ),
+                                ),
+                            );
 
-								// Add thumb url.
-								if ( $extension_type && is_string( $img ) ) {
-									$item['page']['img'] = $img;
-								} else if ( $has_thumb && ( in_array( $type, array( 'posts', 'pages' ) ) ) ) {
-									$item['page']['img'] = rw_get_post_thumb_url( $post, $thumb_width, $thumb_height );
-								}
+                            // Add thumb url.
+                            if ( $extension_type && is_string( $img ) ) {
+                                $item['page']['img'] = $img;
+                            } else if ( $has_thumb && ( in_array( $type, array( 'posts', 'pages' ) ) ) ) {
+                                $item['page']['img'] = rw_get_post_thumb_url( $post, $thumb_width, $thumb_height );
+                            }
 
-								$item_group->items[] = $item;
+                            $item_group->items[] = $item;
 
-								$cell ++;
+                            $cell ++;
 
-								$empty = false;
-							}
+                            $empty = false;
+                        }
 
-							$toprated_data->itemGroups[] = $item_group;
-						}
-					}
-				}
+                        $toprated_data->itemGroups[] = $item_group;
+                    }
+                }
 
 				if ( true === $empty ) {
 //            echo '<p style="margin: 0;">There are no rated items for this period.</p>';
