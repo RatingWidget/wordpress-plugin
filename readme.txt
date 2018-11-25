@@ -210,6 +210,9 @@ You can contact us regarding paid customization requests here:
 
 == Change Log ==
 
+= 3.0.2 - 2018-11-25 =
+* Update: Updated version of Freemius with bug fixes and new features.
+
 = 3.0.1 - 2018-08-19 =
 * Fix: Fixed the download link for the premium version on the "Account" section.
 
