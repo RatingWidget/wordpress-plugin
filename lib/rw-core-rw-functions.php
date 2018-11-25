@@ -123,7 +123,7 @@
 
 	function rw_get_thumb_url( $img, $width = 160, $height = 100, $permalink = '' ) {
 		return rw_get_img_thumb_url(
-			( is_string( $img ) && 0 < count( $img ) ) ? $img : $permalink,
+			( is_string( $img ) && 0 < strlen( $img ) ) ? $img : $permalink,
 			$width,
 			$height
 		);
