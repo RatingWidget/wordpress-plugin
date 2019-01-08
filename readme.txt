@@ -210,7 +210,7 @@ You can contact us regarding paid customization requests here:
 
 == Change Log ==
 
-= 3.0.4 - 2018-01-08 =
+= 3.0.4 - 2019-01-08 =
 * Update: Updated version of Freemius with bug fixes.
 
 = 3.0.3 - 2018-12-08 =
