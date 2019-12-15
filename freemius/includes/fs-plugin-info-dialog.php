@@ -37,7 +37,7 @@
          * is used instead.
          *
          * @author Leo Fajardo (@leorw)
-         * @since 2.2.5
+         * @since 2.3.0
          *
          * @var string[]
          */
@@ -48,7 +48,7 @@
          * dropdown list.
          *
          * @author Leo Fajardo (@leorw)
-         * @since 2.2.5
+         * @since 2.3.0
          *
          * @var string[]
          */
@@ -145,15 +145,36 @@
                         }
 
                         if ( is_array( $pricing ) && 0 < count( $pricing ) ) {
-                            $has_paid_plan = true;
+                            $filtered_pricing = array();
 
-                            foreach ( $pricing as &$prices ) {
+                            foreach ( $pricing as $prices ) {
                                 $prices = new FS_Pricing( $prices );
+
+                                if ( ! $prices->is_usd() ) {
+                                    /**
+                                     * Skip non-USD pricing.
+                                     *
+                                     * @author Leo Fajardo (@leorw)
+                                     * @since 2.3.1
+                                     */
+                                    continue;
+                                }
+
+                                if ( ( $prices->has_monthly() && $prices->monthly_price > 1.0 ) ||
+                                     ( $prices->has_annual() && $prices->annual_price > 1.0 ) ||
+                                     ( $prices->has_lifetime() && $prices->lifetime_price > 1.0 )
+                                ) {
+                                    $filtered_pricing[] = $prices;
+                                }
                             }
 
-                            $plan->pricing = $pricing;
+                            if ( ! empty( $filtered_pricing ) ) {
+                                $has_paid_plan = true;
 
-                            $has_pricing = true;
+                                $plan->pricing = $filtered_pricing;
+
+                                $has_pricing = true;
+                            }
                         }
 
                         if ( is_array( $features ) && 0 < count( $features ) ) {
@@ -399,7 +420,7 @@
 
         /**
          * @author Leo Fajardo (@leorw)
-         * @since  2.2.5
+         * @since  2.3.0
          *
          * @param object         $api
          * @param FS_Plugin_Plan $plan
@@ -420,7 +441,7 @@
                  * the actions dropdown.
                  *
                  * @author Leo Fajardo (@leorw)
-                 * @since 2.2.5
+                 * @since 2.3.0
                  */
                 if ( ! $api->has_purchased_license ) {
                     array_unshift( $actions, $checkout_cta );
@@ -525,7 +546,7 @@
 
         /**
          * @author Leo Fajardo (@leorw)
-         * @since  2.2.5
+         * @since  2.3.0
          *
          * @param object $api
          *
@@ -561,7 +582,7 @@
                  * Free-only add-on.
                  *
                  * @author Leo Fajardo (@leorw)
-                 * @since 2.2.5
+                 * @since 2.3.0
                  */
                 $is_free_installed    = $has_installed_version;
                 $is_premium_installed = false;
@@ -570,7 +591,7 @@
                  * Premium-only add-on.
                  *
                  * @author Leo Fajardo (@leorw)
-                 * @since 2.2.5
+                 * @since 2.3.0
                  */
                 $is_free_installed    = false;
                 $is_premium_installed = $has_installed_version;
@@ -579,7 +600,7 @@
                  * Freemium add-on.
                  *
                  * @author Leo Fajardo (@leorw)
-                 * @since 2.2.5
+                 * @since 2.3.0
                  */
                 if ( ! $has_installed_version ) {
                     $is_free_installed    = false;
@@ -604,7 +625,7 @@
                              * Check if there's a plugin installed in a directory named `$api->slug`.
                              *
                              * @author Leo Fajardo (@leorw)
-                             * @since 2.2.5
+                             * @since 2.3.0
                              */
                             $installed_plugins = get_plugins( '/' . $api->slug );
                             $is_free_installed = ( ! empty( $installed_plugins ) );
@@ -618,7 +639,7 @@
                              * Check if there's a plugin installed in a directory named `$api->premium_slug`.
                              *
                              * @author Leo Fajardo (@leorw)
-                             * @since 2.2.5
+                             * @since 2.3.0
                              */
                             $installed_plugins    = get_plugins( '/' . $api->premium_slug );
                             $is_premium_installed = ( ! empty( $installed_plugins ) );
@@ -696,7 +717,7 @@
                      * to work.
                      *
                      * @author Leo Fajardo (@leorw)
-                     * @since 2.2.5
+                     * @since 2.3.0
                      */
                     $this->status['url'] = self::get_blog_status_url( $blog_id, $this->status['url'], $this->status['status'] );
                 }
@@ -706,7 +727,7 @@
                  * installed/updated.
                  *
                  * @author Leo Fajardo (@leorw)
-                 * @since 2.2.5
+                 * @since 2.3.0
                  */
                 $this->status['url'] = str_replace( '?', '?fs_allow_updater_and_dialog=true&amp;', $this->status['url'] );
             }
@@ -793,7 +814,7 @@
          * Rebuilds the status URL based on the admin URL.
          *
          * @author Leo Fajardo (@leorw)
-         * @since 2.2.5
+         * @since 2.3.0
          *
          * @param int    $blog_id
          * @param string $network_status_url
@@ -1047,7 +1068,7 @@
                 $href        = add_query_arg( array( 'tab' => $tab, 'section' => $section_name ) );
                 $href        = esc_url( $href );
                 $san_section = esc_attr( $section_name );
-                echo "\t<a name='$san_section' href='$href' $class>$title</a>\n";
+                echo "\t<a name='$san_section' href='$href' $class>" . esc_html( $title ) . "</a>\n";
             }
 
             echo "</div>\n";
@@ -1414,7 +1435,7 @@
                                 $stars_label
                             ) ) ?>"><?php echo $stars_label ?></a></span>
                                 <span class="counter-back">
-						<span class="counter-bar" style="width: <?php echo 92 * $_rating; ?>px;"></span>
+						<span class="counter-bar" style="width: <?php echo absint(92 * $_rating); ?>px;"></span>
 					</span>
                                 <span class="counter-count"><?php echo number_format_i18n( $ratecount ); ?></span>
                             </div>
@@ -1535,7 +1556,7 @@
                                      * Close the other dropdown if it's active.
                                      *
                                      * @author Leo Fajardo (@leorw)
-                                     * @since 2.2.5
+                                     * @since 2.3.0
                                      */
                                     $( '.fs-dropdown.active' ).each( function() {
                                         toggleDropdown( $( this ), false );
@@ -1546,7 +1567,7 @@
                                  * Toggle the current dropdown.
                                  *
                                  * @author Leo Fajardo (@leorw)
-                                 * @since 2.2.5
+                                 * @since 2.3.0
                                  */
                                 toggleDropdown( $dropdown, ! isActive );
 
@@ -1557,7 +1578,7 @@
                              * Close all dropdowns.
                              *
                              * @author Leo Fajardo (@leorw)
-                             * @since 2.2.5
+                             * @since 2.3.0
                              */
                             toggleDropdown( $( this ).find( '.fs-dropdown' ), false );
                         });
@@ -1567,7 +1588,7 @@
                          * Add the `up` class so that the bottom dropdown's content will be shown above its buttons.
                          *
                          * @author Leo Fajardo (@leorw)
-                         * @since 2.2.5
+                         * @since 2.3.0
                          */
                         $( '#plugin-information-footer' ).find( '.fs-dropdown' ).addClass( 'up' );
                     }
@@ -1576,7 +1597,7 @@
                      * Returns the default state of the dropdown arrow button and hides the dropdown list.
                      *
                      * @author Leo Fajardo (@leorw)
-                     * @since 2.2.5
+                     * @since 2.3.0
                      *
                      * @param {Object}  [$dropdown]
                      * @param {Boolean} [state]
