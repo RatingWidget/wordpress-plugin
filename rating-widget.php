@@ -4938,15 +4938,7 @@
 						</div>
 					</form>
 				</div>
-                <?php
-                    $params = array(
-                        'page'           => 'rw-settings',
-                        'module_id'      => rw_fs()->get_id(),
-                        'module_slug'    => rw_fs()->get_slug(),
-                        'module_version' => rw_fs()->get_plugin_version(),
-                    );
-                ?>
-				<?php fs_require_template( 'powered-by.php', $params ) ?>
+                <?php rw_require_view( 'fs-powered-by.php' ) ?>
 				<?php
 
 				// Store options if in save mode.
