@@ -118,4 +118,4 @@
 			</div>
 		</form>
 	</div>
-<?php fs_require_template( 'powered-by.php' ) ?>
+<?php rw_require_view( 'fs-powered-by.php' ) ?>
