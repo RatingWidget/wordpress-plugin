@@ -210,6 +210,9 @@ You can contact us regarding paid customization requests here:
 
 == Change Log ==
 
+= 3.0.9 - 2020-03-11 =
+* Fix: Fixed a fatal error on the "Advanced" settings page.
+
 = 3.0.8 - 2019-12-16 =
 * Update: Updated version of Freemius with bug fixes.
 
