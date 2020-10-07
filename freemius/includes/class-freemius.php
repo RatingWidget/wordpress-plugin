@@ -5481,7 +5481,10 @@
          * @return bool
          */
         function is_extensions_tracking_allowed() {
-            return (true === $this->_storage->get( 'is_extensions_tracking_allowed', true ) );
+            return ( true === $this->apply_filters(
+                    'is_extensions_tracking_allowed',
+                    $this->_storage->get( 'is_extensions_tracking_allowed', true )
+                ) );
         }
 
         /**
@@ -9018,12 +9021,25 @@
                         'is_uninstalled' => false,
                     );
 
-                    $plugins_update_data[]                       = $new_plugin;
                     $network_plugins_cache->plugins[ $basename ] = $new_plugin;
+
+                    $is_site_level_active = (
+                        isset( $site_active_plugins[ $basename ] ) &&
+                        $site_active_plugins[ $basename ]['is_active']
+                    );
+
+                    /**
+                     * If not network active, set the activity status based on the site-level plugin status.
+                     */
+                    if ( ! $new_plugin['is_active'] ) {
+                        $new_plugin['is_active'] = $is_site_level_active;
+                    }
+
+                    $plugins_update_data[] = $new_plugin;
 
                     if ( isset( $site_active_plugins[ $basename ] ) ) {
                         $site_active_plugins_cache->plugins[ $basename ]              = $new_plugin;
-                        $site_active_plugins_cache->plugins[ $basename ]['is_active'] = true;
+                        $site_active_plugins_cache->plugins[ $basename ]['is_active'] = $is_site_level_active;
                     }
                 }
             }
@@ -23324,14 +23340,18 @@
                 return;
             }
 
-            if ( $this->is_registered() && $this->is_tracking_allowed() ) {
-                if ( ! $this->is_enable_anonymous() ) {
-                    // If opted in and tracking is allowed, don't allow to opt out if anonymous mode is disabled.
-                    return;
-                }
+            if (
+                $this->is_activation_mode() &&
+                $this->is_premium() &&
+                ! $this->is_registered()
+            ) {
+                // If not yet registered and running the premium code base, a license activation link will already be shown.
+                return;
+            }
 
-                if ( ! $this->is_free_plan() ) {
-                    // Don't allow to opt out if running in paid plan.
+            if ( $this->is_registered() && $this->is_tracking_allowed() ) {
+                if ( ! $this->is_premium() && ! $this->is_enable_anonymous() ) {
+                    // If opted in and tracking is allowed, don't allow to opt out if not premium and anonymous mode is disabled.
                     return;
                 }
             }
@@ -23446,10 +23466,12 @@
          * @since  1.0.3
          */
         function _redirect_on_activation_hook() {
-            $url = $this->get_after_plugin_activation_redirect_url();
+            if ( $this->apply_filters( 'redirect_on_activation', true ) ) {
+                $url = $this->get_after_plugin_activation_redirect_url();
 
-            if ( is_string( $url ) ) {
-                fs_redirect( $url );
+                if ( is_string( $url ) ) {
+                    fs_redirect( $url );
+                }
             }
         }
 
