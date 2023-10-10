@@ -44,10 +44,10 @@
 				?>
 				<select>
 					<?php foreach ( $frquencies as $f ) : $selected = ( $frequency == $f['days'] ); ?>
-						<option name="rw_frequency" data-frequency="<?php echo $f['f'] ?>"
-						        value="<?php echo $f['days'] ?>" <?php if ( $selected ) {
+						<option name="rw_frequency" data-frequency="<?php echo esc_attr( $f['f'] ) ?>"
+						        value="<?php echo (int) $f['days'] ?>" <?php if ( $selected ) {
 							echo ' selected="selected"';
-						} ?>><?php echo $f['label'] . ' - ' . $f['desc'] ?></option>
+						} ?>><?php echo esc_html( $f['label'] . ' - ' . $f['desc'] ) ?></option>
 					<?php endforeach ?>
 				</select>
 				<script type="text/javascript">

@@ -4,7 +4,7 @@
         <?php
             $language_str = isset(rw_settings()->language_str) ? rw_settings()->language_str : "en";
             foreach (rw_settings()->languages as $short => $long)
-                echo '<option value="' . $short . '"' . (($short == $language_str) ? ' selected="selected"' : '') . '>' . $long . '</option>';
+                echo '<option value="' . esc_attr( $short ) . '"' . (($short == $language_str) ? ' selected="selected"' : '') . '>' . esc_html( $long ) . '</option>';
         ?>
     </select>
 </td>

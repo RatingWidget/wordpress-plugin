@@ -9,20 +9,20 @@
 ?>
 <td><span class="rw-ui-def"><?php _erw( 'theme' ) ?>:</span></td>
 <td>
-	<img id="rw_theme_loader" src="<?php echo WP_RW__ADDRESS_IMG; ?>rw.loader.gif" alt=""/>
+	<img id="rw_theme_loader" src="<?php echo esc_url( WP_RW__ADDRESS_IMG . 'rw.loader.gif' ) ?>" alt=""/>
 	<?php
 		global $RW_THEMES;
 
 		foreach ( $RW_THEMES as $type => $type_themes ) {
 			?>
-			<div id="rw_<?php echo $type; ?>_theme_select" class="rw-select" style="display: none;">
+			<div id="rw_<?php echo esc_attr( $type ) ?>_theme_select" class="rw-select" style="display: none;">
 				<select tabindex="4">
 					<option></option>
 				</select>
 				<i class="rw-select-icon"></i>
 
 				<div class="rw-select-frame" style="display: none;"></div>
-				<div id="rw_<?php echo $type; ?>_theme_selected" class="rw-li rw-selected-item">
+				<div id="rw_<?php echo esc_attr( $type ) ?>_theme_selected" class="rw-li rw-selected-item">
 					<?php
 						if ( $options_type == $type && isset( $options_theme ) && isset( $type_themes[ $options_theme ] ) ) {
 							require( WP_RW__PLUGIN_DIR . "/themes/" . $type_themes[ $options_theme ]["file"] );
@@ -61,7 +61,7 @@
 						}
 					?>
 				</div>
-				<ul id="rw_<?php echo $type; ?>_theme_select_list" class="rw-list" style="display: none;">
+				<ul id="rw_<?php echo esc_attr( $type ) ?>_theme_select_list" class="rw-list" style="display: none;">
 					<?php
 						foreach ( $type_themes as $theme_name => $data ) {
 							if ( $data["type"] == $type ) {
@@ -71,7 +71,7 @@
 								<li class="rw-li<?php if ( $selected_theme === $theme_name ) {
 									echo " rw-selected";
 								} ?>"
-								    onclick="jQuery('#rw_<?php echo $type; ?>_theme_selected').html(this.innerHTML); jQuery('#rw_<?php echo $type; ?>_theme_select_list li.rw-li.rw-selected').removeClass('rw-selected'); this.className += ' rw-selected'; RWM.Set.theme('<?php echo $theme_name; ?>', RW.TYPE.<?php echo strtoupper( $type ); ?>);"
+								    onclick="jQuery('#rw_<?php echo esc_js( $type ) ?>_theme_selected').html(this.innerHTML); jQuery('#rw_<?php echo esc_js( $type ) ?>_theme_select_list li.rw-li.rw-selected').removeClass('rw-selected'); this.className += ' rw-selected'; RWM.Set.theme('<?php echo esc_js( $theme_name ) ?>', RW.TYPE.<?php echo esc_js( strtoupper( $type ) ) ?>);"
 								    onmouseover="jQuery(this.parentNode.childNodes).removeClass('rw-hover'); this.className += ' rw-hover';">
 									<?php
 										$options->size                         = "large";

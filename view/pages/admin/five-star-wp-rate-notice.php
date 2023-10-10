@@ -11,11 +11,11 @@
 	extract( $VARS );
 ?>
 <div>
-	<?php echo sprintf( __rw( 'rate-ask_message' ), $min_votes_trigger ) ?>
+	<?php echo esc_html( sprintf( __rw( 'rate-ask_message' ), $min_votes_trigger ) ) ?>
 	<br/><br/>
 	<strong><em>~ Vova Feldman</em></strong>
 </div>
-<ul data-nonce="<?php echo wp_create_nonce( 'rw_five_star_wp_rate_action_nonce' ) ?>">
+<ul data-nonce="<?php echo esc_attr( wp_create_nonce( 'rw_five_star_wp_rate_action_nonce' ) ) ?>">
 	<li><a data-rate-action="do-rate"
 	       href="https://wordpress.org/support/view/plugin-reviews/rating-widget?rate=5#postform"><?php _erw( 'rate-ask_ok' ) ?></a>
 	</li>

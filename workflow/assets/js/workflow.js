@@ -15,8 +15,9 @@
 						url: ajaxurl,
 						type: 'POST',
 						data: {
-							action: 'update-workflows-id-order',
-							ids: sortedIDs
+							action			: 'rw_update_workflows_id_order',
+							rw_ajax_security: RW_WORKFLOWS_SETTINGS.nonces.rw_update_workflows_id_order,
+							ids				: sortedIDs
 						}
 					});
 				}
@@ -29,7 +30,7 @@
 				var	$operation = $( this ).parents( '.operation:first' ),
 					$variablesContainer = $operation.find( '.operation-inputs' ),
 					variableTypeId = $( this ).val(),
-					variableDataType = WORKFLOWS_SETTINGS['variable-types'][ variableTypeId ].dataType;
+					variableDataType = RW_WORKFLOWS_SETTINGS['variable-types'][ variableTypeId ].dataType;
 				
 				if ( -1 === variableTypeId ) {
 					$variablesContainer.hide();
@@ -41,7 +42,7 @@
 				var $colOperator = $variablesContainer.find( '.col:first' ),
 					$colVariable = $variablesContainer.find( '.col:last' ),
 					$operators = createFromTemplate( 'operators' ),
-					allOperators = WORKFLOWS_SETTINGS.operators,
+					allOperators = RW_WORKFLOWS_SETTINGS.operators,
 					supportedOperators = allOperators[ variableDataType ];
 
 				$colOperator.html( '' );
@@ -97,7 +98,7 @@
 				if ( 'edit-name' === currentStep ) {
 					var name = $( '#workflow-name' ).val().trim();
 					if ( 0 === name.length ) {
-						showError( WORKFLOWS_SETTINGS.text.invalid_workflow );
+						showError( RW_WORKFLOWS_SETTINGS.text.invalid_workflow );
 						return false;
 					}
 
@@ -105,9 +106,10 @@
 						url: ajaxurl,
 						type: 'POST',
 						data: {
-							action: ( workflowId.length > 0 ) ? 'update-workflow' : 'new-workflow',
-							name: name,
-							id: workflowId
+							action			: ( workflowId.length > 0 ) ? 'rw_update_workflow' : 'rw_new_workflow',
+							rw_ajax_security: RW_WORKFLOWS_SETTINGS.nonces[ ( workflowId.length > 0 ) ? 'rw_update_workflow' : 'rw_new_workflow' ],
+							name			: name,
+							id				: workflowId
 						},
 						success: function( result ) {
 							var $listGroupItemTemplate = $( '.list-group-item[data-id="' + workflowId + '"]' );
@@ -143,9 +145,9 @@
 								$editConditions.find( 'select.variable-types' ).change();
 
 								$( '#edit-workflow' ).attr( 'data-id', workflowId );
-								WORKFLOWS_SETTINGS.workflows[ workflowId ] = jsonResult.data.workflow;
+								RW_WORKFLOWS_SETTINGS.workflows[ workflowId ] = jsonResult.data.workflow;
 							} else {
-								WORKFLOWS_SETTINGS.workflows[ workflowId ].name = name;
+								RW_WORKFLOWS_SETTINGS.workflows[ workflowId ].name = name;
 							}
 
 							$listGroupItemTemplate.find( '.list-group-item-content' ).html( name );
@@ -222,7 +224,7 @@
 							$( this ).find( '.operations-list' ).children().each(function() {
 								var $condition = $( this ),
 									variableTypeId = $condition.find( '.variable-types' ).val(),
-									variableType = WORKFLOWS_SETTINGS['variable-types'][ variableTypeId ],
+									variableType = RW_WORKFLOWS_SETTINGS['variable-types'][ variableTypeId ],
 									operatorId = $condition.find( '.operators' ).val(),
 									operand = ( 'dropdown' === variableType.field.type ) ? $condition.find( '.operation-inputs .col:last select' ).val() : $condition.find( '.operation-inputs .col:last input' ).val(),
 									condition = '',
@@ -230,8 +232,8 @@
 
 
 								var conditionItem = 
-									WORKFLOWS_SETTINGS['variable-types'][ variableTypeId ].title
-									+ ' ' + WORKFLOWS_SETTINGS.operators[ variableType.dataType ][ operatorId ].title;
+									RW_WORKFLOWS_SETTINGS['variable-types'][ variableTypeId ].title
+									+ ' ' + RW_WORKFLOWS_SETTINGS.operators[ variableType.dataType ][ operatorId ].title;
 
 								if ( 'dropdown' === variableType.field.type ) {
 									conditionItem += ' ' + '<strong>' + ( undefined != operandTypeValues[ operand ] ? operandTypeValues[ operand ].title : '' ) + '</strong>';
@@ -265,7 +267,7 @@
 								action += '<span class="label label-default and">and</span>';
 							}
 
-							action += WORKFLOWS_SETTINGS.actions[ actionId ].title + '</li>';
+							action += RW_WORKFLOWS_SETTINGS.actions[ actionId ].title + '</li>';
 
 							actionsHtml += action;
 						});
@@ -282,7 +284,7 @@
 								eventType += '<span class="label label-default and">or</span>';
 							}
 
-							eventType += WORKFLOWS_SETTINGS['event-types'][ eventTypeId ].title + '</li>';
+							eventType += RW_WORKFLOWS_SETTINGS['event-types'][ eventTypeId ].title + '</li>';
 
 							eventTypesHtml += eventType;
 						});
@@ -312,7 +314,7 @@
 				if ( 'edit-name' === currentTabId ) {
 					var name = $( '#workflow-name' ).val().trim();
 					if ( 0 === name.length ) {
-						showError( WORKFLOWS_SETTINGS.text.invalid_workflow );
+						showError( RW_WORKFLOWS_SETTINGS.text.invalid_workflow );
 						return false;
 					}
 
@@ -322,9 +324,10 @@
 						url: ajaxurl,
 						type: 'POST',
 						data: {
-							action: 'update-workflow',
-							name: name,
-							id: workflowId ? workflowId : ''
+							action			: 'rw_update_workflow',
+							rw_ajax_security: RW_WORKFLOWS_SETTINGS.nonces.rw_update_workflow,
+							name			: name,
+							id				: workflowId ? workflowId : ''
 						},
 						success: function() {
 							updateSummary();
@@ -381,15 +384,16 @@
 								url: ajaxurl,
 								type: 'POST',
 								data: {
-									action: 'update-workflow',
-									name: newWorkflowName,
-									id: workflowId
+									action		    : 'rw_update_workflow',
+									rw_ajax_security: RW_WORKFLOWS_SETTINGS.nonces.rw_update_workflow,
+									name			: newWorkflowName,
+									id				: workflowId
 								},
 								success: function( result ) {
 									var $listGroupItemTemplate = $( '.list-group-item[data-id="' + workflowId + '"]' );
 									$listGroupItemTemplate.find( '.list-group-item-content' ).html( newWorkflowName );
 										
-									WORKFLOWS_SETTINGS.workflows[ workflowId ].name = newWorkflowName;
+									RW_WORKFLOWS_SETTINGS.workflows[ workflowId ].name = newWorkflowName;
 									
 									$( '.workflow-title' ).replaceWith( '<h3 class="workflow-title">' + newWorkflowName + '</h3>');
 								},
@@ -435,7 +439,7 @@
 					var href = $( this ).attr( 'href' );
 					$( '.nav-pills' ).children().removeClass( 'active' ).find( 'a[href="' + href + '"]' ).parent().addClass( 'active' );
 					var workflowId = $( '#edit-workflow' ).attr( 'data-id' ),
-						workflow = WORKFLOWS_SETTINGS.workflows[ workflowId ],
+						workflow = RW_WORKFLOWS_SETTINGS.workflows[ workflowId ],
 						$editConditions = $( '#edit-conditions' ).find( '.edit-conditions' );
 
 					if ( 0 === $editConditions.length ) {
@@ -454,7 +458,7 @@
 						}
 						
 						if ( idx > 0 ) {
-							$editConditions.find( '.and-operation-container > p:last' ).replaceWith( '<div><p class="and-operation"><em>' + WORKFLOWS_SETTINGS.text.and + '</em></p></div>' );
+							$editConditions.find( '.and-operation-container > p:last' ).replaceWith( '<div><p class="and-operation"><em>' + RW_WORKFLOWS_SETTINGS.text.and + '</em></p></div>' );
 							$newCondition = createFromTemplate( 'condition' );
 							$editConditions.find( '.and-operation-container' ).append( $newCondition.children() );
 						}
@@ -467,7 +471,7 @@
 
 							var singleCondition = conditionsArr[ idx2 ],
 								operandTypeId = singleCondition.operandType,
-								operandType = WORKFLOWS_SETTINGS['variable-types'][ operandTypeId ],
+								operandType = RW_WORKFLOWS_SETTINGS['variable-types'][ operandTypeId ],
 								operatorId = singleCondition.operator,
 								operand = singleCondition.operand;
 								
@@ -489,7 +493,7 @@
 					var href = $( this ).attr( 'href' );
 					$( '.nav-pills' ).children().removeClass( 'active' ).find( 'a[href="' + href + '"]' ).parent().addClass( 'active' );
 					var workflowId = $( '#edit-workflow' ).attr( 'data-id' ),
-						workflow = WORKFLOWS_SETTINGS.workflows[ workflowId ],
+						workflow = RW_WORKFLOWS_SETTINGS.workflows[ workflowId ],
 						$editActions = $( '#edit-actions' ).find( '.edit-actions' );
 
 					if ( 0 === $editActions.length ) {
@@ -530,7 +534,7 @@
 					var href = $( this ).attr( 'href' );
 					$( '.nav-pills' ).children().removeClass( 'active' ).find( 'a[href="' + href + '"]' ).parent().addClass( 'active' );
 					var workflowId = $( '#edit-workflow' ).attr( 'data-id' ),
-						workflow = WORKFLOWS_SETTINGS.workflows[ workflowId ],
+						workflow = RW_WORKFLOWS_SETTINGS.workflows[ workflowId ],
 						$editEventTypes = $( '#edit-events' ).find( '.edit-events' );
 
 					if ( 0 === $editEventTypes.length ) {
@@ -581,7 +585,7 @@
 					targetWorkflowId = $button.parents( '.list-group-item:first' ).attr( 'data-id' );
 				
 				RW_WF_Modal.show({
-					body      : '<p>' + WORKFLOWS_SETTINGS.text.confirm_delete + '</p>',
+					body      : '<p>' + RW_WORKFLOWS_SETTINGS.text.confirm_delete + '</p>',
 					id		  : 'confirm-delete-workflow',
 					data	  : {'target-workflow-id': targetWorkflowId},
 					delay     : 1,
@@ -590,7 +594,7 @@
 					buttons   : {
 						delete_workflow: {
 							primary: true,
-							html   : '<a type="button">' + WORKFLOWS_SETTINGS.text.delete_button + '</a>',
+							html   : '<a type="button">' + RW_WORKFLOWS_SETTINGS.text.delete_button + '</a>',
 							click  : function () {
 								var workflowId		= $( '#confirm-delete-workflow' ).attr( 'data-target-workflow-id' ),
 									$listGroupItem	= $( '.list-group.ui-sortable a.list-group-item[data-id="'+workflowId+'"]' );
@@ -602,8 +606,9 @@
 										url: ajaxurl,
 										type: 'POST',
 										data: {
-											action: 'delete-workflow',
-											id: workflowId
+											action			: 'rw_delete_workflow',
+											rw_ajax_security: RW_WORKFLOWS_SETTINGS.nonces.rw_delete_workflow,
+											id				: workflowId
 										},
 										success: function( result ) {
 											result = JSON.parse( result );
@@ -620,7 +625,7 @@
 							}
 						},
 						cancel       : {
-							html: '<a type="button" class="button-close">' + WORKFLOWS_SETTINGS.text.cancel_button + '</a>'
+							html: '<a type="button" class="button-close">' + RW_WORKFLOWS_SETTINGS.text.cancel_button + '</a>'
 						}
 					}
 				});
@@ -635,9 +640,10 @@
 					url: ajaxurl,
 					type: 'POST',
 					data: {
-						action: 'update-workflow',
-						id: workflowId,
-						active: active
+						action			: 'rw_update_workflow',
+						rw_ajax_security: RW_WORKFLOWS_SETTINGS.nonces.rw_update_workflow,
+						id				: workflowId,
+						active			: active
 					}
 				});
 			});
@@ -661,7 +667,7 @@
 				}
 				
 				var workflowId = $( this ).attr( 'data-id' );
-				var workflow = WORKFLOWS_SETTINGS.workflows[ workflowId ];
+				var workflow = RW_WORKFLOWS_SETTINGS.workflows[ workflowId ];
 				
 				var conditionsHtml = '';
 				for ( var idx in workflow.conditions ) {
@@ -679,15 +685,15 @@
 						
 						var singleCondition = conditionsArr[ idx2 ],
 							variableTypeId = singleCondition.operandType,
-							variableType = WORKFLOWS_SETTINGS['variable-types'][ variableTypeId ],
+							variableType = RW_WORKFLOWS_SETTINGS['variable-types'][ variableTypeId ],
 							operatorId = singleCondition.operator,
 							operand = singleCondition.operand,
 							condition = '';
 							
-						var operandTypeValues = ( WORKFLOWS_SETTINGS['variable-types'][ variableTypeId ].values ) ? ( WORKFLOWS_SETTINGS['variable-types'][ variableTypeId ].values ) : [] ;
+						var operandTypeValues = ( RW_WORKFLOWS_SETTINGS['variable-types'][ variableTypeId ].values ) ? ( RW_WORKFLOWS_SETTINGS['variable-types'][ variableTypeId ].values ) : [] ;
 						
-						var _condition = WORKFLOWS_SETTINGS['variable-types'][ variableTypeId ].title
-							+ ' ' + WORKFLOWS_SETTINGS.operators[ variableType.dataType ][ operatorId ].title
+						var _condition = RW_WORKFLOWS_SETTINGS['variable-types'][ variableTypeId ].title
+							+ ' ' + RW_WORKFLOWS_SETTINGS.operators[ variableType.dataType ][ operatorId ].title
 
 						if ( 'dropdown' === variableType.field.type ) {
 							_condition += ' ' + '<strong>' + ( operandTypeValues[ operand ] ? operandTypeValues[ operand ].title : '' ) + '</strong>';
@@ -722,7 +728,7 @@
 						action += '<span class="label label-default and">and</span>';
 					}
 
-					action += WORKFLOWS_SETTINGS.actions[ actionId ].title + '</li>';
+					action += RW_WORKFLOWS_SETTINGS.actions[ actionId ].title + '</li>';
 
 					actionsHtml += action;
 				}
@@ -741,7 +747,7 @@
 						eventType += '<span class="label label-default and">or</span>';
 					}
 
-					eventType += WORKFLOWS_SETTINGS['event-types'][ eventTypeId ].title + '</li>';
+					eventType += RW_WORKFLOWS_SETTINGS['event-types'][ eventTypeId ].title + '</li>';
 
 					eventTypesHtml += eventType;
 				}
@@ -784,20 +790,20 @@
 							
 							$operationsList.append( $newOperation );
 							
-							$currentTab.find( '.and-operation-container > p:last' ).replaceWith( '<div><p class="and-operation"><em>' + WORKFLOWS_SETTINGS.text.and + '</em></p></div>' );
+							$currentTab.find( '.and-operation-container > p:last' ).replaceWith( '<div><p class="and-operation"><em>' + RW_WORKFLOWS_SETTINGS.text.and + '</em></p></div>' );
 							$currentTab.find( '.and-operation-container' ).append( $newCondition.children() );
 							$newOperation.find( 'select.variable-types' ).change();
 						} else if ( 'edit-actions' === currentTabId ) {
 							var $newAction = createFromTemplate( 'action-template', true );
 							$newAction.find( '.operation > .col' ).append( createFromTemplate( 'actions' ) );
 
-							$currentTab.find( '.and-operation-container > p.and-operation' ).replaceWith( '<div><p class="and-operation"><em>' + WORKFLOWS_SETTINGS.text.and + '</em></p></div>' );
+							$currentTab.find( '.and-operation-container > p.and-operation' ).replaceWith( '<div><p class="and-operation"><em>' + RW_WORKFLOWS_SETTINGS.text.and + '</em></p></div>' );
 							$currentTab.find( '.and-operation-container' ).append( $newAction.children() );
 						} else if ( 'edit-events' === currentTabId ) {
 							var $newEvent = createFromTemplate( 'event-type-template', true );
 							$newEvent.find( '.operation > .col' ).append( createFromTemplate( 'event-types' ) );
 
-							$currentTab.find( '.and-operation-container > p.and-operation' ).replaceWith( '<div><p class="and-operation"><em>' + WORKFLOWS_SETTINGS.text.or + '</em></p></div>' );
+							$currentTab.find( '.and-operation-container > p.and-operation' ).replaceWith( '<div><p class="and-operation"><em>' + RW_WORKFLOWS_SETTINGS.text.or + '</em></p></div>' );
 							$currentTab.find( '.and-operation-container' ).append( $newEvent.children() );
 						}
 					}
@@ -879,7 +885,7 @@
 			wp_buttons: true,
 			buttons   : {
 				close       : {
-					html: '<a type="button" class="button-close">' + WORKFLOWS_SETTINGS.text.close_button + '</a>'
+					html: '<a type="button" class="button-close">' + RW_WORKFLOWS_SETTINGS.text.close_button + '</a>'
 				}
 			}
 		});
@@ -918,7 +924,7 @@
 			var conditions = [];
 			$( this ).find( '.operations-list' ).children().each(function() {
 				var variableTypeId = $( this ).find( '.variable-types' ).val();
-				var variableType = WORKFLOWS_SETTINGS['variable-types'][ variableTypeId ];
+				var variableType = RW_WORKFLOWS_SETTINGS['variable-types'][ variableTypeId ];
 				var operator = $( this ).find( '.operators' ).val();
 				
 				var operand = false;
@@ -946,12 +952,13 @@
 			url: ajaxurl,
 			type: 'POST',
 			data: {
-				action: 'update-workflow',
-				id: $( '#edit-workflow' ).attr( 'data-id' ),
-				conditions: allConditions
+				action			: 'rw_update_workflow',
+				rw_ajax_security: RW_WORKFLOWS_SETTINGS.nonces.rw_update_workflow,
+				id				: $( '#edit-workflow' ).attr( 'data-id' ),
+				conditions		: allConditions
 			},
 			success: function( result ) {
-				WORKFLOWS_SETTINGS.workflows[ $( '#edit-workflow' ).attr( 'data-id' ) ].conditions = allConditions;
+				RW_WORKFLOWS_SETTINGS.workflows[ $( '#edit-workflow' ).attr( 'data-id' ) ].conditions = allConditions;
 				successCallback( JSON.parse( result ) );
 			},
 			complete: function() {
@@ -972,12 +979,13 @@
 			url: ajaxurl,
 			type: 'POST',
 			data: {
-				action: 'update-workflow',
-				id: $( '#edit-workflow' ).attr( 'data-id' ),
-				actions: actions
+				action			: 'rw_update_workflow',
+				rw_ajax_security: RW_WORKFLOWS_SETTINGS.nonces.rw_update_workflow,
+				id				: $( '#edit-workflow' ).attr( 'data-id' ),
+				actions			: actions
 			},
 			success: function( result ) {
-				WORKFLOWS_SETTINGS.workflows[ $( '#edit-workflow' ).attr( 'data-id' ) ].actions = actions;
+				RW_WORKFLOWS_SETTINGS.workflows[ $( '#edit-workflow' ).attr( 'data-id' ) ].actions = actions;
 				successCallback( JSON.parse( result ) );
 			},
 			complete: function() {
@@ -998,12 +1006,13 @@
 			url: ajaxurl,
 			type: 'POST',
 			data: {
-				action: 'update-workflow',
-				id: $( '#edit-workflow' ).attr( 'data-id' ),
-				event_types: event_types
+				action			: 'rw_update_workflow',
+				rw_ajax_security: RW_WORKFLOWS_SETTINGS.nonces.rw_update_workflow,
+				id				: $( '#edit-workflow' ).attr( 'data-id' ),
+				event_types		: event_types
 			},
 			success: function( result ) {
-				WORKFLOWS_SETTINGS.workflows[ $( '#edit-workflow' ).attr( 'data-id' ) ].eventTypes = event_types;
+				RW_WORKFLOWS_SETTINGS.workflows[ $( '#edit-workflow' ).attr( 'data-id' ) ].eventTypes = event_types;
 				successCallback( JSON.parse( result ) );
 			},
 			complete: function() {
@@ -1026,7 +1035,7 @@
 		}
 
 		var workflowId = $( '#edit-workflow' ).attr( 'data-id' );
-		var workflow = WORKFLOWS_SETTINGS.workflows[ workflowId ];
+		var workflow = RW_WORKFLOWS_SETTINGS.workflows[ workflowId ];
 
 		var conditionsHtml = '';
 		for ( var idx in workflow.conditions ) {
@@ -1045,14 +1054,14 @@
 				var singleCondition = conditionsArr[ idx2 ],
 					operandId = singleCondition.operandType,
 					operatorId = singleCondition.operator,
-					operandType = WORKFLOWS_SETTINGS['variable-types'][ operandId ],
+					operandType = RW_WORKFLOWS_SETTINGS['variable-types'][ operandId ],
 					operand = singleCondition.operand,
 					condition = '',
 					operandTypeValues = ( operandType.values ? operandType.values : [] );
 
 				var conditionItem = 
-					WORKFLOWS_SETTINGS['variable-types'][ operandId ].title
-					+ ' ' + WORKFLOWS_SETTINGS.operators[ operandType.dataType ][ operatorId ].title;
+					RW_WORKFLOWS_SETTINGS['variable-types'][ operandId ].title
+					+ ' ' + RW_WORKFLOWS_SETTINGS.operators[ operandType.dataType ][ operatorId ].title;
 			
 				if ( 'dropdown' === operandType.field.type ) {
 					conditionItem += ' ' + '<strong>' + ( undefined != operandTypeValues[ operand ] ? operandTypeValues[ operand ].title : '' ) + '</strong>';
@@ -1088,7 +1097,7 @@
 				action += '<span class="label label-default and">and</span>';
 			}
 
-			action += WORKFLOWS_SETTINGS.actions[ actionId ].title + '</li>';
+			action += RW_WORKFLOWS_SETTINGS.actions[ actionId ].title + '</li>';
 
 			actionsHtml += action;
 		}
@@ -1107,7 +1116,7 @@
 				eventType += '<span class="label label-default and">or</span>';
 			}
 
-			eventType += WORKFLOWS_SETTINGS['event-types'][ eventTypeId ].title + '</li>';
+			eventType += RW_WORKFLOWS_SETTINGS['event-types'][ eventTypeId ].title + '</li>';
 
 			eventTypesHtml += eventType;
 		}
@@ -1156,16 +1165,16 @@
 		populateWorkflowsList();
 		
 		// Create the template <option> HTML element containing all supported actions. e.g.: 'Ask to Tweet the rated element'.
-		populateDropdownTemplate( 'actions', WORKFLOWS_SETTINGS.actions );
+		populateDropdownTemplate( 'actions', RW_WORKFLOWS_SETTINGS.actions );
 		
 		// Create the template <option> HTML element containing all supported event types. e.g.: 'afterVote' or 'beforeVote'.
-		populateDropdownTemplate( 'event-types', WORKFLOWS_SETTINGS['event-types'] );
+		populateDropdownTemplate( 'event-types', RW_WORKFLOWS_SETTINGS['event-types'] );
 		
 		populateDropdownTemplate( 'operators', false );
 		
 		var $form			= $( '#workflows-page' ),
 			$variableTypes	= $( '<select class="workflow-template" data-class="variable-types"></select>' ).appendTo( $form ),
-			variableTypes	= WORKFLOWS_SETTINGS['variable-types'];
+			variableTypes	= RW_WORKFLOWS_SETTINGS['variable-types'];
 	
 		for ( var variableId in variableTypes ) {
 			var variableType = variableTypes[ variableId ];
@@ -1193,14 +1202,14 @@
 	 * Creates the items of the workflows list. 
 	 */
 	function populateWorkflowsList() {
-		var workflows		= WORKFLOWS_SETTINGS.workflows,
+		var workflows		= RW_WORKFLOWS_SETTINGS.workflows,
 			$workflowsPanel = $( '#workflows > .panel' ),
 			$listGroup		= $workflowsPanel.children( '.list-group' );
 
 		if ( Object.keys( workflows ).length > 0 ) {
-			$workflowsPanel.show().find( '> .panel-heading' ).text( WORKFLOWS_SETTINGS.text.has_workflows );
+			$workflowsPanel.show().find( '> .panel-heading' ).text( RW_WORKFLOWS_SETTINGS.text.has_workflows );
 			
-			var workflowIds = WORKFLOWS_SETTINGS.workflows_id_order;
+			var workflowIds = RW_WORKFLOWS_SETTINGS.workflows_id_order;
 			if ( undefined === workflowIds || null === workflowIds || 0 === workflowIds.length ) {
 				workflowIds = Object.keys( workflows );
 			}
@@ -1220,7 +1229,7 @@
 				$listGroup.append( $listGroupItemTemplate );
 			}
 		} else {
-			$workflowsPanel.find( '> .panel-heading' ).text( WORKFLOWS_SETTINGS.text.no_workflows );
+			$workflowsPanel.find( '> .panel-heading' ).text( RW_WORKFLOWS_SETTINGS.text.no_workflows );
 		}
 	}
 	

@@ -21,7 +21,7 @@
 ?>
 <p>
 	<input type="hidden" name="rw_comment_meta_box_nonce"
-	       value="<?php echo wp_create_nonce( basename( WP_RW__PLUGIN_FILE_FULL ) ); ?>"/>
+	       value="<?php echo esc_attr( wp_create_nonce( basename( WP_RW__PLUGIN_FILE_FULL ) ) ) ?>"/>
 <table class="rw-rating-table rw-comment-admin-rating rw-left">
 	<?php
 		$urid_summary = $rwp->get_rating_id_by_element( $comment->comment_ID, $rclass, false );
@@ -39,11 +39,11 @@
 			<tr>
 				<td>
 					<div>
-						<nobr><?php echo ( isset( $criterion['label'] ) && ! empty( $criterion['label'] ) ) ? $criterion['label'] : ''; ?></nobr>
+						<nobr><?php echo esc_html( ( isset( $criterion['label'] ) && ! empty( $criterion['label'] ) ) ? $criterion['label'] : '' ) ?></nobr>
 					</div>
 					<div
-						class="rw-ui-container rw-class-<?php echo $criterion_rclass ?>" <?php echo $multi_criterion ? "data-uarid=\"$urid_summary\"" : ''; ?> <?php echo ( $multi_criterion || $default_hide_recommendations ) ? ' data-hide-recommendations="true" ' : ''; ?>
-						data-urid="<?php echo $urid; ?>" data-sync="false"></div>
+						class="rw-ui-container rw-class-<?php echo esc_attr( $criterion_rclass ) ?>" <?php echo $multi_criterion ? "data-uarid=\"" . esc_attr( $urid_summary ) . "\"" : ''; ?> <?php echo ( $multi_criterion || $default_hide_recommendations ) ? ' data-hide-recommendations="true" ' : ''; ?>
+						data-urid="<?php echo esc_attr( $urid ) ?>" data-sync="false"></div>
 					<p></p>
 				</td>
 			</tr>
@@ -56,11 +56,11 @@
 			<tr>
 				<td>
 					<div>
-						<nobr><?php echo ( isset( $multirating_options->summary_label ) && ! empty( $multirating_options->summary_label ) ) ? $multirating_options->summary_label : ''; ?></nobr>
+						<nobr><?php echo esc_html( ( isset( $multirating_options->summary_label ) && ! empty( $multirating_options->summary_label ) ) ? $multirating_options->summary_label : '' ) ?></nobr>
 					</div>
 					<div
-						class="rw-ui-container rw-class-<?php echo $rclass ?>" <?php echo $default_hide_recommendations ? ' data-hide-recommendations="true" ' : ''; ?>
-						data-urid="<?php echo $urid_summary; ?>" data-read-only="true" data-force-sync="true"></div>
+						class="rw-ui-container rw-class-<?php echo esc_attr( $rclass ) ?>" <?php echo $default_hide_recommendations ? ' data-hide-recommendations="true" ' : ''; ?>
+						data-urid="<?php echo esc_attr( $urid_summary ) ?>" data-read-only="true" data-force-sync="true"></div>
 					<p></p>
 				</td>
 			</tr>

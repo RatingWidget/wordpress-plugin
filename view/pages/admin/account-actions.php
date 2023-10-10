@@ -98,19 +98,19 @@
 			?>
 			<?php $odd = true;
 				foreach ( $profile as $p ) : ?>
-					<tr class="fs-field-<?php echo $p['id'] ?><?php if ( $odd ) : ?> alternate<?php endif ?>">
+					<tr class="fs-field-<?php echo esc_attr( $p['id'] ) ?><?php if ( $odd ) : ?> alternate<?php endif ?>">
 						<td>
-							<nobr><?php echo $p['title'] ?>:</nobr>
+							<nobr><?php echo esc_html( $p['title'] ) ?>:</nobr>
 						</td>
 						<td>
 							<code><?php echo htmlspecialchars( $p['value'] ) ?></code>
 						</td>
 						<?php if ( WP_RW__DEBUG ) : ?>
 							<td class="fs-right">
-								<form action="<?php echo rw_fs()->_get_admin_page_url( 'account' ) ?>" method="POST"
-								      onsubmit="var val = prompt('<?php printf( __rw( 'what-is-your' ), $p['title'] ) ?>', '<?php echo $p['value'] ?>'); if (null == val || '' === val) return false; jQuery('input[name=rw_<?php echo $p['id'] ?>]').val(val); return true;">
-									<input type="hidden" name="rw_action" value="update_<?php echo $p['id'] ?>">
-									<input type="hidden" name="rw_<?php echo $p['id'] ?>" value="">
+								<form action="<?php echo esc_url( rw_fs()->_get_admin_page_url( 'account' ) ) ?>" method="POST"
+								      onsubmit="var val = prompt('<?php printf( __rw( 'what-is-your' ), esc_js( $p['title'] ) ) ?>', '<?php echo esc_js( $p['value'] ) ?>'); if (null == val || '' === val) return false; jQuery('input[name=rw_<?php echo esc_js( $p['id'] ) ?>]').val(val); return true;">
+									<input type="hidden" name="rw_action" value="update_<?php echo esc_attr( $p['id'] ) ?>">
+									<input type="hidden" name="rw_<?php echo esc_attr( $p['id'] ) ?>" value="">
 									<?php wp_nonce_field( 'update_' . $p['id'] ) ?>
 									<input type="submit" class="button button-small" value="<?php _erw( 'edit' ) ?>">
 								</form>
