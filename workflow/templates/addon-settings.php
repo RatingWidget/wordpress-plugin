@@ -41,7 +41,7 @@
 			<a href="<?php echo esc_url( add_query_arg( array( 'add-on' => $tab_key ) ) ); ?>"
 			   class="nav-tab<?php if ( $tab_key === $selected_key ) {
 				   echo ' nav-tab-active';
-			   } ?>"><?php echo $tab_settings['title'] ?></a>
+			   } ?>"><?php echo esc_html( $tab_settings['title'] ) ?></a>
 		<?php } ?>
 	</h2>
 
@@ -54,9 +54,9 @@
 						<div class="has-sidebar has-right-sidebar">
 							<div class="has-sidebar-content">
 								<div class="postbox rw-body">
-									<h3><?php echo $section['title']; ?></h3>
+									<h3><?php echo esc_html( $section['title'] ) ?></h3>
 
-									<div id="section-<?php echo $section['id']; ?>"
+									<div id="section-<?php echo esc_attr( $section['id'] ) ?>"
 									     class="inside rw-ui-content-container rw-no-radius">
 										<table>
 											<tbody>
@@ -79,21 +79,21 @@
 														$value = $field['default'];
 													}
 													?>
-													<tr id="<?php echo $field_id; ?>"
+													<tr id="<?php echo esc_attr( $field_id ) ?>"
 													    class="rw-<?php echo $is_odd_row ? 'odd' : 'even'; ?>">
 														<td>
-															<span class="rw-ui-def"><?php echo $field['title']; ?>
+															<span class="rw-ui-def"><?php echo esc_html( $field['title'] ) ?>
 																:</span>
 														</td>
 														<td>
 															<?php if ( 'textfield' === $field['type'] ) { ?>
-																<input type="text" id="<?php echo $field_id; ?>"
-																       name="addon-fields[<?php echo $field_id; ?>]"
-																       value="<?php echo $value; ?>"/>
+																<input type="text" id="<?php echo esc_attr( $field_id ) ?>"
+																       name="addon-fields[<?php echo esc_attr( $field_id ) ?>]"
+																       value="<?php echo esc_attr( $value ) ?>"/>
 															<?php } else if ( 'textarea' === $field['type'] ) { ?>
-																<textarea id="<?php echo $field_id; ?>"
-																          name="addon-fields[<?php echo $field_id; ?>]"
-																          rows="5"><?php echo $value; ?></textarea>
+																<textarea id="<?php echo esc_attr( $field_id ) ?>"
+																          name="addon-fields[<?php echo esc_attr( $field_id ) ?>]"
+																          rows="5"><?php echo esc_html( $value ) ?></textarea>
 															<?php } ?>
 														</td>
 													</tr>
@@ -107,6 +107,7 @@
 					<?php
 					}
 				?>
+                <input type="hidden" name="rw_addon_settings_nonce" value="<?php echo esc_attr( wp_create_nonce( basename( WP_RW__PLUGIN_FILE_FULL ) ) ) ?>"/>
 				<p class="submit"><input type="submit" name="submit" id="submit" class="button button-primary"
 				                         value="<?php _erw( 'save-changes' ) ?>"></p>
 			</div>
@@ -136,7 +137,7 @@
 				</div>
 			</div>
 		</div>
-		<input type="hidden" name="add-on" value="<?php echo $selected_key; ?>"/>
+		<input type="hidden" name="add-on" value="<?php echo esc_attr( $selected_key ) ?>"/>
 		<input type="hidden" name="rw-save-addons-settings"/>
 	</form>
 </div>

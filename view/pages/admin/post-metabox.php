@@ -38,9 +38,9 @@
 ?>
 <p>
 	<input type="hidden" name="rw_post_meta_box_nonce"
-	       value="<?php echo wp_create_nonce( basename( WP_RW__PLUGIN_FILE_FULL ) ) ?>"/>
+	       value="<?php echo esc_attr( wp_create_nonce( basename( WP_RW__PLUGIN_FILE_FULL ) ) ) ?>"/>
 <table
-	class="rw-rating-table rw-<?php echo ( isset( $options->advanced ) && isset( $options->advanced->layout ) && ! empty( $options->advanced->layout->dir ) ) ? $options->advanced->layout->dir : 'ltr' ?>">
+	class="rw-rating-table rw-<?php echo ( isset( $options->advanced ) && isset( $options->advanced->layout ) && ! empty( $options->advanced->layout->dir ) ) ? esc_attr( $options->advanced->layout->dir ) : 'ltr' ?>">
 	<?php
 		$urid_summary = $rwp->get_rating_id_by_element( $post->ID, $rclass, false );
 
@@ -57,11 +57,11 @@
 			<tr>
 				<td>
 					<div>
-						<nobr><?php echo ( isset( $criteria['label'] ) && ! empty( $criteria['label'] ) ) ? $criteria['label'] : ''; ?></nobr>
+						<nobr><?php echo esc_html( ( isset( $criteria['label'] ) && ! empty( $criteria['label'] ) ) ? $criteria['label'] : '' ) ?></nobr>
 					</div>
 					<div
-						class="rw-ui-container rw-class-<?php echo $criteria_rclass ?>" <?php echo $multi_criteria ? "data-uarid=\"$urid_summary\"" : ''; ?> <?php echo ( $multi_criteria || $default_hide_recommendations ) ? ' data-hide-recommendations="true" ' : ''; ?>
-						data-urid="<?php echo $urid; ?>" data-read-only="false" data-sync="false"></div>
+						class="rw-ui-container rw-class-<?php echo esc_attr( $criteria_rclass ) ?>" <?php echo $multi_criteria ? "data-uarid=\"" . esc_attr( $urid_summary ) . "\"" : ''; ?> <?php echo ( $multi_criteria || $default_hide_recommendations ) ? ' data-hide-recommendations="true" ' : ''; ?>
+						data-urid="<?php echo esc_attr( $urid ) ?>" data-read-only="false" data-sync="false"></div>
 					<p></p>
 				</td>
 			</tr>
@@ -74,11 +74,11 @@
 			<tr>
 				<td>
 					<div>
-						<nobr><?php echo ( isset( $multirating_options->summary_label ) && ! empty( $multirating_options->summary_label ) ) ? $multirating_options->summary_label : ''; ?></nobr>
+						<nobr><?php echo ( isset( $multirating_options->summary_label ) && ! empty( $multirating_options->summary_label ) ) ? esc_html( $multirating_options->summary_label ) : ''; ?></nobr>
 					</div>
 					<div
-						class="rw-ui-container rw-class-<?php echo $rclass ?>" <?php echo $default_hide_recommendations ? ' data-hide-recommendations="true" ' : ''; ?>
-						data-urid="<?php echo $urid_summary; ?>" data-read-only="true" data-force-sync="true"></div>
+						class="rw-ui-container rw-class-<?php echo esc_attr( $rclass ) ?>" <?php echo $default_hide_recommendations ? ' data-hide-recommendations="true" ' : ''; ?>
+						data-urid="<?php echo esc_attr( $urid_summary ) ?>" data-read-only="true" data-force-sync="true"></div>
 					<p></p>
 				</td>
 			</tr>

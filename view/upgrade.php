@@ -17,7 +17,7 @@
 			<li><?php _erw( 'upgrade_wpml' ) ?></li>
 		</ul>
 		<div id="rw_new_wp_subscribe">
-			<a style="display: block; text-align: center;" href="<?php echo rw_fs()->get_upgrade_url() ?>"
+			<a style="display: block; text-align: center;" href="<?php echo esc_url( rw_fs()->get_upgrade_url() ) ?>"
 			   onclick="_gaq.push(['_trackEvent', 'upgrade', 'wordpress', 'gopro_button', 1, true]); _gaq.push(['_link', this.href]); return false;"
 			   class="button-secondary gradient rw-upgrade-button"><?php _erw( 'learn-more' ) ?></a>
 		</div>

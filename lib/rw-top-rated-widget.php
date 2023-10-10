@@ -483,7 +483,7 @@
 					// Set a flag that the widget is loaded.
 					ratingwidget()->TopRatedWidgetLoaded();
 					?>
-					<b class="rw-ui-recommendations" data-id="<?php echo $toprated_data->id; ?>"></b>
+					<b class="rw-ui-recommendations" data-id="<?php echo esc_attr( $toprated_data->id ) ?>"></b>
 					<script type="text/javascript">
 						var _rwq = _rwq || [];
 						_rwq.push(['_setRecommendations', <?php echo json_encode($toprated_data); ?>]);
@@ -651,16 +651,16 @@
 					<div class="rw-toprated-settings-section selected">
 						<div class="rw-section-body">
 							<p><label
-									for="<?php echo $this->get_field_id( 'title' ); ?>"><?php _erw( 'widget-title' ) ?>
-									: <input id="<?php echo $this->get_field_id( 'title' ); ?>"
-									         name="<?php echo $this->get_field_name( 'title' ); ?>" type="text"
+									for="<?php echo esc_attr( $this->get_field_id( 'title' ) ) ?>"><?php _erw( 'widget-title' ) ?>
+									: <input id="<?php echo esc_attr( $this->get_field_id( 'title' ) ) ?>"
+									         name="<?php echo esc_attr( $this->get_field_name( 'title' ) ) ?>" type="text"
 									         value="<?php echo esc_attr( $title ); ?>"/></label></p>
 
 							<p><label
-									for="<?php echo $this->get_field_id( 'title_max_length' ); ?>"><?php _erw( 'title-max-length' ) ?>
+									for="<?php echo esc_attr( $this->get_field_id( 'title_max_length' ) ) ?>"><?php _erw( 'title-max-length' ) ?>
 									: <input style="width: 110px;"
-									         id="<?php echo $this->get_field_id( 'title_max_length' ); ?>"
-									         name="<?php echo $this->get_field_name( 'title_max_length' ); ?>"
+									         id="<?php echo esc_attr( $this->get_field_id( 'title_max_length' ) ) ?>"
+									         name="<?php echo esc_attr( $this->get_field_name( 'title_max_length' ) ) ?>"
 									         type="text"
 									         value="<?php echo esc_attr( $titleMaxLength ); ?>"/></label></p>
 						</div>
@@ -675,14 +675,14 @@
 								$selected = ' selected';
 							}
 							?>
-							<div class="rw-toprated-settings-section<?php echo $selected ?>">
+							<div class="rw-toprated-settings-section<?php echo esc_attr( $selected ) ?>">
 								<h4>
-									<label for="<?php echo $this->get_field_id( "show_{$type}" ); ?>" title="On / Off">
+									<label for="<?php echo esc_attr( $this->get_field_id( "show_{$type}" ) ) ?>" title="On / Off">
 										<input type="checkbox" class="checkbox"
-										       id="<?php echo $this->get_field_id( "show_{$type}" ); ?>"
-										       name="<?php echo $this->get_field_name( "show_{$type}" ); ?>"
-										       value="1"<?php echo( $checked ); ?> />
-										<?php echo $typeTitle; ?>
+										       id="<?php echo esc_attr( $this->get_field_id( "show_{$type}" ) ) ?>"
+										       name="<?php echo esc_attr( $this->get_field_name( "show_{$type}" ) ) ?>"
+										       value="1"<?php echo $checked ?> />
+										<?php echo esc_html( $typeTitle ) ?>
 									</label>
 								</h4>
 
@@ -696,15 +696,15 @@
 										);
 										?>
 										<p>
-											<select id="<?php echo $this->get_field_id( 'style' ); ?>"
-											        name="<?php echo $this->get_field_name( "{$type}_style" ); ?>"
+											<select id="<?php echo esc_attr( $this->get_field_id( 'style' ) ) ?>"
+											        name="<?php echo esc_attr( $this->get_field_name( "{$type}_style" ) ) ?>"
 											        style="font-size: 11px;">
 												<?php $i = 0; // for old versions ?>
 												<?php foreach ( $styles as $key => $val ) : ?>
 													<option
-														value="<?php echo $key ?>"<?php if ( $key == $values["{$type}_style"] || $i === $values["{$type}_style"] ) {
+														value="<?php echo esc_attr( $key ) ?>"<?php if ( $key == $values["{$type}_style"] || $i === $values["{$type}_style"] ) {
 														echo ' selected="selected"';
-													} ?>><?php echo $val; ?></option>
+													} ?>><?php echo esc_html( $val ) ?></option>
 													<?php $i ++; ?>
 												<?php endforeach; ?>
 											</select>
@@ -723,29 +723,29 @@
 											}
 										?>
 										<label class="rw-enabler"
-										       for="<?php echo $this->get_field_id( "show_{$type}_title" ); ?>">
+										       for="<?php echo esc_attr( $this->get_field_id( "show_{$type}_title" ) ) ?>">
 											<input type="checkbox" title="Show Title" class="checkbox"
-											       id="<?php echo $this->get_field_id( "show_{$type}_title" ); ?>"
-											       name="<?php echo $this->get_field_name( "show_{$type}_title" ); ?>"
-											       value="1"<?php echo( $checked ); ?> />
+											       id="<?php echo esc_attr( $this->get_field_id( "show_{$type}_title" ) ) ?>"
+											       name="<?php echo esc_attr( $this->get_field_name( "show_{$type}_title" ) ) ?>"
+											       value="1"<?php echo $checked ?> />
 											<?php
 												$values["{$type}_title"] = empty( $values["{$type}_title"] ) ? $typeTitle : $values["{$type}_title"];
 											?>
 											<?php _erw( 'title' ) ?>:
 										</label>
 										<input
-											id="<?php echo $this->get_field_id( 'title' ); ?>"<?php echo $disabled; ?>
-											name="<?php echo $this->get_field_name( "{$type}_title" ); ?>" type="text"
+											id="<?php echo esc_attr( $this->get_field_id( 'title' ) ) ?>"<?php echo $disabled ?>
+											name="<?php echo esc_attr( $this->get_field_name( "{$type}_title" ) ) ?>" type="text"
 											value="<?php echo esc_attr( $values["{$type}_title"] ); ?>"
 											style="width: 120px;"/>
 									</p>
 
 									<p>
 										<label
-											for="rss-items-<?php echo $values["{$type}_count"]; ?>"><?php _erw( 'max-items' ) ?>
+											for="rss-items-<?php echo esc_attr( $values["{$type}_count"] ) ?>"><?php _erw( 'max-items' ) ?>
 											:
-											<select id="<?php echo $this->get_field_id( "{$type}_count" ); ?>"
-											        name="<?php echo $this->get_field_name( "{$type}_count" ); ?>">
+											<select id="<?php echo esc_attr( $this->get_field_id( "{$type}_count" ) ) ?>"
+											        name="<?php echo esc_attr( $this->get_field_name( "{$type}_count" ) ) ?>">
 												<?php
 													for ( $i = 1; $i <= 25; $i ++ ) {
 														echo "<option value='{$i}' " . ( $values["{$type}_count"] == $i ? "selected='selected'" : '' ) . ">{$i}</option>";
@@ -757,11 +757,11 @@
 
 									<p>
 										<label
-											for="<?php echo $this->get_field_id( "{$type}_min_votes" ); ?>"><?php _erw( 'min-votes' ) ?>
+											for="<?php echo esc_attr( $this->get_field_id( "{$type}_min_votes" ) ) ?>"><?php _erw( 'min-votes' ) ?>
 											(>= 1):
 											<input style="width: 40px; text-align: center;"
-											       id="<?php echo $this->get_field_id( "{$type}_min_votes" ); ?>"
-											       name="<?php echo $this->get_field_name( "{$type}_min_votes" ); ?>"
+											       id="<?php echo esc_attr( $this->get_field_id( "{$type}_min_votes" ) ) ?>"
+											       name="<?php echo esc_attr( $this->get_field_name( "{$type}_min_votes" ) ) ?>"
 											       type="text"
 											       value="<?php echo esc_attr( $values["{$type}_min_votes"] ); ?>"/>
 										</label>
@@ -769,10 +769,10 @@
 
 									<p>
 										<label
-											for="rss-items-<?php echo $values["{$type}_orderby"]; ?>"><?php _erw( 'orderby' ) ?>
+											for="rss-items-<?php echo esc_attr( $values["{$type}_orderby"] ) ?>"><?php _erw( 'orderby' ) ?>
 											:
-											<select id="<?php echo $this->get_field_id( "{$type}_orderby" ); ?>"
-											        name="<?php echo $this->get_field_name( "{$type}_orderby" ); ?>">
+											<select id="<?php echo esc_attr( $this->get_field_id( "{$type}_orderby" ) ) ?>"
+											        name="<?php echo esc_attr( $this->get_field_name( "{$type}_orderby" ) ) ?>">
 												<?php
 													for ( $i = 0, $len = count( $orders ); $i < $len; $i ++ ) {
 														echo '<option value="' . $orders[ $i ] . '"' . ( $values["{$type}_orderby"] == $orders[ $i ] ? "selected='selected'" : '' ) . '>' . $orders_labels[ $i ] . '</option>';
@@ -784,10 +784,10 @@
 
 									<p>
 										<label
-											for="rss-items-<?php echo $values["{$type}_order"]; ?>"><?php _erw( 'order' ) ?>
+											for="rss-items-<?php echo esc_attr( $values["{$type}_order"] ) ?>"><?php _erw( 'order' ) ?>
 											:
-											<select id="<?php echo $this->get_field_id( "{$type}_order" ); ?>"
-											        name="<?php echo $this->get_field_name( "{$type}_order" ); ?>">
+											<select id="<?php echo esc_attr( $this->get_field_id( "{$type}_order" ) ) ?>"
+											        name="<?php echo esc_attr( $this->get_field_name( "{$type}_order" ) ) ?>">
 												<option
 													value="DESC"<?php echo( $values["{$type}_order"] == "DESC" ? " selected='selected'" : '' ); ?>>
 													<?php _erw( 'best' ) ?> (<?php _erw( 'descending' ) ?>)
@@ -812,14 +812,14 @@
 									?>
 									<p>
 										<label
-											for="rss-items-<?php echo $values["{$type}_since_created"]; ?>"><?php printf( __rw( 's-created-in' ), $typeTitle ); ?>
-											<select id="<?php echo $this->get_field_id( "{$type}_since_created" ); ?>"
-											        name="<?php echo $this->get_field_name( "{$type}_since_created" ); ?>">
+											for="rss-items-<?php echo esc_attr( $values["{$type}_since_created"] ) ?>"><?php printf( __rw( 's-created-in' ), $typeTitle ); ?>
+											<select id="<?php echo esc_attr( $this->get_field_id( "{$type}_since_created" ) ) ?>"
+											        name="<?php echo esc_attr( $this->get_field_name( "{$type}_since_created" ) ) ?>">
 												<?php
 													foreach ( $since_created_options as $since_created => $display_text ) {
 														?>
 														<option
-															value="<?php echo $since_created; ?>" <?php selected( $values["{$type}_since_created"], $since_created ); ?>><?php echo $display_text; ?></option>
+															value="<?php echo esc_attr( $since_created ) ?>" <?php selected( $values["{$type}_since_created"], $since_created ); ?>><?php echo esc_html( $display_text ) ?></option>
 													<?php
 													}
 												?>

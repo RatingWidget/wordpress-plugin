@@ -33,7 +33,7 @@
 	$add_criteria_str = __rw( 'add-criteria-rating' );
 ?>
 <div id="rw_wp_preview" class="postbox rw-body<?php echo $multi_criterion ? ' multi-rating' : '';
-	echo ' rw-' . $options->advanced->layout->dir; ?>">
+	echo ' rw-' . esc_attr( $options->advanced->layout->dir ) ?>">
 <table cellpadding="0" cellspacing="0" style="float: right;height: 45px;">
 	<tr>
 		<td style="vertical-align: middle;">
@@ -91,7 +91,7 @@
 					<div class="rw-ui-container rw-ui-star rw-urid-3" data-sync="false"></div>
 					<div class="rw-ui-container rw-ui-nero rw-urid-17" data-sync="false"></div>
 				</div>
-				<table class="rw-preview rw-preview-<?php echo $options->type; ?>" data-rclass="<?php echo $rclass; ?>">
+				<table class="rw-preview rw-preview-<?php echo esc_attr( $options->type ) ?>" data-rclass="<?php echo esc_attr( $rclass ) ?>">
 					<?php
 						$criterion_id = 1;
 						foreach ( $multirating_options->criteria as $criterion ) {
@@ -108,20 +108,20 @@
 							<tr class="rw-rating">
 								<td>
 									<span class="rw-add-label"><a href="#"
-									                              data-placeholder="<?php echo $add_label_str ?>"
+									                              data-placeholder="<?php echo esc_attr( $add_label_str ) ?>"
 									                              class="<?php echo ( isset( $criterion['label'] ) && $criterion['label'] != $add_label_str ) ? 'has-custom-value' : ''; ?>">
-											<nobr><?php echo( isset( $criterion['label'] ) ? $criterion['label'] : $add_label_str ); ?></nobr>
+											<nobr><?php echo esc_html( ( isset( $criterion['label'] ) ? $criterion['label'] : $add_label_str ) ) ?></nobr>
 										</a></span>
 								</td>
 								<td class="rw-rating-type">
 									<div
-										class="rw-ui-container rw-class-<?php echo $criteria_rclass; ?> rw-ui-star" <?php echo $multi_criterion ? "data-uarid=\"$urid_summary_star\"" : '';
+										class="rw-ui-container rw-class-<?php echo esc_attr( $criteria_rclass ) ?> rw-ui-star" <?php echo $multi_criterion ? "data-uarid=\"" . esc_attr( $urid_summary_star ) . "\"" : '';
 										echo ( $multi_criterion || $default_hide_recommendations ) ? ' data-hide-recommendations="true"' : ''; ?>
-										data-urid="<?php echo $urid_star; ?>"></div>
+										data-urid="<?php echo esc_attr( $urid_star ) ?>"></div>
 									<div
-										class="rw-ui-container rw-class-<?php echo $criteria_rclass; ?> rw-ui-nero" <?php echo $multi_criterion ? "data-uarid=\"$urid_summary_nero\"" : '';
+										class="rw-ui-container rw-class-<?php echo esc_attr( $criteria_rclass ) ?> rw-ui-nero" <?php echo $multi_criterion ? "data-uarid=\"" . esc_attr( $urid_summary_nero ) . "\"" : '';
 										echo ( $multi_criterion || $default_hide_recommendations ) ? ' data-hide-recommendations="true"' : ''; ?>
-										data-urid="<?php echo $urid_nero; ?>"></div>
+										data-urid="<?php echo esc_attr( $urid_nero ) ?>"></div>
 								</td>
 								<td class="rw-action">
 									<span class="rw-remove"><a href="#" class="rw-remove-button"></a></span>
@@ -139,17 +139,17 @@
 									$upgrade_label_text = __rw( 'upgrade_criteria-limit' );
 									if ( $total_criteria >= 3 && ! rw_fs()->is_plan_or_trial( 'professional' ) ) {
 										?>
-										<a class="rw-add-rating upgrade" href="<?php echo $rw_fs->get_upgrade_url(); ?>"
-										   data-upgrade-href="<?php echo $rw_fs->get_upgrade_url(); ?>"
-										   data-upgrade-text="[+] <?php echo $upgrade_label_text ?>"
-										   data-default-text="[+] <?php echo $add_criteria_str ?>">[+] <?php echo $upgrade_label_text ?></a>
+										<a class="rw-add-rating upgrade" href="<?php echo esc_url( $rw_fs->get_upgrade_url() ) ?>"
+										   data-upgrade-href="<?php echo esc_url( $rw_fs->get_upgrade_url() ) ?>"
+										   data-upgrade-text="[+] <?php echo esc_attr( $upgrade_label_text ) ?>"
+										   data-default-text="[+] <?php echo esc_attr( $add_criteria_str ) ?>">[+] <?php echo esc_html( $upgrade_label_text ) ?></a>
 									<?php
 									} else {
 										?>
 										<a class="rw-add-rating" href="#"
-										   data-upgrade-href="<?php echo $rw_fs->get_upgrade_url(); ?>"
-										   data-upgrade-text="[+] <?php echo $upgrade_label_text ?>"
-										   data-default-text="[+] <?php echo $add_criteria_str ?>">[+] <?php echo $add_criteria_str ?></a>
+										   data-upgrade-href="<?php echo esc_url( $rw_fs->get_upgrade_url() ) ?>"
+										   data-upgrade-text="[+] <?php echo esc_attr( $upgrade_label_text ) ?>"
+										   data-default-text="[+] <?php echo esc_attr( $add_criteria_str ) ?>">[+] <?php echo esc_html( $add_criteria_str ) ?></a>
 									<?php
 									}
 								?>
@@ -166,9 +166,9 @@
 						<?php $summary_label = ( isset( $multirating_options->summary_label ) && $multirating_options->summary_label != $add_label_str ) ? $multirating_options->summary_label : '' ?>
 						<td>
 							<span class="rw-add-label rw-summary-label"><a href="#"
-							                                               data-placeholder="<?php echo $add_label_str ?>"
+							                                               data-placeholder="<?php echo esc_attr( $add_label_str ) ?>"
 							                                               class="<?php echo ! empty( $summary_label ) ? 'has-custom-value' : ''; ?>">
-									<nobr><?php echo( ! empty( $summary_label ) ? $summary_label : $add_label_str ) ?></nobr>
+									<nobr><?php echo esc_html( ! empty( $summary_label ) ? $summary_label : $add_label_str ) ?></nobr>
 								</a></span>
 						</td>
 						<td colspan="2">
@@ -177,11 +177,11 @@
 								if ( $multi_criterion ) {
 									?>
 									<div
-										class="rw-ui-container rw-class-<?php echo $rclass; ?> rw-ui-star"<?php echo $default_hide_recommendations ? ' data-hide-recommendations="true"' : ''; ?>
-										data-urid="<?php echo $urid_summary_star; ?>" data-read-only="true"></div>
+										class="rw-ui-container rw-class-<?php echo esc_attr( $rclass ) ?> rw-ui-star"<?php echo $default_hide_recommendations ? ' data-hide-recommendations="true"' : ''; ?>
+										data-urid="<?php echo esc_attr($urid_summary_star ) ?>" data-read-only="true"></div>
 									<div
-										class="rw-ui-container rw-class-<?php echo $rclass; ?> rw-ui-nero"<?php echo $default_hide_recommendations ? ' data-hide-recommendations="true"' : ''; ?>
-										data-urid="<?php echo $urid_summary_nero; ?>" data-read-only="true"></div>
+										class="rw-ui-container rw-class-<?php echo esc_attr( $rclass ) ?> rw-ui-nero"<?php echo $default_hide_recommendations ? ' data-hide-recommendations="true"' : ''; ?>
+										data-urid="<?php echo esc_attr( $urid_summary_nero ) ?>" data-read-only="true"></div>
 								<?php
 								} else {
 									?>
@@ -196,13 +196,13 @@
 							?>
 						</td>
 						<input type="hidden" class="multi-rating-label" name="multi_rating[summary_label]"
-						       value="<?php echo $summary_label; ?>"/>
+						       value="<?php echo esc_attr( $summary_label ) ?>"/>
 					</tr>
 					<tr class="rw-template-rating" data-cid="0">
 						<td>
 							<span class="rw-add-label"><a href="#"
-							                              data-placeholder="<?php echo $add_label_str ?>">
-									<nobr><?php echo $add_label_str ?></nobr>
+							                              data-placeholder="<?php echo esc_attr( $add_label_str ) ?>">
+									<nobr><?php echo esc_html( $add_label_str ) ?></nobr>
 								</a></span>
 						</td>
 						<td class="rw-rating-type">
@@ -253,15 +253,15 @@
 
 		function getSummaryUrid(type) {
 			if (type == RW.TYPE.STAR) {
-				return '<?php echo $urid_summary_star; ?>';
+				return <?php echo wp_json_encode( $urid_summary_star ) ?>;
 			} else {
-				return '<?php echo $urid_summary_nero; ?>';
+				return <?php echo wp_json_encode( $urid_summary_nero ) ?>;
 			}
 		}
 
 		// Initialize ratings.
 		function RW_Async_Init() {
-			RW.init('<?php echo rw_account()->site_public_key ?>');
+			RW.init(<?php echo wp_json_encode( rw_account()->site_public_key ) ?>);
 			<?php
 				$b_type = $options->type;
 				$b_theme = $options->theme;
@@ -281,7 +281,7 @@
                             $options->style = "";
                         }
                         
-                        echo $ratings_uids[$type] . ", ";
+                        echo esc_js( $ratings_uids[$type] . ", " );
                         echo json_encode($options);
                         
                         // Recover.
@@ -297,7 +297,7 @@
 				rwNero = RWM.NERO = ratings[17].getInstances(0);
 
 				jQuery("#rw_theme_loader").hide();
-				jQuery("#rw_<?php echo $options->type;?>_theme_select").show();
+				jQuery(<?php echo wp_json_encode( "#rw_{$options->type}_theme_select" ) ?>).show();
 
 				RWM.Set.sizeIcons(RW.TYPE.<?php echo strtoupper($options->type);?>);
 
@@ -313,16 +313,16 @@
 
 				// Set selected themes.
 				RWM.Set.selectedTheme.star = "<?php
-                            echo (isset($options->type) && 
+                            echo esc_js( (isset($options->type) &&
                                   $options->type == "star" && 
                                   isset($options->theme) && 
-                                  $options->theme !== "") ? $options->theme : DEF_STAR_THEME;
+                                  $options->theme !== "") ? $options->theme : DEF_STAR_THEME );
                         ?>";
 				RWM.Set.selectedTheme.nero = "<?php
-                            echo (isset($options->type) &&
+                            echo esc_js( (isset($options->type) &&
                                   $options->type == "nero" &&
                                   isset($options->theme) && 
-                                  $options->theme !== "") ? $options->theme : DEF_NERO_THEME;
+                                  $options->theme !== "") ? $options->theme : DEF_NERO_THEME );
                         ?>";
 
 				RWM.Set.selectedType = RW.TYPE.<?php echo strtoupper($options->type);?>;
@@ -344,7 +344,7 @@
 				var rw = document.createElement("script");
 				rw.type = "text/javascript";
 				rw.async = true;
-				rw.src = "<?php echo rw_get_js_url('external.php');?>?wp=<?php echo WP_RW__VERSION;?>";
+				rw.src = <?php echo wp_json_encode( rw_get_js_url('external.php') . '?wp=' . WP_RW__VERSION ) ?>;
 				var s = document.getElementsByTagName("script")[0];
 				s.parentNode.insertBefore(rw, s);
 			})();
@@ -352,12 +352,12 @@
 	</script>
 </div>
 <div class="submit" style="margin-top: 10px; padding: 0;">
-	<input type="hidden" name="<?php echo rw_settings()->form_hidden_field_name; ?>" value="Y">
+	<input type="hidden" name="<?php echo esc_attr( rw_settings()->form_hidden_field_name ) ?>" value="Y">
 	<input type="hidden" id="rw_options_hidden" name="rw_options" value=""/>
 
 	<input type="submit" name="Submit" class="button-primary" value="<?php echo esc_attr( __rw( 'save-changes' ) ) ?>"/>
 	<?php if ( $rw_fs->is_not_paying() ) : ?>
-		<a href="<?php echo $rw_fs->get_upgrade_url() ?>"
+		<a href="<?php echo esc_url( $rw_fs->get_upgrade_url() ) ?>"
 		   onclick="_gaq.push(['_trackEvent', 'upgrade', 'wordpress', 'gopro_button', 1, true]); _gaq.push(['_link', this.href]); return false;"
 		   class="button-secondary gradient rw-upgrade-button"
 		   style="float: right;"><?php _erw( 'upgrade-now' ) ?></a>

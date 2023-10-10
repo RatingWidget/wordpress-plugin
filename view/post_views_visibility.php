@@ -24,7 +24,7 @@
 					<div class="rw-ui-img-radio rw-ui-hor<?php if ( $settings->{'show_on_' . $view} ) {
 						echo ' rw-selected';
 					} ?>">
-						<input type="checkbox" name="rw_show_on_<?php echo $view; ?>"
+						<input type="checkbox" name="rw_show_on_<?php echo esc_attr( $view ) ?>"
 						       value="true" <?php if ( $settings->{'show_on_' . $view} ) {
 							echo ' checked="checked"';
 						} ?>> <span><?php printf( __rw( 'visibility_show-on-every' ), ucwords( $view ) ) ?></span>

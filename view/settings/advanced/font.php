@@ -24,7 +24,7 @@
 		</td>
 		<td>
 			<div id="colorSelector" class="rw-color-selector">
-				<div style="background-color: <?php echo $font->color; ?>"></div>
+				<div style="background-color: <?php echo esc_attr( $font->color ) ?>"></div>
 			</div>
 		</td>
 	</tr>
@@ -34,7 +34,7 @@
 		</td>
 		<td>
 			<div id="hoverColorSelector" class="rw-color-selector">
-				<div style="background-color: <?php echo $font->hover->color; ?>"></div>
+				<div style="background-color: <?php echo esc_attr( $font->hover->color ) ?>"></div>
 			</div>
 		</td>
 	</tr>
@@ -58,12 +58,12 @@
 					?>
 					<div class="rw-ui-img-radio<?php if ( $font->type == $f ) {
 						echo " rw-selected";
-					} ?> rw-font-<?php echo $label; ?>"
-					     onclick="rwStar.setFontType('<?php echo $f; ?>'); rwNero.setFontType('<?php echo $f; ?>');">
+					} ?> rw-font-<?php echo esc_attr( $label ) ?>"
+					     onclick="rwStar.setFontType('<?php echo esc_js( $f ) ?>'); rwNero.setFontType('<?php echo esc_js( $f ) ?>');">
 						<span class="rw-font-sample">A</span>
-						<span><?php echo ucwords( $label ); ?></span>
+						<span><?php echo esc_html( ucwords( $label ) ) ?></span>
 						<input type="radio" name="rw-font-type"
-						       value="<?php echo $f; ?>"<?php if ( $font->type == $f ) {
+						       value="<?php echo esc_attr( $f ) ?>"<?php if ( $font->type == $f ) {
 							echo ' checked="checked"';
 						} ?> />
 					</div>

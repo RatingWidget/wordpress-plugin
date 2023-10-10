@@ -39,7 +39,7 @@
 					} ?>>
 					<span><?php printf( __rw( 'visibility_show-on-every-exclude' ), $type, $types ); ?> </span>
 					<input type="text" name="rw_visibility_exclude"
-					       value="<?php echo implode_or_empty( $visibility->exclude ); ?>"/>
+					       value="<?php echo esc_attr( implode_or_empty( $visibility->exclude ) ) ?>"/>
 				</div>
 				<div class="rw-ui-img-radio rw-ui-hor<?php if ( $visibility->selected == 2 ) {
 					echo ' rw-selected';
@@ -49,7 +49,7 @@
 						echo ' checked="checked"';
 					} ?>> <span><?php printf( __rw( 'visibility_show-on-every-include', WP_RW__ID ), $types ); ?></span>
 					<input type="text" name="rw_visibility_include"
-					       value="<?php echo implode_or_empty( $visibility->include ); ?>"/>
+					       value="<?php echo esc_attr( implode_or_empty( $visibility->include ) ) ?>"/>
 				</div>
 				<span
 					style="font-size: 10px; background: white; padding: 2px; border: 1px solid gray; display: block; margin-top: 5px; font-weight: bold; background: rgb(240,240,240); color: black;"><?php _erw( 'visibility__separate-with-commas' ) ?></span>

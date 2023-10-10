@@ -12,8 +12,8 @@
 							</div>
 							<div id="rw_new_wp_subscribe">
 								<input type="hidden" id="rw_wp_uid"
-								       value="<?php echo rw_account()->site_public_key ?>"/>
-								<a href="<?php echo rw_fs()->get_upgrade_url() ?>"
+								       value="<?php echo esc_attr( rw_account()->site_public_key ) ?>"/>
+								<a href="<?php echo esc_url( rw_fs()->get_upgrade_url() ) ?>"
 								   onclick="_gaq.push(['_trackEvent', 'upgrade', 'wordpress', 'gopro_button', 1, true]); _gaq.push(['_link', this.href]); return false;"
 								   class="button-primary gradient"
 								   style="display: block; text-align: center;"><?php _erw( 'learn-more' ) ?></a>
@@ -39,5 +39,5 @@
 		</div>
 	</div>
 	<br/>
-	<img src="<?php echo WP_RW__ADDRESS_IMG . "wordpress/rw.report.example.png" ?>" alt="">
+	<img src="<?php echo esc_url( WP_RW__ADDRESS_IMG . "wordpress/rw.report.example.png" ) ?>" alt="">
 </div>

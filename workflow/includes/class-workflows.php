@@ -117,10 +117,10 @@
 			add_filter( 'ratingwidget_dashboard_submenus', array( &$this, '_add_dashboard_menu' ) );
 
 			// AJAX request handlers
-			add_action( 'wp_ajax_new-workflow', array( &$this, 'new_workflow' ) );
-			add_action( 'wp_ajax_update-workflow', array( &$this, 'update_workflow' ) );
-			add_action( 'wp_ajax_update-workflows-id-order', array( &$this, 'update_workflows_id_order' ) );
-			add_action( 'wp_ajax_delete-workflow', array( &$this, 'delete_workflow' ) );
+			add_action( 'wp_ajax_rw_new_workflow', array( &$this, 'new_workflow' ) );
+			add_action( 'wp_ajax_rw_update_workflow', array( &$this, 'update_workflow' ) );
+			add_action( 'wp_ajax_rw_update_workflows_id_order', array( &$this, 'update_workflows_id_order' ) );
+			add_action( 'wp_ajax_rw_delete_workflow', array( &$this, 'delete_workflow' ) );
 		}
 
 		/**
@@ -434,7 +434,14 @@
 		 * @since  1.0.0
 		 */
 		function update_workflows_id_order() {
-			$ids = isset( $_POST['ids'] ) ? $_POST['ids'] : array();
+            check_ajax_referer( 'rw_update_workflows_id_order', 'rw_ajax_security' );
+
+            if ( ! current_user_can( 'manage_options' ) ) {
+                echo 0;
+                exit;
+            }
+
+            $ids = isset( $_POST['ids'] ) ? $_POST['ids'] : array();
 
 			if ( ! empty( $ids ) ) {
 				$this->_workflows_id_order = $ids;
@@ -452,32 +459,39 @@
 		 * @since  1.0.0
 		 */
 		function new_workflow() {
+            check_ajax_referer( 'rw_new_workflow', 'rw_ajax_security' );
+
+            $result = array( 'success' => true );
+
+            if ( ! current_user_can( 'manage_options' ) ) {
+                $result['success'] = false;
+                $result['errors']  = array( __rw( 'no-sufficient-permissions' ) );
+
+                echo json_encode( $result );
+                exit;
+            }
+
 			$name = isset( $_POST['name'] ) ? trim( stripslashes( $_POST['name'] ) ) : '';
 
 			// Validate the name of the new workflow.
 			if ( empty( $name ) ) {
-				$message = array(
-					'success' => 0,
-					'errors'  => array(
-						__rw( 'invalid-workflow-name' )
-					)
+                $result['success'] = false;
+                $result['errors']  = array(
+                    __rw( 'invalid-workflow-name' ),
 				);
 
-				echo json_encode( $message );
+				echo json_encode( $result );
 				exit;
 			}
 
 			$id = $this->insert_workflow( array( 'name' => $name ) );
 
-			$message = array(
-				'success' => 1,
-				'data'    => array(
-					'id'       => $id,
-					'workflow' => $this->_workflows->{$id}
-				)
+			$result['data'] = array(
+                'id'       => $id,
+                'workflow' => $this->_workflows->{$id},
 			);
 
-			echo json_encode( $message );
+			echo json_encode( $result );
 
 			exit;
 		}
@@ -489,18 +503,28 @@
 		 * @since  1.0.0
 		 */
 		function update_workflow() {
+            check_ajax_referer( 'rw_update_workflow', 'rw_ajax_security' );
+
+            $result = array( 'success' => true );
+
+            if ( ! current_user_can( 'manage_options' ) ) {
+                $result['success'] = false;
+                $result['errors']  = array( __rw( 'no-sufficient-permissions' ) );
+
+                echo json_encode( $result );
+                exit;
+            }
+
 			// Target workflow's ID
 			$id = isset( $_POST['id'] ) ? trim( $_POST['id'] ) : '';
 
 			if ( empty( $id ) ) {
-				$message = array(
-					'success' => 0,
-					'errors'  => array(
-						__rw( 'invalid-workflow-name' )
-					)
-				);
-                                
-                                echo json_encode( $message );
+				$message['success'] = false;
+                $message['errors']  = array(
+                    __rw( 'invalid-workflow-name' ),
+                );
+
+                echo json_encode( $message );
 				exit;
 			}
 
@@ -543,15 +567,12 @@
 				$this->_options->set_option( 'workflows', $this->_workflows, true );
 			}
 
-			$message = array(
-				'success' => 1,
-				'data'    => array(
-					'id'       => $id,
-					'workflow' => $workflow
-				)
+            $result['data'] = array(
+                'id'       => $id,
+                'workflow' => $workflow,
 			);
 
-			echo json_encode( $message );
+			echo json_encode( $result );
 			exit;
 		}
 
@@ -562,83 +583,29 @@
 		 * @since  1.0.0
 		 */
 		function delete_workflow() {
+            check_ajax_referer( 'rw_delete_workflow', 'rw_ajax_security' );
+
+            $result = array( 'success' => true );
+
+            if ( ! current_user_can( 'manage_options' ) ) {
+                $result['success'] = false;
+                $result['errors']  = array( __rw( 'no-sufficient-permissions' ) );
+
+                echo json_encode( $result );
+                exit;
+            }
+
 			$id = isset( $_POST['id'] ) ? trim( $_POST['id'] ) : '';
 
 			$this->_delete_workflow( $id );
 
-			$message = array(
-				'success' => 1,
-				'data'    => array(
-					'id' => $id
-				)
+            $result['data'] = array(
+                'id' => $id,
 			);
 
-			echo json_encode( $message );
+			echo json_encode( $result );
 
 			exit;
-		}
-
-		/**
-		 * Inserts an add-on's workflow into the database option.
-		 *
-		 * @author Leo Fajardo (@leorw)
-		 * @since  1.0.0
-		 *
-		 * @param string $addon_slug
-		 * @param array  $workflow
-		 */
-		function insert_addon_workflow( $addon_slug, $workflow = array() ) {
-			if ( empty( $workflow ) ) {
-				return;
-			}
-
-			$addon_settings = $this->get_single_addon_settings( $addon_slug );
-			if ( ! is_object( $addon_settings ) ) {
-				$addon_settings = new stdClass();
-			}
-
-			$workflow_id = isset( $addon_settings->workflow_id ) ? $addon_settings->workflow_id : false;
-
-			// Only add the workflow if it has not been added before.
-			if ( false === $workflow_id ) {
-				$workflow_id = $this->insert_workflow( $workflow );
-
-				// Save the workflow ID so that it will not be added again everytime the add-on is activated.
-				$addon_settings->workflow_id = $workflow_id;
-
-				// Update the add-on's settings.
-				$this->_addons_settings->{$addon_slug} = $addon_settings;
-
-				$this->_options->set_option( 'addons_settings', $this->_addons_settings, true );
-			}
-		}
-
-		/**
-		 * Removes an add-on's workflow from the database option.
-		 *
-		 * @author Leo Fajardo (@leorw)
-		 * @since  1.0.0
-		 *
-		 * @param string $addon_slug
-		 */
-		function remove_addon_workflow( $addon_slug ) {
-			$addon_settings = $this->get_single_addon_settings( $addon_slug );
-			if ( ! is_object( $addon_settings ) ) {
-				return;
-			}
-
-			if ( ! isset( $addon_settings->workflow_id ) && ! isset( $addon_settings->show_install_message ) ) {
-				return;
-			}
-
-			$workflow_id = $addon_settings->workflow_id;
-
-			$this->_delete_workflow( $workflow_id );
-
-			unset( $addon_settings->workflow_id );
-			unset( $addon_settings->show_install_message );
-
-			$this->_options->set_option( 'addons_settings', $this->_addons_settings, true );
 		}
 
 		/**
@@ -795,7 +762,18 @@
 		 * @since  1.0.0
 		 */
 		function handle_addons_settings_save() {
-			if ( isset( $_POST['rw-save-addons-settings'] ) ) {
+            if (
+                ! isset( $_POST['rw_addon_settings_nonce'] ) ||
+                ! wp_verify_nonce( $_POST['rw_addon_settings_nonce'], basename( WP_RW__PLUGIN_FILE_FULL ) )
+            ) {
+                return;
+            }
+
+            if ( ! current_user_can( 'manage_options' ) ) {
+                return;
+            }
+
+            if ( isset( $_POST['rw-save-addons-settings'] ) ) {
 				$addon = isset( $_POST['add-on'] ) ? trim( $_POST['add-on'] ) : '';
 				if ( ! empty( $addon ) ) {
 					$settings = isset( $this->_addons_settings->{$addon} ) ? $this->_addons_settings->{$addon} : false;
@@ -848,9 +826,15 @@
 				'event-types'        => array(
 					'afterVote'  => array( 'title' => __rw( 'after-vote' ) ),
 					'beforeVote' => array( 'title' => __rw( 'before-vote' ) )
-				)
+				),
+                'nonces'             => array(
+                    'rw_new_workflow'              => wp_create_nonce( 'rw_new_workflow' ),
+                    'rw_update_workflow'           => wp_create_nonce( 'rw_update_workflow' ),
+                    'rw_delete_workflow'           => wp_create_nonce( 'rw_delete_workflow' ),
+                    'rw_update_workflows_id_order' => wp_create_nonce( 'rw_update_workflows_id_order' ),
+                )
 			);
 
-			echo '<script>var WORKFLOWS_SETTINGS = ' . json_encode( $data ) . '</script>';
+			echo '<script>var RW_WORKFLOWS_SETTINGS = ' . json_encode( $data ) . '</script>';
 		}
 	}

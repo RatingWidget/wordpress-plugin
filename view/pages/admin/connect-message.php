@@ -8,7 +8,7 @@
 	$site_url = get_site_url();
 
 ?>
-<p>Hey <?php echo $first_name ?>,<br>
+<p>Hey <?php echo esc_html( $first_name ) ?>,<br>
 	RatingWidget is a ratings <b>service</b> - the ratings data is stored on our servers. To use the plugin we need to connect your account to <a href="https://rating-widget.com/" target="_blank">rating-widget.com</a> and <a href="https://freemius.com/wordpress/usage-tracking/56/rating-widget/" target="_blank">freemius.com</a>.</p>
 <p style="font-size: 12px; margin-top: 10px; text-align: center;">
 Please read our <a id="rw_terms_trigger" href="#">Terms of Use and Privacy Policy</a>.</p>

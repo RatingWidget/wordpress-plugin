@@ -11,7 +11,7 @@
         $halign = isset($args["halign"]) ? $args["halign"] : "right";
         $type = isset($args["type"]) ? $args["type"] : "star";
 ?>
-<div class="rw-ui-container rw-ui-<?php echo $type;?> rw-style-<?php echo $style;?> rw-halign-<?php echo $halign;?> rw-dir-<?php echo $dir;?> rw-valign-middle rw-size-small"><?php
+<div class="rw-ui-container rw-ui-<?php echo esc_attr( $type ) ?> rw-style-<?php echo esc_attr( $style ) ?> rw-halign-<?php echo esc_attr( $halign ) ?> rw-dir-<?php echo esc_attr( $dir ) ?> rw-valign-middle rw-size-small"><?php
     if ($type == "star")
     {
         echo '<div class="rw-action-area rw-clearfix"><ul class="rw-ui-stars">';

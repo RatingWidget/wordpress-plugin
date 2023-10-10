@@ -4,7 +4,7 @@
 	<div class="wrap rw-dir-ltr">
 		<form id="rw_advanced_settings_form" method="post" action="">
 			<input type="hidden" name="rw_advanced_settings_nonce"
-			       value="<?php echo wp_create_nonce( basename( WP_RW__PLUGIN_FILE_FULL ) ) ?>"/>
+			       value="<?php echo esc_attr( wp_create_nonce( basename( WP_RW__PLUGIN_FILE_FULL ) ) ) ?>"/>
 			<div id="poststuff">
 				<div id="rw_wp_set">
 					<div id="rw_identify_by" class="has-sidebar has-right-sidebar">

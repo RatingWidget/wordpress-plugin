@@ -4,7 +4,7 @@
 	<meta charset="<?php bloginfo( 'charset' ); ?>">
 	<meta name="viewport" content="width=device-width">
 	<title><?php _erw( 'toprated-table-win_title' ) ?></title>
-	<link rel="stylesheet" href="<?php echo WP_RW__PLUGIN_URL ?>resources/css/toprated-shortcode-old.css"/>
+	<link rel="stylesheet" href="<?php echo esc_url( WP_RW__PLUGIN_URL . 'resources/css/toprated-shortcode-old.css' ) ?>"/>
 </head>
 <body>
 <form>

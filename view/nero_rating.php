@@ -17,9 +17,9 @@ if (!function_exists("show_nero_rating")){
         $font_size = "font-size: " . (isset($roptions->advanced->font->size) ? $roptions->advanced->font->size : "12px") . ";";
         $line_height = "line-height: " . (isset($roptions->advanced->layout->lineHeight) ? $roptions->advanced->layout->lineHeight : "16px") . ";";
 ?>
-<div class="rw-ui-container rw-no-render<?php echo $type . $size . $dir . $halign . $valign . $style;?>">
-    <div class="rw-action-area rw-clearfix"><span class="rw-ui-like"><i class="rw-ui-like-icon"></i><span class="rw-ui-like-label" style="<?php echo $font_type . $font_size . $line_height;?>"><?php echo $likes;?></span></span><span class="rw-ui-dislike"><i class="rw-ui-dislike-icon"></i><span class="rw-ui-dislike-label" style="<?php echo $font_type . $font_size . $line_height;?>"><?php echo $dislikes;?></span></span>
-    <a class="rw-report-link" target="_blank" title="Rating-Widget Report"></a></div><span class="rw-ui-info" style="<?php echo $font_type . $font_color . $font_size . $line_height;?>"><?php echo $label;?></span>
+<div class="rw-ui-container rw-no-render<?php echo esc_attr( $type . $size . $dir . $halign . $valign . $style ) ?>">
+    <div class="rw-action-area rw-clearfix"><span class="rw-ui-like"><i class="rw-ui-like-icon"></i><span class="rw-ui-like-label" style="<?php echo esc_attr( $font_type . $font_size . $line_height ) ?>"><?php echo esc_html( $likes ) ?></span></span><span class="rw-ui-dislike"><i class="rw-ui-dislike-icon"></i><span class="rw-ui-dislike-label" style="<?php echo esc_attr( $font_type . $font_size . $line_height ) ?>"><?php echo esc_html( $dislikes ) ?></span></span>
+    <a class="rw-report-link" target="_blank" title="Rating-Widget Report"></a></div><span class="rw-ui-info" style="<?php echo esc_attr( $font_type . $font_color . $font_size . $line_height ) ?>"><?php echo esc_html( $label ) ?></span>
 </div>
 <?php
     }

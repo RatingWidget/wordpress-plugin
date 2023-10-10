@@ -16,9 +16,9 @@
 								echo ' selected="selected"';
 							} ?>><?php _erw( 'all-categories' ) ?></option>
 							<?php foreach ( $all_categories as $category ) : $selected = ( $all || in_array( $category->cat_ID, rw_settings()->categories ) ); ?>
-								<option value="<?php echo $category->cat_ID ?>" <?php if ( $selected ) {
+								<option value="<?php echo esc_attr( $category->cat_ID ) ?>" <?php if ( $selected ) {
 									echo ' selected="selected"';
-								} ?>><?php echo $category->cat_name ?></option>
+								} ?>><?php echo esc_html( $category->cat_name ) ?></option>
 							<?php endforeach ?>
 						</select>
 
@@ -28,7 +28,7 @@
 							} ?>>
 							<?php foreach ( $all_categories as $category ) : $selected = ( $all || in_array( $category->cat_ID, rw_settings()->categories ) ); ?>
 								<input type="checkbox" name="rw_categories[]"
-								       value="<?php echo $category->cat_ID; ?>" <?php if ( $selected ) {
+								       value="<?php echo esc_attr( $category->cat_ID ) ?>" <?php if ( $selected ) {
 									echo ' checked="checked"';
 								} ?>>
 							<?php endforeach ?>

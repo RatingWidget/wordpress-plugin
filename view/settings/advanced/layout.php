@@ -17,10 +17,10 @@
 					?>
 					<div class="rw-ui-img-radio<?php if ( $selected ) {
 						echo ' rw-selected';
-					} ?>" onclick="RWM.Set.direction(RW.DIR.<?php echo strtoupper( $dir ); ?>);">
+					} ?>" onclick="RWM.Set.direction(RW.DIR.<?php echo esc_js( strtoupper( $dir ) ) ?>);">
 						<i class="rw-ui-holder"><i
-								class="rw-ui-sprite rw-ui-large rw-ui-<?php echo strtolower( $dir ); ?>"></i></i>
-						<span><?php echo $direction; ?></span>
+								class="rw-ui-sprite rw-ui-large rw-ui-<?php echo esc_attr( strtolower( $dir ) ) ?>"></i></i>
+						<span><?php echo esc_html( $direction ) ?></span>
 						<input type="radio" name="rw-direction" value="0"<?php if ( $selected ) {
 							echo ' checked="checked"';
 						} ?> />
@@ -51,10 +51,10 @@
 							?>
 							<div class="rw-ui-img-radio<?php if ( $selected ) {
 								echo ' rw-selected';
-							} ?>" onclick="RWM.Set.align('<?php echo $ver . "', '" . $hor ?>')">
+							} ?>" onclick="RWM.Set.align('<?php echo esc_js( $ver . "', '" . $hor ) ?>')">
 								<i class="rw-ui-holder"><i
-										class="rw-ui-sprite rw-ui-large rw-ui-<?php echo $ver . $hor; ?>"></i></i>
-								<span><?php echo __rw( $ver ) . ' ' . __rw( $hor ) ?></span>
+										class="rw-ui-sprite rw-ui-large rw-ui-<?php echo esc_attr( $ver . $hor ) ?>"></i></i>
+								<span><?php echo esc_html( __rw( $ver ) . ' ' . __rw( $hor ) ) ?></span>
 								<input type="radio" name="rw-align"
 								       value="<?php echo $i * 3 + $j; ?>"<?php if ( $selected ) {
 									echo ' checked="checked"';
