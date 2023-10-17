@@ -25,8 +25,6 @@ The most popular, GDPR compliant, Five Star Review System on the web. User-frien
 * Custom Post Type Ratings
 * Author Review Ratings
 
-[Test drive RatingWidget Now! (DEMO)](https://addendio.com/try-plugin/?slug=rating-widget "Test drive RatingWidget Now! (DEMO)")
-
 #### GDPR
 * We introduced two helper client-side methods: `RW.optIn()` and `RW.optOut()`. You can leverage those with your cookies consent opt-in/out logic.
 * We are no longer storing IPs. Instead, we store anonymized IPs - a non-personal data. Therefore, we are no longer storing any personal data of EU visitors unless they opt-in.
